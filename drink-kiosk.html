@@ -211,6 +211,10 @@
   .btn-primary.disabled{opacity:.45;filter:grayscale(.4);pointer-events:none;box-shadow:none;}
   .opt-group h4 em.req{color:#ffd0e6;border-color:var(--magenta);}
   .opt-group.need h4{color:var(--magenta);}
+  .opt.soldopt{opacity:.45;filter:grayscale(.5);cursor:default;pointer-events:none;position:relative;}
+  .opt.soldopt::after{content:'out';position:absolute;top:6px;right:7px;background:rgba(90,108,130,.55);
+    color:#fff;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:999px;
+    text-transform:uppercase;line-height:1;}
 
   /* ================= CART ================= */
   .cart-line{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--border);align-items:center;}
@@ -1141,7 +1145,8 @@ let MENU = THIRSTY_MENU;
 
 /* ============ STATE ============ */
 let activeCat = "floats";
-let SOLD_OUT = new Set();   // ids marked sold-out from the owner phone app (declared early: renderMenu uses it)
+let SOLD_OUT  = new Set();  // drink ids marked sold-out from the owner phone app (declared early: renderMenu uses it)
+let SOLD_OPTS = new Set();  // option ids ("key:name") marked sold-out — declared early: renderSheet uses it
 let cart = [];
 let editing = null; // {catKey,item,sel,qty}
 
@@ -1557,6 +1562,8 @@ function renderSheet(){
         ${o.choices.map(ch=>{
           const on = o.multi ? sel[o.key].includes(ch.name) : sel[o.key]===ch.name;
           const add = ch.d>0?`<span class="add">+$${ch.d.toFixed(2)}</span>`:(ch.d<0?`<span class="add">-$${Math.abs(ch.d).toFixed(2)}</span>`:'');
+          const soldOpt = SOLD_OPTS.has(o.key+":"+ch.name);
+          if(soldOpt) return `<button class="opt soldopt" disabled aria-disabled="true" tabindex="-1">${ch.name} ${add}</button>`;
           return `<button class="opt ${on?'sel':''}" onclick="pick('${o.key}','${ch.name.replace(/'/g,"\\'")}',${o.multi})">${ch.name} ${add}</button>`;
         }).join("")}
       </div>
@@ -1581,6 +1588,7 @@ function renderSheet(){
 }
 
 function pick(key,name,multi){
+  if(SOLD_OPTS.has(key+":"+name)) return; // refuse sold-out choices — button is already disabled/greyed
   if(multi){
     const arr = editing.sel[key];
     const i = arr.indexOf(name);
@@ -2137,10 +2145,33 @@ setInterval(checkVersion, 180000);          // re-check every 3 min
 /* ---- Remote control: sold-out drinks set from the owner phone app.
         Server pulls kiosk-control.json from your repo; page applies it. ---- */
 function applyControl(d){
+  // --- drinks sold-out (unchanged logic) ---
   const list = (d && Array.isArray(d.soldOut)) ? d.soldOut : [];
   const next = new Set(list);
   const changed = next.size!==SOLD_OUT.size || [...next].some(x=>!SOLD_OUT.has(x));
   if(changed){ SOLD_OUT = next; if($("#menu")) renderMenu(); }
+
+  // --- options sold-out ---
+  const optList = (d && Array.isArray(d.soldOutOptions)) ? d.soldOutOptions : [];
+  const nextOpts = new Set(optList);
+  const optsChanged = nextOpts.size!==SOLD_OPTS.size || [...nextOpts].some(x=>!SOLD_OPTS.has(x));
+  if(optsChanged){
+    SOLD_OPTS = nextOpts;
+    // If a customizer sheet is currently open, re-render it so a live toggle takes effect.
+    // Also deselect any choice that just became sold-out.
+    if(editing && $("#overlay").classList.contains("show")){
+      // Strip sold-out choices from current selections
+      const cat = MENU[editing.catKey];
+      cat.options.forEach(o=>{
+        if(o.multi){
+          editing.sel[o.key] = (editing.sel[o.key]||[]).filter(n=>!SOLD_OPTS.has(o.key+":"+n));
+        } else if(editing.sel[o.key] && SOLD_OPTS.has(o.key+":"+editing.sel[o.key])){
+          editing.sel[o.key] = null;
+        }
+      });
+      renderSheet();
+    }
+  }
 }
 async function checkControl(){
   try{ applyControl(await (await fetch('/control',{cache:'no-store'})).json()); }catch(e){}
