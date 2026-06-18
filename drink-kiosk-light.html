@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Thirsty Beaches — Order Here</title>
+<link rel="icon" type="image/png" href="assets/logo.png?v=5">
+<link rel="apple-touch-icon" href="assets/logo.png?v=5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080B16;
+    --bg-2:#0C1020;
+    --ink:#F3F6FF;
+    --ink-soft:#BAC3DB;
+    --ink-faint:#5B6794;
+    --panel:rgba(255,255,255,.045);
+    --panel-2:rgba(255,255,255,.07);
+    --border:rgba(255,255,255,.10);
+    --border-2:rgba(255,255,255,.16);
+    --blue:#2E8BFF;
+    --cyan:#34D7FF;
+    --magenta:#FF3D97;
+    --orange:#FF8A2B;
+    --gold:#FFC95C;
+    --grad-brand:linear-gradient(110deg,#2E8BFF 0%,#FF3D97 54%,#FF8A2B 108%);
+    --grad-cool:linear-gradient(120deg,#2E8BFF,#34D7FF);
+    --grad-warm:linear-gradient(120deg,#FF3D97,#FF8A2B);
+    --glow-warm:0 18px 50px -16px rgba(255,61,151,.55);
+    --glow-cool:0 18px 50px -16px rgba(46,139,255,.5);
+    --radius:24px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:"Plus Jakarta Sans",system-ui,sans-serif;
+    color:var(--ink);background:var(--bg);
+    overflow:hidden;user-select:none;-webkit-user-select:none;
+  }
+
+  /* ambient backdrop */
+  .bg-deco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:
+    radial-gradient(1100px 700px at 8% -8%, rgba(46,139,255,.20), transparent 60%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(255,61,151,.16), transparent 58%),
+    radial-gradient(1200px 800px at 60% 120%, rgba(255,138,43,.12), transparent 60%),
+    linear-gradient(180deg,var(--bg) 0%, var(--bg-2) 100%);}
+  .bg-deco::before{content:"";position:absolute;inset:-20%;background:
+    radial-gradient(600px 600px at 30% 30%, rgba(52,215,255,.10), transparent 60%);
+    animation:drift 22s ease-in-out infinite alternate;}
+  @keyframes drift{from{transform:translate(0,0);}to{transform:translate(8%,6%);}}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .app{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;}
+
+  /* ================= ATTRACT ================= */
+  #attract{position:fixed;inset:0;z-index:50;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:6vh 32px;overflow:hidden;background:
+    radial-gradient(1000px 720px at 50% -12%, rgba(46,139,255,.22), transparent 60%),
+    radial-gradient(900px 700px at 50% 118%, rgba(255,61,151,.18), transparent 60%),
+    radial-gradient(700px 600px at 85% 90%, rgba(255,138,43,.12), transparent 60%),
+    linear-gradient(180deg,var(--bg) 0%, var(--bg-2) 100%);}
+  .attract-inner{display:flex;flex-direction:column;align-items:center;animation:rise .9s cubic-bezier(.2,.8,.2,1) both;}
+  #attract .attract-logo{width:min(560px,74vw);height:auto;filter:drop-shadow(0 24px 60px rgba(0,0,0,.6));
+    transform-origin:bottom center;animation:cupbounce 2.8s ease-in-out infinite;will-change:transform;}
+  @keyframes cupbounce{
+    0%{transform:translateY(0);}
+    22%{transform:translateY(-36px);}
+    40%{transform:translateY(0);}
+    54%{transform:translateY(-14px);}
+    68%{transform:translateY(0);}
+    100%{transform:translateY(0);}
+  }
+  @media (prefers-reduced-motion: reduce){ #attract .attract-logo{animation:none;} }
+  #attract .wordmark{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(56px,10vw,128px);line-height:.9;
+    letter-spacing:-.02em;display:none;flex-direction:column;}
+  #attract .wordmark span{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  #attract .tagline{font-family:"Outfit",sans-serif;font-weight:600;letter-spacing:.4em;text-transform:uppercase;
+    font-size:clamp(12px,1.6vw,17px);color:var(--ink-soft);margin:30px 0 40px;padding-left:.4em;}
+  .tap-cta{position:relative;margin-top:42px;font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(17px,2vw,22px);
+    color:var(--ink);letter-spacing:.04em;padding:20px 52px;border-radius:999px;
+    background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box, var(--grad-brand) border-box;
+    border:1.6px solid transparent;box-shadow:0 0 0 0 rgba(255,61,151,.0);overflow:hidden;
+    animation:breathe 3.4s ease-in-out infinite;}
+  .tap-cta::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.18),transparent);
+    transform:skewX(-18deg);animation:sheen 4.2s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{box-shadow:0 14px 40px -16px rgba(255,61,151,.5);}50%{box-shadow:0 18px 54px -14px rgba(46,139,255,.55);}}
+  @keyframes sheen{0%{left:-60%;}55%,100%{left:130%;}}
+  @keyframes rise{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ================= HEADER ================= */
+  header{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:16px 34px;background:rgba(10,13,26,.55);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--grad-brand);opacity:.7;}
+  .brand{display:flex;align-items:center;gap:14px;cursor:pointer;}
+  .brand .logo-img{height:52px;width:auto;display:block;}
+  .brand #brandFallback{font-family:"Fraunces",serif;font-weight:900;font-size:26px;letter-spacing:-.01em;
+    background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .cartbtn{display:flex;align-items:center;gap:12px;cursor:pointer;color:var(--ink);
+    font-family:"Outfit",sans-serif;font-weight:700;font-size:18px;letter-spacing:.01em;padding:13px 24px;border-radius:999px;
+    background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box, var(--grad-brand) border-box;border:1.5px solid transparent;
+    transition:transform .16s ease,box-shadow .16s ease;box-shadow:var(--glow-warm);}
+  .cartbtn:active{transform:scale(.96);}
+  .cartbtn .count{background:var(--grad-warm);color:#fff;min-width:27px;height:27px;border-radius:999px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;padding:0 7px;}
+  .cartbtn.empty{opacity:.35;pointer-events:none;box-shadow:none;}
+
+  /* bottom checkout bar — appears when the cart has items, in the lower reach zone */
+  .orderbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;align-items:center;justify-content:space-between;
+    gap:16px;padding:22px 34px;background:var(--grad-brand);color:#fff;cursor:pointer;
+    font-family:"Outfit",sans-serif;font-weight:800;box-shadow:0 -12px 40px -8px rgba(0,0,0,.65);
+    animation:obrise .25s ease;}
+  .orderbar.show{display:flex;}
+  @keyframes obrise{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .orderbar .ob-count{font-size:20px;opacity:.95;white-space:nowrap;}
+  .orderbar .ob-cta{font-size:23px;letter-spacing:.01em;}
+  .orderbar .ob-total{font-size:26px;white-space:nowrap;}
+
+  /* ================= TABS ================= */
+  .tabs{display:flex;gap:12px;padding:26px 34px 8px;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:0 0 auto;border:1px solid var(--border);background:var(--panel);color:var(--ink-soft);
+    font-family:"Outfit",sans-serif;font-weight:600;font-size:18px;padding:14px 26px;border-radius:14px;cursor:pointer;
+    display:flex;align-items:center;gap:10px;white-space:nowrap;backdrop-filter:blur(8px);
+    transition:color .16s,border-color .16s,background .16s,transform .14s;}
+  .tab .ico{font-size:20px;opacity:.9;}
+  .tab:active{transform:scale(.96);}
+  .tab.active{color:#fff;border-color:transparent;
+    background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box, var(--grad-brand) border-box;
+    box-shadow:var(--glow-cool);}
+  .tab.active .ico{opacity:1;}
+
+  /* ================= MENU ================= */
+  main{flex:1;overflow-y:auto;padding:22px 34px 150px;}
+  .cat-head{display:flex;align-items:baseline;gap:18px;margin:14px 4px 26px;}
+  .cat-head h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(32px,4.4vw,52px);margin:0;letter-spacing:-.01em;color:var(--ink);}
+  .cat-head span{color:var(--ink-soft);font-weight:500;font-size:18px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:22px;}
+  .card{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 16px 22px;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;gap:6px;
+    backdrop-filter:blur(10px);text-align:left;font-family:inherit;overflow:hidden;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;animation:cardIn .55s both;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+  .card:hover{transform:translateY(-6px);border-color:var(--border-2);box-shadow:0 30px 60px -28px rgba(0,0,0,.8),var(--glow-cool);}
+  .card:active{transform:scale(.98);}
+  .card .art{width:100%;aspect-ratio:4/3;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;border:1px solid var(--border);background-size:cover;background-position:center;
+    background-image:linear-gradient(145deg, rgba(46,139,255,.20) 0%, rgba(255,61,151,.14) 52%, rgba(255,138,43,.18) 100%);}
+  .card .art .mono{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(48px,7vw,80px);color:rgba(255,255,255,.18);
+    line-height:1;}
+  .card .art .cicon{display:flex;align-items:center;justify-content:center;width:60%;height:60%;
+    filter:drop-shadow(0 12px 16px rgba(0,0,0,.55));animation:floaticon 3.8s ease-in-out infinite;will-change:transform;}
+  .card .art .cicon svg{width:100%;height:100%;display:block;}
+  .card .art .dimg{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));
+    animation:floaticon 3.8s ease-in-out infinite;will-change:transform;}
+  .card:hover .art .dimg{animation-play-state:paused;transform:scale(1.1);}
+  @keyframes floaticon{0%,100%{transform:translateY(4px) rotate(-3deg);}50%{transform:translateY(-11px) rotate(3deg);}}
+  .card:hover .art .cicon{animation-play-state:paused;transform:scale(1.12) rotate(0deg);}
+  @media (prefers-reduced-motion: reduce){ .card .art .cicon{animation:none;transform:rotate(-3deg);} }
+  .sheet-hd .art .emoji{font-size:44px;line-height:1;}
+  .cart-line .art .emoji{font-size:30px;line-height:1;}
+  .card .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.28));}
+  .card h3{margin:0 4px;font-family:"Outfit",sans-serif;font-size:21px;font-weight:700;letter-spacing:-.01em;color:var(--ink);}
+  .card .desc{margin:0 4px;font-size:14px;color:var(--ink-soft);line-height:1.45;min-height:40px;}
+  .card .price{margin:6px 4px 0;font-family:"Outfit",sans-serif;font-weight:800;font-size:23px;color:#FFC95C;}
+
+  /* ================= SHEET / MODAL ================= */
+  .overlay{position:fixed;inset:0;background:rgba(4,6,14,.66);backdrop-filter:blur(6px);z-index:60;
+    display:none;align-items:flex-end;justify-content:center;}
+  .overlay.show{display:flex;}
+  .sheet{background:linear-gradient(180deg,#11152a,#0B0E1C);width:100%;max-width:700px;max-height:92vh;overflow-y:auto;
+    border:1px solid var(--border);border-bottom:none;border-radius:28px 28px 0 0;padding:0 0 24px;
+    box-shadow:0 -30px 70px -10px rgba(0,0,0,.7);animation:rise .32s cubic-bezier(.2,.8,.2,1);}
+  @media(min-width:740px){.overlay{align-items:center;}.sheet{border-radius:28px;border-bottom:1px solid var(--border);max-height:88vh;}}
+  .sheet-hd{position:sticky;top:0;z-index:2;background:rgba(17,21,42,.9);backdrop-filter:blur(12px);
+    padding:26px 28px 18px;display:flex;gap:18px;align-items:center;border-bottom:1px solid var(--border);}
+  .sheet-hd .art{width:78px;height:78px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border-radius:18px;border:1px solid var(--border);background-size:cover;background-position:center;
+    background-image:linear-gradient(145deg, rgba(46,139,255,.22), rgba(255,61,151,.16) 55%, rgba(255,138,43,.2));}
+  .sheet-hd .art span{font-family:"Fraunces",serif;font-weight:900;font-size:34px;color:rgba(255,255,255,.42);}
+  .sheet-hd h3{font-family:"Fraunces",serif;font-weight:900;font-size:28px;margin:0 0 4px;color:var(--ink);}
+  .sheet-hd p{margin:0;color:var(--ink-soft);font-size:15px;}
+  .close{margin-left:auto;border:1px solid var(--border);background:var(--panel);width:48px;height:48px;border-radius:999px;
+    font-size:20px;cursor:pointer;color:var(--ink);flex:0 0 auto;}
+  .opt-group{padding:22px 28px 4px;}
+  .opt-group h4{font-family:"Outfit",sans-serif;font-size:17px;margin:0 0 13px;font-weight:700;display:flex;gap:8px;align-items:center;color:var(--ink);}
+  .opt-group h4 em{font-style:normal;color:var(--ink-soft);font-weight:500;font-size:12px;
+    border:1px solid var(--border);padding:3px 10px;border-radius:999px;}
+  .opt-row{display:flex;flex-wrap:wrap;gap:11px;}
+  .opt{border:1px solid var(--border);background:var(--panel);font-family:"Outfit",sans-serif;font-weight:600;font-size:16px;
+    padding:14px 20px;border-radius:14px;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:8px;
+    transition:border-color .14s,background .14s,transform .1s,box-shadow .14s;}
+  .opt:active{transform:scale(.95);}
+  .opt.sel{border-color:transparent;color:#fff;
+    background:linear-gradient(#141830,#141830) padding-box, var(--grad-brand) border-box;box-shadow:var(--glow-warm);}
+  .opt .oico{font-size:1.15em;line-height:1;margin-right:2px;}
+  .opt .add{color:var(--ink-soft);font-weight:600;font-size:14px;}
+  .opt.sel .add{color:rgba(255,255,255,.85);}
+  .sheet-ft{position:sticky;bottom:0;background:rgba(11,14,28,.92);backdrop-filter:blur(12px);padding:18px 28px 8px;
+    display:flex;gap:14px;align-items:center;border-top:1px solid var(--border);margin-top:14px;}
+  .qty{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:6px;}
+  .qty button{border:none;background:var(--panel-2);width:48px;height:48px;border-radius:11px;font-size:24px;font-weight:700;cursor:pointer;color:var(--ink);}
+  .qty span{min-width:42px;text-align:center;font-family:"Outfit",sans-serif;font-weight:700;font-size:22px;}
+  .btn-primary{flex:1;border:none;cursor:pointer;font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;color:#fff;
+    background:var(--grad-brand);padding:21px;border-radius:16px;box-shadow:var(--glow-warm);
+    display:flex;justify-content:center;gap:10px;align-items:center;transition:transform .12s;}
+  .btn-primary:active{transform:scale(.98);}
+  .btn-primary.disabled{opacity:.45;filter:grayscale(.4);pointer-events:none;box-shadow:none;}
+  .opt-group h4 em.req{color:#ffd0e6;border-color:var(--magenta);}
+  .opt-group.need h4{color:var(--magenta);}
+
+  /* ================= CART ================= */
+  .cart-line{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--border);align-items:center;}
+  .cart-line .art{flex:0 0 auto;width:60px;height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border-radius:14px;border:1px solid var(--border);background-size:cover;background-position:center;
+    background-image:linear-gradient(145deg, rgba(46,139,255,.22), rgba(255,61,151,.16) 55%, rgba(255,138,43,.2));}
+  .cart-line .art span{font-family:"Fraunces",serif;font-weight:900;font-size:26px;color:rgba(255,255,255,.42);}
+  .cart-line .info{flex:1;}
+  .cart-line .info b{font-family:"Outfit",sans-serif;font-weight:700;font-size:18px;color:var(--ink);}
+  .cart-line .info .mods{color:var(--ink-soft);font-size:14px;margin-top:3px;line-height:1.4;}
+  .cart-line .info .price{font-weight:800;margin-top:6px;font-size:16px;color:#FFC95C;}
+  .cart-empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .totals{padding:22px 0 6px;}
+  .totals .row{display:flex;justify-content:space-between;padding:8px 0;font-size:17px;color:var(--ink-soft);}
+  .totals .row.grand{font-family:"Fraunces",serif;font-weight:900;font-size:27px;color:var(--ink);
+    border-top:1px solid var(--border);margin-top:10px;padding-top:18px;}
+  .linkbtn{background:none;border:none;color:var(--magenta);font-family:"Outfit",sans-serif;font-weight:600;font-size:15px;cursor:pointer;padding:6px 0;}
+
+  /* ================= CONFIRM ================= */
+  #confirm{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:40px;background:
+    radial-gradient(900px 600px at 50% 0%, rgba(46,139,255,.22), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(255,61,151,.18), transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg-2));}
+  #confirm.show{display:flex;}
+  #confirm .confirm-logo{width:min(360px,52vw);height:auto;margin-bottom:30px;filter:drop-shadow(0 14px 30px rgba(0,0,0,.5));}
+  #confirm .check{width:150px;height:150px;border-radius:50%;background:var(--grad-cool);color:#fff;font-size:78px;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 70px 10px rgba(46,139,255,.45);
+    animation:pop .55s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes pop{from{transform:scale(0);}to{transform:scale(1);}}
+  #confirm h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(36px,6vw,56px);margin:28px 0 8px;color:var(--ink);}
+  #confirm p{font-size:21px;color:var(--ink-soft);margin:0;max-width:540px;}
+  #confirm .ordernum{margin:30px 0;background:var(--panel);border:1px solid var(--border);border-radius:22px;padding:22px 50px;backdrop-filter:blur(8px);}
+  #confirm .ordernum span{display:block;font-family:"Outfit",sans-serif;font-size:13px;color:var(--ink-soft);font-weight:600;letter-spacing:.18em;text-transform:uppercase;}
+  #confirm .ordernum b{font-family:"Fraunces",serif;font-weight:900;font-size:70px;line-height:1.15;color:#FFC95C;}
+  .ghostbtn{margin-top:16px;border:1px solid var(--border-2);background:var(--panel);color:var(--ink);
+    font-family:"Outfit",sans-serif;font-weight:700;font-size:18px;padding:17px 44px;border-radius:999px;cursor:pointer;}
+
+  main::-webkit-scrollbar,.sheet::-webkit-scrollbar{width:8px;}
+  main::-webkit-scrollbar-thumb,.sheet::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:8px;}
+
+  /* ===================== PORTRAIT — vertical 48" touchscreen ===================== */
+  @media (orientation: portrait){
+    header{padding:28px 44px;}
+    .brand .logo-img{height:88px;}
+    .brand #brandFallback{font-size:42px;}
+    .cartbtn{font-size:27px;padding:22px 38px;}
+    .cartbtn .count{min-width:38px;height:38px;font-size:21px;}
+    .tabs{padding:36px 44px 14px;gap:20px;}
+    .tab{font-size:27px;padding:24px 42px;border-radius:22px;}
+    .tab .ico{font-size:32px;}
+    main{padding:32px 44px 220px;}
+    .orderbar{padding:30px 46px;}
+    .orderbar .ob-count{font-size:27px;}
+    .orderbar .ob-cta{font-size:32px;}
+    .orderbar .ob-total{font-size:36px;}
+    .cat-head{margin:20px 8px 36px;}
+    .cat-head h2{font-size:clamp(48px,7vw,88px);}
+    .cat-head span{font-size:27px;}
+    .grid{grid-template-columns:repeat(3,1fr);gap:20px;}
+    .card{padding:14px 14px 20px;border-radius:26px;}
+    .card .art{border-radius:20px;margin-bottom:14px;}
+    .card .art .cicon{width:62%;height:62%;}
+    .sheet-hd .art .emoji{font-size:60px;}
+    .cart-line .art .emoji{font-size:42px;}
+    .card h3{font-size:25px;}
+    .card .desc{font-size:16px;min-height:44px;line-height:1.4;}
+    /* attract */
+    #attract .attract-logo{width:min(860px,88vw);}
+    #attract .wordmark{font-size:clamp(110px,17vw,210px);}
+    #attract .tagline{font-size:clamp(22px,3vw,32px);margin:48px 0 60px;letter-spacing:.45em;}
+    .tap-cta{font-size:clamp(30px,3.4vw,42px);padding:32px 86px;margin-top:60px;}
+    /* sheet / customizer */
+    .overlay{align-items:flex-end;}
+    .sheet{max-width:none;width:100%;border-radius:40px 40px 0 0;max-height:88vh;}
+    .sheet-hd{padding:36px 40px 24px;}
+    .sheet-hd h3{font-size:44px;}
+    .sheet-hd p{font-size:23px;}
+    .sheet-hd .art{width:120px;height:120px;border-radius:26px;}
+    .sheet-hd .art span{font-size:52px;}
+    .close{width:68px;height:68px;font-size:30px;}
+    .opt-group{padding:30px 40px 6px;}
+    .opt-group h4{font-size:28px;margin-bottom:18px;}
+    .opt-group h4 em{font-size:18px;}
+    .opt{font-size:25px;padding:22px 30px;border-radius:20px;}
+    .opt .add{font-size:21px;}
+    .sheet-ft{padding:26px 40px 12px;}
+    .qty button{width:68px;height:68px;font-size:36px;}
+    .qty span{font-size:34px;min-width:58px;}
+    .btn-primary{font-size:32px;padding:32px;border-radius:26px;}
+    .totals .row{font-size:25px;}
+    .totals .row.grand{font-size:42px;padding-top:24px;}
+    .cart-line{padding:24px 0;}
+    .cart-line .art{width:88px;height:88px;}
+    .cart-line .art span{font-size:38px;}
+    .cart-line .info b{font-size:27px;}
+    .cart-line .info .mods{font-size:21px;}
+    .cart-line .info .price{font-size:25px;}
+    .linkbtn{font-size:23px;}
+    /* confirm */
+    #confirm .check{width:230px;height:230px;font-size:125px;}
+    #confirm h2{font-size:clamp(60px,9vw,92px);}
+    #confirm p{font-size:31px;max-width:780px;}
+    #confirm .ordernum{padding:34px 70px;}
+    #confirm .ordernum b{font-size:120px;}
+    #confirm .ordernum span{font-size:20px;}
+    .ghostbtn{font-size:30px;padding:28px 70px;}
+  }
+
+  /* ============================================================
+     LIGHT BEACHY THEME — sand + sky + sunset (overrides dark above)
+     ============================================================ */
+  :root{
+    --bg:#fff5e6; --bg-2:#ffe7cc;
+    --ink:#163a5f; --ink-soft:#5a6c82;
+    --panel:rgba(255,255,255,.72); --panel-2:rgba(255,255,255,.92);
+    --border:rgba(22,58,95,.14); --border-2:rgba(22,58,95,.26);
+  }
+  body{color:var(--ink);background:#fff5e6;}
+  .bg-deco{background:
+    radial-gradient(1080px 760px at 14% -8%, #00bcff 0%, rgba(0,188,255,0) 58%),
+    radial-gradient(980px 720px at 98% -2%, #ffce00 0%, rgba(255,206,0,0) 56%),
+    radial-gradient(1120px 860px at 64% 118%, #ff3d96 0%, rgba(255,61,150,0) 60%),
+    radial-gradient(840px 680px at 2% 72%, #00e6bf 0%, rgba(0,230,191,0) 54%),
+    linear-gradient(180deg,#74d4ff 0%, #ffe699 44%, #ffb188 100%);}
+  .bg-deco::before{display:none;}
+  .grain{opacity:.025;}
+  #attract{background:
+    radial-gradient(820px 560px at 50% 12%, #ffce33 0%, transparent 52%),
+    radial-gradient(780px 580px at 88% 104%, #ff6fb0 0%, transparent 56%),
+    radial-gradient(720px 540px at 6% 88%, #3dbdff 0%, transparent 54%),
+    linear-gradient(180deg,#74cfff 0%, #ffe79c 50%, #ff986a 100%);}
+  #attract h1{color:var(--ink);text-shadow:0 2px 12px rgba(255,255,255,.55);}
+  #attract .tagline{color:#7a5a3a;}
+  /* ---- Animated beach scene behind the logo (light attract) ---- */
+  #attract .beach-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+  #attract .attract-inner{position:relative;z-index:2;}
+  #attract .sun{position:absolute;top:9%;left:50%;width:min(320px,54vw);height:min(320px,54vw);
+    transform:translate(-50%,0);border-radius:50%;
+    background:radial-gradient(circle at 50% 45%,#fff6cf 0%,#ffd96b 36%,rgba(255,176,64,.40) 60%,transparent 72%);
+    animation:sunpulse 6.5s ease-in-out infinite;}
+  @keyframes sunpulse{0%,100%{transform:translate(-50%,0) scale(1);opacity:.9;}50%{transform:translate(-50%,-12px) scale(1.05);opacity:1;}}
+  #attract .waves{position:absolute;left:0;right:0;bottom:0;height:40%;}
+  #attract .wave{position:absolute;bottom:0;left:-50%;width:200%;height:100%;}
+  #attract .wave path{fill:currentColor;}
+  #attract .wave-back{color:rgba(70,200,255,.28);animation:wavedrift 14s ease-in-out infinite alternate;}
+  #attract .wave-mid{color:rgba(32,210,196,.36);bottom:-3%;animation:wavedrift 10s ease-in-out infinite alternate-reverse;}
+  #attract .wave-front{color:rgba(36,92,201,.42);bottom:-7%;animation:wavedrift 7.5s ease-in-out infinite alternate;}
+  @keyframes wavedrift{from{transform:translateX(0);}to{transform:translateX(7%);}}
+  #attract .bubbles span{position:absolute;bottom:18%;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.9),rgba(255,255,255,.12));
+    box-shadow:0 0 10px rgba(255,255,255,.45);animation:bubblerise linear infinite;}
+  @keyframes bubblerise{0%{transform:translateY(0) scale(.6);opacity:0;}12%{opacity:.85;}88%{opacity:.55;}100%{transform:translateY(-72vh) scale(1.15);opacity:0;}}
+  #attract .bubbles span:nth-child(1){left:11%;width:13px;height:13px;animation-duration:10s;animation-delay:0s;}
+  #attract .bubbles span:nth-child(2){left:23%;width:9px;height:9px;animation-duration:8s;animation-delay:2.4s;}
+  #attract .bubbles span:nth-child(3){left:37%;width:17px;height:17px;animation-duration:12.5s;animation-delay:1.1s;}
+  #attract .bubbles span:nth-child(4){left:49%;width:8px;height:8px;animation-duration:7.5s;animation-delay:3.6s;}
+  #attract .bubbles span:nth-child(5){left:61%;width:15px;height:15px;animation-duration:11s;animation-delay:.6s;}
+  #attract .bubbles span:nth-child(6){left:73%;width:10px;height:10px;animation-duration:9s;animation-delay:4.2s;}
+  #attract .bubbles span:nth-child(7){left:84%;width:14px;height:14px;animation-duration:13s;animation-delay:1.8s;}
+  #attract .bubbles span:nth-child(8){left:92%;width:8px;height:8px;animation-duration:8.5s;animation-delay:5s;}
+  @media (prefers-reduced-motion: reduce){ #attract .sun,#attract .wave,#attract .bubbles span{animation:none;} }
+  /* ---- Order-complete celebration ---- */
+  #confirm{overflow-y:auto;}
+  #confirm .confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
+  #confirm .confetti span{position:absolute;top:-26px;width:11px;height:16px;border-radius:2px;opacity:.92;animation:confetti-fall linear forwards;}
+  @keyframes confetti-fall{to{transform:translateY(115vh) rotate(720deg);opacity:.9;}}
+  #confirm .check,#confirm h2,#confirm p,#confirm .ordernum,#confirm .tidelist{position:relative;z-index:2;}
+  #confirm.show .check{animation:checkpop .6s cubic-bezier(.2,1.35,.4,1) both;}
+  @keyframes checkpop{0%{transform:scale(0) rotate(-30deg);}60%{transform:scale(1.16) rotate(7deg);}100%{transform:scale(1) rotate(0);}}
+  /* ---- The Tide List (Beach Club) ---- */
+  #confirm .tidelist{margin-top:14px;width:min(580px,92vw);display:flex;flex-direction:column;align-items:center;}
+  #confirm .tidelist h3{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,4.4vw,38px);margin:0 0 8px;color:var(--ink);}
+  #confirm .tidelist p{font-size:18px;margin:0 0 18px;max-width:480px;}
+  #confirm .tidelist .btn-primary{margin:4px 0;min-width:260px;}
+  #confirm .tidelist .ghostbtn{margin-top:4px;}
+  #confirm .tl-num{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(28px,5vw,40px);letter-spacing:.05em;color:var(--ink);margin:4px 0 16px;}
+  #confirm .keypad{display:grid;grid-template-columns:repeat(3,minmax(72px,92px));gap:12px;justify-content:center;margin:0 auto 16px;}
+  #confirm .keypad button{font-family:"Outfit",sans-serif;font-size:26px;font-weight:800;padding:18px 0;border-radius:18px;border:1.5px solid var(--border);background:rgba(255,255,255,.72);color:var(--ink);cursor:pointer;transition:transform .08s;}
+  #confirm .keypad button:active{transform:scale(.95);}
+  #confirm .tl-consent{display:flex;align-items:flex-start;gap:10px;justify-content:center;text-align:left;font-size:14px;color:var(--ink-soft);margin:0 auto 16px;max-width:420px;}
+  #confirm .tl-consent input{width:22px;height:22px;flex:none;margin-top:1px;}
+  #confirm .ordernum b{letter-spacing:.08em;}
+  /* ---- Vibe Reader (camera drink-match) ---- */
+  .vibebtn{font-family:"Outfit",sans-serif;font-weight:800;font-size:clamp(13px,1.6vw,18px);color:var(--ink);cursor:pointer;white-space:nowrap;
+    background:linear-gradient(#fff,#fff) padding-box,var(--grad-brand) border-box;border:2px solid transparent;border-radius:999px;padding:12px 22px;}
+  #attract .vibe-attract{margin-top:20px;background:none;border:none;color:var(--ink);font-family:"Outfit",sans-serif;font-weight:600;
+    font-size:clamp(14px,1.7vw,17px);letter-spacing:.01em;text-decoration:underline;text-underline-offset:4px;cursor:pointer;opacity:.82;}
+  #vibe{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6vh 28px;overflow-y:auto;
+    background:radial-gradient(900px 600px at 50% 2%,#ffd884,transparent 58%),linear-gradient(180deg,#9fdcff 0%,#ffe6a8 52%,#ffc09c 100%);}
+  #vibe.show{display:flex;}
+  #vibe .vibe-logo{width:min(300px,52vw);height:auto;margin-bottom:26px;filter:drop-shadow(0 12px 28px rgba(0,0,0,.18));}
+  #vibe h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(34px,6vw,58px);margin:0 0 12px;color:var(--ink);}
+  #vibe p{font-size:18px;color:#5a4632;margin:0 0 22px;max-width:520px;line-height:1.5;}
+  #vibe .stage{display:none;flex-direction:column;align-items:center;}
+  #vibe .stage.on{display:flex;}
+  .vibe-cam{width:min(520px,84vw);aspect-ratio:3/4;border-radius:30px;object-fit:cover;transform:scaleX(-1);background:#0b1020;box-shadow:0 22px 60px rgba(0,0,0,.28);border:3px solid #fff;}
+  .vibe-scan{position:relative;border-radius:30px;overflow:hidden;}
+  .vibe-scan::after{content:"";position:absolute;left:5%;right:5%;height:3px;top:8%;border-radius:3px;background:linear-gradient(90deg,transparent,#34d7ff,#ff3d8b,transparent);box-shadow:0 0 18px #34d7ff;animation:scanline 1.5s ease-in-out infinite;}
+  @keyframes scanline{0%{top:8%}50%{top:88%}100%{top:8%}}
+  #vibe .reading{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(22px,3.4vw,30px);color:var(--ink);margin:6px 0;max-width:540px;}
+  #vibe .matchname{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(42px,7.5vw,72px);line-height:1.02;margin:8px 0;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  #vibe .vibe-actions{display:flex;flex-direction:column;gap:12px;margin-top:18px;width:min(380px,86vw);}
+  #vibe .vibe-priv{font-size:13px;color:#7a5a3a;max-width:420px;margin-top:16px;opacity:.9;}
+  /* ---- Toast ---- */
+  .toast{position:fixed;left:50%;bottom:54px;transform:translateX(-50%) translateY(34px);z-index:90;
+    background:rgba(22,58,95,.96);color:#fff;font-family:"Outfit",sans-serif;font-weight:700;font-size:18px;
+    padding:16px 30px;border-radius:999px;box-shadow:0 16px 44px rgba(0,0,0,.3);opacity:0;pointer-events:none;
+    transition:opacity .3s ease,transform .3s cubic-bezier(.2,1.2,.4,1);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  header{background:rgba(255,255,255,.74);border-bottom:1px solid var(--border);}
+  .tab{background:var(--panel);color:var(--ink-soft);}
+  .tab.active{color:var(--ink);}
+  .cat-head span{color:var(--ink-soft);}
+  .card{background:rgba(255,255,255,.86);border-color:var(--border);box-shadow:0 18px 34px -20px rgba(22,58,95,.4);}
+  .card h3{color:var(--ink);}
+  .card .desc{color:var(--ink-soft);}
+  .card .price,.cart-line .info .price,#confirm .ordernum b{color:#e8590c;}
+  /* ===== Per-category card art system (Snake Eyes art direction) ===== */
+  .card[data-cat="floats"]     {--grad:linear-gradient(150deg,#7b3fd6,#c4288a 52%,#ef6a1d);--acc:#a07bff;}
+  .card[data-cat="dirtysodas"] {--grad:linear-gradient(150deg,#d4275e,#ff7a3d);--acc:#ff6f9c;}
+  .card[data-cat="newwaves"]   {--grad:linear-gradient(150deg,#0a9fc4,#1f6ae0);--acc:#28cdff;}
+  .card[data-cat="energy"]     {--grad:linear-gradient(150deg,#ff6a00,#ffc01e);--acc:#ffb300;}
+  .card[data-cat="lemonades"]  {--grad:linear-gradient(150deg,#d98a00,#f4c20d);--acc:#ffcf33;}
+  .card[data-cat="italian"]    {--grad:linear-gradient(150deg,#b51f9a,#ff5fa8);--acc:#ff86d6;}
+  .card[data-cat="dolewhip"]   {--grad:linear-gradient(150deg,#0f9a6e,#2fd6a0);--acc:#46e9c4;}
+  .card[data-cat="coffee"]     {--grad:linear-gradient(150deg,#5e3a22,#a9743f);--acc:#dcab73;}
+  .card[data-cat="beachbabies"]{--grad:linear-gradient(150deg,#1488c4,#5fc4ff);--acc:#8fe0ff;}
+  .card[data-cat="secret"]     {--grad:linear-gradient(150deg,#181826,#383350);--acc:#cda44e;}
+  .card .art{background-image:repeating-conic-gradient(from 0deg at 50% 26%, rgba(255,255,255,.075) 0 4deg, rgba(255,255,255,0) 4deg 12deg), var(--grad,linear-gradient(150deg,#7b3fd6,#c4288a 52%,#ef6a1d));border-color:rgba(22,58,95,.12);}
+  .card{box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 16px 34px -16px rgba(22,58,95,.34),0 4px 10px -5px rgba(22,58,95,.26);}
+  .card:active{transform:scale(.97) translateY(2px);}
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;z-index:6;background:var(--acc,#ff177e);opacity:1;}
+  .card .art::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0) 46%);mix-blend-mode:screen;}
+  .card .art::after{z-index:4;}                                  /* bottom vignette above photo, under price */
+  .card .art .cicon{z-index:2;width:66%;height:66%;filter:drop-shadow(0 10px 14px rgba(0,0,0,.30));animation:none !important;transform:none !important;}
+  .card:hover .art .cicon{transform:none !important;}
+  @keyframes softfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  #attract .attract-logo{animation:softfloat 5s ease-in-out infinite;}
+  .tab .catdot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:middle;box-shadow:0 0 0 3px rgba(255,255,255,.45);}
+  /* ---- name entry (on-screen keyboard) ---- */
+  .namebox{margin:10px 28px 14px;min-height:54px;border-radius:16px;border:1.5px solid var(--border);background:rgba(255,255,255,.72);
+    display:flex;align-items:center;justify-content:center;padding:8px 16px;
+    font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,4vw,36px);letter-spacing:.04em;color:var(--ink);}
+  .namebox .ph{font-family:"Outfit",sans-serif;font-weight:600;font-size:18px;letter-spacing:0;color:var(--ink-soft);opacity:.7;}
+  .keyboard{padding:0 18px 6px;}
+  .krow{display:flex;gap:7px;justify-content:center;margin-bottom:7px;}
+  .kkey{flex:1 1 0;min-width:0;max-width:78px;padding:16px 0;border-radius:12px;border:1.5px solid var(--border);
+    background:rgba(255,255,255,.82);color:var(--ink);font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(16px,2.2vw,22px);cursor:pointer;}
+  .kkey:active{transform:scale(.94);}
+  .kkey.kwide{max-width:200px;flex:2 1 0;font-size:16px;font-weight:600;}
+  #confirm .orderfor{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(24px,3.6vw,32px);color:var(--ink);margin:6px 0 0;}
+  /* ---- "Pay at the window" animated banner ---- */
+  #confirm .paywindow{position:relative;z-index:3;display:inline-flex;align-items:center;gap:14px;margin:18px 0 2px;padding:16px 30px;border-radius:999px;
+    background:var(--grad-brand);color:#fff;font-family:"Outfit",sans-serif;font-weight:800;font-size:clamp(18px,2.4vw,25px);letter-spacing:.01em;
+    box-shadow:0 14px 34px -10px rgba(255,61,151,.5);animation:paypulse 1.9s ease-in-out infinite;}
+  @keyframes paypulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+  #confirm .paychevrons{display:inline-flex;gap:5px;}
+  #confirm .paychevrons i{width:11px;height:11px;border-top:3px solid #fff;border-right:3px solid #fff;transform:rotate(45deg);opacity:.3;animation:chev 1.2s ease-in-out infinite;}
+  #confirm .paychevrons i:nth-child(2){animation-delay:.18s}
+  #confirm .paychevrons i:nth-child(3){animation-delay:.36s}
+  @keyframes chev{0%,100%{opacity:.25}50%{opacity:1}}
+  /* ---- "Camera on" notice (Vibe Reader) ---- */
+  #vibe .cam-on{display:inline-flex;align-items:center;gap:9px;margin:0 auto 14px;padding:9px 18px;border-radius:999px;
+    background:rgba(22,58,95,.92);color:#fff;font-family:"Outfit",sans-serif;font-weight:700;font-size:15px;}
+  #vibe .cam-on .cam-dot{width:11px;height:11px;border-radius:50%;background:#ff3b3b;animation:recdot 1.3s ease-in-out infinite;}
+  @keyframes recdot{0%,100%{box-shadow:0 0 0 0 rgba(255,59,59,.55)}50%{box-shadow:0 0 0 7px rgba(255,59,59,0)}}
+  /* ---- Blended category palette ---- */
+  .card[data-cat="blended"]{--grad:linear-gradient(150deg,#1f93c9,#76dceb);--acc:#56c8e8;}
+  /* ---- tap-to-launch: card floats off the screen when pushed ---- */
+  .card.flyaway{animation:flyaway .34s cubic-bezier(.4,0,.55,1) forwards;pointer-events:none;z-index:30;}
+  @keyframes flyaway{40%{transform:translateY(-14px) scale(1.06);}100%{transform:translateY(-120px) scale(1.14) rotate(-5deg);opacity:0;}}
+  @media (prefers-reduced-motion: reduce){ .card.flyaway{animation:none;opacity:.4;} }
+  .sheet-hd .art .cicon{width:84%;height:84%;display:flex;}
+  .cart-line .art .cicon{width:90%;height:90%;display:flex;}
+  .card .art .dimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:none;animation:none;z-index:3;}
+  .card .art .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;margin:0;
+    color:rgba(255,255,255,.95);font-family:"Fraunces",serif;font-weight:900;font-size:clamp(72px,15vw,140px);line-height:1;
+    letter-spacing:-.04em;text-shadow:0 8px 28px rgba(0,0,0,.22);pointer-events:none;}
+  .card .art .pricechip{position:absolute;right:10px;bottom:10px;z-index:5;font-family:"Outfit",sans-serif;font-weight:800;
+    font-size:clamp(16px,2vw,22px);color:#fff;padding:7px 14px;border-radius:999px;letter-spacing:.01em;
+    background:rgba(18,28,50,.42);backdrop-filter:blur(12px) saturate(150%);
+    border:1px solid rgba(255,255,255,.30);box-shadow:0 6px 16px rgba(0,0,0,.26);}
+  .card .price,.cart-line .info .price,#confirm .ordernum b{color:#ff177e;}  /* price (cart + confirm) */
+  .sheet-hd .art,.cart-line .art{background-image:linear-gradient(145deg,#1d3f6b,#c2562b);}
+  .sheet{background:#fffaf1;border-color:var(--border);}
+  .sheet-hd{background:rgba(255,250,241,.96);border-color:var(--border);}
+  .sheet-hd h3,.sheet-hd p,.opt-group h4{color:var(--ink);}
+  .close{background:#fff;border-color:var(--border);color:var(--ink);}
+  .opt{background:#fff;border-color:var(--border);color:var(--ink);}
+  .opt .add{color:var(--ink-soft);}
+  .opt-group h4 em{border-color:var(--border);color:var(--ink-soft);}
+  .sheet-ft{background:rgba(255,250,241,.96);border-color:var(--border);}
+  .qty{background:#fff7ec;border-color:var(--border);}
+  .qty button{background:#fff;color:var(--ink);}
+  .qty span{color:var(--ink);}
+  .cart-line{border-color:var(--border);}
+  .cart-line .info b{color:var(--ink);}
+  .cart-line .info .mods{color:var(--ink-soft);}
+  .totals .row{color:var(--ink-soft);}
+  .totals .row.grand{color:var(--ink);border-color:var(--border);}
+  #confirm{background:
+    radial-gradient(900px 560px at 50% 0%, #ffd884, transparent 58%),
+    linear-gradient(180deg,#bfe9ff, #ffe0bd);}
+  #confirm h2{color:var(--ink);text-shadow:none;}
+  #confirm p,#confirm .ordernum span{color:#7a5a3a;}
+  #confirm .ordernum{background:rgba(255,255,255,.65);border-color:var(--border);}
+  .ghostbtn{border-color:var(--border-2);background:rgba(255,255,255,.6);color:var(--ink);}
+
+  /* ===== FUN: Beach-name generator (name pad) ===== */
+  .beachname{display:flex;align-items:center;justify-content:center;gap:9px;margin:0 28px 12px;
+    width:calc(100% - 56px);padding:13px 18px;border-radius:14px;cursor:pointer;
+    font-family:"Outfit",sans-serif;font-weight:700;font-size:16px;letter-spacing:.01em;color:#fff;
+    border:none;background:linear-gradient(110deg,#34D7FF,#7A5CFF 60%,#FF3D97);
+    box-shadow:0 10px 24px -10px rgba(122,92,255,.6);transition:transform .12s ease;}
+  .beachname:active{transform:scale(.97);}
+  .beachname svg{width:20px;height:20px;flex:none;}
+
+  /* ===== FUN: Spin the Tide wheel (confirm) ===== */
+  .spintide{margin:6px auto 18px;max-width:430px;text-align:center;}
+  .spintide h3{font-family:"Fraunces",serif;font-weight:900;font-size:24px;margin:0 0 2px;color:var(--ink);}
+  .spintide p{margin:0 0 12px;color:#7a5a3a;font-size:14px;}
+  .wheelwrap{position:relative;width:230px;height:230px;margin:0 auto 14px;}
+  .wheelwrap .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:4;
+    width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
+    border-top:22px solid #163a5f;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));}
+  .wheelwrap .hub{position:absolute;top:50%;left:50%;width:46px;height:46px;transform:translate(-50%,-50%);
+    z-index:3;border-radius:50%;background:#fff;border:4px solid #163a5f;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-weight:900;font-size:13px;color:#163a5f;}
+  .wheelsvg{width:100%;height:100%;display:block;border-radius:50%;
+    box-shadow:0 14px 36px -10px rgba(0,0,0,.4),0 0 0 6px rgba(255,255,255,.7);
+    transition:transform 4.4s cubic-bezier(.12,.62,.16,1);transform:rotate(0deg);}
+  .wheelsvg text{font-family:"Outfit",sans-serif;font-weight:800;fill:#fff;}
+  .spintide .spinbtn{width:auto;padding:15px 44px;}
+  .spintide .prize{display:none;margin:4px auto 0;padding:14px 18px;max-width:380px;border-radius:16px;
+    background:rgba(255,255,255,.78);border:1.5px solid var(--border-2);animation:pop .4s ease both;}
+  .spintide .prize b{display:block;font-family:"Fraunces",serif;font-weight:900;font-size:22px;color:#ff177e;margin-bottom:2px;}
+  .spintide .prize span{font-size:14px;color:#7a5a3a;}
+  .spintide.spun .spinbtn{display:none;}
+  .spintide.spun .prize{display:block;}
+
+  /* ===== FUN: Drink of the Day leaderboard (attract) ===== */
+  .dotd{margin:26px auto 0;max-width:360px;background:rgba(255,255,255,.55);
+    border:1.5px solid rgba(255,255,255,.7);border-radius:20px;padding:16px 20px 18px;
+    box-shadow:0 14px 34px -16px rgba(22,58,95,.4);backdrop-filter:blur(8px);}
+  .dotd h4{margin:0 0 12px;font-family:"Fraunces",serif;font-weight:900;font-size:19px;color:#163a5f;
+    letter-spacing:.01em;text-align:center;}
+  .dotd .row{display:flex;align-items:center;gap:12px;padding:7px 0;}
+  .dotd .row + .row{border-top:1px solid rgba(22,58,95,.1);}
+  .dotd .rk{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-weight:900;font-size:14px;color:#fff;}
+  .dotd .row:nth-child(2) .rk{background:linear-gradient(135deg,#ffd24a,#ff9e1b);}
+  .dotd .row:nth-child(3) .rk{background:linear-gradient(135deg,#9fd0e6,#6fa8c4);}
+  .dotd .row:nth-child(4) .rk{background:linear-gradient(135deg,#e7b98e,#c08a55);}
+  .dotd .nm{flex:1;text-align:left;font-family:"Outfit",sans-serif;font-weight:700;font-size:16px;color:#163a5f;}
+  .dotd .ct{flex:none;font-family:"Outfit",sans-serif;font-weight:700;font-size:13px;color:#5a6c82;}
+  .dotd .row:nth-child(2) .nm{color:#ff177e;}
+</style>
+</head>
+<body>
+
+<div class="bg-deco" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ATTRACT -->
+<div id="attract" onclick="start()">
+  <div class="beach-scene" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="bubbles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="waves">
+      <svg class="wave wave-back" viewBox="0 0 1440 200" preserveAspectRatio="none"><path d="M0,80 C240,140 480,20 720,80 C960,140 1200,20 1440,80 L1440,200 L0,200 Z"/></svg>
+      <svg class="wave wave-mid" viewBox="0 0 1440 200" preserveAspectRatio="none"><path d="M0,80 C240,140 480,20 720,80 C960,140 1200,20 1440,80 L1440,200 L0,200 Z"/></svg>
+      <svg class="wave wave-front" viewBox="0 0 1440 200" preserveAspectRatio="none"><path d="M0,80 C240,140 480,20 720,80 C960,140 1200,20 1440,80 L1440,200 L0,200 Z"/></svg>
+    </div>
+  </div>
+  <div class="attract-inner">
+    <img src="assets/logo.png?v=5" alt="Thirsty Beaches" class="attract-logo"
+         onerror="this.remove();document.getElementById('wordmark').style.display='flex';document.getElementById('tagline').style.display='block';">
+    <div class="wordmark" id="wordmark"><span>Thirsty</span><span>Beaches</span></div>
+    <p class="tagline" id="tagline" style="display:none">Stay Thirsty, Beaches</p>
+    <div class="tap-cta">Tap to begin</div>
+    <button class="vibe-attract" onclick="event.stopPropagation(); start(); vibeStart();">Not sure? Let us match your drink</button>
+    <div class="dotd" id="dotd" style="display:none" onclick="event.stopPropagation();"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <header>
+    <div class="brand" onclick="brandTap()">
+      <img src="assets/logo.png?v=5" alt="Thirsty Beaches" class="logo-img"
+           onerror="this.remove();document.getElementById('brandFallback').style.display='block';">
+      <span id="brandFallback" style="display:none;">Thirsty Beaches</span>
+    </div>
+    <button class="vibebtn" onclick="vibeStart()">Match My Vibe</button>
+    <button class="cartbtn empty" id="cartBtn" onclick="openCart()">
+      View Order <span class="count" id="cartCount">0</span>
+    </button>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <main id="menu"></main>
+  <div class="orderbar" id="orderBar" onclick="openCart()">
+    <span class="ob-count" id="obCount">0 items</span>
+    <span class="ob-cta">View Order &middot; Checkout →</span>
+    <span class="ob-total" id="obTotal">$0.00</span>
+  </div>
+</div>
+
+<!-- ITEM / CART MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<!-- CONFIRM -->
+<div id="confirm">
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+  <img src="assets/logo.png?v=5" class="confirm-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <div class="check">✓</div>
+  <h2>You're in, Beaches</h2>
+  <p>Your order's on the way — listen for your name at the window.</p>
+  <div id="orderForName" class="orderfor"></div>
+  <div class="ordernum"><span>Your order number</span><b id="orderNum">42</b></div>
+  <div class="paywindow">Head to the window to pay &amp; grab your order<span class="paychevrons"><i></i><i></i><i></i></span></div>
+
+  <!-- Spin the Tide — one free spin per order -->
+  <div class="spintide" id="spinTide">
+    <h3>Spin the Tide</h3>
+    <p>One free spin — win a little something for your visit.</p>
+    <div class="wheelwrap">
+      <div class="pointer"></div>
+      <svg class="wheelsvg" id="wheelSvg" viewBox="0 0 200 200"></svg>
+      <div class="hub">SPIN</div>
+    </div>
+    <button class="btn-primary spinbtn" id="spinBtn" onclick="spinTide()">Spin the wheel</button>
+    <div class="prize" id="spinPrize"><b id="prizeTitle"></b><span id="prizeNote"></span></div>
+  </div>
+
+  <!-- Beach Club / The Tide List -->
+  <div class="tidelist" id="tidelist">
+    <div class="tl-pitch" id="tlPitch">
+      <h3>Join The Tide List</h3>
+      <p>Every 5th float on us — plus we'll text you where the trailer washes up each day.</p>
+      <button class="btn-primary" onclick="tideOpen()">Join the club</button>
+      <button class="ghostbtn" onclick="resetAll()">No thanks — start a new order</button>
+    </div>
+    <div class="tl-form" id="tlForm" style="display:none">
+      <h3>What's your number?</h3>
+      <div class="tl-num" id="tlNum">(•••) •••-••••</div>
+      <div class="keypad" id="keypad"></div>
+      <label class="tl-consent"><input type="checkbox" id="tlConsent" onchange="tideRecalc()"> Text me the day's spot &amp; deals. Msg &amp; data rates may apply.</label>
+      <button class="btn-primary disabled" id="tlSubmit" onclick="tideJoin()">Join</button>
+      <button class="ghostbtn" onclick="resetAll()">Skip</button>
+    </div>
+    <div class="tl-done" id="tlDone" style="display:none">
+      <h3>You're on The Tide List!</h3>
+      <p>Welcome to the club. Stay Thirsty, Beaches.</p>
+      <button class="btn-primary" onclick="resetAll()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIBE READER — camera drink match (privacy-first: photo never saved or sent) -->
+<div id="vibe">
+  <img src="assets/logo.png?v=5" class="vibe-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <div class="stage on" id="vibeIntro">
+    <h2>What's your vibe?</h2>
+    <p>Let the beach read your energy and match you a drink. We take <b>one quick photo</b> to read your vibe — it's used only to pick your drink and <b>isn't saved.</b></p>
+    <div class="vibe-actions">
+      <button class="btn-primary" onclick="vibeAllow()">Read my vibe</button>
+      <button class="btn-primary" onclick="vibeSurprise()" style="opacity:.9">Skip the camera — surprise me</button>
+      <button class="ghostbtn" onclick="vibeClose()">No thanks</button>
+    </div>
+  </div>
+  <div class="stage" id="vibeCam">
+    <h2>Strike a pose</h2>
+    <div class="cam-on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><rect x="2.5" y="7" width="14" height="11" rx="2.5"/><path d="M16.5 10.5l5-2.5v8l-5-2.5z"/></svg><span class="cam-dot"></span>Camera on — used only to match your drink</div>
+    <div class="vibe-scan"><video id="vibeVideo" class="vibe-cam" autoplay playsinline muted></video></div>
+    <div class="vibe-actions"><button class="btn-primary" onclick="vibeSnap()">Read it</button><button class="ghostbtn" onclick="vibeClose()">Cancel</button></div>
+    <p class="vibe-priv">Your photo is used once to match a drink and isn't stored. The camera turns off the moment you leave this screen.</p>
+  </div>
+  <div class="stage" id="vibeResult">
+    <h2>The beach has spoken</h2>
+    <div class="reading" id="vibeReading"></div>
+    <div class="matchname" id="vibeMatchName"></div>
+    <p id="vibeWhy"></p>
+    <div class="vibe-actions">
+      <button class="btn-primary" id="vibeAddBtn" onclick="vibeAddToOrder()">Add it to my order</button>
+      <button class="btn-primary" onclick="vibeAllow()" style="opacity:.9">Try again</button>
+      <button class="ghostbtn" onclick="vibeClose()">Show me the full menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast (secret menu unlock, etc.) -->
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script>
+/* ============ MENU DATA ============ */
+const TAX = 0.0725; // edit to your local sales tax rate
+
+/* Where the kiosk gets its menu. This points at YOUR backend (clover-menu-server.js),
+   NOT at Clover directly — the API token must never live in this file.
+   If the fetch fails, the kiosk silently falls back to FALLBACK_MENU below. */
+const MENU_ENDPOINT = "/menu";   // relative = always hits whatever port the server runs on
+const ORDER_ENDPOINT = "/order";
+let orderInFlight = false;
+
+const FALLBACK_MENU = {
+  coffee: { label:"Coffee", icon:"☕", title:"Coffee & Espresso", blurb:"Hot or iced, made to order",
+    items:[
+      {id:"latte", name:"Latte", art:"☕", desc:"Espresso + steamed milk", price:4.75},
+      {id:"capp", name:"Cappuccino", art:"☕", desc:"Espresso + foam", price:4.50},
+      {id:"mocha", name:"Mocha", art:"🍫", desc:"Espresso + chocolate + milk", price:5.25},
+      {id:"americano", name:"Americano", art:"☕", desc:"Espresso + hot water", price:3.75},
+      {id:"coldbrew", name:"Cold Brew", art:"🧊", desc:"Slow-steeped, smooth", price:4.95},
+      {id:"icedcoffee", name:"Iced Coffee", art:"🧋", desc:"Chilled house drip", price:3.95},
+      {id:"flatwhite", name:"Flat White", art:"☕", desc:"Velvety microfoam", price:4.85},
+      {id:"espresso", name:"Espresso", art:"☕", desc:"Double shot", price:3.25},
+    ],
+    options:[
+      {key:"size", label:"Size", required:true, choices:[
+        {name:"Small", d:-0.50},{name:"Medium", d:0},{name:"Large", d:0.75}]},
+      {key:"temp", label:"Temperature", required:true, choices:[
+        {name:"Hot", d:0},{name:"Iced", d:0}]},
+      {key:"milk", label:"Milk", required:true, choices:[
+        {name:"Whole", d:0},{name:"2%", d:0},{name:"Oat", d:0.75},{name:"Almond", d:0.75},{name:"Skim", d:0}]},
+      {key:"flavor", label:"Flavor shot", required:false, multi:true, choices:[
+        {name:"Vanilla", d:0.65},{name:"Caramel", d:0.65},{name:"Hazelnut", d:0.65}]},
+      {key:"extra", label:"Add-ons", required:false, multi:true, choices:[
+        {name:"Extra shot", d:1.00},{name:"Decaf", d:0}]},
+    ]},
+  smoothie: { label:"Smoothies & Juices", icon:"🥤", title:"Smoothies & Juices", blurb:"Fresh fruit, blended cold",
+    items:[
+      {id:"mango", name:"Mango Tango", art:"🥭", desc:"Mango, pineapple, coconut", price:6.50},
+      {id:"strawban", name:"Strawberry Banana", art:"🍓", desc:"A classic crowd-pleaser", price:6.25},
+      {id:"green", name:"Tropical Green", art:"🥬", desc:"Spinach, pineapple, mango", price:6.95},
+      {id:"berry", name:"Berry Blast", art:"🫐", desc:"Mixed berries, banana", price:6.50},
+      {id:"oj", name:"Fresh Orange Juice", art:"🍊", desc:"Squeezed to order", price:4.95},
+      {id:"watermelon", name:"Watermelon Juice", art:"🍉", desc:"Cold-pressed, refreshing", price:5.25},
+      {id:"carrot", name:"Carrot Ginger", art:"🥕", desc:"Carrot, ginger, apple", price:5.50},
+    ],
+    options:[
+      {key:"size", label:"Size", required:true, choices:[
+        {name:"16 oz", d:0},{name:"24 oz", d:1.50}]},
+      {key:"boost", label:"Boosts", required:false, multi:true, choices:[
+        {name:"Protein", d:1.25},{name:"Chia seeds", d:0.75},{name:"Spinach", d:0.75},{name:"Peanut butter", d:1.00}]},
+    ]},
+  dolewhip: { label:"Dole Whip", icon:"🍦", title:"Dole Whip Soft Serve", blurb:"Dairy-free pineapple classic",
+    items:[
+      {id:"pineapple", name:"Pineapple Dole Whip", art:"🍍", desc:"The original, dairy-free", price:5.50},
+      {id:"mangowhip", name:"Mango Dole Whip", art:"🥭", desc:"Sweet & tropical", price:5.50},
+      {id:"strawwhip", name:"Strawberry Dole Whip", art:"🍓", desc:"Bright & fruity", price:5.50},
+      {id:"swirl", name:"Pineapple-Vanilla Swirl", art:"🍦", desc:"Best of both", price:5.75},
+    ],
+    options:[
+      {key:"form", label:"Serve it as", required:true, choices:[
+        {name:"Cup", d:0},{name:"Waffle cone", d:0.75},{name:"Float (in juice)", d:1.50}]},
+      {key:"size", label:"Size", required:true, choices:[
+        {name:"Regular", d:0},{name:"Large", d:1.25}]},
+      {key:"topping", label:"Toppings", required:false, multi:true, choices:[
+        {name:"Toasted coconut", d:0.75},{name:"Pineapple chunks", d:0.75},{name:"Rainbow sprinkles", d:0.50}]},
+    ]},
+};
+
+/* ============ THIRSTY BEACHES MENU (local working menu) ============
+   The real dirty-soda concept menu with fun names + full customization.
+   Drives the kiosk now; when the Clover catalog is populated with these items,
+   re-enable loadMenu() at the bottom to pull live instead. */
+const SIZE_SODA = {key:"size",label:"Size",required:true,choices:[{name:"Small 16oz",d:0},{name:"Medium 24oz",d:0.80},{name:"Large 32oz",d:1.50}]};
+const BASE_SODA = {key:"base",label:"Soda base",required:true,choices:[
+  {name:"Coca-Cola",d:0},{name:"Diet Coke",d:0},{name:"Pepsi",d:0},
+  {name:"Dr Pepper",d:0},{name:"Diet Dr Pepper",d:0},{name:"Sprite",d:0},{name:"Sprite Zero",d:0},
+  {name:"Mountain Dew",d:0},{name:"Diet Mtn Dew",d:0},{name:"Root Beer",d:0},{name:"Cream Soda",d:0},
+  {name:"Fanta Orange",d:0},{name:"Big Red",d:0},{name:"Squirt",d:0}]};
+const FLAVORS   = {key:"flavor",label:"Flavor syrups",required:false,multi:true,choices:[{name:"Coconut",d:0.50},{name:"Vanilla",d:0.50},{name:"Cherry",d:0.50},{name:"Peach",d:0.50},{name:"Raspberry",d:0.50},{name:"Caramel",d:0.50},{name:"Lime",d:0.50},{name:"Blue Raspberry",d:0.50}]};
+const LEM_BASE  = {key:"base",label:"Lemonade base",required:true,choices:[{name:"Classic Lemonade",d:0},{name:"Pink Lemonade",d:0},{name:"Strawberry Lemonade",d:0},{name:"Limeade",d:0},{name:"Cherry Limeade",d:0},{name:"Arnold Palmer (½ tea)",d:0}]};
+const PUREE     = {key:"puree",label:"Fruit puree",required:false,multi:true,choices:[{name:"Strawberry",d:0.99},{name:"Mango",d:0.99},{name:"Pineapple",d:0.99},{name:"Peach",d:0.99},{name:"Raspberry",d:0.99}]};
+const CREAM     = {key:"cream",label:"Cream",required:false,choices:[{name:"None",d:0},{name:"Vanilla Sweet Cream",d:0.60},{name:"Coconut Cream",d:0.60}]};
+const EXTRAS    = {key:"extra",label:"Extras",required:false,multi:true,choices:[{name:"Fresh lime",d:0.25},{name:"Popping boba",d:0.75},{name:"Extra pump",d:0.40}]};
+const TOPPER    = {key:"topper",label:"Top It Off",required:false,multi:true,choices:[{name:"Whipped cream",d:0.50},{name:"Sweet cream cold foam",d:0.75},{name:"Vanilla cold foam",d:0.99},{name:"Salted caramel cold foam",d:0.99}]};
+const ENERGY_BASE = {key:"base",label:"Energy drink",required:true,choices:[{name:"Red Bull",d:0},{name:"Sugar-Free Red Bull",d:0},{name:"Alani Nu",d:0},{name:"Monster",d:0}]};
+const COFFEE_OPTS = [
+  {key:"size",label:"Size",required:true,choices:[{name:"12oz",d:0},{name:"16oz",d:0.60},{name:"20oz",d:1.10}]},
+  {key:"temp",label:"Hot or iced",required:true,choices:[{name:"Hot",d:0},{name:"Iced",d:0}]},
+  {key:"milk",label:"Milk",required:false,choices:[{name:"Whole",d:0},{name:"2%",d:0},{name:"Oat",d:0.75},{name:"Almond",d:0.75}]},
+  {key:"flavor",label:"Flavor syrups",required:false,multi:true,choices:[{name:"Vanilla",d:0.50},{name:"Coconut",d:0.50},{name:"Caramel",d:0.50},{name:"Hazelnut",d:0.50},{name:"Peach",d:0.50}]},
+  {key:"extra",label:"Extras",required:false,multi:true,choices:[{name:"Extra shot",d:1.00},{name:"Decaf",d:0}]},
+];
+const DOLE_OPTS = [
+  {key:"flavor",label:"Flavor",required:true,choices:[{name:"Dole Whip",d:0},{name:"Vanilla",d:0},{name:"Twist (Dole Whip + Vanilla)",d:0}]},
+  {key:"serve",label:"Serve it as",required:true,choices:[{name:"Cup",d:0},{name:"Waffle cone",d:0.75},{name:"Float (in juice/soda)",d:1.50}]},
+  {key:"size",label:"Size",required:true,choices:[{name:"Regular",d:0},{name:"Large",d:1.25}]},
+  {key:"top",label:"Toppings",required:false,multi:true,choices:[{name:"Toasted coconut",d:0.75},{name:"Pineapple chunks",d:0.75},{name:"Rainbow sprinkles",d:0.50},{name:"Tajín",d:0.50},{name:"Popping boba",d:0.75}]},
+];
+/* ---- Float Bar: the build-your-own soft-serve float flow (our signature, nobody else has the machine) ---- */
+const FLOAT_SIZE = {key:"size",label:"Size",required:true,choices:[{name:"Regular",d:0},{name:"Large",d:1.50}]};
+const FLOAT_BASE = {key:"base",label:"What's underneath",required:true,choices:[
+  {name:"Pineapple soda",d:0},{name:"Orange soda",d:0},{name:"Root beer",d:0},{name:"Cream soda",d:0},
+  {name:"Dr Pepper",d:0},{name:"Coconut-lime soda",d:0},{name:"Blue raspberry lemonade",d:0},
+  {name:"Strawberry lemonade",d:0},{name:"Cherry limeade",d:0}]};
+const FLOAT_CAP  = {key:"cap",label:"Soft-serve cap",required:true,choices:[
+  {name:"Dole Whip",d:0},{name:"Vanilla",d:0},{name:"Twist (both)",d:0}]};
+const FLOAT_BOOST= {key:"boost",label:"Load it up",required:false,multi:true,choices:[
+  {name:"Protein scoop",d:1.50},{name:"Popping boba",d:0.75},{name:"Chamoy drizzle",d:0.75},
+  {name:"Tajín rim",d:0.50},{name:"Fresh fruit",d:0.99},{name:"Toasted coconut",d:0.75}]};
+const STYLE = {key:"style",label:"Make it",required:false,choices:[{name:"Over ice",d:0},{name:"Blended / frozen",d:1.00}]};
+
+const THIRSTY_MENU = {
+  floats: { label:"Floats", icon:"🛟", title:"Signature Soft-Serve Floats", blurb:"Our crown jewel — real soft serve nobody else has",
+    options:[FLOAT_SIZE, FLOAT_BASE, FLOAT_CAP, FLOAT_BOOST, TOPPER],
+    items:[
+      {id:"beached-whale", name:"Sandy Bottom", desc:"Dole Whip avalanche over your soda of choice. The float that started it all.", price:6.50},
+      {id:"swole-patrol", name:"Thicc & Thirsty", desc:"Protein float that tastes like dessert and skips the chalk.", price:7.50},
+      {id:"cold-front", name:"Cold Shoulder", desc:"Dirty Dr Pepper under a roll of salted cold foam. Pressure's dropping.", price:6.50},
+      {id:"riptide-float", name:"Riptide", desc:"Red, white and blue stacked in one cup. Layered and loud.", price:6.50},
+      {id:"byo-float", name:"Build Your Own Float", desc:"Pick a base, pick a soft-serve cap, load it up.", price:5.95},
+    ]},
+  dirtysodas: { label:"Dirty Sodas", icon:"🥤", title:"Signature Dirty Sodas", blurb:"Soda + syrups + cream — make it yours",
+    options:[SIZE_SODA, BASE_SODA, FLAVORS, PUREE, CREAM, STYLE, EXTRAS, TOPPER],
+    items:[
+      {id:"thirst-trap", name:"Thirst Trap", desc:"Dr Pepper · coconut · sweet cream — the house signature", price:3.49},
+      {id:"dirty-secret", name:"Dirty Little Secret", desc:"Dr Pepper · coconut · fresh lime · cream", price:3.49},
+      {id:"nice-coconuts", name:"Nice Coconuts", desc:"Coke · coconut · lime · cream", price:3.49},
+      {id:"razzle", name:"Razzle My Berries", desc:"Sprite · raspberry · vanilla cream", price:3.49},
+      {id:"sweet-cheeks", name:"Sweet Cheeks", desc:"Cola · peach · coconut", price:3.49},
+      {id:"upside-down", name:"Upside-Down & Dirty", desc:"Dr Pepper · cherry · pineapple · cream", price:3.49},
+      {id:"tropic-hot", name:"Tropic Like It's Hot", desc:"Sprite · pineapple · coconut · cream", price:3.49},
+      {id:"sunset-rocks", name:"Sunset on the Rocks", desc:"Dr Pepper · raspberry · peach · cream", price:3.49},
+      {id:"pour-decisions", name:"Pour Decisions", desc:"Build your own dirty soda", price:3.49},
+    ]},
+  newwaves: { label:"New Waves", icon:"🌊", title:"New Waves", blurb:"Trending limited drops",
+    options:[SIZE_SODA, CREAM, STYLE, EXTRAS, TOPPER],
+    items:[
+      {id:"golden-hour", name:"Golden Hour", desc:"Orange soda · vanilla sweet cream (creamsicle)", price:3.99},
+      {id:"lazy-river", name:"Lazy River", desc:"Root beer · vanilla cream float", price:3.99},
+      {id:"castaway", name:"Castaway", desc:"Cola · coconut · cream", price:3.99},
+      {id:"beach-sting", name:"Beach Sting", desc:"Lemonade · hot honey · fresh lemon", price:4.49},
+      {id:"riptide", name:"Wipeout", desc:"Sprite · blue raspberry · sour", price:3.99},
+      {id:"sunburn", name:"Sunburn", desc:"Dr Pepper · cherry · cinnamon", price:3.99},
+      {id:"pearl-diver", name:"Pearl Diver", desc:"Lemonade loaded with popping boba", price:4.49},
+      {id:"beach-buzz", name:"Beach Buzz", desc:"Espresso tonic over ice with lime", price:4.95},
+      {id:"spicy-senorita", name:"Spicy Señorita", desc:"Mango, chamoy and a Tajín rim that bites back. Swangy and proud.", price:6.95},
+      {id:"the-blue-one", name:"Feelin' Frisky", desc:"Coconut-lime, electric blue. The bluest drink on the beach.", price:4.49},
+      {id:"low-tide", name:"Low Tide", desc:"Coconut water, citrus and a slow exhale. The beach in a cup.", price:4.95},
+    ]},
+  energy: { label:"Energy", icon:"⚡", title:"Energy Refreshers", blurb:"Red Bull / Monster mocktails",
+    options:[SIZE_SODA, ENERGY_BASE, FLAVORS, PUREE, STYLE, EXTRAS],
+    items:[
+      {id:"adios", name:"Adios, Beaches", desc:"Energy · coconut · pineapple · blue raspberry", price:4.99},
+      {id:"wired", name:"Wired & Tired", desc:"Energy · passion fruit · guava · banana", price:4.99},
+      {id:"wet-wild", name:"Wet & Wild", desc:"Energy · blue raspberry · coconut · lime", price:4.99},
+      {id:"rise-grind", name:"Rise & Grind", desc:"Energy · strawberry · peach · orange", price:4.99},
+      {id:"skinny", name:"Skinny Dippin'", desc:"Sugar-free energy · peach", price:4.99},
+    ]},
+  lemonades: { label:"Lemonades", icon:"🍋", title:"Specialty Lemonades", blurb:"Fresh-squeezed + fruit",
+    options:[SIZE_SODA, LEM_BASE, PUREE, STYLE, EXTRAS, TOPPER],
+    items:[
+      {id:"main-squeeze", name:"Main Squeeze", desc:"Strawberry lemonade", price:3.99},
+      {id:"pucker", name:"Kiss & Tell", desc:"Mango lemonade", price:3.99},
+      {id:"life-beaches", name:"When Life Gives You Beaches", desc:"Coconut-lime lemonade", price:3.99},
+      {id:"easy-squeezy", name:"Easy, Tiger", desc:"Raspberry lemonade", price:3.99},
+    ]},
+  italian: { label:"Italian Sodas", icon:"🫧", title:"Italian Sodas", blurb:"Sparkling + syrup + cream",
+    options:[SIZE_SODA, FLAVORS, CREAM, STYLE, EXTRAS],
+    items:[
+      {id:"dolce", name:"La Dolce Beach", desc:"Vanilla coconut cream soda", price:3.49},
+      {id:"fizzy", name:"Fizzy Business", desc:"Cherry limeade fizz", price:3.49},
+      {id:"feelin-blue", name:"Feelin' Blue", desc:"Blue raspberry + coconut cream", price:3.49},
+    ]},
+  dolewhip: { label:"Soft Serve", icon:"🍦", title:"Dole Whip & Soft Serve", blurb:"Dole Whip, vanilla & twist — cups, cones & floats",
+    options:DOLE_OPTS,
+    items:[
+      {id:"pineapple-express", name:"Pineapple Express", desc:"Classic pineapple Dole Whip", price:5.50},
+      {id:"vanilla-vibes", name:"Vanilla Vibes", desc:"Creamy vanilla soft serve", price:5.00},
+      {id:"swirl-power", name:"Swirl Power", desc:"Dole Whip + vanilla twist", price:5.50},
+      {id:"float-on", name:"Float On", desc:"Soft serve dropped in juice or soda", price:6.00},
+      {id:"whip-it", name:"Whip It Good", desc:"Loaded with all the toppings", price:6.50},
+    ]},
+  coffee: { label:"Coffee", icon:"☕", title:"Coffee & Espresso", blurb:"From the espresso bar",
+    options:[...COFFEE_OPTS, STYLE, TOPPER],
+    items:[
+      {id:"cloud-nine", name:"Cloud Nine", desc:"Cold brew + sweet cream cold foam", price:5.25},
+      {id:"salted-caramel-cloud", name:"Salted Caramel Cloud", desc:"Cold brew + salted caramel cold foam", price:5.50},
+      {id:"beach-smores", name:"Beach S'mores", desc:"Hot chocolate + whipped cream + graham", price:4.50},
+      {id:"espresso-yourself", name:"Espresso Yourself", desc:"Single or double shot", price:3.25},
+      {id:"basic-beach", name:"Basic Beach", desc:"Americano", price:4.25},
+      {id:"cappa", name:"Cappa-Cabana", desc:"Cappuccino", price:4.75},
+      {id:"but-first", name:"But First, Caffeine", desc:"Vanilla-coconut latte", price:5.25},
+      {id:"beach-bothered", name:"Beach & Bothered", desc:"Caramel sea-salt latte", price:5.50},
+      {id:"coco-mocha", name:"Coco Loco Mocha", desc:"Coconut mocha — hot or iced", price:5.50},
+      {id:"wake-shake", name:"Wake & Shake", desc:"Iced flavored latte", price:5.25},
+      {id:"hot-mess", name:"Hot Mess", desc:"Hot chocolate", price:3.95},
+      {id:"beach-drip", name:"Beach Drip", desc:"Brewed coffee", price:2.95},
+    ]},
+  beachbabies: { label:"Beach Babies", icon:"🧃", title:"Beach Babies", blurb:"No caffeine, kid-friendly",
+    options:[{key:"size",label:"Size",required:true,choices:[{name:"Small",d:0},{name:"Large",d:0.80}]}, PUREE, STYLE, TOPPER],
+    items:[
+      {id:"lil-squirt", name:"Lil' Squirt", desc:"Sprite + fruit puree of choice", price:2.99},
+      {id:"shore-temple", name:"Shore Temple", desc:"Sprite + cherry + grenadine", price:2.99},
+      {id:"sandcastle-shake", name:"Sandcastle Shake", desc:"Vanilla soft-serve shake", price:4.50},
+      {id:"beach-ball", name:"Beach Ball", desc:"Fruit punch + popping boba", price:3.49},
+      {id:"mermaid-splash", name:"Mermaid Splash", desc:"Blue raspberry lemonade + whipped cream", price:3.49},
+      {id:"dino-juice", name:"Dino Juice", desc:"Green apple + lemon-lime", price:2.99},
+      {id:"cotton-candy-cloud", name:"Cotton Candy Cloud", desc:"Cotton candy lemonade + whip + sprinkles", price:3.49},
+      {id:"lil-root-beer-float", name:"Lil' Root Beer Float", desc:"Root beer + vanilla soft serve", price:3.99},
+    ]},
+};
+
+/* Fun icon per drink (shown in the card medallion until a real photo is dropped in). */
+const ICONS = {
+  "thirst-trap":"😏","dirty-secret":"🤫","nice-coconuts":"🥥","razzle":"🤩","sweet-cheeks":"🍑",
+  "upside-down":"🙃","tropic-hot":"🔥","sunset-rocks":"🌅","pour-decisions":"🤪",
+  "adios":"👋","wired":"😵‍💫","wet-wild":"💦","rise-grind":"💪","skinny":"🩱",
+  "main-squeeze":"🍓","pucker":"😝","life-beaches":"🏖️","easy-squeezy":"😎",
+  "dolce":"🍦","fizzy":"🫧","feelin-blue":"💙",
+  "pineapple-express":"🍍","vanilla-vibes":"🍦","swirl-power":"🌀","float-on":"🛟","whip-it":"😋",
+  "espresso-yourself":"😤","basic-beach":"☀️","cappa":"🎶","but-first":"☕","beach-bothered":"🥵",
+  "coco-mocha":"🍫","wake-shake":"🕺","hot-mess":"🥴","beach-drip":"💧",
+  "lil-squirt":"🧃","shore-temple":"🍒",
+};
+const iconFor = o => ICONS[o.id] || "🥤";
+
+/* Custom hand-built SVG drink icons per category — brand-styled, no emoji. */
+const CAT_SVG = {
+  floats:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="11" r="3" fill="#ff3d8b"/><path d="M18 30q14-7 28 0q1.6-7-6-9.4q1.6-8-8-9.6q-9.6 1.6-8 9.6q-7.4 2.4-6 9.4z" fill="#fff"/><rect x="17" y="29" width="30" height="4.5" rx="2.2" fill="#dfe6f7"/><path d="M20 33h24l-3.2 23q-.3 2-2.3 2H25.5q-2 0-2.3-2z" fill="#fff"/><path d="M25 44q4-4 7 0t7 0" stroke="#34d7ff" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="29" cy="51" r="1.8" fill="#ffc21e"/><circle cx="35" cy="52" r="1.8" fill="#ff3d8b"/></svg>`,
+  dirtysodas:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M37 6l7 2-9 22-5-1z" fill="#ff3d8b"/><path d="M15 25Q32 12 49 25Z" fill="#fff"/><rect x="15" y="23.5" width="34" height="4.5" rx="2.2" fill="#dfe6f7"/><path d="M18 29h28l-3.6 29q-.3 2-2.4 2H24q-2.1 0-2.4-2z" fill="#fff"/><path d="M23 40q5-4.5 9 0t9 0" stroke="#34d7ff" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="28" cy="48" r="2" fill="#ff3d8b"/><circle cx="36" cy="50" r="2" fill="#ffc21e"/><circle cx="32" cy="45" r="1.7" fill="#34d7ff"/></svg>`,
+  energy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="23" y="13" width="18" height="39" rx="4" fill="#fff"/><rect x="23" y="13" width="18" height="6" rx="3" fill="#dfe6f7"/><path d="M34 22l-8 13h5.5l-2 9 9-14h-5.5z" fill="#ffc21e"/></svg>`,
+  lemonades:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M31 9h8l-3 16h-4z" fill="#ff3d8b"/><rect x="17" y="19" width="30" height="8" rx="3" fill="#dfe6f7"/><rect x="19" y="24" width="26" height="32" rx="6" fill="#fff"/><circle cx="32" cy="42" r="8.5" fill="#ffd84d"/><path d="M23.5 42h17M32 33.5v17M26 36l12 12M26 48l12-12" stroke="#ffb02e" stroke-width="1.3"/></svg>`,
+  italian:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M34 8l6 1-7 20-4-1z" fill="#34d7ff"/><path d="M22 16h20l-2.7 40q-.2 2-2 2H26.7q-1.8 0-2-2z" fill="#fff"/><circle cx="30" cy="30" r="2.3" fill="#34d7ff"/><circle cx="36" cy="37" r="1.9" fill="#ff3d8b"/><circle cx="31" cy="44" r="2" fill="#ffc21e"/><circle cx="36" cy="25" r="1.5" fill="#34d7ff"/></svg>`,
+  dolewhip:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M20 35h24L33 58z" fill="#ffc98a"/><path d="M22.5 39h19M25 44h14" stroke="#e0a25a" stroke-width="1.4"/><path d="M20 36q12-6 24 0q1.5-6-5-8q1.5-7-7-8.5q-8.5 1.5-7 8.5q-6.5 2-5 8z" fill="#fff"/><circle cx="32" cy="13" r="3.2" fill="#ff3d8b"/></svg>`,
+  coffee:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M28 16q2.5-3 0-6M36 16q2.5-3 0-6" stroke="#9fb0d6" stroke-width="2.4" fill="none" stroke-linecap="round"/><rect x="18" y="20" width="28" height="6" rx="3" fill="#dfe6f7"/><path d="M21 27h22l-2.7 29q-.2 2-2.2 2H25.9q-2 0-2.2-2z" fill="#fff"/><rect x="23" y="38" width="18" height="9" rx="2" fill="#ff8a2b"/></svg>`,
+  beachbabies:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M35 7l3 1-1 15h-3z" fill="#ff3d8b"/><path d="M22 21h20l-4 4H26z" fill="#dfe6f7"/><rect x="22" y="24" width="20" height="31" rx="2" fill="#fff"/><rect x="25" y="31" width="14" height="11" rx="1.5" fill="#ffc21e"/></svg>`,
+};
+const svgFor = k => CAT_SVG[k] || CAT_SVG.dirtysodas;
+
+/* Per-drink icons that play on the name (custom SVG). Falls back to the category icon. */
+const CUP = `<path d="M37 5l6 2-8 18-4-1z" fill="#ff3d8b"/><path d="M16 22Q32 11 48 22Z" fill="#fff"/><rect x="16" y="21" width="32" height="4" rx="2" fill="#dfe6f7"/><path d="M19 26h26l-3.3 28q-.3 2-2.3 2H24.6q-2 0-2.3-2z" fill="#fff"/>`;
+const _svg = inner => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+const DRINK_SVG = {
+  "thirst-trap": _svg(CUP+`<path d="M32 51c-5.5-3.8-9-6.8-9-11 0-2.4 1.9-4 4-4 1.8 0 3.4 1.1 5 3 1.6-1.9 3.2-3 5-3 2.1 0 4 1.6 4 4 0 4.2-3.5 7.2-9 11z" fill="#ff3d8b"/>`),
+  "dirty-secret": _svg(CUP+`<circle cx="32" cy="43" r="3.6" fill="#16224d"/><path d="M30.6 45h2.8l1 5.4h-4.8z" fill="#16224d"/>`),
+  "nice-coconuts": _svg(CUP+`<circle cx="28.5" cy="45" r="4.2" fill="#8a5a32"/><circle cx="35.5" cy="45" r="4.2" fill="#8a5a32"/><circle cx="27.8" cy="44" r="1.3" fill="#3b2616"/><circle cx="34.8" cy="44" r="1.3" fill="#3b2616"/>`),
+  "razzle": _svg(CUP+`<circle cx="29" cy="46" r="2.8" fill="#7a5cff"/><circle cx="34.5" cy="47" r="2.8" fill="#7a5cff"/><circle cx="32" cy="42.6" r="2.6" fill="#7a5cff"/><path d="M42 33l1.1 2.7 2.7 1.1-2.7 1.1L42 41l-1.1-2.7L38.2 37l2.7-1.1z" fill="#ffc21e"/>`),
+  "sweet-cheeks": _svg(CUP+`<circle cx="32" cy="45" r="6.5" fill="#ff9aa2"/><path d="M32 39c0-3 3-4 5-4-.5 2.5-2.5 4-5 4z" fill="#79c267"/><path d="M32 39v11.5" stroke="#f07f88" stroke-width="1.2"/>`),
+  "upside-down": _svg(`<g transform="translate(0,64) scale(1,-1)">`+CUP+`</g>`),
+  "tropic-hot": _svg(CUP+`<path d="M32 52c-5-2-7-6-5.5-10.5.6 2.2 2.2 3.2 3.5 3.4-1.3-3.4 0-7.6 3.5-9.9-.6 3.3 1.2 4.6 2.4 6.6 1.8 3.3.6 7.8-3.9 10.4z" fill="#ff7a1a"/>`),
+  "sunset-rocks": _svg(`<circle cx="44" cy="16" r="5" fill="#ffc21e"/>`+CUP+`<rect x="27" y="43" width="6" height="6" rx="1.2" fill="#bfe9ff"/><rect x="33" y="46" width="5.5" height="5.5" rx="1.2" fill="#bfe9ff"/>`),
+  "pour-decisions": _svg(`<g transform="rotate(16 32 42)">`+CUP+`</g><circle cx="50" cy="41" r="2" fill="#34d7ff"/><circle cx="52.5" cy="47" r="1.5" fill="#34d7ff"/>`),
+};
+const svgForItem = (it,cat) => DRINK_SVG[it.id] || CAT_SVG[cat] || CAT_SVG.dirtysodas;
+
+/* Icon shown on each customizer option button (by choice name). Missing = no icon. */
+const OPT_ICONS = {
+  "Coca-Cola":"🥤","Diet Coke":"🥤","Pepsi":"🥤","Dr Pepper":"🍒","Diet Dr Pepper":"🍒",
+  "Sprite":"🍋","Sprite Zero":"🍋","Mountain Dew":"⛰️","Diet Mtn Dew":"⛰️","Root Beer":"🫧",
+  "Cream Soda":"🍦","Fanta Orange":"🍊","Big Red":"❤️","Squirt":"🍈",
+  "Red Bull":"🐂","Sugar-Free Red Bull":"🐂","Alani Nu":"✨","Monster":"👹",
+  "Classic Lemonade":"🍋","Pink Lemonade":"🩷","Strawberry Lemonade":"🍓","Limeade":"🟩",
+  "Cherry Limeade":"🍒","Arnold Palmer (½ tea)":"🧋",
+  "Coconut":"🥥","Vanilla":"🍦","Cherry":"🍒","Peach":"🍑","Raspberry":"🫐","Caramel":"🍯",
+  "Lime":"🍈","Blue Raspberry":"💙","Hazelnut":"🌰",
+  "Strawberry":"🍓","Mango":"🥭","Pineapple":"🍍",
+  "None":"🚫","Vanilla Sweet Cream":"🍦","Coconut Cream":"🥥",
+  "Whole":"🥛","2%":"🥛","Oat":"🌾","Almond":"🌰","Hot":"♨️","Iced":"🧊","Extra shot":"⚡","Decaf":"🌙",
+  "Dole Whip":"🍍","Twist (Dole Whip + Vanilla)":"🌀","Cup":"🥤","Waffle cone":"🍦","Float (in juice/soda)":"🛟",
+  "Toasted coconut":"🥥","Pineapple chunks":"🍍","Rainbow sprinkles":"🌈","Tajín":"🌶️","Popping boba":"🟣",
+  "Fresh lime":"🍈","Extra pump":"➕",
+};
+
+/* Hidden secret menu — unlocked by triple-tapping the logo. Injected into MENU on unlock,
+   removed again on reset so each customer gets to "discover" it. */
+const SECRET_MENU = { label:"Secret", icon:"🤫", title:"The Secret Menu", blurb:"You didn't get this from us",
+  options:[FLOAT_SIZE, FLOAT_BASE, FLOAT_CAP, FLOAT_BOOST, TOPPER],
+  items:[
+    {id:"the-spaceman", name:"The Spaceman", desc:"Galaxy-layered blue raspberry under a Dole Whip cloud. Out of this world.", price:7.50},
+    {id:"midnight-tide", name:"Midnight Tide", desc:"Black cherry cola, vanilla cap, chamoy drizzle.", price:6.95},
+    {id:"the-undertow", name:"The Undertow", desc:"Double protein float. Don't tell your trainer.", price:8.50},
+    {id:"loose-lips", name:"Loose Lips", desc:"Whatever the crew's mixing today. Ask nicely.", price:6.50},
+  ]};
+
+/* Live menu — uses the Thirsty Beaches menu above. (FALLBACK_MENU above is an unused demo.) */
+let MENU = THIRSTY_MENU;
+
+/* ============ STATE ============ */
+let activeCat = "floats";
+let cart = [];
+let editing = null; // {catKey,item,sel,qty}
+
+/* ============ RENDER ============ */
+const $ = s => document.querySelector(s);
+
+/* Idle reset: after inactivity past the attract screen, wipe the order and return to attract
+   so an abandoned cart never carries over to the next customer. */
+const IDLE_MS = 75000;
+let idleTimer = null;
+function armIdle(){
+  clearTimeout(idleTimer);
+  if($("#attract").style.display === "none"){   // only while a session is active
+    idleTimer = setTimeout(resetAll, IDLE_MS);
+  }
+}
+["pointerdown","touchstart","keydown"].forEach(ev =>
+  document.addEventListener(ev, armIdle, {passive:true, capture:true}));
+
+function start(){ $("#attract").style.display="none"; armIdle(); }
+function goHome(){ closeSheet(); renderTabs(); renderMenu(); }
+
+/* ---- Secret menu: triple-tap the logo to unlock ---- */
+let _tap=0, _tapTimer=null;
+function brandTap(){
+  goHome();                                   // logo still works as "home"
+  _tap++; clearTimeout(_tapTimer);
+  _tapTimer = setTimeout(()=>{_tap=0;}, 1600);
+  if(_tap>=3 && !MENU.secret){ _tap=0; unlockSecret(); }
+}
+function unlockSecret(){
+  if(MENU.secret) return;
+  MENU.secret = SECRET_MENU;
+  renderTabs(); selectCat('secret');
+  showToast("You found the Secret Menu");
+}
+
+/* ---- Toast ---- */
+function showToast(msg){
+  const t=$("#toast"); if(!t) return;
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+/* ---- Order-complete confetti ---- */
+function fireConfetti(){
+  const box=$("#confetti"); if(!box) return;
+  box.innerHTML="";
+  const colors=["#ff3d8b","#34d7ff","#ffc21e","#20e6c2","#7a5cff","#ff8a2b"];
+  for(let i=0;i<40;i++){
+    const s=document.createElement("span");
+    s.style.left=(Math.random()*100)+"%";
+    s.style.background=colors[i%colors.length];
+    s.style.animationDelay=(Math.random()*0.5).toFixed(2)+"s";
+    s.style.animationDuration=(2.2+Math.random()*1.7).toFixed(2)+"s";
+    s.style.transform="rotate("+Math.floor(Math.random()*360)+"deg)";
+    box.appendChild(s);
+  }
+}
+
+/* ---- Spin the Tide: one free prize wheel per order (front-end perk; staff honors at window) ---- */
+const PRIZES=[
+  {k:"TOPPER",   title:"Free Topper!",          note:"Show this at the window for a free topper on this order.", color:"#FF3D97"},
+  {k:"SIZE UP",  title:"Free Size-Up!",         note:"Show this at the window to size up your drink, on us.",     color:"#34D7FF"},
+  {k:"SECRET",   title:"Secret Menu Unlocked!", note:"Ask the window to let you in on today's secret drink.",     color:"#FFC95C"},
+  {k:"10% OFF",  title:"10% Off Next Visit!",   note:"Show this on your next visit for 10% off.",                 color:"#20E6C2"},
+  {k:"MINI WHIP",title:"Free Mini Dole Whip!",  note:"Show this at the window for a mini Dole Whip.",             color:"#7A5CFF"},
+  {k:"STAY SALTY",title:"Stay Salty!",          note:"No prize this wave — but you're still a beach legend.",     color:"#FF8A2B"},
+];
+function buildWheel(){
+  const svg=$("#wheelSvg"); if(!svg) return;
+  const n=PRIZES.length, step=360/n, R=100, lr=62, rad=d=>(d-90)*Math.PI/180;
+  let out="";
+  for(let i=0;i<n;i++){
+    const a0=i*step, a1=(i+1)*step;
+    const x0=100+R*Math.cos(rad(a0)), y0=100+R*Math.sin(rad(a0));
+    const x1=100+R*Math.cos(rad(a1)), y1=100+R*Math.sin(rad(a1));
+    out+=`<path d="M100,100 L${x0.toFixed(2)},${y0.toFixed(2)} A100,100 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${PRIZES[i].color}" stroke="#fff" stroke-width="1.5"/>`;
+    const ca=a0+step/2;
+    const tx=100+lr*Math.cos(rad(ca)), ty=100+lr*Math.sin(rad(ca));
+    out+=`<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" font-size="9.5" text-anchor="middle" dominant-baseline="middle" transform="rotate(${(ca).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)})">${PRIZES[i].k}</text>`;
+  }
+  svg.innerHTML=out;
+}
+let _spun=false;
+function resetSpin(){
+  _spun=false;
+  const st=$("#spinTide"); if(st) st.classList.remove("spun");
+  const svg=$("#wheelSvg"); if(svg){ svg.style.transition="none"; svg.style.transform="rotate(0deg)"; void svg.offsetWidth; svg.style.transition=""; }
+}
+function spinTide(){
+  if(_spun) return; _spun=true;
+  const i=Math.floor(Math.random()*PRIZES.length), step=360/PRIZES.length;
+  const dest=360*5 - (i*step + step/2);   // land prize i's center under the top pointer
+  const svg=$("#wheelSvg"); if(svg) svg.style.transform="rotate("+dest+"deg)";
+  setTimeout(()=>{
+    $("#prizeTitle").textContent=PRIZES[i].title;
+    $("#prizeNote").textContent=PRIZES[i].note;
+    $("#spinTide").classList.add("spun");
+    if(PRIZES[i].k!=="STAY SALTY") fireConfetti();
+  }, 4500);
+}
+
+/* ---- Drink of the Day: tallies today's orders in localStorage, shows top sips on attract ---- */
+function dotdKey(){ try{ return "tb_dotd_"+new Date().toISOString().slice(0,10); }catch(e){ return "tb_dotd"; } }
+function recordSales(lines){
+  try{
+    const k=dotdKey(), m=JSON.parse(localStorage.getItem(k)||"{}");
+    for(const l of lines){ const q=Math.max(1,parseInt(l.qty)||1); m[l.name]=(m[l.name]||0)+q; }
+    localStorage.setItem(k, JSON.stringify(m));
+  }catch(e){}
+}
+function renderLeaderboard(){
+  const box=$("#dotd"); if(!box) return;
+  let m={}; try{ m=JSON.parse(localStorage.getItem(dotdKey())||"{}"); }catch(e){}
+  const top=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!top.length){ box.style.display="none"; return; }
+  box.innerHTML="<h4>Today's Top Sips</h4>"+top.map((e,i)=>
+    `<div class="row"><span class="rk">${i+1}</span><span class="nm">${e[0]}</span><span class="ct">${e[1]} sold</span></div>`
+  ).join("");
+  box.style.display="block";
+}
+
+/* ---- The Tide List (Beach Club) — front-end capture only (NOT transmitted/stored).
+       Wiring real SMS needs a backend + TCPA consent before going live. ---- */
+let _phone="";
+function fmtPhone(p){ const a=p.padEnd(10,"•"); return `(${a.slice(0,3)}) ${a.slice(3,6)}-${a.slice(6,10)}`; }
+function buildKeypad(){
+  const k=$("#keypad"); if(!k) return;
+  k.innerHTML=["1","2","3","4","5","6","7","8","9","","0","⌫"].map(d=>
+    d===""?`<span></span>`:`<button onclick="tideKey('${d}')">${d}</button>`).join("");
+}
+function tideRecalc(){
+  const ok = _phone.length===10 && $("#tlConsent").checked;
+  $("#tlSubmit").classList.toggle("disabled", !ok);
+}
+function tideKey(d){
+  if(d==="⌫") _phone=_phone.slice(0,-1);
+  else if(_phone.length<10) _phone+=d;
+  $("#tlNum").textContent=fmtPhone(_phone);
+  tideRecalc();
+}
+function tideOpen(){
+  _phone=""; buildKeypad();
+  $("#tlNum").textContent=fmtPhone("");
+  $("#tlConsent").checked=false; $("#tlSubmit").classList.add("disabled");
+  $("#tlPitch").style.display="none"; $("#tlForm").style.display="block";
+}
+function tideJoin(){
+  if(_phone.length!==10 || !$("#tlConsent").checked) return;
+  _phone="";                                  // front-end only — nothing sent anywhere yet
+  $("#tlForm").style.display="none"; $("#tlDone").style.display="block";
+  fireConfetti();
+}
+
+/* ---- Vibe Reader: camera-based drink match ----
+   PRIVACY: the frame is analyzed ON-DEVICE (average color/energy) and is NEVER
+   stored or sent anywhere. The camera stream is stopped on every exit/reset.
+   A real-AI-vision version would need on-screen consent + a server proxy + cost
+   + a COPPA review (kids use this) — that's a deliberate phase 2, not this code. */
+let _vibeStream=null, _vibeMatch=null;
+/* A wide pool so each scan feels different. Mostly varied with a light colour "nudge". */
+const VIBE_POOL=[
+  {cat:"floats",     id:"beached-whale",  reading:"Sunshine in human form.",   why:"You need the float that started it all."},
+  {cat:"floats",     id:"swole-patrol",   reading:"Big main-character energy.",why:"A protein float to match the grind."},
+  {cat:"floats",     id:"cold-front",     reading:"Effortlessly cool.",        why:"Low-key, high-impact — a total Cold Shoulder."},
+  {cat:"floats",     id:"riptide-float",  reading:"Bold and a little extra.",  why:"Red, white & blue, stacked loud."},
+  {cat:"newwaves",   id:"the-blue-one",   reading:"Cool, calm, mysterious.",   why:"The bluest drink on the beach is you."},
+  {cat:"newwaves",   id:"spicy-senorita", reading:"Sweet with a kick.",        why:"Mango, chamoy, and attitude."},
+  {cat:"newwaves",   id:"low-tide",       reading:"Chill and unbothered.",     why:"Coconut calm in a cup."},
+  {cat:"energy",     id:"adios",          reading:"Here for a good time.",     why:"You don't sip slow."},
+  {cat:"energy",     id:"wired",          reading:"Running on pure hype.",     why:"Wired & Tired says hi."},
+  {cat:"lemonades",  id:"main-squeeze",   reading:"Sweet, classic, a catch.",  why:"You're somebody's Main Squeeze."},
+  {cat:"lemonades",  id:"life-beaches",   reading:"Fresh and breezy.",         why:"When life gives you beaches…"},
+  {cat:"dirtysodas", id:"thirst-trap",    reading:"Impossible to ignore.",     why:"You're a Thirst Trap. Obviously."},
+  {cat:"dirtysodas", id:"sweet-cheeks",   reading:"Sweet on the inside.",      why:"Peachy and proud."},
+  {cat:"dirtysodas", id:"nice-coconuts",  reading:"Tropical state of mind.",   why:"Coconut, lime, good vibes."},
+  {cat:"coffee",     id:"cloud-nine",     reading:"Dreamy and smooth.",        why:"Cold brew on Cloud Nine."},
+  {cat:"dolewhip",   id:"pineapple-express", reading:"Pure golden sunshine.",  why:"A Dole Whip swirl with your name on it."},
+];
+let _lastVibe=-1;
+function vibePick(v){
+  const nudges=[];
+  if(v){
+    if(v.b>v.r+18) nudges.push(4);
+    if(v.r>v.g+22 && v.r>v.b+10) nudges.push(5,12);
+    if(v.g>v.r && v.g>v.b) nudges.push(9,10);
+    if(v.bright<90) nudges.push(2,14);
+    if(v.warm>30 && v.bright>150) nudges.push(0,15);
+  }
+  let idx = (nudges.length && Math.random()<0.5)
+    ? nudges[Math.floor(Math.random()*nudges.length)]
+    : Math.floor(Math.random()*VIBE_POOL.length);
+  if(idx===_lastVibe) idx=(idx+1)%VIBE_POOL.length;   // never the same twice in a row
+  _lastVibe=idx;
+  return VIBE_POOL[idx];
+}
+
+function vibeStart(){ showStage('vibeIntro'); $("#vibe").classList.add('show'); armIdle(); }
+async function vibeAllow(){
+  showStage('vibeCam');
+  try{
+    _vibeStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}, audio:false});
+    $("#vibeVideo").srcObject=_vibeStream;
+  }catch(e){
+    vibeSurprise();   // no camera / denied → still fun: a surprise match
+  }
+}
+function analyzeFrame(video){
+  const c=document.createElement('canvas'); c.width=64; c.height=64;
+  const ctx=c.getContext('2d');
+  try{ ctx.drawImage(video,0,0,64,64); }catch(e){ return null; }
+  let r=0,g=0,b=0,n=0; const d=ctx.getImageData(0,0,64,64).data;
+  for(let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+  r/=n; g/=n; b/=n;
+  return {r,g,b, bright:(r+g+b)/3, warm:r-b, sat:Math.max(r,g,b)-Math.min(r,g,b)};
+}
+function vibeReveal(t){
+  _vibeMatch={cat:t.cat, id:t.id};
+  const item = MENU[t.cat] && MENU[t.cat].items.find(i=>i.id===t.id);
+  $("#vibeReading").textContent=t.reading;
+  $("#vibeMatchName").textContent=item?item.name:"Thirst Trap";
+  $("#vibeWhy").textContent=t.why;
+  stopVibeCam();
+  showStage('vibeResult');
+}
+function vibeCandidates(){
+  const out=[];
+  for(const [cat,c] of Object.entries(MENU)){
+    for(const it of c.items){ out.push({cat, id:it.id, name:it.name, desc:it.desc||""}); }
+  }
+  return out;
+}
+function showVibeLoading(){
+  $("#vibeReading").textContent="Reading your vibe…";
+  $("#vibeMatchName").textContent="…";
+  $("#vibeWhy").textContent="";
+  showStage('vibeResult');
+}
+async function vibeSnap(){
+  const v=$("#vibeVideo");
+  let img=null;
+  try{
+    const c=document.createElement('canvas'); c.width=320; c.height=320;
+    c.getContext('2d').drawImage(v,0,0,320,320);
+    img=c.toDataURL('image/jpeg',0.7).split(',')[1];
+  }catch(e){}
+  const localV=analyzeFrame(v);
+  stopVibeCam();
+  showVibeLoading();
+  if(img){
+    try{
+      const cands=vibeCandidates();
+      const res=await fetch('/vibe',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({image:img,candidates:cands})});
+      if(res.ok){
+        const d=await res.json();
+        if(d&&d.ai&&d.id){
+          const t=cands.find(x=>x.id===d.id);
+          if(t){ vibeReveal({cat:t.cat,id:t.id,reading:d.reading||"The beach has read you.",why:d.why||""}); return; }
+        }
+      }
+    }catch(e){}
+  }
+  vibeReveal(vibePick(localV));   // fallback: on-device pick (no AI key, or AI failed)
+}
+function vibeSurprise(){ vibeReveal(vibePick(null)); }
+function vibeAddToOrder(){ const m=_vibeMatch; vibeClose(); if(m) openItem(m.cat,m.id); }
+function stopVibeCam(){
+  if(_vibeStream){ _vibeStream.getTracks().forEach(t=>t.stop()); _vibeStream=null; }
+  const vid=$("#vibeVideo"); if(vid) vid.srcObject=null;
+}
+function vibeClose(){ stopVibeCam(); $("#vibe").classList.remove('show'); }
+function showStage(id){ document.querySelectorAll('#vibe .stage').forEach(s=>s.classList.toggle('on', s.id===id)); }
+
+const CAT_ACCENT={floats:"#a07bff",dirtysodas:"#ff6f9c",newwaves:"#28cdff",energy:"#ffb300",lemonades:"#ffcf33",italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#dcab73",beachbabies:"#8fe0ff",secret:"#cda44e"};
+function renderTabs(){
+  $("#tabs").innerHTML = Object.entries(MENU).map(([k,c])=>
+    `<button class="tab ${k===activeCat?'active':''}" data-cat="${k}" onclick="selectCat('${k}')">
+      <span class="catdot" style="background:${CAT_ACCENT[k]||'#ff6f9c'}"></span>${c.label}</button>`).join("");
+}
+function selectCat(k){ activeCat=k; renderTabs(); renderMenu(); $("#menu").scrollTop=0; }
+
+function mono(name){
+  const w=(name||"").split(/\s+/).filter(x=>/[a-z]/i.test((x||"")[0]||""));
+  if(w.length>=2) return (w[0][0]+w[1][0]).toUpperCase();
+  return (name||"?").replace(/[^a-z]/gi,"").slice(0,2).toUpperCase();
+}
+
+/* ---- Glossy "sticker" drink icons: cup shows the DRINK's real color, per-drink ---- */
+function drinkColors(it,cat){
+  const s=(it.id+" "+it.name+" "+(it.desc||"")).toLowerCase();
+  const tests=[
+    [/cold brew|coffee|espresso|mocha|latte|\bdrip\b|cappa|americano/, ["#8a542c","#3d2414"]],
+    [/dr pepper|cola|\bcoke\b|pepsi|root beer|cream soda|dirty|cold front|cold shoulder|thirst trap|midnight|sunburn/, ["#7d4427","#3f2113"]],
+    [/blue|riptide|\bwave\b|frisky|wipeout|mermaid/, ["#37c6ff","#1f6ae0"]],
+    [/strawberr|cherry|razz|\bberr|main squeeze|spicy|se.?orita|punch|shore/, ["#ff5b7e","#d62246"]],
+    [/lemon|limeade|pucker|kiss|squeez|tiger|cotton candy/, ["#ffd64a","#f3a200"]],
+    [/mango|peach|orange|golden|sunset|tropic|castaway|fanta/, ["#ffac3a","#ff6a00"]],
+    [/lime|green apple|\bdino\b|mint|melon|squirt/, ["#7fe06a","#34b349"]],
+    [/grape|purple/, ["#b07bff","#7a3fe0"]],
+    [/coconut|cream|vanilla|cloud|low tide|dole|pineapple|swirl|whip|shake|sandy|swole|protein|s.?mores|float/, ["#fff0cf","#ffd98a"]],
+  ];
+  let liq=null; for(const [re,col] of tests){ if(re.test(s)){ liq=col; break; } }
+  if(!liq) liq=["#ff8fb0","#ff5b8a"];
+  const swirl = cat==="floats" || cat==="dolewhip" || /float|whip|shake|cream|cloud|dole|swirl|sundae|s.?mores/.test(s);
+  return {l1:liq[0], l2:liq[1], swirl, straw:"#ff4d8d"};
+}
+/* Per-category facial expressions — all drawn as SVG (no emoji). Adaptive colors so they read on any drink. */
+function faceFor(cat,it,fc,rim){
+  const D="#1b2444";
+  const s=(it.id+" "+it.name+" "+(it.desc||"")).toLowerCase();
+  const eye=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="${D}" stroke-width="1.4"/>`;
+  const pup=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${D}"/>`;
+  let exp="shades";
+  if(cat==="energy") exp="wired";
+  else if(cat==="coffee") exp="sleepy";
+  else if(cat==="beachbabies") exp="cutie";
+  else if(cat==="secret") exp="wink";
+  else if(/spicy|se.?orita|sting|sunburn|hot honey|chamoy|tajin|taj.n/.test(s)) exp="spicy";
+  if(exp==="wired") return `<g>`
+    +eye(42,77,4.6)+pup(43.2,77.6,2)+eye(58,77,4.6)+pup(56.8,77.6,2)
+    +`<path d="M36.5 70 l5.5 2.5M63.5 70 l-5.5 2.5" stroke="${D}" stroke-width="2" stroke-linecap="round"/>`
+    +`<path d="M44 89 q6 7 12 0 q-6 2.5 -12 0 z" fill="${D}"/></g>`;
+  if(exp==="sleepy") return `<g fill="none" stroke="${fc}" stroke-width="2.4" stroke-linecap="round">`
+    +`<path d="M39.5 78 q3.5 3 7 0"/><path d="M53.5 78 q3.5 3 7 0"/><path d="M46.5 90 q4 2 7 0"/></g>`;
+  if(exp==="cutie") return `<g>`
+    +eye(43,77,4.4)+pup(43,77.8,2.2)+`<circle cx="44.3" cy="75.8" r="1" fill="#fff"/>`
+    +eye(57,77,4.4)+pup(57,77.8,2.2)+`<circle cx="58.3" cy="75.8" r="1" fill="#fff"/>`
+    +`<circle cx="36.5" cy="84" r="2.6" fill="#ff8fae" opacity=".7"/><circle cx="63.5" cy="84" r="2.6" fill="#ff8fae" opacity=".7"/>`
+    +`<path d="M45 89 q5 5 10 0" fill="none" stroke="${fc}" stroke-width="2.4" stroke-linecap="round"/></g>`;
+  if(exp==="wink") return `<g>`
+    +`<path d="M39 78.5 q3.5 -3.5 7 0" fill="none" stroke="${fc}" stroke-width="2.6" stroke-linecap="round"/>`
+    +eye(57,77,4)+pup(57,77.5,1.9)
+    +`<path d="M44.5 90 q5.5 4.5 11 -1" fill="none" stroke="${fc}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+  if(exp==="spicy") return `<g>`
+    +eye(42,76.5,4)+pup(42,77,1.9)+eye(58,76.5,4)+pup(58,77,1.9)
+    +`<path d="M44.5 88 h11 a3 3 0 0 1 -3 3.5 h-5 a3 3 0 0 1 -3 -3.5 z" fill="${D}"/>`
+    +`<path d="M48.5 90 h3 v2.6 a1.5 1.5 0 0 1 -3 0 z" fill="#ff5b6e"/>`
+    +`<path d="M65 71 q3.2 4.5 0 6.5 q-3.2 -2 0 -6.5z" fill="#7fd0ff" stroke="${D}" stroke-width="1"/></g>`;
+  // default "shades" — cool beach mascot
+  return `<g>`
+    +`<rect x="35.5" y="74" width="12" height="9" rx="3" fill="${D}" stroke="${rim}" stroke-width="1.3"/>`
+    +`<rect x="52.5" y="74" width="12" height="9" rx="3" fill="${D}" stroke="${rim}" stroke-width="1.3"/>`
+    +`<path d="M47.5 77.5 h5" stroke="${D}" stroke-width="2"/>`
+    +`<circle cx="39.5" cy="76.5" r="1.4" fill="#fff"/><circle cx="56.5" cy="76.5" r="1.4" fill="#fff"/>`
+    +`<path d="M44.5 90 q5.5 6 11 0" fill="none" stroke="${fc}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+}
+function drinkIcon(it,cat){
+  const c=drinkColors(it,cat), id="g"+it.id.replace(/[^a-z0-9]/gi,""), OL="#1b2444";
+  const cup="M30 48 L70 48 L65 108 Q64 113 59 113 L41 113 Q36 113 35 108 Z";
+  const lum=(parseInt(c.l2.slice(1,3),16)*0.3+parseInt(c.l2.slice(3,5),16)*0.59+parseInt(c.l2.slice(5,7),16)*0.11);
+  const light=lum>150, fc=light?"#1b2444":"#ffffff", rim=light?"none":"#ffffff";
+  const face=faceFor(cat,it,fc,rim);   // per-category expression (all drawn SVG, no emoji)
+  const top = c.swirl
+    ? `<path d="M36 49 q-4 -10 7 -11 q-2 -10 9 -10 q11 0 9 10 q11 1 7 11 z" fill="#fff" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/>`
+      +`<circle cx="51" cy="21" r="4.2" fill="#ff3d6e" stroke="${OL}" stroke-width="2.5"/>`
+    : `<rect x="33" y="40" width="34" height="9" rx="4.5" fill="#eef3ff" stroke="${OL}" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 100 122" xmlns="http://www.w3.org/2000/svg">`
+    +`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.l1}"/><stop offset="1" stop-color="${c.l2}"/></linearGradient>`
+    +`<clipPath id="c${id}"><path d="${cup}"/></clipPath></defs>`
+    +`<line x1="60" y1="46" x2="73" y2="12" stroke="${OL}" stroke-width="10" stroke-linecap="round"/>`
+    +`<line x1="60" y1="46" x2="73" y2="12" stroke="${c.straw}" stroke-width="5.5" stroke-linecap="round"/>`
+    +`<path d="${cup}" fill="#ffffff" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`
+    +`<g clip-path="url(#c${id})"><rect x="28" y="62" width="44" height="55" fill="url(#${id})"/>`
+    +`<path d="M28 64 q11 -7 22 0 t22 0 v8 h-44 z" fill="${c.l1}"/>`
+    +`<circle cx="43" cy="103" r="2.6" fill="#fff" opacity=".4"/><circle cx="56" cy="106" r="2" fill="#fff" opacity=".4"/></g>`
+    +`<rect x="38" y="56" width="5" height="50" rx="2.5" fill="#fff" opacity=".35"/>`
+    +`<path d="${cup}" fill="none" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`
+    +face+top+`</svg>`;
+}
+function renderMenu(){
+  const c = MENU[activeCat];
+  $("#menu").innerHTML = `
+    <div class="cat-head"><h2>${c.title}</h2><span>${c.blurb}</span></div>
+    <div class="grid">
+      ${c.items.map((it,i)=>`
+        <button class="card" data-cat="${activeCat}" style="animation-delay:${i*45}ms" onclick="tapCard(this,'${activeCat}','${it.id}')">
+          <div class="art"><span class="cicon">${drinkIcon(it,activeCat)}</span><img class="dimg" src="assets/drinks/${it.id}.png" alt="" onerror="this.remove()"><span class="pricechip">$${it.price.toFixed(2)}</span></div>
+          <h3>${it.name}</h3>
+          <p class="desc">${it.desc}</p>
+        </button>`).join("")}
+    </div>`;
+}
+
+/* ---- item customizer ---- */
+/* Tapped a card: float it away, then open the customizer. */
+function tapCard(el,catKey,itemId){
+  if(el && el.classList){
+    el.classList.add('flyaway');
+    setTimeout(()=>{ openItem(catKey,itemId); el.classList.remove('flyaway'); }, 300);
+  } else { openItem(catKey,itemId); }
+}
+function openItem(catKey,itemId){
+  const cat = MENU[catKey];
+  const item = cat.items.find(i=>i.id===itemId);
+  const sel = {};
+  cat.options.forEach(o=>{ sel[o.key] = o.multi ? [] : null; }); // nothing pre-selected — required must be chosen
+  editing = {catKey,item,sel,qty:1};
+  renderSheet();
+  $("#overlay").classList.add("show");
+}
+
+function renderSheet(){
+  const {catKey,item,sel,qty} = editing;
+  const cat = MENU[catKey];
+  const groups = cat.options.map(o=>`
+    <div class="opt-group${o.required && !o.multi && !sel[o.key] ? ' need' : ''}">
+      <h4>${o.label} ${o.required && !o.multi ? '<em class="req">Required</em>' : '<em>optional</em>'}${o.multi?'<em>pick any</em>':''}</h4>
+      <div class="opt-row">
+        ${o.choices.map(ch=>{
+          const on = o.multi ? sel[o.key].includes(ch.name) : sel[o.key]===ch.name;
+          const add = ch.d>0?`<span class="add">+$${ch.d.toFixed(2)}</span>`:(ch.d<0?`<span class="add">-$${Math.abs(ch.d).toFixed(2)}</span>`:'');
+          return `<button class="opt ${on?'sel':''}" onclick="pick('${o.key}','${ch.name.replace(/'/g,"\\'")}',${o.multi})">${ch.name} ${add}</button>`;
+        }).join("")}
+      </div>
+    </div>`).join("");
+  const missing = cat.options.filter(o=>o.required && !o.multi && !sel[o.key]);
+  const addBtn = missing.length
+    ? `<button class="btn-primary disabled">Choose ${missing[0].label.replace(/<[^>]*>/g,'')}</button>`
+    : `<button class="btn-primary" onclick="addToCart()">Add to order &middot; $${(linePrice()*qty).toFixed(2)}</button>`;
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div class="art"${item.img?` style="background-image:url('${item.img}')"`:''}>${item.img?'':`<span class="cicon shdicon">${drinkIcon(item,catKey)}</span>`}</div>
+      <div><h3>${item.name}</h3><p>${item.desc}</p></div>
+      <button class="close" onclick="closeSheet()">✕</button>
+    </div>
+    ${groups}
+    <div class="sheet-ft">
+      <div class="qty">
+        <button onclick="bumpQty(-1)">–</button><span id="qv">${qty}</span><button onclick="bumpQty(1)">+</button>
+      </div>
+      ${addBtn}
+    </div>`;
+}
+
+function pick(key,name,multi){
+  if(multi){
+    const arr = editing.sel[key];
+    const i = arr.indexOf(name);
+    if(i>=0) arr.splice(i,1); else arr.push(name);
+  } else { editing.sel[key]=name; }
+  renderSheet();
+}
+function bumpQty(n){ editing.qty=Math.max(1,editing.qty+n); renderSheet(); }
+
+function linePrice(){
+  const {catKey,item,sel}=editing;
+  let p = item.price;
+  MENU[catKey].options.forEach(o=>{
+    const v = sel[o.key];
+    if(o.multi){ (v||[]).forEach(name=>{ const ch=o.choices.find(c=>c.name===name); if(ch)p+=ch.d; }); }
+    else if(v){ const ch=o.choices.find(c=>c.name===v); if(ch)p+=ch.d; }
+  });
+  return p;
+}
+
+function addToCart(){
+  // ensure required selections
+  const {catKey,item,sel,qty}=editing;
+  for(const o of MENU[catKey].options){
+    if(o.required && !o.multi && !sel[o.key]) return; // safety — the Add button is already disabled until required choices are made
+  }
+  const mods = [];
+  MENU[catKey].options.forEach(o=>{
+    const v=sel[o.key];
+    if(o.multi && v.length) mods.push(...v);
+    else if(!o.multi && v) mods.push(v);
+  });
+  const line = {icon:iconFor(item), img:item.img, name:item.name, mods, unit:linePrice(), qty,
+                catKey, itemId:item.id, sel:JSON.parse(JSON.stringify(sel))};
+  const wasEdit = editing.idx!=null && cart[editing.idx];
+  if(wasEdit) cart[editing.idx] = line; else cart.push(line);
+  closeSheet();
+  updateCartBtn();
+  if(wasEdit) openCart();   // return to the cart after editing a line
+}
+function editCartLine(i){
+  const c = cart[i]; if(!c) return;
+  const cat = MENU[c.catKey]; if(!cat) return;
+  const item = cat.items.find(it=>it.id===c.itemId); if(!item) return;
+  editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i};
+  renderSheet();
+  $("#overlay").classList.add("show");
+}
+function closeSheet(){ $("#overlay").classList.remove("show"); editing=null; }
+
+/* ---- cart ---- */
+function updateCartBtn(){
+  const n = cart.reduce((a,c)=>a+c.qty,0);
+  $("#cartCount").textContent = n;
+  $("#cartBtn").classList.toggle("empty", n===0);
+  const bar = $("#orderBar");
+  if(bar){
+    bar.classList.toggle("show", n>0);
+    $("#obCount").textContent = n + (n===1 ? " item" : " items");
+    $("#obTotal").textContent = "$" + cartTotals().sub.toFixed(2);
+  }
+}
+function cartTotals(){
+  const sub = cart.reduce((a,c)=>a+c.unit*c.qty,0);
+  const tax = sub*TAX;
+  return {sub,tax,total:sub+tax};
+}
+function openCart(){
+  if(!cart.length) return;
+  const {sub,tax,total}=cartTotals();
+  const lines = cart.map((c,i)=>`
+    <div class="cart-line">
+      <div class="art"${c.img?` style="background-image:url('${c.img}')"`:''}>${c.img?'':`<span class="cicon shdicon">${drinkIcon((MENU[c.catKey]&&MENU[c.catKey].items.find(x=>x.id===c.itemId))||{id:c.itemId||'x',name:c.name,desc:''}, c.catKey)}</span>`}</div>
+      <div class="info">
+        <b>${c.name}</b>
+        ${c.mods.length?`<div class="mods">${c.mods.join(" &middot; ")}</div>`:''}
+        <div class="price">$${(c.unit*c.qty).toFixed(2)}</div>
+        <button class="linkbtn editbtn" onclick="editCartLine(${i})">Edit</button>
+      </div>
+      <div class="qty">
+        <button onclick="cartQty(${i},-1)">–</button><span>${c.qty}</span><button onclick="cartQty(${i},1)">+</button>
+      </div>
+    </div>`).join("");
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div><h3>Your order</h3><p>${cart.reduce((a,c)=>a+c.qty,0)} item(s)</p></div>
+      <button class="close" onclick="closeSheet()">✕</button>
+    </div>
+    <div style="padding:6px 28px 0">
+      ${lines}
+      <div class="totals">
+        <div class="row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+        <div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>
+        <div class="row"><span></span><span style="font-size:.6em;opacity:.65">+ tax added at checkout</span></div>
+      </div>
+      <button class="linkbtn" onclick="clearCart()">Clear order</button>
+    </div>
+    <div class="sheet-ft">
+      <button class="btn-primary" onclick="askName()">Place order &middot; $${sub.toFixed(2)}</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+}
+
+/* ---- name entry (on-screen keyboard — no physical keyboard needed) ---- */
+let _orderName = "";
+function askName(){ renderNamePad(); $("#overlay").classList.add("show"); }
+function renderNamePad(){
+  const sub = cartTotals().sub;
+  const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+  const kb = rows.map(r => `<div class="krow">`+[...r].map(c=>`<button class="kkey" onclick="nameKey('${c}')">${c}</button>`).join("")+`</div>`).join("")
+    + `<div class="krow"><button class="kkey kwide" onclick="nameSpace()">space</button><button class="kkey kwide" onclick="nameBack()">&larr; delete</button></div>`;
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div><h3>Whose order is this?</h3><p>We'll call your name when it's ready.</p></div>
+      <button class="close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="namebox" id="nameBox"></div>
+    <button class="beachname" onclick="beachName()"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1.6"/><circle cx="8" cy="8" r="1.6" fill="#fff"/><circle cx="16" cy="8" r="1.6" fill="#fff"/><circle cx="12" cy="12" r="1.6" fill="#fff"/><circle cx="8" cy="16" r="1.6" fill="#fff"/><circle cx="16" cy="16" r="1.6" fill="#fff"/></svg>Surprise me — give me a beach name</button>
+    <div class="keyboard">${kb}</div>
+    <div class="sheet-ft">
+      <button class="linkbtn" onclick="openCart()">Back</button>
+      <button class="btn-primary" id="placeBtn" onclick="placeOrder()">Place order &middot; $${sub.toFixed(2)}</button>
+    </div>`;
+  refreshName();
+}
+function nameKey(c){ if(_orderName.length<22) _orderName += c; refreshName(); }
+function nameSpace(){ if(_orderName.trim() && _orderName.length<22) _orderName += " "; refreshName(); }
+function nameBack(){ _orderName = _orderName.slice(0,-1); refreshName(); }
+function refreshName(){
+  const box=$("#nameBox");
+  if(box) box.innerHTML = _orderName ? _orderName : `<span class="ph">Tap your name…</span>`;
+  const pb=$("#placeBtn"); if(pb) pb.classList.toggle("disabled", !_orderName.trim());
+}
+/* ---- Beach-name generator: a random, kid-clean beach alter-ego ---- */
+const BEACH_FIRST=["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral",
+  "Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Sir Splash","Lady"];
+const BEACH_LAST=["Riptide","Sandcastle","Seabreeze","Sunchaser","Wavemaker","Beachcomber","Driftwood",
+  "Pufferfish","Starfish","Sandbar","Shoreline","Coconut","Seahorse","Castaway","Sailor","Dune","Marlin","Barnacle"];
+function beachName(){
+  const f=BEACH_FIRST[Math.floor(Math.random()*BEACH_FIRST.length)];
+  const l=BEACH_LAST[Math.floor(Math.random()*BEACH_LAST.length)];
+  _orderName=(f+" "+l).slice(0,24);
+  refreshName();
+}
+function cartQty(i,n){
+  cart[i].qty+=n;
+  if(cart[i].qty<=0) cart.splice(i,1);
+  updateCartBtn();
+  if(cart.length) openCart(); else closeSheet();
+}
+function clearCart(){ cart=[]; updateCartBtn(); closeSheet(); }
+
+/* ---- place order ----
+   NOTE: This is where a real Clover integration would POST the order to the
+   Clover Orders API and (optionally) trigger payment on a Clover device.
+   Right now it just shows a confirmation number for "pay at counter".        */
+async function placeOrder(){
+  if(orderInFlight) return;                 // block double-submit (double-tap / reopen mid-send)
+  if(!cart.length) return;
+  orderInFlight = true;
+  const btn = document.querySelector('.sheet-ft .btn-primary');
+  if(btn){ btn.textContent = "Sending…"; btn.classList.add('disabled'); }
+  try{
+    const res = await fetch(ORDER_ENDPOINT, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cart, name:_orderName.trim()})
+    });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const d = await res.json();
+    if(!d || !d.ticket) throw new Error("no ticket returned");
+    // success — only now do we clear the cart and confirm
+    recordSales(cart);                        // tally for the Drink of the Day board
+    cart = []; updateCartBtn(); closeSheet();
+    $("#orderNum").textContent = d.ticket;
+    $("#orderForName").textContent = _orderName.trim() ? ("Order for " + _orderName.trim()) : "";
+    _orderName = "";
+    resetSpin();                              // fresh, unspun wheel for this order
+    $("#confirm").classList.add("show");
+    fireConfetti();
+  }catch(err){
+    console.warn("Order failed:", err.message);
+    // honest failure — keep the cart, let them retry or order at the counter
+    if(btn){ btn.textContent = "Couldn't send — tap to retry"; btn.classList.remove('disabled'); }
+  }finally{
+    orderInFlight = false;
+  }
+}
+function resetAll(){
+  clearTimeout(idleTimer);
+  cart=[]; updateCartBtn();
+  delete MENU.secret; _tap=0; _phone=""; _orderName="";  // hide secret menu again for the next customer
+  stopVibeCam(); $("#vibe").classList.remove("show");    // camera off + close the vibe reader (privacy)
+  activeCat=Object.keys(MENU)[0];
+  closeSheet();
+  $("#confirm").classList.remove("show");
+  const tp=$("#tlPitch"), tf=$("#tlForm"), td=$("#tlDone");  // reset Tide List back to its pitch
+  if(tp) tp.style.display="block"; if(tf) tf.style.display="none"; if(td) td.style.display="none";
+  renderLeaderboard();                                    // refresh Today's Top Sips
+  $("#attract").style.display="flex";
+  goHome();
+}
+
+/* ============ LOAD MENU FROM YOUR BACKEND ============
+   Fetches the Clover-derived menu from your server. The server (clover-menu-server.js)
+   holds the API token and does the Clover calls + formatting, so this kiosk never
+   sees the token. On any failure we keep the built-in FALLBACK_MENU so the kiosk
+   still works offline. */
+async function loadMenu(){
+  try{
+    const res = await fetch(MENU_ENDPOINT, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    if(!data || !Object.keys(data).length) throw new Error("empty menu");
+    MENU = data;
+    activeCat = Object.keys(MENU)[0];
+    renderTabs(); renderMenu();
+    console.log("Loaded live menu from Clover backend.");
+  }catch(err){
+    console.warn("Live menu unavailable, using built-in fallback menu:", err.message);
+  }
+}
+
+/* init */
+renderTabs(); renderMenu(); updateCartBtn();
+buildWheel(); renderLeaderboard();          // Spin the Tide wheel + Today's Top Sips
+
+/* ---- Remote update: reload when the server has pulled a newer version.
+        Only reloads while idle on the attract screen, never mid-order. ---- */
+let _loadedVersion = null;
+async function checkVersion(){
+  try{
+    const d = await (await fetch('/version',{cache:'no-store'})).json();
+    if(_loadedVersion===null){ _loadedVersion=d.v; return; }      // remember the version we booted with
+    const idle = getComputedStyle($("#attract")).display !== 'none';
+    if(d.v!==_loadedVersion && idle) location.reload();           // newer build available + nobody ordering
+  }catch(e){}
+}
+checkVersion();
+setInterval(checkVersion, 180000);          // re-check every 3 min
+// loadMenu(); // re-enable when the Clover catalog holds the real dirty-soda menu
+if(location.hash.includes("menu")) start(); // deep-link straight to the menu (skips attract)
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "files": [
+    { "path": "drink-kiosk.html",       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html" },
+    { "path": "drink-kiosk-light.html", "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html" }
+  ]
+}
