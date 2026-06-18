@@ -615,6 +615,61 @@
     display:flex;align-items:center;justify-content:center;background:rgba(22,58,95,.55);
     font-family:"Fraunces",serif;font-weight:900;font-size:clamp(18px,3vw,26px);color:#fff;
     letter-spacing:.06em;text-transform:uppercase;}
+
+  /* ===== PAY SCREEN (tap-to-pay Flex overlay) ===== */
+  #payscreen{position:fixed;inset:0;z-index:75;display:none;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;padding:40px 32px;overflow-y:auto;
+    background:radial-gradient(900px 600px at 50% 0%,rgba(46,139,255,.22),transparent 60%),
+    radial-gradient(800px 600px at 50% 120%,rgba(255,61,151,.18),transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg-2));}
+  #payscreen.show{display:flex;}
+  #payscreen .pay-logo{width:min(260px,44vw);height:auto;margin-bottom:24px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.45));}
+  #payscreen .pay-amount{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(44px,8vw,80px);
+    color:#FFC95C;line-height:1;margin:0 0 8px;}
+  #payscreen .pay-label{font-family:"Outfit",sans-serif;font-weight:600;font-size:clamp(14px,2vw,18px);
+    color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;margin:0 0 32px;}
+  /* animated reader icon */
+  #payscreen .reader-icon{width:120px;height:120px;margin:0 auto 28px;position:relative;}
+  #payscreen .reader-icon svg{width:100%;height:100%;}
+  #payscreen .tap-rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  #payscreen .tap-rings span{position:absolute;border-radius:50%;border:2.5px solid var(--blue);
+    animation:tapring 1.8s ease-out infinite;opacity:0;}
+  #payscreen .tap-rings span:nth-child(1){width:70px;height:70px;animation-delay:0s;}
+  #payscreen .tap-rings span:nth-child(2){width:96px;height:96px;animation-delay:.45s;}
+  #payscreen .tap-rings span:nth-child(3){width:122px;height:122px;animation-delay:.9s;}
+  @keyframes tapring{0%{transform:scale(.7);opacity:.8;}100%{transform:scale(1.1);opacity:0;}}
+  #payscreen .pay-headline{font-family:"Fraunces",serif;font-weight:900;
+    font-size:clamp(28px,4.5vw,44px);color:var(--ink);margin:0 0 10px;}
+  #payscreen .pay-body{font-size:clamp(15px,2vw,19px);color:var(--ink-soft);max-width:520px;margin:0 auto 32px;line-height:1.5;}
+  #payscreen .pay-actions{display:flex;flex-direction:column;gap:14px;width:min(380px,88vw);}
+  #payscreen .pay-retry{border:none;cursor:pointer;font-family:"Outfit",sans-serif;font-weight:700;
+    font-size:clamp(17px,2.2vw,22px);color:#fff;background:var(--grad-brand);padding:22px;
+    border-radius:16px;box-shadow:var(--glow-warm);transition:transform .12s;}
+  #payscreen .pay-retry:active{transform:scale(.98);}
+  #payscreen .pay-window{border:1px solid var(--border-2);background:var(--panel);color:var(--ink);
+    font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(15px,2vw,19px);
+    padding:18px;border-radius:16px;cursor:pointer;}
+  /* state-specific visibility */
+  #payscreen .ps-prompt .tap-rings{display:flex;}
+  #payscreen .ps-working .tap-rings{display:flex;}
+  #payscreen[data-state="prompt"] .pay-retry{display:none;}
+  #payscreen[data-state="working"] .pay-retry{display:none;}
+  #payscreen[data-state="working"] .tap-rings span{animation-duration:1.2s;}
+  #payscreen[data-state="approved"] .pay-retry{display:none;}
+  #payscreen[data-state="approved"] .pay-window{display:none;}
+  /* suppress rings when not waiting */
+  #payscreen:not([data-state="prompt"]):not([data-state="working"]) .tap-rings span{animation:none;opacity:0;}
+  @media (orientation:portrait){
+    #payscreen .reader-icon{width:190px;height:190px;margin-bottom:40px;}
+    #payscreen .tap-rings span:nth-child(1){width:110px;height:110px;}
+    #payscreen .tap-rings span:nth-child(2){width:148px;height:148px;}
+    #payscreen .tap-rings span:nth-child(3){width:188px;height:188px;}
+    #payscreen .pay-headline{font-size:clamp(44px,7vw,70px);}
+    #payscreen .pay-body{font-size:clamp(22px,3vw,30px);}
+    #payscreen .pay-retry{font-size:clamp(26px,3.5vw,36px);padding:32px;}
+    #payscreen .pay-window{font-size:clamp(23px,3vw,30px);padding:28px;}
+    #payscreen .pay-amount{font-size:clamp(66px,11vw,110px);}
+  }
 </style>
 </head>
 <body>
@@ -721,6 +776,33 @@
   </div>
 </div>
 
+<!-- PAY SCREEN — tap-to-pay on the Clover Flex (shown only when PAY_ENABLED=true and Flex is READY) -->
+<!-- State is driven by data-state attribute on #payscreen: prompt | working | declined | cancelled | error | timeout -->
+<!-- Falls back silently to pay-at-window on any non-approved outcome or if PAY_ENABLED is off -->
+<div id="payscreen" data-state="prompt">
+  <img src="assets/logo.png?v=5" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <div class="pay-amount" id="payAmount">$0.00</div>
+  <div class="pay-label">Total</div>
+  <div class="reader-icon">
+    <!-- Card + NFC wave icon -->
+    <svg viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="24" width="56" height="38" rx="6" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)" stroke-width="2.5"/>
+      <rect x="10" y="35" width="56" height="8" fill="rgba(255,255,255,.18)"/>
+      <rect x="18" y="46" width="14" height="7" rx="2" fill="rgba(255,255,255,.35)"/>
+      <!-- NFC waves -->
+      <path d="M74 36 Q80 42 80 48 Q80 54 74 60" stroke="#2E8BFF" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M81 30 Q91 39 91 48 Q91 57 81 66" stroke="#2E8BFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".6"/>
+    </svg>
+    <div class="tap-rings"><span></span><span></span><span></span></div>
+  </div>
+  <h2 class="pay-headline" id="payHeadline">Tap to pay</h2>
+  <p class="pay-body" id="payBody">Tap, insert, or swipe your card on the reader.</p>
+  <div class="pay-actions">
+    <button class="pay-retry" id="payRetryBtn" onclick="doPay()">Try again</button>
+    <button class="pay-window" onclick="payAtWindow()">Pay at the window instead</button>
+  </div>
+</div>
+
 <!-- VIBE READER — camera drink match (privacy-first: photo never saved or sent) -->
 <div id="vibe">
   <img src="assets/logo.png?v=5" class="vibe-logo" alt="Thirsty Beaches" onerror="this.remove()">
@@ -768,9 +850,18 @@ const TAX = 0.0725; // edit to your local sales tax rate
 /* Where the kiosk gets its menu. This points at YOUR backend (clover-menu-server.js),
    NOT at Clover directly — the API token must never live in this file.
    If the fetch fails, the kiosk silently falls back to FALLBACK_MENU below. */
-const MENU_ENDPOINT = "/menu";   // relative = always hits whatever port the server runs on
-const ORDER_ENDPOINT = "/order";
+const MENU_ENDPOINT       = "/menu";
+const ORDER_ENDPOINT      = "/order";
+const PAY_ENDPOINT        = "/pay";
+const PAY_STATUS_ENDPOINT = "/pay/status";
+const PAY_CONFIG_ENDPOINT = "/payconfig";
+
 let orderInFlight = false;
+
+// Tap-to-pay state — set at page load from /payconfig, updated per order
+let _payEnabled = false;   // true only if server says PAY_ENABLED=true
+let _payOrder   = null;    // { orderId, ticket } from the last /order response
+let _payAmount  = 0;       // cents — matches the order total on the Flex
 
 const FALLBACK_MENU = {
   coffee: { label:"Coffee", icon:"☕", title:"Coffee & Espresso", blurb:"Hot or iced, made to order",
@@ -1804,11 +1895,16 @@ function cartQty(i,n){
 function clearCart(){ cart=[]; updateCartBtn(); closeSheet(); }
 
 /* ---- place order ----
-   NOTE: This is where a real Clover integration would POST the order to the
-   Clover Orders API and (optionally) trigger payment on a Clover device.
-   Right now it just shows a confirmation number for "pay at counter".        */
+   Two-step flow when tap-to-pay is live:
+     1. POST /order  → creates the Clover order (existing logic, unchanged)
+     2. GET /pay/status → check whether the Flex is ready
+        - ready → show #payscreen and call doPay()
+        - not ready / PAY_ENABLED=false → show existing pay-at-window #confirm
+
+   When PAY_ENABLED=false (the default) this function behaves exactly as before.
+   The pay-at-window path is always available and is never an error state.       */
 async function placeOrder(){
-  if(orderInFlight) return;                 // block double-submit (double-tap / reopen mid-send)
+  if(orderInFlight) return;
   if(!cart.length) return;
   orderInFlight = true;
   const btn = document.querySelector('.sheet-ft .btn-primary');
@@ -1820,30 +1916,164 @@ async function placeOrder(){
     });
     if(!res.ok) throw new Error("HTTP "+res.status);
     const d = await res.json();
-    if(!d || !d.ticket) throw new Error("no ticket returned");
-    // success — only now do we clear the cart and confirm
-    recordSales(cart);                        // tally for the Drink of the Day board
+    if(!d || !d.ticket || !d.orderId) throw new Error("no ticket returned");
+
+    // Order created — record sales for leaderboard, then decide payment path
+    recordSales(cart);
+    const amountCents = Math.round(cartTotals().sub * 100);  // subtotal (before tax) in cents
     cart = []; updateCartBtn(); closeSheet();
-    $("#orderNum").textContent = d.ticket;
-    $("#orderForName").textContent = _orderName.trim() ? ("Order for " + _orderName.trim()) : "";
     _orderName = "";
-    resetSpin();                              // fresh, unspun wheel for this order
-    $("#confirm").classList.add("show");
-    fireConfetti();
+
+    // Check if tap-to-pay is live on the server (cheap local fetch, no Flex involved yet)
+    let flexReady = false;
+    if(_payEnabled){
+      try{
+        const st = await (await fetch(PAY_STATUS_ENDPOINT, {cache:"no-store"})).json();
+        flexReady = (st && st.state === "ready");
+      } catch(e){ /* fetch failed — Flex unavailable, fall back */ }
+    }
+
+    if(flexReady){
+      // TAP-TO-PAY PATH: show the pay screen and attempt the card tap
+      _payOrder  = d;
+      _payAmount = amountCents;
+      openPayScreen();
+    } else {
+      // PAY-AT-WINDOW PATH (always works; default when PAY_ENABLED=false or Flex offline)
+      showConfirm(d, false);
+    }
   }catch(err){
     console.warn("Order failed:", err.message);
-    // honest failure — keep the cart, let them retry or order at the counter
     if(btn){ btn.textContent = "Couldn't send — tap to retry"; btn.classList.remove('disabled'); }
   }finally{
     orderInFlight = false;
   }
 }
+
+/* ---- showConfirm(order, paid) ----
+   Shared confirm screen used by both the tap-to-pay approved path and the
+   pay-at-window path. When paid=true the banner says "Grab your order";
+   when paid=false (or omitted) it says "Head to the window to pay".          */
+function showConfirm(order, paid){
+  const o = order || _payOrder;
+  if(!o) return;
+  $("#orderNum").textContent    = o.ticket || o.orderId.slice(-4).toUpperCase();
+  $("#orderForName").textContent = "";  // _orderName already cleared above
+  resetSpin();
+
+  // Swap the pay-at-window banner copy depending on whether the customer already paid
+  const banner = $("#confirm .paywindow");
+  if(banner){
+    if(paid){
+      banner.innerHTML = 'Grab your order at the window <span class="paychevrons"><i></i><i></i><i></i></span>';
+    } else {
+      banner.innerHTML = 'Head to the window to pay &amp; grab your order <span class="paychevrons"><i></i><i></i><i></i></span>';
+    }
+  }
+
+  $("#confirm").classList.add("show");
+  fireConfetti();
+}
+
+/* ---- openPayScreen() ----
+   Shows the #payscreen overlay and starts the payment attempt. Called only
+   when the Flex is confirmed READY. doPay() is called immediately.           */
+function openPayScreen(){
+  const ps = $("#payscreen");
+  if(!ps) return;
+  $("#payAmount").textContent = "$" + (_payAmount / 100).toFixed(2);
+  setPayState("prompt");
+  ps.classList.add("show");
+  doPay();
+}
+
+/* ---- setPayState(state) ----
+   Drives the pay screen UX by setting data-state and updating headline/body copy. */
+const PAY_COPY = {
+  prompt:    { hl:"Tap to pay",               body:"Tap, insert, or swipe your card on the reader." },
+  working:   { hl:"Talking to the reader…",   body:"Follow the prompts on the card reader." },
+  declined:  { hl:"That card didn't go through", body:"No worries — give it another tap, or pay at the window." },
+  cancelled: { hl:"Payment cancelled",        body:"Want to try again, or pay at the window?" },
+  error:     { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
+  timeout:   { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
+};
+function setPayState(state){
+  const ps = $("#payscreen");
+  if(!ps) return;
+  ps.setAttribute("data-state", state);
+  const copy = PAY_COPY[state] || PAY_COPY.prompt;
+  const hl = $("#payHeadline"); if(hl) hl.textContent = copy.hl;
+  const bd = $("#payBody");    if(bd) bd.textContent  = copy.body;
+}
+
+/* ---- doPay() ----
+   Calls POST /pay and handles every result code. Every terminal state lands
+   on either the existing #confirm screen (paid or pay-at-window) — the
+   customer is never stranded on a dead-end screen.
+
+   Idempotency is enforced server-side (ExternalId + in-flight guard); it is
+   safe to call doPay() again on "Try again" — the server returns the cached
+   approved result if the card was already charged.                           */
+async function doPay(){
+  if(!_payOrder || !_payAmount) return;
+  setPayState("working");
+
+  let out;
+  try{
+    const r = await fetch(PAY_ENDPOINT, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ orderId: _payOrder.orderId, amountCents: _payAmount }),
+    });
+    out = await r.json();
+  } catch(e){
+    // Transport failure (server unreachable) → treat as unavailable → pay-at-window
+    out = { result:"unavailable" };
+  }
+
+  switch(out.result){
+    case "approved":
+      // Card charged: hide pay screen and show the success confirm (not pay-at-window)
+      closePayScreen();
+      showConfirm(_payOrder, true);
+      break;
+
+    case "declined":
+    case "cancelled":
+    case "error":
+    case "timeout":
+      // Retriable: stay on the pay screen and offer "Try again" + pay-at-window
+      setPayState(out.result);
+      break;
+
+    case "unavailable":
+    case "busy":
+    case "mismatch":
+    default:
+      // Can't take the tap right now — never strand the customer; go to pay-at-window
+      closePayScreen();
+      showConfirm(_payOrder, false);
+      break;
+  }
+}
+
+/* ---- payAtWindow() — the persistent ghost button on the pay screen ---- */
+function payAtWindow(){
+  closePayScreen();
+  showConfirm(_payOrder, false);
+}
+
+function closePayScreen(){
+  const ps = $("#payscreen");
+  if(ps){ ps.classList.remove("show"); ps.setAttribute("data-state","prompt"); }
+}
 function resetAll(){
   clearTimeout(idleTimer);
   cart=[]; updateCartBtn();
-  closeUpsell();                                         // clear any dangling upsell prompt
+  closeUpsell();                                          // clear any dangling upsell prompt
   delete MENU.secret; _tap=0; _phone=""; _orderName="";  // hide secret menu again for the next customer
-  stopVibeCam(); $("#vibe").classList.remove("show");    // camera off + close the vibe reader (privacy)
+  stopVibeCam(); $("#vibe").classList.remove("show");     // camera off + close the vibe reader (privacy)
+  closePayScreen(); _payOrder=null; _payAmount=0;         // clear pay screen state
   activeCat=Object.keys(MENU)[0];
   closeSheet();
   $("#confirm").classList.remove("show");
@@ -1877,6 +2107,18 @@ async function loadMenu(){
 /* init */
 renderTabs(); renderMenu(); updateCartBtn();
 buildWheel(); renderLeaderboard();          // Spin the Tide wheel + Today's Top Sips
+
+/* ---- Tap-to-pay: load PAY_ENABLED flag from the server at page load.
+        This is a one-time read; the per-order Flex status check (GET /pay/status)
+        happens inside placeOrder() to get a fresh device-ready state each time.
+        If this fetch fails, _payEnabled stays false → pay-at-window only (safe). ---- */
+(async function loadPayConfig(){
+  try{
+    const d = await (await fetch(PAY_CONFIG_ENDPOINT, {cache:"no-store"})).json();
+    _payEnabled = !!(d && d.enabled);
+    if(_payEnabled) console.log("Tap-to-pay enabled (PAY_ENABLED=true on server).");
+  }catch(e){ /* silent — pay-at-window is the safe default */ }
+})();
 
 /* ---- Remote update: reload when the server has pulled a newer version.
         Only reloads while idle on the attract screen, never mid-order. ---- */
