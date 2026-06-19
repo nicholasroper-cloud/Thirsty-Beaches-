@@ -614,6 +614,66 @@
     font-family:"Outfit",sans-serif;font-weight:700;font-size:17px;padding:20px 30px;border-radius:16px;cursor:pointer;}
   @media (orientation: portrait){.upsell-add{font-size:30px;padding:30px;}.upsell-skip{font-size:27px;padding:30px 42px;}}
 
+  /* ===== DESIGN YOUR OWN — chip picker overlay ===== */
+  #designDrink{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;
+    justify-content:center;padding:32px 28px 28px;overflow-y:auto;
+    background:radial-gradient(900px 600px at 50% -10%,rgba(46,139,255,.22),transparent 60%),
+    radial-gradient(800px 600px at 50% 120%,rgba(255,61,151,.18),transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg-2));}
+  #designDrink.show{display:flex;}
+  #designDrink .dd-inner{width:100%;max-width:760px;display:flex;flex-direction:column;gap:24px;}
+  #designDrink .dd-hd{text-align:center;}
+  #designDrink .dd-hd h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(28px,5vw,48px);
+    margin:0 0 6px;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  #designDrink .dd-hd p{color:var(--ink-soft);font-size:clamp(14px,1.8vw,17px);margin:0;}
+  /* chip section */
+  .dd-section{display:flex;flex-direction:column;gap:12px;}
+  .dd-section h3{font-family:"Outfit",sans-serif;font-weight:700;font-size:15px;color:var(--ink-faint);
+    text-transform:uppercase;letter-spacing:.12em;margin:0;}
+  .dd-chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .dd-chip{border:1.5px solid var(--border-2);background:var(--panel);color:var(--ink);
+    font-family:"Outfit",sans-serif;font-weight:600;font-size:clamp(13px,1.5vw,16px);
+    padding:10px 18px;border-radius:999px;cursor:pointer;transition:background .12s,border-color .12s,transform .08s;
+    display:flex;align-items:center;gap:8px;line-height:1.2;-webkit-user-select:none;user-select:none;}
+  .dd-chip:active{transform:scale(.95);}
+  .dd-chip.sel{background:var(--grad-brand);border-color:transparent;color:#fff;box-shadow:var(--glow-warm);}
+  .dd-chip svg{flex:none;width:18px;height:18px;opacity:.7;}
+  .dd-chip.sel svg{opacity:1;}
+  /* footer */
+  .dd-ft{display:flex;gap:12px;align-items:center;padding-top:4px;}
+  .dd-ft .btn-primary{flex:1;border:none;cursor:pointer;font-family:"Outfit",sans-serif;font-weight:700;
+    font-size:clamp(16px,2vw,20px);color:#fff;background:var(--grad-brand);padding:22px;border-radius:16px;
+    box-shadow:var(--glow-warm);transition:transform .12s;}
+  .dd-ft .btn-primary:active{transform:scale(.98);}
+  .dd-ft .btn-primary.disabled{opacity:.4;pointer-events:none;box-shadow:none;background:var(--panel-2);}
+  .dd-ft .ghostbtn{border:1px solid var(--border-2);background:var(--panel);color:var(--ink-soft);
+    font-family:"Outfit",sans-serif;font-weight:600;font-size:clamp(14px,1.8vw,18px);
+    padding:22px 28px;border-radius:16px;cursor:pointer;}
+  /* loading / result state */
+  .dd-loading{display:none;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:40px 0;}
+  .dd-loading.on{display:flex;}
+  .dd-spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:#2E8BFF;
+    border-radius:50%;animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .dd-loading p{color:var(--ink-soft);font-size:16px;margin:0;}
+  /* "Design Your Own" header button — shown only when AI_DESIGN_ENABLED=true */
+  .designbtn{display:none;border:1.5px solid var(--border-2);background:rgba(46,139,255,.12);
+    color:var(--ink);font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(12px,1.4vw,15px);
+    padding:10px 20px;border-radius:999px;cursor:pointer;letter-spacing:.01em;
+    transition:background .12s,border-color .12s;}
+  .designbtn.show{display:block;}
+  .designbtn:hover{background:rgba(46,139,255,.22);border-color:rgba(46,139,255,.5);}
+  @media (orientation: portrait){
+    .dd-chip{font-size:22px;padding:18px 28px;gap:12px;}
+    .dd-chip svg{width:26px;height:26px;}
+    .dd-section h3{font-size:22px;}
+    .dd-ft .btn-primary{font-size:30px;padding:30px;}
+    .dd-ft .ghostbtn{font-size:26px;padding:30px 38px;}
+    .dd-loading p{font-size:22px;}
+    .dd-spinner{width:72px;height:72px;}
+    .designbtn{font-size:20px;padding:16px 30px;}
+  }
+
   /* ===== Remote Sold-Out (set from the owner phone app) ===== */
   .card.sold{opacity:.5;filter:grayscale(.7);cursor:default;}
   .card.sold .art::after{content:"Sold Out";position:absolute;inset:0;z-index:6;border-radius:inherit;
@@ -712,6 +772,7 @@
            onerror="this.remove();document.getElementById('brandFallback').style.display='block';">
       <span id="brandFallback" style="display:none;">Thirsty Beaches</span>
     </div>
+    <button class="designbtn" id="designBtn" onclick="openDesignDrink()">Design Your Own</button>
     <button class="vibebtn" onclick="vibeStart()">Match My Vibe</button>
     <button class="cartbtn empty" id="cartBtn" onclick="openCart()">
       View Order <span class="count" id="cartCount">0</span>
@@ -805,6 +866,46 @@
   <div class="pay-actions">
     <button class="pay-retry" id="payRetryBtn" onclick="doPay()">Try again</button>
     <button class="pay-window" onclick="payAtWindow()">Pay at the window instead</button>
+  </div>
+</div>
+
+<!-- DESIGN YOUR OWN — AI chip picker (shown only when AI_DESIGN_ENABLED=true + key present) -->
+<!-- Customer input: mood + flavor chips only at launch. No free-text field. COPPA: nothing stored. -->
+<div id="designDrink">
+  <div class="dd-inner">
+    <div class="dd-hd">
+      <h2>Design Your Own</h2>
+      <p>Pick your mood and flavors — we'll invent your perfect beach drink.</p>
+    </div>
+
+    <!-- CHIP PICKER (shown during selection) -->
+    <div id="ddPicker">
+      <div class="dd-section">
+        <h3>Your mood</h3>
+        <div class="dd-chips" id="ddMoodChips">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+      <div class="dd-section">
+        <h3>Flavor direction</h3>
+        <div class="dd-chips" id="ddFlavorChips">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+      <div class="dd-ft">
+        <button class="btn-primary disabled" id="ddSubmitBtn" onclick="designDrinkSubmit()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+          Invent my drink
+        </button>
+        <button class="ghostbtn" onclick="closeDesignDrink()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- LOADING STATE (shown while calling /designdrink) -->
+    <div class="dd-loading" id="ddLoading">
+      <div class="dd-spinner"></div>
+      <p>Inventing your drink&hellip;</p>
+    </div>
   </div>
 </div>
 
@@ -1422,6 +1523,204 @@ function stopVibeCam(){
 }
 function vibeClose(){ stopVibeCam(); $("#vibe").classList.remove('show'); }
 function showStage(id){ document.querySelectorAll('#vibe .stage').forEach(s=>s.classList.toggle('on', s.id===id)); }
+
+/* ============ DESIGN YOUR OWN — AI chip-picker flow ============
+   Flag-gated: only visible when /aiconfig returns {enabled:true}.
+   Customer input: chips only at launch (no free-text field).
+   COPPA: nothing stored — mood/flavor selections are transient.
+   Moderation: server-side only; raw AI text never reaches this page.
+   Fallback: if {ai:false}, drop customer into the Build-Your-Own flow. */
+
+let _aiDesignEnabled = false;   // set at page load from /aiconfig; default OFF
+
+/* Mood chips — drawn SVG icons, no emoji, on-brand light palette */
+const DD_MOODS = [
+  { id:"refreshing",  label:"Refreshing",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>` },
+  { id:"tropical",    label:"Tropical",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C7 2 3 7 3 12s4 10 9 10 9-5 9-10"/><path d="M12 2c2 4 3 8 0 10s-4 6-3 10"/><path d="M3 12h18"/></svg>` },
+  { id:"sweet",       label:"Sweet",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>` },
+  { id:"bold",        label:"Bold",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>` },
+  { id:"chill",       label:"Chill",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.9"/><path d="M17 8c0 7-6 10-10 12"/><path d="M17 8c4 4 6 8 3 14"/><circle cx="17" cy="8" r="2"/></svg>` },
+  { id:"fruity",      label:"Fruity",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="14" r="7"/><path d="M12 7V3"/><path d="M9 4c1.5-1 3.5-1 5 0"/></svg>` },
+  { id:"cozy",        label:"Cozy",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>` },
+  { id:"adventurous", label:"Adventurous",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>` },
+];
+
+/* Flavor chips */
+const DD_FLAVORS = [
+  { id:"coconut",     label:"Coconut",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 4 4 8 0 9s-4 5-2 9"/><path d="M3 12h18"/></svg>` },
+  { id:"mango",       label:"Mango",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C8 2 5 7 6 13c1 5 4 9 6 9s5-4 6-9c1-6-2-11-6-11z"/><path d="M12 2v4"/></svg>` },
+  { id:"citrus",      label:"Citrus",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M8 13h8"/><path d="M12 9v8"/></svg>` },
+  { id:"berry",       label:"Berry",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="14" r="4"/><circle cx="16" cy="14" r="4"/><circle cx="12" cy="10" r="4"/><path d="M12 6V3"/></svg>` },
+  { id:"vanilla",     label:"Vanilla",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/><path d="M12 14v8"/></svg>` },
+  { id:"peach",       label:"Peach",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3C8 3 5 7 6 12c1 5 4 9 6 9s5-4 6-9c1-5-2-9-6-9z"/><path d="M12 3c0 0 2-2 4-1"/></svg>` },
+  { id:"caramel",     label:"Caramel",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M8 15h8"/></svg>` },
+  { id:"cream",       label:"Creamy",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10c0-4 3-7 5-7s5 3 5 7"/><path d="M5 21V14a7 7 0 0 1 14 0v7H5z"/></svg>` },
+  { id:"tangy",       label:"Tangy",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3"/></svg>` },
+  { id:"watermelon",  label:"Watermelon",
+    svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 0 1 18 0"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="8" y1="12" x2="9" y2="17"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="16" y1="12" x2="15" y2="17"/></svg>` },
+];
+
+/* Chip picker state */
+let _ddMood    = new Set();   // selected mood chip ids
+let _ddFlavors = new Set();   // selected flavor chip ids
+
+function renderDDChips() {
+  function chipHTML(item, set, fn) {
+    const on = set.has(item.id);
+    return `<button class="dd-chip${on ? " sel" : ""}" onclick="${fn}('${item.id}')">${item.svg}${item.label}</button>`;
+  }
+  const mc = $("#ddMoodChips");
+  const fc = $("#ddFlavorChips");
+  if (mc) mc.innerHTML = DD_MOODS.map(c => chipHTML(c, _ddMood, "toggleDDMood")).join("");
+  if (fc) fc.innerHTML = DD_FLAVORS.map(c => chipHTML(c, _ddFlavors, "toggleDDFlavor")).join("");
+  // Enable the submit button only when at least one chip is chosen.
+  const btn = $("#ddSubmitBtn");
+  if (btn) btn.classList.toggle("disabled", !_ddMood.size && !_ddFlavors.size);
+}
+
+function toggleDDMood(id) {
+  if (_ddMood.has(id)) _ddMood.delete(id); else { if (_ddMood.size < 6) _ddMood.add(id); }
+  renderDDChips();
+}
+function toggleDDFlavor(id) {
+  if (_ddFlavors.has(id)) _ddFlavors.delete(id); else { if (_ddFlavors.size < 6) _ddFlavors.add(id); }
+  renderDDChips();
+}
+
+function openDesignDrink() {
+  if (!_aiDesignEnabled) {
+    // Feature is off — open the dirty-soda BYO flow as the fallback
+    openItem("dirtysodas", "pour-decisions");
+    return;
+  }
+  // Reset chip state (nothing carries between sessions — COPPA)
+  _ddMood.clear(); _ddFlavors.clear();
+  const picker  = $("#ddPicker");
+  const loading = $("#ddLoading");
+  if (picker)  { picker.style.display  = ""; }
+  if (loading) { loading.classList.remove("on"); }
+  renderDDChips();
+  $("#designDrink").classList.add("show");
+  armIdle();
+}
+
+function closeDesignDrink() {
+  _ddMood.clear(); _ddFlavors.clear();
+  $("#designDrink").classList.remove("show");
+}
+
+async function designDrinkSubmit() {
+  if (!_ddMood.size && !_ddFlavors.size) return;
+  const picker  = $("#ddPicker");
+  const loading = $("#ddLoading");
+  if (picker)  picker.style.display  = "none";
+  if (loading) loading.classList.add("on");
+
+  try {
+    const res = await fetch("/designdrink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mood:    [..._ddMood],
+        flavors: [..._ddFlavors],
+      }),
+    });
+    const d = res.ok ? await res.json() : { ai: false };
+    closeDesignDrink();
+    if (d && d.ai && d.catKey) {
+      openAIDrink(d);
+    } else {
+      // Graceful fallback: Build-Your-Own dirty soda
+      showToast("Let's build something amazing — pick your way.");
+      openItem("dirtysodas", "pour-decisions");
+    }
+  } catch (e) {
+    closeDesignDrink();
+    showToast("Let's build something amazing — pick your way.");
+    openItem("dirtysodas", "pour-decisions");
+  }
+}
+
+/* openAIDrink(resp) — maps a validated /designdrink response into the
+   existing customizer so pricing runs through linePrice() unchanged.
+   The AI drink becomes a normal editing object; addToCart() and the
+   order path are untouched. No AI-stated price is ever used. */
+function openAIDrink(resp) {
+  // Coerce catKey to a known MENU key; fall back to dirtysodas.
+  const catKey = MENU[resp.catKey] ? resp.catKey : "dirtysodas";
+  const cat    = MENU[catKey];
+
+  // Synthesize a menu-item-shaped object the customizer can render.
+  // Price = the category's cheapest item (BYO / Pour Decisions preferred).
+  const baseItem =
+    cat.items.find(i => /build your own|pour decisions|byo/i.test(i.name + i.id)) ||
+    cat.items.reduce((a, b) => b.price < a.price ? b : a, cat.items[0]);
+  const item = {
+    id:    "ai-" + Date.now(),
+    name:  String(resp.name  || "Beach Special").slice(0, 28),
+    desc:  String(resp.blurb || "").slice(0, 120),
+    price: baseItem.price,
+    _ai:   true,
+  };
+
+  // Build sel in the shape the customizer expects: { groupKey: name | [names] }
+  // All groups default to empty/null; we apply AI ids with the same guards the
+  // category enforces (group must exist, choice must exist in that category).
+  const sel = {};
+  cat.options.forEach(o => { sel[o.key] = o.multi ? [] : null; });
+
+  function applyId(id) {
+    const colonIdx = id.indexOf(":");
+    if (colonIdx < 0) return;
+    const groupKey   = id.slice(0, colonIdx);
+    const choiceName = id.slice(colonIdx + 1);
+    const opt        = cat.options.find(o => o.key === groupKey);
+    if (!opt) return;                                     // group not offered in this category
+    if (!opt.choices.some(c => c.name === choiceName)) return; // choice not in this category
+    if (opt.multi) {
+      if (!sel[groupKey].includes(choiceName)) sel[groupKey].push(choiceName);
+    } else {
+      sel[groupKey] = choiceName;
+    }
+  }
+
+  if (resp.base) applyId(resp.base);
+  (resp.mods || []).forEach(applyId);
+
+  editing = { catKey, item, sel, qty: 1 };
+  renderSheet();
+  $("#overlay").classList.add("show");
+}
+
+/* Load the AI design flag once at page load — same pattern as loadPayConfig().
+   If the fetch fails, _aiDesignEnabled stays false (safe default: feature hidden). */
+const AI_CONFIG_ENDPOINT = "/aiconfig";
+(async function loadAIConfig() {
+  try {
+    const d = await (await fetch(AI_CONFIG_ENDPOINT, { cache: "no-store" })).json();
+    _aiDesignEnabled = !!(d && d.enabled);
+    const btn = $("#designBtn");
+    if (btn) btn.classList.toggle("show", _aiDesignEnabled);
+    if (_aiDesignEnabled) console.log("AI drink design enabled (AI_DESIGN_ENABLED=true on server).");
+  } catch (e) { /* silent — feature stays hidden */ }
+})();
 
 const CAT_ACCENT={floats:"#a07bff",dirtysodas:"#ff6f9c",newwaves:"#28cdff",energy:"#ffb300",lemonades:"#ffcf33",italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#dcab73",beachbabies:"#8fe0ff",secret:"#cda44e"};
 function renderTabs(){
@@ -2082,6 +2381,7 @@ function resetAll(){
   closeUpsell();                                          // clear any dangling upsell prompt
   delete MENU.secret; _tap=0; _phone=""; _orderName="";  // hide secret menu again for the next customer
   stopVibeCam(); $("#vibe").classList.remove("show");     // camera off + close the vibe reader (privacy)
+  closeDesignDrink();                                      // clear chip state + close design picker (COPPA)
   closePayScreen(); _payOrder=null; _payAmount=0;         // clear pay screen state
   activeCat=Object.keys(MENU)[0];
   closeSheet();
