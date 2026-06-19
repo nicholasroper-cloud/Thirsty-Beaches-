@@ -133,6 +133,33 @@
     box-shadow:var(--glow-cool);}
   .tab.active .ico{opacity:1;}
 
+  /* ================= SPECIALS ================= */
+  #specials-section{padding:18px 34px 0;}
+  .specials-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px;}
+  .specials-head h3{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(22px,3vw,32px);
+    margin:0;letter-spacing:-.01em;color:var(--ink);}
+  .specials-badge{background:var(--grad-brand);color:#fff;font-family:"Outfit",sans-serif;
+    font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    border-radius:20px;padding:3px 10px;}
+  .specials-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .special-card{position:relative;background:linear-gradient(135deg,rgba(52,215,255,.1),rgba(255,61,151,.09));
+    border:1.5px solid rgba(52,215,255,.3);border-radius:var(--radius);
+    padding:18px 18px 20px;cursor:pointer;text-align:left;
+    transition:transform .18s,border-color .18s,box-shadow .18s;
+    animation:cardIn .45s both;}
+  .special-card:hover{transform:translateY(-4px);border-color:rgba(52,215,255,.6);
+    box-shadow:0 20px 48px -18px rgba(52,215,255,.35);}
+  .special-card:active{transform:scale(.98);}
+  .special-card.sold{opacity:.5;pointer-events:none;}
+  .special-card-tag{display:inline-block;background:var(--grad-brand);color:#fff;
+    font-family:"Outfit",sans-serif;font-weight:800;font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;border-radius:20px;padding:3px 10px;margin-bottom:10px;}
+  .special-card-name{font-family:"Fraunces",serif;font-weight:900;
+    font-size:clamp(20px,2.6vw,28px);color:var(--ink);line-height:1.1;margin-bottom:6px;}
+  .special-card-blurb{font-size:14px;color:var(--ink-soft);line-height:1.45;margin-bottom:12px;}
+  .special-card-price{font-family:"Outfit",sans-serif;font-weight:800;font-size:22px;
+    color:#ff177e;letter-spacing:-.01em;}
+
   /* ================= MENU ================= */
   main{flex:1;overflow-y:auto;padding:22px 34px 150px;}
   .cat-head{display:flex;align-items:baseline;gap:18px;margin:14px 4px 26px;}
@@ -781,6 +808,9 @@
 
   <div class="tabs" id="tabs"></div>
 
+  <!-- Today's Specials — hidden when empty, populated by applyControl() -->
+  <div id="specials-section" style="display:none;"></div>
+
   <main id="menu"></main>
   <div class="orderbar" id="orderBar" onclick="openCart()">
     <span class="ob-count" id="obCount">0 items</span>
@@ -1251,6 +1281,10 @@ let SOLD_OUT  = new Set();  // drink ids marked sold-out from the owner phone ap
 let SOLD_OPTS = new Set();  // option ids ("key:name") marked sold-out — declared early: renderSheet uses it
 let cart = [];
 let editing = null; // {catKey,item,sel,qty}
+
+// Specials — set by applyControl(), rendered in renderSpecials()
+let SPECIALS     = [];
+let SPECIALS_SIG = '';
 
 /* ============ RENDER ============ */
 const $ = s => document.querySelector(s);
@@ -2443,7 +2477,7 @@ async function checkVersion(){
 checkVersion();
 setInterval(checkVersion, 180000);          // re-check every 3 min
 
-/* ---- Remote control: sold-out drinks set from the owner phone app.
+/* ---- Remote control: sold-out drinks + specials set from the owner phone app.
         Server pulls kiosk-control.json from your repo; page applies it. ---- */
 function applyControl(d){
   // --- drinks sold-out (unchanged logic) ---
@@ -2473,6 +2507,90 @@ function applyControl(d){
       renderSheet();
     }
   }
+
+  // --- specials (Feature B) ---
+  const nextSpecials = Array.isArray(d && d.specials) ? d.specials : [];
+  const sig = nextSpecials.map(s => s.id + ':' + (s.updated || '')).join('|');
+  if(sig !== SPECIALS_SIG){
+    SPECIALS     = nextSpecials;
+    SPECIALS_SIG = sig;
+    renderSpecials();
+  }
+}
+
+/* Re-derive a special's price from the live MENU, mirroring linePrice().
+   Never trusts the stored price field — kiosk re-prices deterministically. */
+function specialDisplayPrice(sp){
+  const cat = MENU[sp.catKey];
+  if(!cat) return null;
+  // Find the template base item
+  const baseItem = (sp.baseItemId && cat.items.find(i => i.id === sp.baseItemId))
+    || cat.items.reduce((a,b) => b.price < a.price ? b : a, cat.items[0]);
+  let pr = baseItem.price;
+  function addDelta(id){
+    const colonIdx = id.indexOf(':');
+    if(colonIdx < 0) return;
+    const gk = id.slice(0, colonIdx);
+    const nm = id.slice(colonIdx + 1);
+    const o  = cat.options.find(g => g.key === gk);
+    const ch = o && o.choices.find(c => c.name === nm);
+    if(ch) pr += ch.d;
+  }
+  if(sp.base) addDelta(sp.base);
+  (sp.mods || []).forEach(addDelta);
+  return Math.round(pr * 100) / 100;
+}
+
+/* Render the "Today's Specials" featured strip above the category menu.
+   Hidden when SPECIALS is empty. Respects SOLD_OUT / SOLD_OPTS. */
+function renderSpecials(){
+  const sec = document.getElementById('specials-section');
+  if(!sec) return;
+  if(!SPECIALS.length){ sec.style.display = 'none'; return; }
+
+  const cards = SPECIALS.map(sp => {
+    const price = specialDisplayPrice(sp);
+    if(price === null) return ''; // skip if catKey unknown to this kiosk build
+
+    // Is this special's base or any required mod sold out?
+    const soldBase = sp.base && SOLD_OPTS.has(sp.base);
+    const soldMod  = (sp.mods || []).some(id => SOLD_OPTS.has(id));
+    const soldDrink = SOLD_OUT.has(sp.baseItemId || '');
+    const isSold = soldBase || soldMod || soldDrink;
+
+    const label = sp.label ? escK(sp.label) : "Today's Special";
+    return `<button class="special-card${isSold?' sold':''}"
+                    onclick="tapSpecial('${escK(sp.id)}')"
+                    ${isSold ? 'aria-disabled="true"' : ''}
+                    aria-label="${escK(sp.name)} — tap to customise">
+      <div class="special-card-tag">${label}</div>
+      <div class="special-card-name">${escK(sp.name)}</div>
+      <div class="special-card-blurb">${escK(sp.blurb || '')}</div>
+      <div class="special-card-price">$${price.toFixed(2)}</div>
+    </button>`;
+  }).join('');
+
+  sec.style.display = '';
+  sec.innerHTML = `
+    <div class="specials-head">
+      <h3>Today's Specials</h3>
+      <span class="specials-badge">Featured</span>
+    </div>
+    <div class="specials-grid">${cards}</div>`;
+}
+
+/* Minimal HTML-escape for kiosk (no innerHTML injection risk from specials data). */
+function escK(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* Tap a special card — maps into openAIDrink() exactly like a /designdrink result. */
+function tapSpecial(id){
+  const sp = SPECIALS.find(s => s.id === id);
+  if(!sp) return;
+  openAIDrink({ catKey: sp.catKey, base: sp.base, mods: sp.mods,
+                name: sp.name, blurb: sp.blurb });
 }
 async function checkControl(){
   try{ applyControl(await (await fetch('/control',{cache:'no-store'})).json()); }catch(e){}
