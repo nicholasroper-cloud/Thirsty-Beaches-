@@ -1052,7 +1052,7 @@ const FALLBACK_MENU = {
       {key:"size", label:"Size", required:true, choices:[
         {name:"Regular", d:0},{name:"Large", d:1.25}]},
       {key:"topping", label:"Toppings", required:false, multi:true, choices:[
-        {name:"Toasted coconut", d:0.75},{name:"Pineapple chunks", d:0.75},{name:"Rainbow sprinkles", d:0.50}]},
+        {name:"Toasted coconut", d:0.75},{name:"Pineapple chunks", d:0.75},{name:"Rainbow sprinkles", d:0.50},{name:"Freeze-dried candy", d:0.75}]},
     ]},
 };
 
@@ -1071,7 +1071,7 @@ const LEM_BASE  = {key:"base",label:"Lemonade base",required:true,choices:[{name
 const PUREE     = {key:"puree",label:"Fruit puree",required:false,multi:true,choices:[{name:"Strawberry",d:0.99},{name:"Mango",d:0.99},{name:"Pineapple",d:0.99},{name:"Peach",d:0.99},{name:"Raspberry",d:0.99}]};
 const CREAM     = {key:"cream",label:"Cream",required:false,choices:[{name:"None",d:0},{name:"Vanilla Sweet Cream",d:0.60},{name:"Coconut Cream",d:0.60}]};
 const EXTRAS    = {key:"extra",label:"Extras",required:false,multi:true,choices:[{name:"Fresh lime",d:0.25},{name:"Popping boba",d:0.75},{name:"Extra pump",d:0.40}]};
-const TOPPER    = {key:"topper",label:"Top It Off",required:false,multi:true,choices:[{name:"Whipped cream",d:0.50},{name:"Sweet cream cold foam",d:0.75},{name:"Vanilla cold foam",d:0.99},{name:"Salted caramel cold foam",d:0.99}]};
+const TOPPER    = {key:"topper",label:"Top It Off",required:false,multi:true,choices:[{name:"Whipped cream",d:0.50},{name:"Sweet cream cold foam",d:0.75},{name:"Vanilla cold foam",d:0.99},{name:"Salted caramel cold foam",d:0.99},{name:"Freeze-dried candy",d:0.75}]};
 const ENERGY_BASE = {key:"base",label:"Energy drink",required:true,choices:[{name:"Red Bull",d:0},{name:"Sugar-Free Red Bull",d:0},{name:"Alani Nu",d:0},{name:"Monster",d:0}]};
 const COFFEE_OPTS = [
   {key:"size",label:"Size",required:true,choices:[{name:"12oz",d:0},{name:"16oz",d:0.60},{name:"20oz",d:1.10}]},
@@ -1084,7 +1084,7 @@ const DOLE_OPTS = [
   {key:"flavor",label:"Flavor",required:true,choices:[{name:"Dole Whip",d:0},{name:"Vanilla",d:0},{name:"Twist (Dole Whip + Vanilla)",d:0}]},
   {key:"serve",label:"Serve it as",required:true,choices:[{name:"Cup",d:0},{name:"Waffle cone",d:0.75},{name:"Float (in juice/soda)",d:1.50}]},
   {key:"size",label:"Size",required:true,choices:[{name:"Regular",d:0},{name:"Large",d:1.25}]},
-  {key:"top",label:"Toppings",required:false,multi:true,choices:[{name:"Toasted coconut",d:0.75},{name:"Pineapple chunks",d:0.75},{name:"Rainbow sprinkles",d:0.50},{name:"Tajín",d:0.50},{name:"Popping boba",d:0.75}]},
+  {key:"top",label:"Toppings",required:false,multi:true,choices:[{name:"Toasted coconut",d:0.75},{name:"Pineapple chunks",d:0.75},{name:"Rainbow sprinkles",d:0.50},{name:"Tajín",d:0.50},{name:"Popping boba",d:0.75},{name:"Freeze-dried candy",d:0.75}]},
 ];
 /* ---- Float Bar: the build-your-own soft-serve float flow (our signature, nobody else has the machine) ---- */
 const FLOAT_SIZE = {key:"size",label:"Size",required:true,choices:[{name:"Regular",d:0},{name:"Large",d:1.50}]};
@@ -1096,7 +1096,7 @@ const FLOAT_CAP  = {key:"cap",label:"Soft-serve cap",required:true,choices:[
   {name:"Dole Whip",d:0},{name:"Vanilla",d:0},{name:"Twist (both)",d:0}]};
 const FLOAT_BOOST= {key:"boost",label:"Load it up",required:false,multi:true,choices:[
   {name:"Protein scoop",d:1.50},{name:"Popping boba",d:0.75},{name:"Chamoy drizzle",d:0.75},
-  {name:"Tajín rim",d:0.50},{name:"Fresh fruit",d:0.99},{name:"Toasted coconut",d:0.75}]};
+  {name:"Tajín rim",d:0.50},{name:"Fresh fruit",d:0.99},{name:"Toasted coconut",d:0.75},{name:"Freeze-dried candy",d:0.75}]};
 const STYLE = {key:"style",label:"Make it",required:false,choices:[{name:"Over ice",d:0},{name:"Blended / frozen",d:1.00}]};
 
 const THIRSTY_MENU = {
