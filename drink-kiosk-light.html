@@ -1198,6 +1198,11 @@ const THIRSTY_MENU = {
       {id:"cotton-candy-cloud", name:"Cotton Candy Cloud", desc:"Cotton candy lemonade + whip + sprinkles", price:3.49},
       {id:"lil-root-beer-float", name:"Lil' Root Beer Float", desc:"Root beer + vanilla soft serve", price:3.99},
     ]},
+  treats: { label:"Treats", icon:"", title:"Sweet Treats", blurb:"Freeze-dried candy — crunchy, made in-house",
+    options:[{key:"size",label:"Bag Size",required:true,choices:[{name:"Small",d:0},{name:"Medium",d:2.00},{name:"Large",d:6.00}]}],
+    items:[
+      {id:"fd-candy", name:"Freeze-Dried Candy", desc:"Crunchy, puffy freeze-dried candy by the bag", price:3.99},
+    ]},
 };
 
 /* Fun icon per drink (shown in the card medallion until a real photo is dropped in). */
@@ -1756,7 +1761,7 @@ const AI_CONFIG_ENDPOINT = "/aiconfig";
   } catch (e) { /* silent — feature stays hidden */ }
 })();
 
-const CAT_ACCENT={floats:"#a07bff",dirtysodas:"#ff6f9c",newwaves:"#28cdff",energy:"#ffb300",lemonades:"#ffcf33",italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#dcab73",beachbabies:"#8fe0ff",secret:"#cda44e"};
+const CAT_ACCENT={floats:"#a07bff",dirtysodas:"#ff6f9c",newwaves:"#28cdff",energy:"#ffb300",lemonades:"#ffcf33",italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#dcab73",beachbabies:"#8fe0ff",treats:"#ff5ec7",secret:"#cda44e"};
 function renderTabs(){
   $("#tabs").innerHTML = Object.entries(MENU).map(([k,c])=>
     `<button class="tab ${k===activeCat?'active':''}" data-cat="${k}" onclick="selectCat('${k}')">
