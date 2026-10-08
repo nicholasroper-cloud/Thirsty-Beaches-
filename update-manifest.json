@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -8,6 +8,14 @@
     {
       "path": "drink-kiosk-light.html",
       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html"
+    },
+    {
+      "path": "make-station.html",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html"
+    },
+    {
+      "path": "recipes.json",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/recipes.json"
     },
     {
       "path": "assets/logo.png",

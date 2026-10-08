@@ -1,0 +1,1605 @@
+{
+ "updated": "2026-10-08T23:18:32.334Z",
+ "source": "Thirsty Beaches Build Cards + kiosk menu",
+ "recipes": {
+  "Thirst Trap": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Coconut",
+    "Sweet Cream"
+   ],
+   "note": ""
+  },
+  "Dirty Little Secret": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Coconut",
+    "Fresh Lime",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Nice Coconuts": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Coke",
+    "Coconut",
+    "Fresh Lime",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Razzle My Berries": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Sprite",
+    "Raspberry",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Sweet Cheeks": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Coke",
+    "Peach",
+    "Coconut"
+   ],
+   "note": ""
+  },
+  "Upside-Down & Dirty": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Cherry",
+    "Pineapple",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Tropic Like It's Hot": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Sprite",
+    "Pineapple",
+    "Coconut",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Sunset on the Rocks": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Raspberry",
+    "Peach",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Party Wave": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper Blackberry",
+    "Raspberry",
+    "Mango Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Just Beachy": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Vanilla",
+    "Peach",
+    "Half & Half"
+   ],
+   "note": ""
+  },
+  "Coco Cabana": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Coconut",
+    "Vanilla"
+   ],
+   "note": ""
+  },
+  "Razz Dazzle": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Raspberry Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "No Regrets": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Diet Dr Pepper",
+    "Sugar Free Vanilla",
+    "Sugar Free Coconut"
+   ],
+   "note": ""
+  },
+  "Fling on the Beach": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Vanilla",
+    "Strawberry Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Cake Walk": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Dr Pepper",
+    "Cupcake",
+    "Strawberry Puree",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Cran-Do Attitude": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Diet Coke",
+    "Cranberry",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Cherry on Top": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Pepsi",
+    "Cherry",
+    "Coconut",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Shark Bait": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Mountain Dew",
+    "Mango Puree",
+    "Strawberry Puree"
+   ],
+   "note": ""
+  },
+  "Dew or Die": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Mountain Dew",
+    "Pineapple",
+    "Fresh Lime",
+    "Raspberry Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Salt Life": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Mountain Dew",
+    "Pomegranate",
+    "Grapefruit",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Guava Lava": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Mountain Dew",
+    "Guava",
+    "Strawberry",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "One in a Melon": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Mountain Dew",
+    "Mango",
+    "Watermelon",
+    "Coconut Cream",
+    "Passion Fruit Popping Pearls"
+   ],
+   "note": ""
+  },
+  "Hula Hottie": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Sprite",
+    "Lemonade",
+    "Mango",
+    "Pineapple",
+    "Strawberry",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Fruit Loop Lagoon": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Sprite",
+    "Strawberry",
+    "Watermelon",
+    "Peach"
+   ],
+   "note": ""
+  },
+  "Pink Flamingo": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Lemonade",
+    "Guava",
+    "Grapefruit",
+    "Fresh Orange"
+   ],
+   "note": ""
+  },
+  "Butter Me Up": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Root Beer",
+    "Butterscotch",
+    "Vanilla Creme"
+   ],
+   "note": ""
+  },
+  "Tan Lines": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Fresca",
+    "Passion Fruit",
+    "Fresh Orange",
+    "Mango Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Pink Bikini": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Fresca",
+    "Peach",
+    "Strawberry",
+    "Raspberry",
+    "Fresh Lemon"
+   ],
+   "note": ""
+  },
+  "Big Red Flag": {
+   "c": "Dirty Sodas",
+   "i": [
+    "Big Red Cream Soda",
+    "Vanilla",
+    "Strawberry Puree",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Peach Please": {
+   "c": "Dirty Sodas",
+   "i": [],
+   "note": "Recipe not on file yet"
+  },
+  "Golden Hour": {
+   "c": "New Waves",
+   "i": [
+    "Orange Soda",
+    "Vanilla",
+    "Sweet Cream"
+   ],
+   "note": ""
+  },
+  "Lazy River": {
+   "c": "New Waves",
+   "i": [
+    "Root Beer",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Castaway": {
+   "c": "New Waves",
+   "i": [
+    "Coke",
+    "Coconut",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Beach Sting": {
+   "c": "New Waves",
+   "i": [
+    "Lemonade",
+    "Hot Honey",
+    "Fresh Lemon"
+   ],
+   "note": ""
+  },
+  "Wipeout": {
+   "c": "New Waves",
+   "i": [
+    "Sprite",
+    "Blue Raspberry",
+    "Sour"
+   ],
+   "note": ""
+  },
+  "Sunburn": {
+   "c": "New Waves",
+   "i": [
+    "Dr Pepper",
+    "Cherry",
+    "Cinnamon"
+   ],
+   "note": ""
+  },
+  "Pearl Diver": {
+   "c": "New Waves",
+   "i": [
+    "Lemonade",
+    "Popping Pearls"
+   ],
+   "note": ""
+  },
+  "Feelin' Frisky": {
+   "c": "New Waves",
+   "i": [
+    "Sprite",
+    "Coconut",
+    "Blue Raspberry",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Spicy Señorita": {
+   "c": "New Waves",
+   "i": [
+    "Sprite",
+    "Mango",
+    "Mango Puree",
+    "Chamoy Drizzle",
+    "Tajin Rim"
+   ],
+   "note": ""
+  },
+  "Beach Buzz": {
+   "c": "New Waves",
+   "i": [],
+   "note": "Espresso tonic over ice with lime",
+   "how": [
+    [
+     "Fresh lime",
+     "Squeeze and drop in",
+     "1 wedge"
+    ],
+    [
+     "Ice",
+     "Fill the cup with ice",
+     "Fill"
+    ],
+    [
+     "Tonic",
+     "Pour to 2 inches from the top",
+     "Fill"
+    ],
+    [
+     "Espresso",
+     "Pull a double shot and pour slowly over the top",
+     "2 shots"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Low Tide": {
+   "c": "New Waves",
+   "i": [],
+   "note": "Coconut water, citrus and a slow exhale",
+   "how": [
+    [
+     "Fresh lime + lemon",
+     "Squeeze and drop in",
+     "1 each"
+    ],
+    [
+     "Ice",
+     "Fill the cup with ice",
+     "Fill"
+    ],
+    [
+     "Coconut water",
+     "Pour to the top",
+     "Fill"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Adios, Beaches": {
+   "c": "Energy",
+   "i": [
+    "Swig Energy",
+    "Coconut",
+    "Pineapple",
+    "Blue Raspberry"
+   ],
+   "note": ""
+  },
+  "Wired & Tired": {
+   "c": "Energy",
+   "i": [
+    "Swig Energy",
+    "Passion Fruit",
+    "Guava",
+    "Banana"
+   ],
+   "note": ""
+  },
+  "Wet & Wild": {
+   "c": "Energy",
+   "i": [
+    "Swig Energy",
+    "Blue Raspberry",
+    "Coconut",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Rise & Grind": {
+   "c": "Energy",
+   "i": [
+    "Swig Energy",
+    "Strawberry",
+    "Peach",
+    "Fresh Orange"
+   ],
+   "note": ""
+  },
+  "Skinny Dippin'": {
+   "c": "Energy",
+   "i": [
+    "Sugar Free Swig Energy",
+    "Sugar Free Peach"
+   ],
+   "note": ""
+  },
+  "Piña Collider": {
+   "c": "Energy",
+   "i": [
+    "Sugar Free Swig Energy",
+    "Ginger Ale",
+    "SF Coconut",
+    "SF Pineapple",
+    "Mango Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Lemon Drop Kick": {
+   "c": "Energy",
+   "i": [
+    "Sugar Free Swig Energy",
+    "Fresh Lemon",
+    "Frozen Strawberries"
+   ],
+   "note": ""
+  },
+  "Passion Pit": {
+   "c": "Energy",
+   "i": [
+    "Blended Swig Energy",
+    "Passion Fruit",
+    "Peach",
+    "Strawberry",
+    "Mango Puree"
+   ],
+   "note": ""
+  },
+  "Cloud Surfer": {
+   "c": "Energy",
+   "i": [
+    "Blended Swig Energy",
+    "Raspberry",
+    "Blue Raspberry",
+    "Vanilla",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Main Squeeze": {
+   "c": "Lemonades",
+   "i": [
+    "Lemonade",
+    "Strawberry",
+    "Strawberry Puree"
+   ],
+   "note": ""
+  },
+  "Kiss & Tell": {
+   "c": "Lemonades",
+   "i": [
+    "Lemonade",
+    "Mango",
+    "Mango Puree"
+   ],
+   "note": ""
+  },
+  "When Life Gives You Beaches": {
+   "c": "Lemonades",
+   "i": [
+    "Lemonade",
+    "Coconut",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Easy, Tiger": {
+   "c": "Lemonades",
+   "i": [
+    "Lemonade",
+    "Raspberry",
+    "Raspberry Puree"
+   ],
+   "note": ""
+  },
+  "La Dolce Beach": {
+   "c": "Italian Sodas",
+   "i": [
+    "Sparkling Water",
+    "Vanilla",
+    "Coconut",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Fizzy Business": {
+   "c": "Italian Sodas",
+   "i": [
+    "Sparkling Water",
+    "Cherry",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Feelin' Blue": {
+   "c": "Italian Sodas",
+   "i": [
+    "Sparkling Water",
+    "Blue Raspberry",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Spa Day": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "Sugar Free Coconut",
+    "Sugar Free Vanilla",
+    "Frozen Strawberry",
+    "Frozen Mango"
+   ],
+   "note": ""
+  },
+  "Mango Tango": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "SF Coconut",
+    "SF Vanilla",
+    "Mango Puree",
+    "Frozen Mango",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Flamingle": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "Guava",
+    "Grapefruit",
+    "Fresh Orange"
+   ],
+   "note": ""
+  },
+  "Berry Breezy": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "SF Coconut",
+    "SF Vanilla",
+    "Strawberry Puree",
+    "Frozen Strawberry",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Cannonball": {
+   "c": "Refreshers",
+   "i": [
+    "Sparkling Water",
+    "Sugar Free Pineapple",
+    "Strawberry Puree",
+    "Fresh Lemon"
+   ],
+   "note": ""
+  },
+  "Rash Guard": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "SF Vanilla",
+    "SF Peach",
+    "SF Pineapple",
+    "Fresh Lime",
+    "Raspberry Puree"
+   ],
+   "note": ""
+  },
+  "Unsinkable": {
+   "c": "Refreshers",
+   "i": [
+    "Water",
+    "Grapefruit",
+    "Mango Puree",
+    "Fresh Lemon"
+   ],
+   "note": ""
+  },
+  "Lil' Squirt": {
+   "c": "Beach Babies",
+   "i": [
+    "Sprite",
+    "Strawberry Puree"
+   ],
+   "note": ""
+  },
+  "Shore Temple": {
+   "c": "Beach Babies",
+   "i": [
+    "Sprite",
+    "Cherry",
+    "Grenadine"
+   ],
+   "note": ""
+  },
+  "Beach Ball": {
+   "c": "Beach Babies",
+   "i": [
+    "Fruit Punch",
+    "Popping Pearls"
+   ],
+   "note": ""
+  },
+  "Mermaid Splash": {
+   "c": "Beach Babies",
+   "i": [
+    "Lemonade",
+    "Blue Raspberry",
+    "Whipped Cream Garnish"
+   ],
+   "note": ""
+  },
+  "Dino Juice": {
+   "c": "Beach Babies",
+   "i": [
+    "Sprite",
+    "Green Apple"
+   ],
+   "note": ""
+  },
+  "Cotton Candy Cloud": {
+   "c": "Beach Babies",
+   "i": [
+    "Lemonade",
+    "Cotton Candy",
+    "Whipped Cream Garnish"
+   ],
+   "note": ""
+  },
+  "Sharky": {
+   "c": "Beach Babies",
+   "i": [],
+   "note": "Recipe not on file yet"
+  },
+  "Sandcastle Shake": {
+   "c": "Beach Babies",
+   "i": [],
+   "note": "Vanilla soft-serve shake",
+   "how": [
+    [
+     "Vanilla soft serve",
+     "Into the blender",
+     "2 swirls"
+    ],
+    [
+     "Milk",
+     "Add a splash so it blends",
+     "2 oz"
+    ],
+    [
+     "Blend",
+     "Blend smooth, 20 seconds",
+     "20s"
+    ],
+    [
+     "Whipped cream",
+     "On top",
+     "Top"
+    ],
+    [
+     "Dome lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Lil' Root Beer Float": {
+   "c": "Beach Babies",
+   "i": [],
+   "note": "Root beer + vanilla soft serve",
+   "how": [
+    [
+     "Root beer",
+     "Pour slow to the 2/3 line",
+     "2/3"
+    ],
+    [
+     "Vanilla soft serve",
+     "Small swirl on top",
+     "1 swirl"
+    ],
+    [
+     "Dome lid + spoon straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Pumpkin Spice & Everything Dirty": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Dr Pepper",
+    "Vanilla",
+    "Cinnamon",
+    "Pumpkin Sauce",
+    "Half & Half",
+    "Cinnamon Stick"
+   ],
+   "note": ""
+  },
+  "Apple of My Thighs": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Blended Diet Mountain Dew",
+    "Green Apple",
+    "Green Apple Puree",
+    "Caramel Drizzle"
+   ],
+   "note": ""
+  },
+  "Sweater Weather": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Root Beer",
+    "Toasted Marshmallow",
+    "Butterscotch",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Harvest Moon": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Water",
+    "Apple",
+    "Raspberry",
+    "Mango Puree",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Gourd Vibes Only": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Dr Pepper",
+    "Vanilla",
+    "Pumpkin Sauce",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Cider Beaches": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Sprite",
+    "Green Apple",
+    "Cinnamon",
+    "Fresh Lemon"
+   ],
+   "note": ""
+  },
+  "Hayride Hottie": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Coke",
+    "Caramel",
+    "Apple",
+    "Half & Half"
+   ],
+   "note": ""
+  },
+  "Fall Back & Relax": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Root Beer",
+    "Cinnamon",
+    "Vanilla Cream",
+    "Cinnamon Stick"
+   ],
+   "note": ""
+  },
+  "Spice Spice Beachy": {
+   "c": "Seasonal – Fall",
+   "i": [
+    "Swig Energy",
+    "Cinnamon",
+    "Pumpkin Sauce",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Witch Better Have My Candy": {
+   "c": "Seasonal – Halloween",
+   "i": [
+    "Sprite",
+    "Blue Raspberry",
+    "Gummy Worms",
+    "Sour Patch Bits Garnish"
+   ],
+   "note": ""
+  },
+  "Boo-tea Call": {
+   "c": "Seasonal – Halloween",
+   "i": [
+    "Lemonade",
+    "Blackberry",
+    "Grape",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "The Graveyard Shift": {
+   "c": "Seasonal – Halloween",
+   "i": [
+    "Swig Energy",
+    "Black Cherry",
+    "Chamoy Drizzle"
+   ],
+   "note": ""
+  },
+  "Ghosted": {
+   "c": "Seasonal – Halloween",
+   "i": [
+    "Cream Soda",
+    "Vanilla",
+    "Coconut Cream",
+    "Whipped Cream Garnish"
+   ],
+   "note": ""
+  },
+  "Sleigh All Day": {
+   "c": "Seasonal – Winter",
+   "i": [
+    "Dr Pepper",
+    "Peppermint",
+    "Vanilla",
+    "Half & Half"
+   ],
+   "note": ""
+  },
+  "Jingle Juice": {
+   "c": "Seasonal – Winter",
+   "i": [
+    "Sprite",
+    "Cranberry",
+    "Pomegranate",
+    "Fresh Lime"
+   ],
+   "note": ""
+  },
+  "Naughty & Nice": {
+   "c": "Seasonal – Winter",
+   "i": [
+    "Coke",
+    "Cherry",
+    "Vanilla",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Frosty the Snowcone": {
+   "c": "Seasonal – Winter",
+   "i": [
+    "Blended Lemonade",
+    "Blue Raspberry",
+    "Coconut Cream"
+   ],
+   "note": ""
+  },
+  "Crush On You": {
+   "c": "Seasonal – Valentine's",
+   "i": [
+    "Sprite",
+    "Raspberry",
+    "Strawberry Puree",
+    "Vanilla Cream"
+   ],
+   "note": ""
+  },
+  "Love Potion No. 9": {
+   "c": "Seasonal – Valentine's",
+   "i": [
+    "Dr Pepper",
+    "Raspberry",
+    "Chocolate Strawberry Cream"
+   ],
+   "note": ""
+  },
+  "Beach Drip": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Brewed coffee",
+   "how": [
+    [
+     "Cup",
+     "Hot cup and sleeve, or iced cup with ice",
+     "Size"
+    ],
+    [
+     "Brew",
+     "Pour from the brewer, roast on the ticket",
+     "Fill"
+    ],
+    [
+     "Room",
+     "Leave 1/2 inch if they want cream",
+     "Fill"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Espresso Yourself": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Single or double shot",
+   "how": [
+    [
+     "Shot",
+     "Pull a single or double on the espresso machine",
+     "1-2 shots"
+    ],
+    [
+     "Cup",
+     "Serve in a small hot cup",
+     ""
+    ],
+    [
+     "Hand off",
+     "Call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Hot Mess": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Hot chocolate",
+   "how": [
+    [
+     "Hot chocolate",
+     "Dispense from the hot chocolate hopper",
+     "Fill"
+    ],
+    [
+     "Whipped cream",
+     "Only if on the ticket",
+     "Top"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Basic Beach": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Americano",
+   "how": [
+    [
+     "Shots",
+     "Pull a double shot into the cup",
+     "2 shots"
+    ],
+    [
+     "Hot water",
+     "Fill from the hot water tap, leave 1/2 inch",
+     "Fill"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Beach S'mores": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Hot chocolate + whipped cream + graham",
+   "how": [
+    [
+     "Hot chocolate",
+     "Dispense from the hot chocolate hopper, leave 1 inch",
+     "Fill"
+    ],
+    [
+     "Whipped cream",
+     "Tall swirl on top",
+     "Top"
+    ],
+    [
+     "Graham crumble",
+     "Sprinkle over the whip",
+     "Pinch"
+    ],
+    [
+     "Lid",
+     "Dome lid, name on the lid",
+     "✓"
+    ]
+   ]
+  },
+  "Cappa-Cabana": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Cappuccino",
+   "how": [
+    [
+     "Shots",
+     "Pull a double shot into the cup",
+     "2 shots"
+    ],
+    [
+     "Milk",
+     "Steam the milk on the ticket, lots of foam",
+     "Fill"
+    ],
+    [
+     "Pour",
+     "Pour milk, spoon the foam on top",
+     "Top"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "But First, Caffeine": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Vanilla-coconut latte",
+   "how": [
+    [
+     "Vanilla + coconut",
+     "Pump both into the cup first",
+     "1 pump each"
+    ],
+    [
+     "Shots",
+     "Pull a double shot over the syrup",
+     "2 shots"
+    ],
+    [
+     "Milk",
+     "Steam (hot) or pour over ice (iced), milk on the ticket",
+     "Fill"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Cloud Nine": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Cold brew + sweet cream cold foam",
+   "how": [
+    [
+     "Ice",
+     "Fill the cup with ice",
+     "Fill"
+    ],
+    [
+     "Cold brew",
+     "Pour to 1 inch from the top",
+     "Fill"
+    ],
+    [
+     "Sweet cream cold foam",
+     "Froth and spoon on top",
+     "Top"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Wake & Shake": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Iced flavored latte",
+   "how": [
+    [
+     "Flavor syrup",
+     "Pump the flavor on the ticket into the cup",
+     "2 pumps"
+    ],
+    [
+     "Shots",
+     "Pull a double shot over the syrup",
+     "2 shots"
+    ],
+    [
+     "Ice",
+     "Fill with ice",
+     "Fill"
+    ],
+    [
+     "Milk",
+     "Pour the milk on the ticket to the top",
+     "Fill"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Beach & Bothered": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Caramel sea-salt latte",
+   "how": [
+    [
+     "Caramel",
+     "Pump into the cup first",
+     "2 pumps"
+    ],
+    [
+     "Shots",
+     "Pull a double shot over the syrup",
+     "2 shots"
+    ],
+    [
+     "Milk",
+     "Steam (hot) or pour over ice (iced)",
+     "Fill"
+    ],
+    [
+     "Sea salt",
+     "Light pinch on top",
+     "Pinch"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Coco Loco Mocha": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Coconut mocha, hot or iced",
+   "how": [
+    [
+     "Chocolate + coconut",
+     "Pump both into the cup",
+     "1 pump each"
+    ],
+    [
+     "Shots",
+     "Pull a double shot over the syrup",
+     "2 shots"
+    ],
+    [
+     "Milk",
+     "Steam (hot) or pour over ice (iced)",
+     "Fill"
+    ],
+    [
+     "Toasted coconut",
+     "Sprinkle on top",
+     "Pinch"
+    ],
+    [
+     "Lid",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Salted Caramel Cloud": {
+   "c": "Coffee",
+   "i": [],
+   "note": "Cold brew + salted caramel cold foam",
+   "how": [
+    [
+     "Ice",
+     "Fill the cup with ice",
+     "Fill"
+    ],
+    [
+     "Cold brew",
+     "Pour to 1 inch from the top",
+     "Fill"
+    ],
+    [
+     "Salted caramel cold foam",
+     "Froth and spoon on top",
+     "Top"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Vanilla Vibes": {
+   "c": "Soft Serve",
+   "i": [],
+   "note": "Creamy vanilla soft serve",
+   "how": [
+    [
+     "Cup or cone",
+     "As on the ticket",
+     ""
+    ],
+    [
+     "Vanilla soft serve",
+     "Pull a tall swirl, keep the machine handle steady",
+     "1 swirl"
+    ],
+    [
+     "Toppings",
+     "Only if on the ticket",
+     "As ordered"
+    ],
+    [
+     "Spoon + napkin",
+     "Hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Pineapple Express": {
+   "c": "Soft Serve",
+   "i": [],
+   "note": "Classic pineapple Dole Whip",
+   "how": [
+    [
+     "Cup or cone",
+     "As on the ticket",
+     ""
+    ],
+    [
+     "Dole Whip",
+     "Pull a tall pineapple swirl",
+     "1 swirl"
+    ],
+    [
+     "Toppings",
+     "Only if on the ticket",
+     "As ordered"
+    ],
+    [
+     "Spoon + napkin",
+     "Hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Swirl Power": {
+   "c": "Soft Serve",
+   "i": [],
+   "note": "Dole Whip + vanilla twist",
+   "how": [
+    [
+     "Cup or cone",
+     "As on the ticket",
+     ""
+    ],
+    [
+     "Twist",
+     "Pull the Dole Whip + vanilla twist handle",
+     "1 swirl"
+    ],
+    [
+     "Toppings",
+     "Only if on the ticket",
+     "As ordered"
+    ],
+    [
+     "Spoon + napkin",
+     "Hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Float On": {
+   "c": "Soft Serve",
+   "i": [],
+   "note": "Soft serve dropped in juice or soda",
+   "how": [
+    [
+     "Juice or soda",
+     "Pour what they picked to the 2/3 line",
+     "2/3"
+    ],
+    [
+     "Soft serve",
+     "Swirl the cap they picked on top",
+     "1 swirl"
+    ],
+    [
+     "Dome lid + spoon straw",
+     "Name on the lid, call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Whip It Good": {
+   "c": "Soft Serve",
+   "i": [],
+   "note": "Loaded with all the toppings",
+   "how": [
+    [
+     "Cup",
+     "Soft-serve cup",
+     ""
+    ],
+    [
+     "Soft serve",
+     "Pull a tall swirl of the flavor on the ticket",
+     "1 swirl"
+    ],
+    [
+     "Toasted coconut, pineapple, sprinkles",
+     "Load every topping on the ticket",
+     "All"
+    ],
+    [
+     "Drizzle",
+     "Chamoy or caramel if on the ticket",
+     "Drizzle"
+    ],
+    [
+     "Spoon + napkin",
+     "Hand off",
+     "✓"
+    ]
+   ]
+  },
+  "Sandy Bottom": {
+   "c": "Floats",
+   "i": [],
+   "note": "Dole Whip over your soda of choice",
+   "how": [
+    [
+     "Cup",
+     "Float cup, size on the ticket",
+     ""
+    ],
+    [
+     "Soda base",
+     "Pour the soda they picked to the 2/3 line, slow down the side",
+     "2/3"
+    ],
+    [
+     "Dole Whip",
+     "Swirl a tall cap on top, over the soda",
+     "1 swirl"
+    ],
+    [
+     "Dome lid + spoon straw",
+     "Name on the lid, call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Thicc & Thirsty": {
+   "c": "Floats",
+   "i": [],
+   "note": "Protein float",
+   "how": [
+    [
+     "Protein scoop",
+     "Into the blender first",
+     "1 scoop"
+    ],
+    [
+     "Vanilla soft serve",
+     "Add to the blender",
+     "1 swirl"
+    ],
+    [
+     "Milk or soda base",
+     "Add what they picked, plus a handful of ice",
+     "Fill 1/2"
+    ],
+    [
+     "Blend",
+     "Blend until smooth, 20 to 30 seconds",
+     "30s"
+    ],
+    [
+     "Pour + lid",
+     "Dome lid, spoon straw, name on the lid",
+     "✓"
+    ]
+   ]
+  },
+  "Cold Shoulder": {
+   "c": "Floats",
+   "i": [],
+   "note": "Dirty Dr Pepper under salted cold foam",
+   "how": [
+    [
+     "Coconut",
+     "Pump into the empty cup",
+     "2 pumps"
+    ],
+    [
+     "Ice",
+     "Pebble ice to just under the rim",
+     "Fill"
+    ],
+    [
+     "Dr Pepper",
+     "Pour slow down the side, leave 1 inch",
+     "Fill"
+    ],
+    [
+     "Salted cold foam",
+     "Froth and spoon over the top so it sits",
+     "Top"
+    ],
+    [
+     "Lid + straw",
+     "Name on the lid, call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Riptide": {
+   "c": "Floats",
+   "i": [],
+   "note": "Red, white and blue layered float",
+   "how": [
+    [
+     "Strawberry puree",
+     "Into the empty cup first",
+     "1.5 oz"
+    ],
+    [
+     "Ice",
+     "Pebble ice to just under the rim",
+     "Fill"
+    ],
+    [
+     "Sprite",
+     "Pour slow down the side, leave 2 inches",
+     "2/3"
+    ],
+    [
+     "Vanilla soft serve",
+     "Swirl on top as the white layer",
+     "1 swirl"
+    ],
+    [
+     "Blue raspberry",
+     "Drizzle over the soft serve for the blue layer",
+     "1 pump"
+    ],
+    [
+     "Dome lid + spoon straw",
+     "Name on the lid, call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Build Your Own Float": {
+   "c": "Floats",
+   "i": [],
+   "note": "Pick a base, pick a soft-serve cap, load it up",
+   "how": [
+    [
+     "Base",
+     "Pour the base they picked to the 2/3 line",
+     "2/3"
+    ],
+    [
+     "Soft-serve cap",
+     "Dole Whip, vanilla or twist, as on the ticket",
+     "1 swirl"
+    ],
+    [
+     "Load it up",
+     "Add every topping on the ticket",
+     "As ordered"
+    ],
+    [
+     "Dome lid + spoon straw",
+     "Name on the lid, call the ticket",
+     "✓"
+    ]
+   ]
+  },
+  "Pour Decisions": {
+   "c": "Dirty Sodas",
+   "i": [],
+   "note": "Build your own dirty soda"
+  },
+  "Small Bag": {
+   "c": "Treats",
+   "i": [],
+   "note": "Freeze-dried candy — crunchy, made in-house"
+  },
+  "Medium Bag": {
+   "c": "Treats",
+   "i": [],
+   "note": "Freeze-dried candy — crunchy, made in-house"
+  },
+  "Large Bag": {
+   "c": "Treats",
+   "i": [],
+   "note": "Freeze-dried candy — crunchy, made in-house"
+  }
+ }
+}

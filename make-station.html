@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Thirsty Beaches Make Station</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 21" landscape station screen, one site, two modes.
+   TICKETS: left = order queue (oldest first), right = the selected ticket (drink builds + GRAB cards + Done).
+   LOOKUP:  the Build Cards picker (search / category / cup) for walk-ups and training.
+   Brand: Thirsty Beaches logo, sun-and-surf accents, category colors matched to the kiosk. Stacks on a phone. */
+/* Brand: thirstybeaches.com synthwave. Single dark theme by choice: the trailer screen matches the site, not the OS. */
+:root{color-scheme:dark;--bg:#08011c;--pane:#0d0526;--card:#150b31;--fg:#fff6e8;--mute:#a996cf;--line:#2c1b52;--accent:#00f0ff;--accent-ink:#08011c;
+--pink:#ff2d95;--pink-deep:#c4177a;--now:#2a1e14;--now-line:#ffd166;--done:#0f2a22;--sun:#ffd166;--grab:#2a0c22;--grab-line:#ff3cac;--grab-ink:#ff9adf;--alert:#ff6b6b;--late:#2a0f1c;
+--display:'Bungee','Fredoka',system-ui,sans-serif;--body:'Archivo',system-ui,-apple-system,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:18px;-webkit-text-size-adjust:100%;overflow:hidden}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+/* ---- top bar ---- */
+.top{display:flex;align-items:center;gap:16px;padding:8px 18px;background:var(--card);border-bottom:1px solid var(--line)}
+.top img{height:56px;width:auto}
+.top .wordmark{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1}
+.top .wordmark small{display:block;font-family:var(--body);font-weight:600;font-size:.75rem;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.modes{display:flex;gap:6px;background:var(--pane);padding:5px;border-radius:999px;margin-left:12px}
+.mode{border:none;background:transparent;border-radius:999px;padding:10px 20px;font-weight:800;font-size:1rem;min-height:48px;color:var(--mute);position:relative}
+.mode[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.mode .n{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:999px;background:var(--sun);color:#14292B;font-family:var(--display);font-size:.95rem;margin-left:8px;padding:0 6px}
+.top .spacer{flex:1}
+.stat{text-align:right;line-height:1.15}
+.stat b{font-family:var(--display);font-weight:700;font-size:1.5rem;display:block}
+.stat span{font-size:.78rem;color:var(--mute);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.stat.late b{color:var(--alert)}
+.clock{font-family:var(--display);font-weight:600;font-size:1.5rem;font-variant-numeric:tabular-nums;color:var(--mute)}
+.view{display:none;min-height:0}
+.view.on{display:grid}
+/* ---- TICKETS view ---- */
+#tickets{grid-template-columns:420px minmax(0,1fr);overflow:hidden}
+.queue{background:var(--pane);border-right:1px solid var(--line);display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.qlist{overflow-y:auto;min-height:0;padding:12px;display:grid;gap:10px;align-content:start;overscroll-behavior:contain}
+.tk{width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;align-items:center;min-height:84px}
+.tk.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.tk.new{border-color:var(--now-line);background:var(--now)}
+.tk.late{background:var(--late)}
+.tk .code{font-family:var(--display);font-weight:700;font-size:1.7rem;letter-spacing:.04em;grid-row:span 2;font-variant-numeric:tabular-nums}
+.tk .who{font-weight:800;font-size:1.05rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk .sub{font-size:.85rem;color:var(--mute);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk .sub i{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
+.tk .age{font-family:var(--display);font-weight:600;font-size:1.15rem;color:var(--mute);grid-row:span 2;font-variant-numeric:tabular-nums}
+.tk.late .age{color:var(--alert)}
+.qempty{padding:40px 16px;color:var(--mute);text-align:center;font-weight:700;font-family:var(--display);font-size:1.3rem}
+.qempty small{display:block;font-family:var(--body);font-weight:600;font-size:.9rem;margin-top:6px}
+.recent{border-top:1px solid var(--line);padding:10px 12px;display:grid;gap:6px}
+.recent h3{margin:0 0 2px;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.rrow{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.rrow b{font-family:var(--display);letter-spacing:.04em}
+.rrow span{flex:1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.undo{background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.8rem;min-height:36px}
+.make{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+.mhead{display:flex;align-items:center;gap:18px;padding:14px 24px 10px;border-bottom:1px solid var(--line)}
+.mhead .code{font-family:var(--display);font-weight:700;font-size:2.8rem;line-height:1;letter-spacing:.04em}
+.mhead .who{font-weight:800;font-size:1.35rem;line-height:1.15;min-width:0}
+.mhead .who small{display:block;font-weight:600;font-size:.9rem;color:var(--mute)}
+.mhead .spacer{flex:1}
+.prog{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--mute)}
+.prog .pip{width:16px;height:16px;border-radius:50%;background:var(--line)}
+.prog .pip.ok{background:var(--accent)}
+.big{font-weight:800;font-size:1.25rem;min-height:68px;padding:12px 28px;border-radius:16px;border:none;background:var(--accent);color:var(--accent-ink)}
+.big.ready{box-shadow:0 0 0 4px var(--sun)}
+.items{overflow-y:auto;min-height:0;padding:16px 24px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:14px;align-content:start;overscroll-behavior:contain}
+.card{background:var(--card);border:2px solid var(--line);border-left:10px solid var(--cat,var(--line));border-radius:16px;padding:14px 16px 14px 14px;display:grid;gap:10px;align-content:start}
+.card.ok{opacity:.5}
+.chead{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
+.cupb{display:grid;place-items:center;width:64px;height:64px;border-radius:14px;background:var(--cat,var(--pane));color:#14292B;font-family:var(--display);font-weight:700;line-height:1;text-align:center}
+.cupb b{font-size:1.5rem}.cupb small{font-size:.7rem;font-weight:600}
+.cupb.none{background:var(--pane);color:var(--mute)}
+.chead h2{font-family:var(--display);font-weight:700;font-size:1.55rem;margin:0;line-height:1.05;text-wrap:balance}
+.chead .cup{font-weight:700;color:var(--mute);font-size:.9rem;margin-top:3px}
+.qty{font-family:var(--display);font-weight:700;font-size:1.3rem;background:var(--pane);border-radius:999px;padding:4px 14px;white-space:nowrap}
+.qty.many{background:var(--sun);color:#14292B}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.85rem;font-weight:700;border:1.5px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--mute)}
+.chip.hot{border-color:var(--now-line);color:var(--fg);background:var(--now)}
+.tag{display:inline-block;font-family:var(--display);font-weight:700;font-size:.72rem;letter-spacing:.08em;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:2px;color:#14292B;background:var(--sun)}
+.tag.sub{background:#F6A623}.tag.add{background:#5EE0A0}.tag.no{background:#FF7A6E}
+.chip .tag{margin-right:4px;vertical-align:0}
+ol li.chg{border-color:var(--now-line)}
+ol li.chg .what{color:var(--fg)}
+ol{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:s}
+ol li{counter-increment:s;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;border:2px solid var(--line);user-select:none;min-height:56px;cursor:pointer}
+ol li::before{content:counter(s);font-family:var(--display);font-weight:700;font-size:1.05rem;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--pane);color:var(--accent)}
+ol li .what{font-weight:800;font-size:1.15rem;line-height:1.1;min-width:0}
+ol li .what span{display:block;font-weight:400;font-size:.82rem;color:var(--mute);margin-top:1px}
+ol li .amt{font-family:var(--display);font-weight:700;font-size:1.3rem;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+ol li.now{background:var(--now);border-color:var(--now-line)}
+ol li.now::before{background:var(--now-line);color:#14292B}
+ol li.done{background:var(--done);border-color:transparent}
+ol li.done .what,ol li.done .amt{text-decoration:line-through;opacity:.5}
+ol li.done::before{content:"\2713";background:var(--accent);color:var(--accent-ink)}
+.card.grab{background:var(--grab);border-color:var(--grab-line);border-left-color:var(--grab-line);grid-template-rows:auto minmax(0,1fr);min-height:150px;cursor:pointer}
+.card.grab .tag{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--grab-ink)}
+.card.grab h2{font-family:var(--display);font-weight:700;font-size:1.9rem;margin:4px 0 0;line-height:1.05}
+.card.grab .big-qty{font-family:var(--display);font-weight:700;font-size:3rem;line-height:1;color:var(--grab-ink);align-self:end;justify-self:end}
+.card.grab .hint{font-size:.9rem;color:var(--mute)}
+.note{font-size:.95rem;background:var(--now);border:1.5px solid var(--now-line);border-radius:10px;padding:8px 10px}
+.blank{grid-column:1/-1;text-align:center;color:var(--mute);padding:70px 20px;font-family:var(--display);font-size:1.8rem}
+.blank small{display:block;font-family:var(--body);font-size:1rem;margin-top:8px}
+.upnext{border-top:1px solid var(--line);padding:10px 24px;display:flex;gap:12px;align-items:center;font-size:.95rem;color:var(--mute);min-height:48px}
+.upnext b{font-family:var(--display);letter-spacing:.04em;color:var(--fg)}
+.upnext span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* ---- LOOKUP view (the Build Cards) ---- */
+#lookup{grid-template-columns:minmax(0,2fr) minmax(0,3fr);overflow:hidden}
+.find{background:var(--pane);border-right:1px solid var(--line);display:grid;grid-template-rows:auto auto auto minmax(0,1fr);gap:12px;padding:16px;min-height:0}
+input[type=search]{width:100%;font:inherit;font-size:1.15rem;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);min-height:56px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fchip{font-weight:700;font-size:1rem;min-height:48px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--card)}
+.fchip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;align-content:start;overflow-y:auto;min-height:0;overscroll-behavior:contain}
+.pick{text-align:left;min-height:72px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);border-left:8px solid var(--cat,var(--line));background:var(--card);display:grid;gap:2px;align-content:center}
+.pick b{font-family:var(--display);font-weight:600;font-size:1.1rem;line-height:1.1}
+.pick small{color:var(--mute);font-size:.8rem}
+.pick.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.lmake{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:12px;padding:20px 26px;min-height:0}
+.lmake h2{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);margin:0;line-height:1;text-wrap:balance}
+.lmake .sub{color:var(--mute);margin:6px 0 0;font-size:1.05rem}
+.lmake ol{grid-auto-rows:minmax(0,1fr);min-height:0}
+.lmake ol li .what{font-size:clamp(1.2rem,2vw,1.7rem)}
+.lmake ol li .amt{font-size:clamp(1.4rem,2.6vw,2.2rem)}
+.lmake ol li::before{width:52px;height:52px;font-size:1.3rem}
+.lmake ol li{grid-template-columns:52px minmax(0,1fr) auto;padding:10px 18px}
+.foot{display:flex;gap:10px;align-items:center}
+.ghost{background:transparent;border:2px solid var(--line);border-radius:14px;font-weight:800;min-height:60px;padding:12px 20px}
+.status{font-family:var(--display);font-weight:600;font-size:1.1rem;color:var(--mute);flex:1;text-align:center}
+.status.ok{color:var(--accent)}
+.empty{padding:16px;color:var(--mute);grid-column:1/-1}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:8px 16px;background:var(--alert);color:#fff;font-weight:800;text-align:center;z-index:9}
+button:focus-visible,li:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){.tk,ol li,.card{transition:background .15s,border-color .15s,opacity .15s}.tk.new{animation:pop .6s ease}.big.ready{animation:pulse 1.4s ease infinite}}
+@keyframes pop{0%{transform:scale(.96)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px var(--sun)}50%{box-shadow:0 0 0 10px transparent}}
+@media (max-width:1100px){
+  body{overflow:auto}
+  .app{height:auto}
+  #tickets,#lookup{grid-template-columns:1fr;overflow:visible}
+  .queue,.find{border-right:0;border-bottom:1px solid var(--line);grid-template-rows:auto}
+  .qlist,.list{max-height:36vh}
+  .items{grid-template-columns:1fr;padding:12px 16px}
+  .mhead{flex-wrap:wrap;padding:12px 16px}
+  .lmake ol{grid-auto-rows:auto}
+  .top{flex-wrap:wrap}
+}
+
+/* ---- synthwave skin ---- */
+body{background:radial-gradient(1200px 600px at 50% -200px,#3a1261 0%,#1a0838 45%,var(--bg) 80%) fixed,var(--bg)}
+.top{background:rgba(8,1,28,.85);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(255,45,149,.25)}
+.top .wordmark{font-size:1.05rem;letter-spacing:.02em;color:#fff}
+.top .wordmark small,.stat span,.recent h3,.card.grab .tag,.tk .sub,.upnext,.chead .cup,.lmake .sub,.status,.chip{font-family:var(--mono);letter-spacing:.06em}
+.chip{text-transform:none;font-size:.78rem}
+.stat span{font-size:.68rem}
+.mode[aria-pressed=true]{background:var(--pink);color:#fff;box-shadow:0 0 18px rgba(255,45,149,.55)}
+.mode .n{background:var(--sun);color:#08011c}
+.clock{color:var(--accent);text-shadow:0 0 12px rgba(0,240,255,.6)}
+.tk .code,.mhead .code,.rrow b,.upnext b{color:#fff;text-shadow:0 0 10px rgba(0,240,255,.45)}
+.tk.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset,0 0 18px rgba(0,240,255,.35)}
+.tk.new{border-color:var(--sun);box-shadow:0 0 18px rgba(255,209,102,.45)}
+.big{background:linear-gradient(90deg,var(--pink),#ff6ab5);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25);box-shadow:0 0 22px rgba(255,45,149,.45);font-family:var(--display);font-weight:400;font-size:1.05rem;letter-spacing:.02em}
+.big.ready{box-shadow:0 0 0 4px var(--accent),0 0 26px rgba(0,240,255,.6)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px var(--accent),0 0 26px rgba(0,240,255,.6)}50%{box-shadow:0 0 0 10px transparent,0 0 36px rgba(0,240,255,.3)}}
+.ghost{border-color:var(--accent);color:var(--accent);font-family:var(--display);font-weight:400;font-size:.95rem}
+.fchip[aria-pressed=true]{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 0 14px rgba(255,45,149,.5)}
+ol li::before{background:#1f1142;color:var(--accent);font-family:var(--display);font-weight:400}
+ol li.now{background:var(--now);border-color:var(--sun);box-shadow:0 0 16px rgba(255,209,102,.25)}
+ol li.now::before{background:var(--sun);color:#08011c}
+ol li.done{background:var(--done)}
+ol li.done::before{background:#3be08a;color:#08011c}
+ol li .amt{color:var(--accent);text-shadow:0 0 10px rgba(0,240,255,.4);font-weight:400}
+.cupb{color:#08011c}.cupb.none{background:#1f1142;color:var(--mute)}
+.cupb b,.qty,.chead h2,.lmake h2,.card.grab h2,.card.grab .big-qty,.stat b,.tk .age,.mhead .code,.tk .code,.pick b,.qempty{font-weight:400}
+.chead h2{font-size:1.35rem;letter-spacing:.01em}
+.lmake h2{font-size:clamp(1.8rem,3.4vw,2.8rem)}
+.card.grab h2{font-size:1.6rem}
+.tag{font-family:var(--mono);font-weight:500;letter-spacing:.12em}
+.tag.sub{background:var(--sun);color:#08011c}.tag.add{background:#3be08a;color:#08011c}.tag.no{background:var(--alert);color:#08011c}
+.qty.many{background:var(--sun);color:#08011c}
+.tk.late{background:var(--late)}
+.bar{background:var(--pink-deep)}
+input[type=search]{font-family:var(--mono);font-size:1rem}
+input[type=search]::placeholder{color:var(--mute)}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img src="/assets/logo.png" alt="Thirsty Beaches" onerror="this.remove()">
+    <div class="wordmark">Make Station<small>Stay thirsty, beaches</small></div>
+    <div class="modes">
+      <button class="mode" id="mTickets" aria-pressed="true">Tickets<span class="n" id="nWait">0</span></button>
+      <button class="mode" id="mLookup" aria-pressed="false">Lookup</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="stat" id="stOldest"><b>–</b><span>Longest wait</span></div>
+    <div class="stat"><b id="stMade">0</b><span>Made today</span></div>
+    <div class="clock" id="clock"></div>
+  </header>
+
+  <section class="view on" id="tickets">
+    <div class="queue" aria-label="Tickets waiting">
+      <div class="qlist" id="qlist"></div>
+      <div class="recent" id="recent" hidden></div>
+    </div>
+    <div class="make" id="make" aria-live="polite"></div>
+  </section>
+
+  <section class="view" id="lookup">
+    <div class="find" aria-label="Find a drink">
+      <input id="q" type="search" placeholder="Search a drink or ingredient…" aria-label="Search drinks" autocomplete="off">
+      <div class="row" id="cats" aria-label="Category"></div>
+      <div class="row" id="sizes" aria-label="Cup size"></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="lmake" id="lbuild"></div>
+  </section>
+</div>
+<div class="bar" id="bar" hidden></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const CAT_COLOR={"floats":"#a07bff","dirty sodas":"#ff6f9c","new waves":"#28cdff","energy":"#ffb300","lemonades":"#ffcf33","italian sodas":"#ff86d6","soft serve":"#46e9c4","coffee":"#dcab73","beach babies":"#8fe0ff","treats":"#ff5ec7","seasonal":"#ff7a59","refreshers":"#5ee0a0","secret":"#cda44e"};
+const catColor=c=>{const n=norm(c);for(const [k,v] of Object.entries(CAT_COLOR))if(n.includes(k))return v;return"";};
+let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),firstLoad=true,checks={};
+/* ---- mod classification from addons.json (same groups the kiosk + Register use) ---- */
+const SET={size:new Set(),base:new Set(),flavor:new Set(),puree:new Set(),cream:new Set(),style:new Set(),extra:new Set(),topper:new Set(),cap:new Set(),boost:new Set(),serve:new Set(),top:new Set(),temp:new Set(),milk:new Set()};
+const EXTRA_BASES=["Coca-Cola","Coke","Diet Coke","Pepsi","Dr Pepper","Diet Dr Pepper","Sprite","Sprite Zero","Mountain Dew","Diet Mtn Dew","Root Beer","Cream Soda","Fanta Orange","Big Red","Squirt","Fresca","Red Bull","Sugar-Free Red Bull","Alani Nu","Monster","Lemonade","Sparkling Water"];
+function loadGroups(a){for(const g of (a.groups||[])){const k=g.key;if(!SET[k])SET[k]=new Set();for(const it of g.items)SET[k].add(norm(it.name));}for(const b of EXTRA_BASES)SET.base.add(norm(b));}
+function classify(m){const n=norm(m);for(const k of ["size","base","flavor","puree","cream","style","extra","topper","cap","boost","serve","top","temp","milk"])if(SET[k]&&SET[k].has(n))return k;
+ if(/\b(small|medium|large|regular)\b/.test(n)||/\d+ ?oz/.test(n))return"size";return"other";}
+function sizeIdx(m){const n=norm(m);if(/\b(small|regular|12 ?oz)\b/.test(n))return 0;if(/\b(large|32 ?oz|20 ?oz)\b/.test(n))return 2;return 1;}
+function cupBadge(m){if(!m)return{l:"–",s:"one size"};const n=norm(m);const oz=(n.match(/(\d+) ?oz/)||[])[1];const L=/small/.test(n)?"S":/medium/.test(n)?"M":/large/.test(n)?"L":/regular/.test(n)?"R":oz?oz:"–";return{l:L,s:oz?oz+" oz":m};}
+/* ---- build steps: Build Cards rules, with the order's mods applied ---- */
+const PUMPS=[2,3,4];
+const frac=n=>{const w=Math.floor(n),r=n-w;const f=r>=.75?'¾':r>=.5?'½':r>=.25?'¼':'';return (w||!f?w:'')+f;};
+const pl=(n,w)=>frac(n)+' '+w+(n==1?'':'s');
+function kind(x){const l=x.toLowerCase();
+ if(l.includes('puree')||l.includes('sauce'))return'puree';
+ if(l.includes('garnish')||l.includes('rim')||l.includes('bits'))return'garnish';
+ if(l.includes('half & half')||(l.includes('cream')&&!l.includes('soda')))return'cream';
+ if(l.startsWith('fresh'))return'fresh';
+ if(l.includes('frozen'))return'frozen';
+ if(l.includes('pearls')||l.includes('boba'))return'pearls';
+ if(l.includes('stick')||l.includes('gummy'))return'garnish';
+ if(l.includes('drizzle'))return'drizzle';
+ if(l.includes('lemonade')||l.includes('ginger ale'))return'mixer';
+ return'syrup';}
+function amt(k,i,nSyr){return{
+ syrup:pl(Math.max(1,Math.round(PUMPS[i]/nSyr*2)/2),'pump'),puree:['1 oz','1.5 oz','2 oz'][i],cream:['1 oz','1.5 oz','2 oz'][i],
+ fresh:pl([1,2,2][i],'wedge'),frozen:['1/4 cup','1/3 cup','1/2 cup'][i],pearls:pl([1,1.5,2][i],'scoop'),
+ garnish:'1',drizzle:'Drizzle',mixer:['2 oz','3 oz','4 oz'][i]}[k]}
+const HOW={syrup:'Pump into the empty cup first',puree:'Pump in before the ice',fresh:'Squeeze over the cup, drop the wedge in',frozen:'Add to the cup',ice:'Pebble ice to just under the rim',mixer:'Pour over the ice',base:'Pour slow down the side to keep the fizz, leave 1 inch',cream:'Pour over the back of a spoon so it floats',pearls:'Spoon onto the top',garnish:'Finish on top',drizzle:'Zigzag over the top',blend:'Ice, base and mix-ins in the blender, 30 seconds until smooth',lid:'Lid on, straw in, name on the lid, call the ticket'};
+function findRecipe(name){return RECIPES[name]||(Object.entries(RECIPES).find(([k])=>norm(k)===norm(name))||[])[1]||null;}
+function plan(name,mods){
+ const r=findRecipe(name);let ing=r&&r.i.length?r.i.slice():[];const std=ing.slice();
+ let i=1,cup="",blended=false,asOrdered=[],unknown=[],CH={},removed=[];
+ const tagOf=x=>CH[norm(x)]||"";
+ for(const m of mods){
+  const noM=m.match(/^(no|without|hold)\s+(.+)$/i);
+  if(noM){const t=norm(noM[2]);const before=ing.length;ing=ing.filter(x=>!norm(x).includes(t));if(ing.length<before||true)removed.push(noM[2]);continue;}
+  const k=classify(m);
+  if(k==="size"){cup=m;i=sizeIdx(m);}
+  else if(k==="base"){if(ing.length){if(norm(ing[0])!==norm(m)){CH[norm(m)]="sub:"+ing[0];ing[0]=m;}}else if(!r||!r.how){ing.unshift(m);CH[norm(m)]="add";}else asOrdered.push(m);}
+  else if(k==="flavor"){if(!ing.some(x=>norm(x)===norm(m))){ing.push(m);if(std.length)CH[norm(m)]="add";}}
+  else if(k==="puree"){const nm=/puree/i.test(m)?m:m+" Puree";if(!ing.some(x=>norm(x)===norm(nm))){ing.push(nm);if(std.length)CH[norm(nm)]="add";}}
+  else if(k==="cream"){const had=ing.filter(x=>kind(x)==="cream");ing=ing.filter(x=>kind(x)!=="cream");
+   if(/^none$/i.test(m)){if(had.length)removed.push(had.join(", "));}
+   else{ing.push(m);if(had.length&&!had.some(x=>norm(x)===norm(m)))CH[norm(m)]="sub:"+had.join(", ");else if(!had.length&&std.length)CH[norm(m)]="add";}}
+  else if(k==="style"){if(/blend|frozen/i.test(m))blended=true;}
+  else if(k==="other"){unknown.push(m);}
+  else asOrdered.push(m);}
+ const steps=[];
+ if(ing.length){
+  if(blended&&!/^blended/i.test(ing[0]))ing[0]="Blended "+ing[0];
+  const base=ing[0],adds=ing.slice(1).map(a=>({a,k:kind(a)}));const nSyr=Math.max(1,adds.filter(x=>x.k==='syrup').length);const bl=/^blended/i.test(base);
+  const of=k=>adds.filter(x=>k.includes(x.k));
+  const bt=base.replace(/^Blended /i,'');const baseTag=tagOf(bt)||(blended&&std.length?'add:Blended':'');
+  of(['syrup']).forEach(x=>steps.push([x.a,HOW.syrup,amt(x.k,i,nSyr),tagOf(x.a)]));
+  of(['puree']).forEach(x=>steps.push([x.a,HOW.puree,amt(x.k,i,nSyr),tagOf(x.a)]));
+  of(['fresh']).forEach(x=>steps.push([x.a,HOW.fresh,amt(x.k,i,nSyr),tagOf(x.a)]));
+  if(bl){of(['frozen']).forEach(x=>steps.push([x.a,'Into the blender',amt(x.k,i,nSyr),tagOf(x.a)]));steps.push(['Blend with '+bt,HOW.blend,'Fill',baseTag]);}
+  else{of(['frozen']).forEach(x=>steps.push([x.a,HOW.frozen,amt(x.k,i,nSyr),tagOf(x.a)]));steps.push(['Ice',HOW.ice,'Fill','']);
+   of(['mixer']).forEach(x=>steps.push([x.a,HOW.mixer,amt(x.k,i,nSyr),tagOf(x.a)]));steps.push([base,HOW.base,'Fill',baseTag]);}
+  of(['cream']).forEach(x=>steps.push([x.a,HOW.cream,amt(x.k,i,nSyr),tagOf(x.a)]));
+  of(['pearls']).forEach(x=>steps.push([x.a,HOW.pearls,amt(x.k,i,nSyr),tagOf(x.a)]));
+  of(['drizzle']).forEach(x=>steps.push([x.a,HOW.drizzle,amt(x.k,i,nSyr),tagOf(x.a)]));
+  of(['garnish']).forEach(x=>steps.push([x.a,HOW.garnish,amt(x.k,i,nSyr),tagOf(x.a)]));
+  for(const m of asOrdered)steps.push([m,'Customer added this','✓','add']);
+  for(const m of unknown)steps.push([m,'Customer asked for this (not a known add-on)','?','add']);
+  for(const m of removed)steps.push(['No '+m,'Leave it out','–','no']);
+  steps.push(['Lid + straw',HOW.lid,'✓','']);
+ }else if(r&&r.how){
+  for(const s of r.how)steps.push(s.slice());
+  const extra=asOrdered.concat(unknown).map(m=>[m,'Customer added this','✓','add']).concat(removed.map(m=>['No '+m,'Leave it out','–','no']));
+  if(extra.length)steps.splice(steps.length-1,0,...extra);
+ }else{
+  steps.push([r&&r.note?r.note:'House recipe','No build on file yet. Make it the usual way.','','']);
+  for(const m of asOrdered.concat(unknown))steps.push([m,'Customer added this','✓','add']);
+  for(const m of removed)steps.push(['No '+m,'Leave it out','–','no']);
+  steps.push(['Lid + straw',HOW.lid,'✓','']);
+ }
+ const changed=Object.keys(CH).length+removed.length+asOrdered.length+unknown.length+(blended&&std.length?1:0);
+ return{cup,steps,ingredients:ing,recipe:r,CH,removed,changed};}
+/* ---- shared step list behaviour ---- */
+function wireSteps(ol,key,ck,onChange){ol.querySelectorAll('li').forEach((li,j)=>{li.onclick=()=>{ck[key+':'+j]=!ck[key+':'+j];markSteps(ol,key,ck);onChange&&onChange();};});markSteps(ol,key,ck);}
+function markSteps(ol,key,ck){const lis=[...ol.querySelectorAll('li')];let first=null;lis.forEach((li,j)=>{const d=!!ck[key+':'+j];li.classList.toggle('done',d);if(!d&&first===null)first=j;});
+ lis.forEach((li,j)=>li.classList.toggle('now',j===first));const card=ol.closest('.card');if(card)card.classList.toggle('ok',first===null);return first===null;}
+const tagHTML=t=>{if(!t)return'';if(t.startsWith('sub:'))return`<b class="tag sub">SUB</b>`;if(t.startsWith('add'))return`<b class="tag add">ADD</b>`;if(t==='no')return`<b class="tag no">NO</b>`;return'';};
+const tagHint=(t,h)=>t&&t.startsWith('sub:')?'Instead of '+t.slice(4)+'. '+h:h;
+const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${esc(w)}<span>${esc(tagHint(t,h))}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
+/* ================= TICKETS ================= */
+const age=t=>{const s=Math.max(0,Math.floor((queue.now-t)/1000));if(s<60)return s+"s";const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h<24?h+"h "+(m%60)+"m":Math.floor(h/24)+"d"};
+const LATE_MS=6*60000;
+const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
+function renderQueue(){const w=queue.waiting;
+ $('#nWait').textContent=w.length;$('#stMade').textContent=queue.madeToday;
+ const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
+ $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${queue.now-o.created>LATE_MS?' late':''}" data-id="${esc(o.id)}">
+   <span class="code">${esc(o.ticket)}</span><span class="who">${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
+   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
+ $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
+ const r=queue.ready;const rec=$('#recent');rec.hidden=!r.length;
+ if(r.length)rec.innerHTML=`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button></div>`).join(''),
+  rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post('/undo',b.dataset.id));}
+function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
+ if(!o){m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="items"><div class="blank">All caught up<small>${queue.madeToday} made today</small></div></div><div class="upnext"></div>`;return;}
+ const ck=checks[o.id]||(checks[o.id]={});
+ const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
+ m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+  <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
+  <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>`;
+ $('#doneBtn').onclick=()=>{post('/done',o.id);delete checks[o.id];};
+ m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
+ m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
+ progress(o,ck);}
+function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];const ok=cards.filter(c=>c.classList.contains('ok')).length;
+ $('#prog').innerHTML=cards.map(c=>`<span class="pip${c.classList.contains('ok')?' ok':''}"></span>`).join('')+`<span>${ok}/${cards.length}</span>`;
+ $('#doneBtn').classList.toggle('ready',cards.length>0&&ok===cards.length);}
+function drinkCard(it,ix,ck){const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
+ const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
+  return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
+ return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}"><div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+esc(p.ingredients.join(' + ')):''}</div></div><span class="qty${it.qty>1?' many':''}">×${it.qty}</span></div>
+  ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
+function grabCard(it,ix,ck){const k='g'+ix;
+ return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}
+/* ================= LOOKUP (Build Cards) ================= */
+const CUPS={default:[['16 oz',0],['24 oz',1],['32 oz',2]],'coffee':[['12 oz',0],['16 oz',1],['20 oz',2]],'floats':[['Regular',1],['Large',2]],'soft serve':[['Regular',1],['Large',2]],'beach babies':[['Small',0],['Large',2]]};
+let lcat='All',lcup=1,lcur=null,lck={};
+try{const s=JSON.parse(localStorage.getItem('tb-make')||'{}');if(s.cat)lcat=s.cat;if(s.cup!=null)lcup=s.cup;}catch(e){}
+function lsave(){try{localStorage.setItem('tb-make',JSON.stringify({cat:lcat,cup:lcup}))}catch(e){}}
+const recipeList=()=>Object.entries(RECIPES).map(([n,r])=>({n,c:r.c||'',i:r.i||[],note:r.note||'',how:r.how}));
+const cupsFor=c=>{const n=norm(c);for(const [k,v] of Object.entries(CUPS))if(k!=='default'&&n.includes(k))return v;return CUPS.default;};
+function renderLookup(){const all=recipeList();const cats=['All',...new Set(all.map(d=>d.c).filter(Boolean))];
+ if(!lcur||!RECIPES[lcur])lcur=all[0]&&all[0].n;
+ $('#cats').innerHTML=cats.map(c=>`<button class="fchip" aria-pressed="${c===lcat}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+ $('#cats').querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{lcat=b.dataset.c;lsave();renderLookup();});
+ const d=all.find(x=>x.n===lcur)||all[0];const cups=cupsFor(d&&d.c);if(lcup>cups.length-1)lcup=cups.length-1;
+ $('#sizes').innerHTML=cups.map((c,j)=>`<button class="fchip" aria-pressed="${j===lcup}" data-j="${j}">${esc(c[0])}</button>`).join('');
+ $('#sizes').querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{lcup=+b.dataset.j;lsave();lck={};renderLookup();});
+ const q=$('#q').value.toLowerCase().trim();
+ const r=all.filter(x=>(lcat==='All'||x.c===lcat)&&(!q||(x.n+' '+x.i.join(' ')+' '+x.note).toLowerCase().includes(q)));
+ $('#list').innerHTML=r.map(x=>`<button class="pick${x.n===lcur?' on':''}" data-n="${esc(x.n)}" style="${catColor(x.c)?`--cat:${catColor(x.c)}`:''}"><b>${esc(x.n)}</b><small>${esc(x.i[0]||x.note||x.c)}</small></button>`).join('')||'<p class="empty">No drinks match. Try another word.</p>';
+ $('#list').querySelectorAll('.pick').forEach(b=>b.onclick=()=>{lcur=b.dataset.n;lck={};renderLookup();});
+ if(!d){$('#lbuild').innerHTML='';return;}
+ const cupName=cups[lcup][0];const p=plan(d.n,[cupName]);
+ $('#lbuild').innerHTML=`<div><h2>${esc(d.n)}</h2><p class="sub">${esc(d.c)} · ${esc(cupName)} · ${d.i.length?esc(d.i.join(' + ')):esc(d.note||'')}</p></div>${stepsHTML('L',p.steps)}
+  <div class="foot"><button class="ghost" id="lreset">Start over</button><span class="status" id="lstatus"></span><button class="big" id="lnext">Next drink</button></div>`;
+ const ol=$('#lbuild ol');const upd=()=>{const lis=[...ol.querySelectorAll('li')];const done=lis.filter(l=>l.classList.contains('done')).length;const st=$('#lstatus');if(done===lis.length){st.textContent='Done. Hand it off.';st.classList.add('ok');}else{st.textContent=done?done+' of '+lis.length+' steps done':'Tap each step as you go';st.classList.remove('ok');}};
+ wireSteps(ol,'L',lck,upd);upd();
+ $('#lreset').onclick=()=>{lck={};renderLookup();};
+ $('#lnext').onclick=()=>{$('#q').value='';lck={};renderLookup();$('#q').focus();};}
+$('#q').oninput=renderLookup;
+/* ================= modes, data, polling ================= */
+function setMode(m){$('#tickets').classList.toggle('on',m==='tickets');$('#lookup').classList.toggle('on',m==='lookup');$('#mTickets').setAttribute('aria-pressed',m==='tickets');$('#mLookup').setAttribute('aria-pressed',m==='lookup');if(m==='lookup')renderLookup();}
+$('#mTickets').onclick=()=>setMode('tickets');$('#mLookup').onclick=()=>setMode('lookup');
+let audioCtx=null;document.addEventListener('pointerdown',()=>{try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();}catch(e){}},{once:true});
+function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
+async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
+async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw new Error(r.status);queue=await r.json();
+  $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
+  const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
+  for(const o of queue.waiting)if(!seen.has(o.id)&&!firstLoad)fresh=true;
+  if(firstLoad){queue.waiting.forEach(o=>seen.add(o.id));firstLoad=false;}
+  if(fresh){ding();if(!$('#tickets').classList.contains('on'))setMode('tickets');}
+  if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
+  else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
+ catch(e){$('#bar').hidden=false;$('#bar').textContent='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';}}
+function tick(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});queue.now=Date.now();renderQueue();}
+(async()=>{try{RECIPES=(await (await fetch('/recipes.json')).json()).recipes||{};}catch(e){}
+ try{loadGroups(await (await fetch('/addons.json')).json());}catch(e){}
+ tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
+ if(location.hash==='#lookup')setMode('lookup');
+ try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}})();
+</script>
+</body>
+</html>
