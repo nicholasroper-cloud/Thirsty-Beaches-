@@ -188,6 +188,40 @@ ol li .amt{color:var(--accent);text-shadow:0 0 10px rgba(0,240,255,.4);font-weig
 .bar{background:var(--pink-deep)}
 input[type=search]{font-family:var(--mono);font-size:1rem}
 input[type=search]::placeholder{color:var(--mute)}
+
+/* ---- synthwave scenery (CSS only, light enough for Silk) ---- */
+.app{position:relative;isolation:isolate}
+.app::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.7;
+ background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 28% 62%,#fff 60%,transparent 61%),radial-gradient(1.5px 1.5px at 45% 30%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 63% 12%,#fff 60%,transparent 61%),radial-gradient(1.5px 1.5px at 77% 48%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 88% 26%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 52% 72%,#fff 60%,transparent 61%),radial-gradient(1.5px 1.5px at 93% 70%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 8% 84%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 36% 90%,#fff 60%,transparent 61%),radial-gradient(1.5px 1.5px at 70% 86%,#fff 60%,transparent 61%),radial-gradient(1px 1px at 20% 40%,#fff 60%,transparent 61%)}
+.make{position:relative;overflow:hidden}
+.make::after{content:"";position:absolute;left:-10%;right:-10%;bottom:46px;height:42%;z-index:0;pointer-events:none;opacity:.55;
+ background:linear-gradient(to top,rgba(255,45,149,.10),transparent 70%),repeating-linear-gradient(90deg,rgba(255,45,149,.35) 0 2px,transparent 2px 110px),repeating-linear-gradient(0deg,rgba(0,240,255,.28) 0 2px,transparent 2px 56px);
+ transform:perspective(700px) rotateX(58deg);transform-origin:50% 100%;
+ -webkit-mask-image:linear-gradient(to top,#000 20%,transparent);mask-image:linear-gradient(to top,#000 20%,transparent)}
+.make>*{position:relative;z-index:1}
+.mhead .code{animation:neon .8s steps(1,end) 1}
+@keyframes neon{0%{opacity:.2}8%{opacity:1}14%{opacity:.3}22%{opacity:1}30%{opacity:.5}36%{opacity:1}100%{opacity:1}}
+.card{position:relative}
+.card.ok{opacity:.72}
+.card.ok::after{content:"READY";position:absolute;top:14px;right:64px;font-family:var(--display);font-size:1.1rem;letter-spacing:.12em;color:#3be08a;border:3px solid #3be08a;border-radius:8px;padding:4px 12px;transform:rotate(-8deg);text-shadow:0 0 12px rgba(59,224,138,.8);box-shadow:0 0 14px rgba(59,224,138,.5),inset 0 0 10px rgba(59,224,138,.25);pointer-events:none}
+.card.grab.ok::after{right:14px;top:auto;bottom:14px}
+.tk{position:relative}
+.tk.new::after{content:"NEW";position:absolute;top:-9px;right:14px;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;background:var(--sun);color:#08011c;padding:2px 8px;border-radius:999px;box-shadow:0 0 10px rgba(255,209,102,.7)}
+.blank::before{content:"";display:block;width:260px;height:130px;margin:0 auto 22px;border-radius:260px 260px 0 0;
+ background:linear-gradient(#ffd166 0%,#ff9e5e 45%,#ff2d95 100%);
+ -webkit-mask-image:repeating-linear-gradient(to top,transparent 0 6px,#000 6px 22px);mask-image:repeating-linear-gradient(to top,transparent 0 6px,#000 6px 22px);
+ filter:drop-shadow(0 0 24px rgba(255,120,80,.6))}
+.blank{color:#fff;text-shadow:0 0 14px rgba(0,240,255,.6);letter-spacing:.04em}
+.blank small{color:var(--mute);font-family:var(--mono);text-shadow:none}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px;box-shadow:0 0 0 2px rgba(255,255,255,.12),0 0 8px currentColor;background:currentColor}
+.ingl{font-family:var(--mono);letter-spacing:.04em}
+.ingl .dot{width:9px;height:9px;margin-right:5px}
+.ingl .sep{color:var(--mute);margin:0 6px}
+.pick .dot{width:8px;height:8px;margin-right:5px}
+.queue,.make,.find,.lmake,.recent,.qlist,.items{min-width:0}
+.rrow span,.rrow b{min-width:0}
+.rrow{min-width:0;overflow:hidden}
+.chead .cup .ingl{font-size:.8rem}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -230,6 +264,10 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const CAT_COLOR={"floats":"#a07bff","dirty sodas":"#ff6f9c","new waves":"#28cdff","energy":"#ffb300","lemonades":"#ffcf33","italian sodas":"#ff86d6","soft serve":"#46e9c4","coffee":"#dcab73","beach babies":"#8fe0ff","treats":"#ff5ec7","seasonal":"#ff7a59","refreshers":"#5ee0a0","secret":"#cda44e"};
+const ING=[["diet dr pepper","#5a2a1a"],["dr pepper","#7a3b26"],["black cherry","#5c0a2a"],["diet coke","#2a1a12"],["coke","#3a2418"],["coca","#3a2418"],["pepsi","#1d3b7a"],["sprite zero","#a8d86b"],["sprite","#b9e86b"],["mountain dew","#c8f05a"],["mtn dew","#c8f05a"],["root beer","#5a2e14"],["cream soda","#e8c88a"],["big red","#e03a3a"],["fanta","#ff9e5e"],["orange soda","#ff9e5e"],["squirt","#d7f0a0"],["fresca","#d8ecff"],["ginger ale","#f3e3a0"],["tonic","#d8ecff"],["sparkling water","#cfefff"],["coconut water","#e8fff8"],["strawberry lemonade","#ff9adf"],["lemonade","#fff3b0"],["red bull","#7fd8ff"],["swig energy","#7fd8ff"],["energy","#7fd8ff"],["monster","#3be08a"],["alani","#ff9adf"],["espresso","#3a2418"],["cold brew","#3a2418"],["coffee","#5a3a22"],["hot chocolate","#6b3a2a"],["chocolate","#6b3a2a"],["milk","#fff6e8"],["half & half","#ffffff"],["heavy cream","#ffffff"],["cream","#fff6e8"],["cold foam","#fff6e8"],["whipped","#ffffff"],["dole whip","#ffe066"],["soft serve","#fff6e8"],["twist","#ffe066"],["protein","#f0f0f0"],["coconut","#f7f2e6"],["vanilla","#ffd166"],["blue raspberry","#4aa8ff"],["raspberry","#d66f8a"],["cherry","#c21a8f"],["peach","#ffb37a"],["mango","#ffb000"],["pineapple","#ffe066"],["strawberr","#ff6b6b"],["lime","#9be36b"],["lemon","#fff3b0"],["orange","#ff9e5e"],["caramel","#c47a3a"],["butterscotch","#de9a6e"],["chamoy","#c4177a"],["tajin","#ff7a45"],["tajín","#ff7a45"],["grenadine","#c21a8f"],["pumpkin","#ff7a45"],["cinnamon","#a0522d"],["peppermint","#3be08a"],["guava","#ff7a9a"],["grapefruit","#ff8c69"],["pomegranate","#b0004e"],["cranberry","#b0004e"],["passion","#ffb000"],["watermelon","#ff5e7a"],["green apple","#7ee36b"],["apple","#d94a4a"],["cotton candy","#ff9adf"],["blackberry","#5c2a72"],["grape","#8a3ffc"],["hot honey","#ffb000"],["honey","#ffb000"],["sour","#c8f05a"],["pearls","#2af5e4"],["boba","#2af5e4"],["marshmallow","#ffffff"],["cupcake","#ff9adf"],["banana","#ffe066"],["sprinkles","#ff3cac"],["gummy","#3be08a"],["candy","#ff3cac"],["salt","#d8ecff"],["ice","#d8ecff"],["water","#cfefff"]];
+const ingColor=x=>{const n=norm(x);for(const [k,v] of ING)if(n.includes(norm(k)))return v;return"";};
+const dot=x=>{const c=ingColor(x);return c?`<i class="dot" style="color:${c}"></i>`:'';};
+const ingList=arr=>`<span class="ingl">${arr.map(x=>dot(x)+esc(x)).join('<span class="sep">·</span>')}</span>`;
 const catColor=c=>{const n=norm(c);for(const [k,v] of Object.entries(CAT_COLOR))if(n.includes(k))return v;return"";};
 let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),firstLoad=true,checks={};
 /* ---- mod classification from addons.json (same groups the kiosk + Register use) ---- */
@@ -317,7 +355,7 @@ function markSteps(ol,key,ck){const lis=[...ol.querySelectorAll('li')];let first
  lis.forEach((li,j)=>li.classList.toggle('now',j===first));const card=ol.closest('.card');if(card)card.classList.toggle('ok',first===null);return first===null;}
 const tagHTML=t=>{if(!t)return'';if(t.startsWith('sub:'))return`<b class="tag sub">SUB</b>`;if(t.startsWith('add'))return`<b class="tag add">ADD</b>`;if(t==='no')return`<b class="tag no">NO</b>`;return'';};
 const tagHint=(t,h)=>t&&t.startsWith('sub:')?'Instead of '+t.slice(4)+'. '+h:h;
-const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${esc(w)}<span>${esc(tagHint(t,h))}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
+const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${/^(lid|pour \+ lid|dome lid|spoon|hand off|blend$)/i.test(w)||t==='no'?'':dot(w)}${esc(w)}<span>${esc(tagHint(t,h))}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
 /* ================= TICKETS ================= */
 const age=t=>{const s=Math.max(0,Math.floor((queue.now-t)/1000));if(s<60)return s+"s";const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h<24?h+"h "+(m%60)+"m":Math.floor(h/24)+"d"};
 const LATE_MS=6*60000;
@@ -349,7 +387,7 @@ function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];co
 function drinkCard(it,ix,ck){const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
  const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
   return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
- return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}"><div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+esc(p.ingredients.join(' + ')):''}</div></div><span class="qty${it.qty>1?' many':''}">×${it.qty}</span></div>
+ return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}"><div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div><span class="qty${it.qty>1?' many':''}">×${it.qty}</span></div>
   ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
  return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}
@@ -369,11 +407,11 @@ function renderLookup(){const all=recipeList();const cats=['All',...new Set(all.
  $('#sizes').querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{lcup=+b.dataset.j;lsave();lck={};renderLookup();});
  const q=$('#q').value.toLowerCase().trim();
  const r=all.filter(x=>(lcat==='All'||x.c===lcat)&&(!q||(x.n+' '+x.i.join(' ')+' '+x.note).toLowerCase().includes(q)));
- $('#list').innerHTML=r.map(x=>`<button class="pick${x.n===lcur?' on':''}" data-n="${esc(x.n)}" style="${catColor(x.c)?`--cat:${catColor(x.c)}`:''}"><b>${esc(x.n)}</b><small>${esc(x.i[0]||x.note||x.c)}</small></button>`).join('')||'<p class="empty">No drinks match. Try another word.</p>';
+ $('#list').innerHTML=r.map(x=>`<button class="pick${x.n===lcur?' on':''}" data-n="${esc(x.n)}" style="${catColor(x.c)?`--cat:${catColor(x.c)}`:''}"><b>${esc(x.n)}</b><small>${x.i[0]?dot(x.i[0]):''}${esc(x.i[0]||x.note||x.c)}</small></button>`).join('')||'<p class="empty">No drinks match. Try another word.</p>';
  $('#list').querySelectorAll('.pick').forEach(b=>b.onclick=()=>{lcur=b.dataset.n;lck={};renderLookup();});
  if(!d){$('#lbuild').innerHTML='';return;}
  const cupName=cups[lcup][0];const p=plan(d.n,[cupName]);
- $('#lbuild').innerHTML=`<div><h2>${esc(d.n)}</h2><p class="sub">${esc(d.c)} · ${esc(cupName)} · ${d.i.length?esc(d.i.join(' + ')):esc(d.note||'')}</p></div>${stepsHTML('L',p.steps)}
+ $('#lbuild').innerHTML=`<div><h2>${esc(d.n)}</h2><p class="sub">${esc(d.c)} · ${esc(cupName)} · ${d.i.length?ingList(d.i):esc(d.note||'')}</p></div>${stepsHTML('L',p.steps)}
   <div class="foot"><button class="ghost" id="lreset">Start over</button><span class="status" id="lstatus"></span><button class="big" id="lnext">Next drink</button></div>`;
  const ol=$('#lbuild ol');const upd=()=>{const lis=[...ol.querySelectorAll('li')];const done=lis.filter(l=>l.classList.contains('done')).length;const st=$('#lstatus');if(done===lis.length){st.textContent='Done. Hand it off.';st.classList.add('ok');}else{st.textContent=done?done+' of '+lis.length+' steps done':'Tap each step as you go';st.classList.remove('ok');}};
  wireSteps(ol,'L',lck,upd);upd();
