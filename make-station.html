@@ -39,6 +39,20 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .stats b{display:block;font-family:var(--display);font-size:2rem;color:var(--accent);text-shadow:0 0 12px rgba(0,240,255,.5)}
 .stats .top{grid-column:1/-1;font-size:.85rem;line-height:1.7}
 .stats .top i{font-style:normal;color:var(--fg)}
+.mode.fs{border:1.5px solid var(--line);background:var(--pane);margin-right:14px;font-family:var(--mono);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+:fullscreen .mode.fs{display:none}
+.saver{position:fixed;inset:0;z-index:50;background:radial-gradient(1400px 800px at 50% 115%,#5a1a6e 0%,#2a0a4a 40%,#08011c 75%);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;cursor:pointer;overflow:hidden;user-select:none}
+.saver.on{display:flex}
+.saver .sun{width:520px;height:260px;border-radius:520px 520px 0 0;background:linear-gradient(#ffd166 0%,#ff9e5e 40%,#ff2d95 100%);-webkit-mask-image:repeating-linear-gradient(to top,transparent 0 10px,#000 10px 40px);mask-image:repeating-linear-gradient(to top,transparent 0 10px,#000 10px 40px);filter:drop-shadow(0 0 40px rgba(255,120,80,.55));animation:bob 9s ease-in-out infinite;position:absolute;bottom:34%;left:50%;transform:translateX(-50%)}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-14px)}}
+.saver .grid{position:absolute;left:-10%;right:-10%;bottom:0;height:36%;opacity:.7;background:repeating-linear-gradient(90deg,rgba(255,45,149,.45) 0 2px,transparent 2px 120px),repeating-linear-gradient(0deg,rgba(0,240,255,.35) 0 2px,transparent 2px 60px);transform:perspective(700px) rotateX(58deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(to top,#000 25%,transparent);mask-image:linear-gradient(to top,#000 25%,transparent);animation:roll 6s linear infinite}
+@keyframes roll{from{background-position:0 0,0 0}to{background-position:0 0,0 60px}}
+.saver img{height:220px;position:relative;z-index:2;filter:drop-shadow(0 0 30px rgba(255,45,149,.6))}
+.saver .time{font-family:var(--display);font-size:5rem;color:#fff;text-shadow:0 0 24px rgba(0,240,255,.8);position:relative;z-index:2;line-height:1}
+.saver .line{font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-size:1rem;position:relative;z-index:2}
+.saver .made{font-family:var(--mono);color:var(--mute);letter-spacing:.1em;position:relative;z-index:2}
+.saver .tap{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:.8rem;letter-spacing:.2em;color:var(--mute);z-index:2}
+@media (prefers-reduced-motion:reduce){.saver .sun,.saver .grid{animation:none}}
 .stat{text-align:right;line-height:1.15}
 .stat b{font-family:var(--display);font-weight:700;font-size:1.5rem;display:block}
 .stat span{font-size:.78rem;color:var(--mute);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
@@ -245,6 +259,7 @@ input[type=search]::placeholder{color:var(--mute)}
       <button class="mode" id="mLookup" aria-pressed="false">Lookup</button>
     </div>
     <div class="spacer"></div>
+    <button class="mode fs" id="fsBtn" title="Fill the whole screen">Full screen</button>
     <button class="mode voice" id="voiceBtn" aria-pressed="false" title="Read new tickets out loud">Voice off</button>
     <div class="stat" id="stOldest"><b>–</b><span>Longest wait</span></div>
     <div class="stat"><b id="stMade">0</b><span>Made today</span></div>
@@ -270,6 +285,7 @@ input[type=search]::placeholder{color:var(--mute)}
   </section>
 </div>
 <div class="bar" id="bar" hidden></div>
+<div class="saver" id="saver" aria-hidden="true"><div class="grid"></div><div class="sun"></div><img src="/assets/logo.png" alt="" onerror="this.remove()"><div class="time" id="saverTime"></div><div class="line">Stay thirsty, beaches</div><div class="made" id="saverMade"></div><div class="tap">Tap anywhere, or a new ticket wakes it</div></div>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -459,15 +475,24 @@ async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
   const freshOnes=queue.waiting.filter(o=>!seen.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
   if(firstLoad){queue.waiting.forEach(o=>seen.add(o.id));firstLoad=false;}
-  if(fresh){ding();freshOnes.slice(0,2).forEach(o=>setTimeout(()=>announce(o),400));if(!$('#tickets').classList.contains('on'))setMode('tickets');}
+  if(fresh){hideSaver();ding();freshOnes.slice(0,2).forEach(o=>setTimeout(()=>announce(o),400));if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
   else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
  catch(e){$('#bar').hidden=false;$('#bar').textContent='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';}}
+/* ---- full screen ---- */
+$('#fsBtn').onclick=()=>{try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}catch(e){}};
+/* ---- screensaver: after SAVER_MIN idle minutes with nothing waiting; any touch or a new ticket wakes it ---- */
+const SAVER_MIN=3;let lastTouch=Date.now(),saverOn=false,saverForced=false;
+function showSaver(){if(saverOn)return;saverOn=true;$('#saver').classList.add('on');saverTick();}
+function hideSaver(){if(!saverOn)return;saverForced=false;saverOn=false;$('#saver').classList.remove('on');}
+function saverTick(){if(!saverOn)return;$('#saverTime').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});const t=queue.today||{};$('#saverMade').textContent=(t.made||0)+' made today'+(t.top&&t.top[0]?' · top drink '+t.top[0].name:'');}
+document.addEventListener('pointerdown',()=>{lastTouch=Date.now();hideSaver();},{capture:true});
+setInterval(()=>{if(!saverOn&&queue.waiting.length===0&&Date.now()-lastTouch>SAVER_MIN*60000)showSaver();if(saverOn&&queue.waiting.length&&!saverForced)hideSaver();saverTick();},5000);
 function tick(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});queue.now=Date.now();renderQueue();}
 (async()=>{try{RECIPES=(await (await fetch('/recipes.json')).json()).recipes||{};}catch(e){}
  try{loadGroups(await (await fetch('/addons.json')).json());}catch(e){}
  setVoice(VOICE);tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
- if(location.hash==='#lookup')setMode('lookup');
+ if(location.hash==='#lookup')setMode('lookup');if(location.hash==='#saver'){saverForced=true;showSaver();}
  try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}})();
 </script>
 </body>

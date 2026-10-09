@@ -65,6 +65,7 @@ async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r
   first=false;}
  catch(e){$('#bar').hidden=false;$('#bar').textContent='Board can’t reach the station. Check the Wi-Fi.';}}
 function tick(){$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+$('#clock').onclick=()=>{try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}catch(e){}};$('#clock').title='Tap for full screen';$('#clock').style.cursor='pointer';
 tick();poll();setInterval(poll,4000);setInterval(tick,15000);
 try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}
 </script>

@@ -51,6 +51,14 @@ SETUP (one time)
   4. Optional: Stop-Kiosk.bat stops BOTH the kiosk and the Make Station
      (it closes every node.exe).
 
+FULL SCREEN + SCREENSAVER
+-------------------------
+  Tap "Full screen" in the top bar to fill the whole display (Silk hides
+  its address bar). On the pickup board, tap the clock for the same.
+  After 3 idle minutes with NOTHING waiting, a screensaver comes on: logo,
+  sunset, clock, today's count. Any touch or a new ticket wakes it, so it
+  never hides an order. Preview it at  http://<pc-address>:8140/#saver
+
 VOICE
 -----
   Tap "Voice off" in the top bar to turn it on. New tickets are then read
