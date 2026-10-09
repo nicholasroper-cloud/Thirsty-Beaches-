@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Thirsty Beaches Order Up</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Customer-facing pickup board. Any TV, tablet or phone on the trailer Wi-Fi: http://<pc>:8140/board
+   Left: ORDER UP (ready in the last 30 min). Right: in the works. Brand: thirstybeaches.com synthwave. */
+:root{color-scheme:dark;--bg:#08011c;--card:#150b31;--fg:#fff6e8;--mute:#a996cf;--line:#2c1b52;--accent:#00f0ff;--pink:#ff2d95;--sun:#ffd166;--green:#3be08a;
+--display:'Bungee',system-ui,sans-serif;--body:'Archivo',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:radial-gradient(1400px 700px at 50% -260px,#3a1261 0%,#1a0838 45%,var(--bg) 80%) fixed,var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden;position:relative}
+body::after{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:34%;pointer-events:none;opacity:.5;z-index:0;
+ background:repeating-linear-gradient(90deg,rgba(255,45,149,.35) 0 2px,transparent 2px 120px),repeating-linear-gradient(0deg,rgba(0,240,255,.28) 0 2px,transparent 2px 60px);
+ transform:perspective(700px) rotateX(58deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(to top,#000 20%,transparent);mask-image:linear-gradient(to top,#000 20%,transparent)}
+.app{position:relative;z-index:1;height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);padding:24px 36px;gap:18px}
+header{display:flex;align-items:center;gap:20px}
+header img{height:84px}
+header .t{font-family:var(--display);font-size:1.4rem;letter-spacing:.04em;color:#fff;text-shadow:0 0 14px rgba(0,240,255,.5)}
+header .t small{display:block;font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+header .sp{flex:1}
+.clock{font-family:var(--display);font-size:1.6rem;color:var(--accent);text-shadow:0 0 12px rgba(0,240,255,.6)}
+main{display:grid;grid-template-columns:3fr 2fr;gap:24px;min-height:0}
+section{min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px}
+h2{margin:0;font-family:var(--display);font-weight:400;font-size:1.3rem;letter-spacing:.08em}
+h2.up{color:var(--green);text-shadow:0 0 16px rgba(59,224,138,.7)}
+h2.wk{color:var(--sun);text-shadow:0 0 16px rgba(255,209,102,.6)}
+.list{display:grid;gap:12px;align-content:start;overflow:hidden}
+.ready{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:20px;background:var(--card);border:2px solid var(--green);border-radius:20px;padding:16px 24px;box-shadow:0 0 24px rgba(59,224,138,.25)}
+.ready .code{font-family:var(--display);font-size:3.4rem;line-height:1;letter-spacing:.06em;color:#fff;text-shadow:0 0 16px rgba(59,224,138,.8)}
+.ready .who{font-weight:700;font-size:2rem;line-height:1.1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ready .who small{display:block;font-family:var(--mono);font-size:.95rem;color:var(--mute);font-weight:400;letter-spacing:.04em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ready.fresh{animation:pop .7s ease}
+@keyframes pop{0%{transform:scale(.94);box-shadow:0 0 0 rgba(59,224,138,0)}50%{transform:scale(1.02);box-shadow:0 0 40px rgba(59,224,138,.6)}100%{transform:scale(1)}}
+.wait{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:16px;background:rgba(21,11,49,.7);border:1.5px solid var(--line);border-radius:16px;padding:12px 18px}
+.wait .code{font-family:var(--display);font-size:1.8rem;letter-spacing:.06em;color:var(--sun)}
+.wait .who{font-weight:700;font-size:1.2rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wait .who small{display:block;font-family:var(--mono);font-size:.8rem;color:var(--mute);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{font-family:var(--mono);color:var(--mute);letter-spacing:.08em;padding:20px 4px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:8px;background:#c4177a;color:#fff;font-weight:700;text-align:center;z-index:9;font-family:var(--mono)}
+@media (max-width:900px){main{grid-template-columns:1fr}.ready .code{font-size:2.4rem}.ready .who{font-size:1.4rem}header img{height:60px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><img src="/assets/logo.png" alt="Thirsty Beaches" onerror="this.remove()"><div class="t">Order Up<small>Stay thirsty, beaches</small></div><div class="sp"></div><div class="clock" id="clock"></div></header>
+  <main>
+    <section><h2 class="up">Ready, come grab it</h2><div class="list" id="ready"></div></section>
+    <section><h2 class="wk">In the works</h2><div class="list" id="wait"></div></section>
+  </main>
+</div>
+<div class="bar" id="bar" hidden></div>
+<script>
+const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let seenReady=new Set(),first=true;
+const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
+function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);speechSynthesis.speak(u);}catch(e){}}
+async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;
+  const ready=q.ready.slice(0,6),wait=q.waiting.slice(0,10);
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
+  for(const o of ready){if(!seenReady.has(o.id)&&!first)say('Order up'+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
+  first=false;}
+ catch(e){$('#bar').hidden=false;$('#bar').textContent='Board can’t reach the station. Check the Wi-Fi.';}}
+function tick(){$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+tick();poll();setInterval(poll,4000);setInterval(tick,15000);
+try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}
+</script>
+</body>
+</html>

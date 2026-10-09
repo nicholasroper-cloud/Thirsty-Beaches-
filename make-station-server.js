@@ -18,7 +18,7 @@
    Config (kiosk-config.env, all optional):
      MAKE_PORT=8140              port the Show connects to
      MAKE_BIND=0.0.0.0           0.0.0.0 = reachable on the LAN; 127.0.0.1 = this PC only
-     MAKE_LOOKBACK_HOURS=6       how far back to show undone tickets
+     MAKE_LOOKBACK_HOURS=16      how far back to show undone tickets (and count today's stats)
      MAKE_POLL_SEC=6             how often to ask Clover for orders
      GRAB_CATEGORIES=Treats      comma list of catalog categories that are "grab", not "build"
    ============================================================================ */
@@ -32,7 +32,7 @@ const MERCHANT_ID = process.env.CLOVER_MERCHANT_ID;
 const BASE        = process.env.CLOVER_BASE_URL || "https://api.clover.com";
 const PORT        = parseInt(process.env.MAKE_PORT || "8140", 10);
 const BIND        = (process.env.MAKE_BIND || "0.0.0.0").trim();
-const LOOKBACK_MS = Math.max(1, parseFloat(process.env.MAKE_LOOKBACK_HOURS || "6")) * 3600000;
+const LOOKBACK_MS = Math.max(1, parseFloat(process.env.MAKE_LOOKBACK_HOURS || "16")) * 3600000;
 const POLL_MS     = Math.max(3, parseInt(process.env.MAKE_POLL_SEC || "6", 10)) * 1000;
 const GRAB_CATS   = new Set((process.env.GRAB_CATEGORIES || "Treats").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
 const STATE_FILE  = path.join(__dirname, "make-state.json");
@@ -150,6 +150,7 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "GET" && (p === "/" || p === "/index.html")) return sendFile(res, path.join(__dirname, "make-station.html"));
+  if (req.method === "GET" && (p === "/board" || p === "/board/")) return sendFile(res, path.join(__dirname, "pickup-board.html"));
   if (req.method === "GET" && p === "/recipes.json") return sendFile(res, path.join(__dirname, "recipes.json"));
   if (req.method === "GET" && p === "/addons.json") return sendFile(res, path.join(__dirname, "addons.json"));
   if (req.method === "GET" && p.startsWith("/assets/")) {
@@ -162,8 +163,20 @@ const server = http.createServer(async (req, res) => {
     const now = Date.now();
     const waiting = queue.orders.filter(o => !o.done);
     const ready   = queue.orders.filter(o => o.done && now - o.done < 30 * 60000).sort((a, b) => b.done - a.done).slice(0, 8);
-    const madeToday = Object.values(state.done).filter(t => new Date(t).toDateString() === new Date(now).toDateString()).length;
-    return sendJSON(res, 200, { now, lastPoll: queue.at, error: queue.error, waiting, ready, madeToday });
+    const today = new Date(now).toDateString();
+    const madeToday = Object.values(state.done).filter(t => new Date(t).toDateString() === today).length;
+    // today's stats from tickets done today that are still in the lookback window
+    const doneToday = queue.orders.filter(o => o.done && new Date(o.done).toDateString() === today);
+    const secs = doneToday.map(o => (o.done - o.created) / 1000).filter(x => x > 0 && x < 4 * 3600);
+    const avgSec = secs.length ? Math.round(secs.reduce((a, b) => a + b, 0) / secs.length) : 0;
+    const tally = {};
+    for (const o of doneToday) for (const it of o.items) if (it.kind === "drink") tally[it.name] = (tally[it.name] || 0) + it.qty;
+    const top = Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
+    const byHour = {};
+    for (const o of doneToday) { const h = new Date(o.done).getHours(); byHour[h] = (byHour[h] || 0) + 1; }
+    const busiest = Object.entries(byHour).sort((a, b) => b[1] - a[1])[0];
+    return sendJSON(res, 200, { now, lastPoll: queue.at, error: queue.error, waiting, ready, madeToday,
+      today: { made: madeToday, avgSec, top, busiestHour: busiest ? +busiest[0] : null, busiestCount: busiest ? busiest[1] : 0 } });
   }
   if (req.method === "POST" && (p === "/done" || p === "/undo")) {
     let body = {};

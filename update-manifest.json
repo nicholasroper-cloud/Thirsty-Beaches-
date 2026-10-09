@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -12,6 +12,10 @@
     {
       "path": "make-station.html",
       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html"
+    },
+    {
+      "path": "pickup-board.html",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html"
     },
     {
       "path": "recipes.json",

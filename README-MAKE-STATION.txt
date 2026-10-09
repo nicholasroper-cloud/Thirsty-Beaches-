@@ -34,6 +34,7 @@ FILES
   Allow-MakeStation-Firewall.bat  <- run ONCE as administrator so the Show can connect
   make-station-server.js          <- the server (reads Clover, serves the page on port 8140)
   make-station.html               <- the screen
+  pickup-board.html               <- customer pickup board (/board)
   recipes.json                    <- the build recipes (from the Build Cards)
   addons.json                     <- add-on names used to understand modifiers (shared with kiosk)
   make-state.json                 <- created on first use: which tickets were marked done
@@ -50,11 +51,32 @@ SETUP (one time)
   4. Optional: Stop-Kiosk.bat stops BOTH the kiosk and the Make Station
      (it closes every node.exe).
 
+VOICE
+-----
+  Tap "Voice off" in the top bar to turn it on. New tickets are then read
+  out loud ("New order for Nick. Thirst Trap, medium."). Needs one tap on
+  the screen after it loads (browsers only allow sound after a touch).
+
+COMING UP + STATS
+-----------------
+  Under the ticket header, "Coming up" totals the bases waiting behind the
+  current ticket (2x Dr Pepper, 1x Sprite...) and flags the same drink on
+  other tickets so they can be made together. When nothing is waiting, the
+  screen shows today's count, average ticket time, busiest hour, top drinks.
+
+PICKUP BOARD (customer-facing)
+------------------------------
+  Any TV, tablet or phone on the trailer Wi-Fi can open
+        http://<pc-address>:8140/board
+  It shows "Ready, come grab it" (tickets marked Done in the last 30 min,
+  with the customer's name) and "In the works". It calls out "Order up for
+  Nick, ticket V J 9 R" when a ticket flips to ready. Same server, no setup.
+
 CONFIG (kiosk-config.env, all optional)
 ---------------------------------------
   MAKE_PORT=8140              port the Show connects to
   MAKE_BIND=0.0.0.0           reachable on the Wi-Fi (default); 127.0.0.1 = this PC only
-  MAKE_LOOKBACK_HOURS=6       how far back to show tickets not yet marked done
+  MAKE_LOOKBACK_HOURS=16      how far back to show tickets not yet marked done (and count today's stats)
   MAKE_POLL_SEC=6             how often to ask Clover for new orders
   GRAB_CATEGORIES=Treats      Clover categories shown as GRAB cards instead of drinks
 

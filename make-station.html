@@ -29,6 +29,16 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .mode[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
 .mode .n{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:999px;background:var(--sun);color:#14292B;font-family:var(--display);font-size:.95rem;margin-left:8px;padding:0 6px}
 .top .spacer{flex:1}
+.mode.voice{border:1.5px solid var(--line);background:var(--pane);margin-right:14px;font-family:var(--mono);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+.mode.voice[aria-pressed=true]{background:transparent;border-color:var(--accent);color:var(--accent);box-shadow:0 0 14px rgba(0,240,255,.35)}
+.prep{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 24px 0;font-family:var(--mono);font-size:.85rem;color:var(--mute);letter-spacing:.04em}
+.prep b{color:var(--fg);font-family:var(--display);font-weight:400;letter-spacing:.06em;font-size:.8rem;margin-right:4px}
+.prep .pc{border:1.5px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--card);color:var(--fg)}
+.prep .pc em{font-style:normal;color:var(--accent);font-family:var(--display);margin-right:4px}
+.stats{display:grid;grid-template-columns:repeat(3,auto);gap:12px 40px;justify-content:center;margin:26px auto 0;font-family:var(--mono);font-size:.9rem;color:var(--mute);text-shadow:none}
+.stats b{display:block;font-family:var(--display);font-size:2rem;color:var(--accent);text-shadow:0 0 12px rgba(0,240,255,.5)}
+.stats .top{grid-column:1/-1;font-size:.85rem;line-height:1.7}
+.stats .top i{font-style:normal;color:var(--fg)}
 .stat{text-align:right;line-height:1.15}
 .stat b{font-family:var(--display);font-weight:700;font-size:1.5rem;display:block}
 .stat span{font-size:.78rem;color:var(--mute);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
@@ -58,7 +68,7 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .rrow b{font-family:var(--display);letter-spacing:.04em}
 .rrow span{flex:1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .undo{background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.8rem;min-height:36px}
-.make{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+.make{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;min-height:0}
 .mhead{display:flex;align-items:center;gap:18px;padding:14px 24px 10px;border-bottom:1px solid var(--line)}
 .mhead .code{font-family:var(--display);font-weight:700;font-size:2.8rem;line-height:1;letter-spacing:.04em}
 .mhead .who{font-weight:800;font-size:1.35rem;line-height:1.15;min-width:0}
@@ -235,6 +245,7 @@ input[type=search]::placeholder{color:var(--mute)}
       <button class="mode" id="mLookup" aria-pressed="false">Lookup</button>
     </div>
     <div class="spacer"></div>
+    <button class="mode voice" id="voiceBtn" aria-pressed="false" title="Read new tickets out loud">Voice off</button>
     <div class="stat" id="stOldest"><b>–</b><span>Longest wait</span></div>
     <div class="stat"><b id="stMade">0</b><span>Made today</span></div>
     <div class="clock" id="clock"></div>
@@ -371,16 +382,28 @@ function renderQueue(){const w=queue.waiting;
  if(r.length)rec.innerHTML=`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button></div>`).join(''),
   rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post('/undo',b.dataset.id));}
 function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
- if(!o){m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="items"><div class="blank">All caught up<small>${queue.madeToday} made today</small></div></div><div class="upnext"></div>`;return;}
+ if(!o){const t=queue.today||{};const fmt=s=>s?(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'–';const hr=t.busiestHour==null?'–':((t.busiestHour%12)||12)+(t.busiestHour<12?' am':' pm');
+  m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="items"><div class="blank">All caught up
+   <div class="stats"><div><b>${t.made||0}</b>made today</div><div><b>${fmt(t.avgSec)}</b>avg ticket time</div><div><b>${hr}</b>busiest hour${t.busiestCount?' ('+t.busiestCount+')':''}</div>
+   ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
  m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+  <div class="prep" id="prep"></div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
   <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>`;
  $('#doneBtn').onclick=()=>{post('/done',o.id);delete checks[o.id];};
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
- progress(o,ck);}
+ progress(o,ck);renderPrep(o);}
+function renderPrep(cur){const others=queue.waiting.filter(x=>x.id!==cur.id);const el=$('#prep');if(!el)return;
+ if(!others.length){el.innerHTML='';return;}
+ const bases={},same={};
+ for(const o of others)for(const it of o.items){if(it.kind!=='drink')continue;const p=plan(it.name,it.mods);const b=p.ingredients[0]||it.name;bases[b]=(bases[b]||0)+it.qty;}
+ for(const it of cur.items)for(const o of others)for(const x of o.items)if(x.name===it.name&&x.mods.join()===it.mods.join())same[it.name]=(same[it.name]||0)+x.qty;
+ const top=Object.entries(bases).sort((a,b)=>b[1]-a[1]).slice(0,6);
+ el.innerHTML=`<b>Coming up</b>`+top.map(([b,c])=>`<span class="pc"><em>${c}×</em>${dot(b)}${esc(b)}</span>`).join('')+
+  Object.entries(same).map(([nm,c])=>`<span class="pc" style="border-color:var(--sun)"><em>+${c}</em>more ${esc(nm)} waiting, make together</span>`).join('');}
 function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];const ok=cards.filter(c=>c.classList.contains('ok')).length;
  $('#prog').innerHTML=cards.map(c=>`<span class="pip${c.classList.contains('ok')?' ok':''}"></span>`).join('')+`<span>${ok}/${cards.length}</span>`;
  $('#doneBtn').classList.toggle('ready',cards.length>0&&ok===cards.length);}
@@ -422,21 +445,27 @@ $('#q').oninput=renderLookup;
 function setMode(m){$('#tickets').classList.toggle('on',m==='tickets');$('#lookup').classList.toggle('on',m==='lookup');$('#mTickets').setAttribute('aria-pressed',m==='tickets');$('#mLookup').setAttribute('aria-pressed',m==='lookup');if(m==='lookup')renderLookup();}
 $('#mTickets').onclick=()=>setMode('tickets');$('#mLookup').onclick=()=>setMode('lookup');
 let audioCtx=null;document.addEventListener('pointerdown',()=>{try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();}catch(e){}},{once:true});
+let VOICE=false;try{VOICE=localStorage.getItem('tb-voice')==='1';}catch(e){}
+function setVoice(v){VOICE=v;$('#voiceBtn').setAttribute('aria-pressed',v);$('#voiceBtn').textContent=v?'Voice on':'Voice off';try{localStorage.setItem('tb-voice',v?'1':'0');}catch(e){}}
+$('#voiceBtn').onclick=()=>{setVoice(!VOICE);if(VOICE)say('Voice on. I will read new tickets.');};
+function say(text){try{if(!VOICE||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.rate=1;u.pitch=1;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+function announce(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>classify(m)==='size');const s=sz?(/small/i.test(sz)?'small':/medium/i.test(sz)?'medium':/large/i.test(sz)?'large':sz):'';return (it.qty>1?it.qty+' ':'')+(it.kind==='grab'?'grab ':'')+it.name+(s?', '+s:'');});
+ say('New order'+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.');}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
 async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw new Error(r.status);queue=await r.json();
   $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
-  for(const o of queue.waiting)if(!seen.has(o.id)&&!firstLoad)fresh=true;
+  const freshOnes=queue.waiting.filter(o=>!seen.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
   if(firstLoad){queue.waiting.forEach(o=>seen.add(o.id));firstLoad=false;}
-  if(fresh){ding();if(!$('#tickets').classList.contains('on'))setMode('tickets');}
+  if(fresh){ding();freshOnes.slice(0,2).forEach(o=>setTimeout(()=>announce(o),400));if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
   else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
  catch(e){$('#bar').hidden=false;$('#bar').textContent='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';}}
 function tick(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});queue.now=Date.now();renderQueue();}
 (async()=>{try{RECIPES=(await (await fetch('/recipes.json')).json()).recipes||{};}catch(e){}
  try{loadGroups(await (await fetch('/addons.json')).json());}catch(e){}
- tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
+ setVoice(VOICE);tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
  if(location.hash==='#lookup')setMode('lookup');
  try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}})();
 </script>
