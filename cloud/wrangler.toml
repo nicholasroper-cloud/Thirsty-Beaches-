@@ -21,7 +21,7 @@ CLOVER_MERCHANT_ID = "MQKMTFBRXFP21"
 CLOVER_BASE_URL = "https://api.clover.com"
 MAKE_LOOKBACK_HOURS = "16"
 GRAB_CATEGORIES = "Treats"
-PAGE_VERSION = "3"
+PAGE_VERSION = "4"
 
 [[kv_namespaces]]
 binding = "STATE"

@@ -16,7 +16,8 @@ if(k){history.replaceState(null,'',u.pathname+u.hash);}}catch(e){}})();
 
 function page(src, dst) {
   let h = fs.readFileSync(path.join(root, src), "utf8");
-  h = h.replace("<script>\nconst $=", keyShim + "\n<script>\nconst $=");           // station + board both start their script this way
+  const i = h.lastIndexOf("<script>");                                              // the page's main script is the last one
+  h = h.slice(0, i) + keyShim + "\n" + h.slice(i);
   if (!h.includes("tb-key")) throw new Error("key shim not inserted into " + src);
   // 401 (missing key) -> clear message instead of "server not reachable"
   h = h.replace("Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?", "Need the access key. Open the station from the link with ?k= on the end.");
