@@ -65,6 +65,18 @@ SETUP (one time)
   4. Optional: Stop-Kiosk.bat stops BOTH the kiosk and the Make Station
      (it closes every node.exe).
 
+KEEPING THE SHOW ON THE PAGE
+----------------------------
+  Echo Shows close the browser after a few idle minutes and go back to
+  the Alexa home screen. The station and board play a silent audio loop
+  (after the first tap) so the Show treats the page as active and leaves
+  it alone. Also on the Show, turn off anything that fights it:
+    Settings > Home & Clock > turn off Home Content / rotating cards
+    Settings > Display > screen timeout: Never (or longest)
+    Settings > Display > Adaptive Brightness: off (optional)
+    Settings > Do Not Disturb: on during service (no pop-ups)
+  Then open the station, tap it once, and tap Full screen.
+
 FULL SCREEN + SCREENSAVER
 -------------------------
   Tap "Full screen" in the top bar to fill the whole display (Silk hides
