@@ -1,0 +1,25 @@
+# Thirsty Beaches Make Station — Cloudflare Worker
+# Deploy:  cd cloud && node build.js && npx wrangler deploy
+# Secrets (set once, never in this file):  npx wrangler secret put CLOVER_API_TOKEN
+#                                          npx wrangler secret put STATION_KEY
+name = "thirsty-beaches-station"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "none"
+
+[vars]
+CLOVER_MERCHANT_ID = "MQKMTFBRXFP21"
+CLOVER_BASE_URL = "https://api.clover.com"
+MAKE_LOOKBACK_HOURS = "16"
+GRAB_CATEGORIES = "Treats"
+PAGE_VERSION = "3"
+
+[[kv_namespaces]]
+binding = "STATE"
+id = "a8cce29686e94412bef46bfb1778cb0f"

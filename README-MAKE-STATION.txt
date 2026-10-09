@@ -28,6 +28,20 @@ show the cup size as a big badge, and tick off step by step. When every card
 on a ticket is ticked, the Done button pulses. Tickets older than 6 minutes
 turn red; the top bar shows the longest wait and how many were made today.
 
+CLOUD EDITION (no PC needed)  <- LIVE since 2026-10-08
+----------------------------
+  The same station runs on Cloudflare Workers, so nothing in the trailer
+  has to be on. Open these on the Show / any screen (the ?k= part is the
+  access key, stored in kiosk-config.env as STATION_CLOUD_KEY):
+    Station:  https://thirsty-beaches-station.nicholasroper.workers.dev/?k=<key>
+    Board:    https://thirsty-beaches-station.nicholasroper.workers.dev/board?k=<key>
+  The page remembers the key after the first open, so bookmarks work.
+  Source: repo-clone/cloud/ (src/index.js = the Worker, build.js copies the
+  station files into public/). To push a change:
+      cd cloud && node build.js && npx wrangler deploy
+  Secrets live only in Cloudflare (CLOVER_API_TOKEN, STATION_KEY).
+  Done-tickets are kept in Cloudflare KV, separate from the local version.
+
 FILES
 -----
   Run-MakeStation.bat             <- double-click to START (on the kiosk PC)
