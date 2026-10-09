@@ -33,8 +33,8 @@ CLOUD EDITION (no PC needed)  <- LIVE since 2026-10-08
   The same station runs on Cloudflare Workers, so nothing in the trailer
   has to be on. Open these on the Show / any screen (the ?k= part is the
   access key, stored in kiosk-config.env as STATION_CLOUD_KEY):
-    Station:  https://thirsty-beaches-station.nicholasroper.workers.dev/?k=<key>
-    Board:    https://thirsty-beaches-station.nicholasroper.workers.dev/board?k=<key>
+    Station:  https://station.thirstybeaches.com/?k=<key>
+    Board:    https://station.thirstybeaches.com/board?k=<key>
   The page remembers the key after the first open, so bookmarks work.
   Source: repo-clone/cloud/ (src/index.js = the Worker, build.js copies the
   station files into public/). To push a change:
