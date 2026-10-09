@@ -175,7 +175,8 @@ const server = http.createServer(async (req, res) => {
     const byHour = {};
     for (const o of doneToday) { const h = new Date(o.done).getHours(); byHour[h] = (byHour[h] || 0) + 1; }
     const busiest = Object.entries(byHour).sort((a, b) => b[1] - a[1])[0];
-    return sendJSON(res, 200, { now, lastPoll: queue.at, error: queue.error, waiting, ready, madeToday,
+    let pageVer = 0; try { pageVer = Math.floor(fs.statSync(path.join(__dirname, "make-station.html")).mtimeMs) + Math.floor(fs.statSync(path.join(__dirname, "pickup-board.html")).mtimeMs); } catch {}
+    return sendJSON(res, 200, { now, pageVer, lastPoll: queue.at, error: queue.error, waiting, ready, madeToday,
       today: { made: madeToday, avgSec, top, busiestHour: busiest ? +busiest[0] : null, busiestCount: busiest ? busiest[1] : 0 } });
   }
   if (req.method === "POST" && (p === "/done" || p === "/undo")) {

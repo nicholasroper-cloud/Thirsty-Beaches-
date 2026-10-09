@@ -455,6 +455,7 @@ function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audio
 async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
 async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw new Error(r.status);queue=await r.json();
   $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
+  if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
   const freshOnes=queue.waiting.filter(o=>!seen.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
   if(firstLoad){queue.waiting.forEach(o=>seen.add(o.id));firstLoad=false;}

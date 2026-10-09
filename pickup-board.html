@@ -57,7 +57,7 @@ const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/
 let seenReady=new Set(),first=true;
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
 function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);speechSynthesis.speak(u);}catch(e){}}
-async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;
+async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
   const ready=q.ready.slice(0,6),wait=q.waiting.slice(0,10);
   $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
