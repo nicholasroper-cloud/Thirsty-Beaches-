@@ -255,6 +255,15 @@
   .cart-line .info .price{font-weight:800;margin-top:6px;font-size:16px;color:#FFC95C;}
   .cart-empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
   .totals{padding:22px 0 6px;}
+  .prizerow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:10px 14px;border:1px dashed rgba(255,255,255,.25);border-radius:14px}
+  .prizebtn{font-weight:700}
+  .prize-ok{font-weight:800;color:#34D7FF}
+  .prizebox{letter-spacing:.18em;font-size:1.6em;font-weight:800;text-align:center}
+  .prizebox i{opacity:.35;font-style:normal}
+  .prizemsg{min-height:1.4em;text-align:center;color:#FF8A2B;font-weight:700;margin:6px 0 10px}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px;margin:0 auto}
+  .kblank{visibility:hidden}
+  .upsizenote{margin:12px auto 0;max-width:520px;padding:10px 16px;border-radius:14px;background:rgba(52,215,255,.15);color:#34D7FF;font-weight:800}
   .totals .row{display:flex;justify-content:space-between;padding:8px 0;font-size:17px;color:var(--ink-soft);}
   .totals .row.grand{font-family:"Fraunces",serif;font-weight:900;font-size:27px;color:var(--ink);
     border-top:1px solid var(--border);margin-top:10px;padding-top:18px;}
@@ -834,6 +843,7 @@
   <div id="orderForName" class="orderfor"></div>
   <div class="ordernum"><span>Your order number</span><b id="orderNum">42</b></div>
   <div class="paywindow">Head to the window to pay &amp; grab your order<span class="paychevrons"><i></i><i></i><i></i></span></div>
+  <div class="upsizenote" style="display:none">🎮 Thirsty Maze free upsize applied — tell the window which drink to size up.</div>
 
   <!-- Spin the Tide — one free spin per order -->
   <div class="spintide" id="spinTide">
@@ -2251,6 +2261,9 @@ function openCart(){
     </div>
     <div style="padding:6px 28px 0">
       ${lines}
+      <div class="prizerow" id="prizeRow">${_prizeCode
+        ? `<span class="prize-ok">🎮 Free upsize unlocked · ${_prizeCode}</span><button class="linkbtn" onclick="clearPrize()">Remove</button>`
+        : `<button class="linkbtn prizebtn" onclick="askPrize()">🎮 Have a Thirsty Maze code?</button>`}</div>
       <div class="totals">
         <div class="row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
         <div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>
@@ -2294,6 +2307,46 @@ function refreshName(){
   if(box) box.innerHTML = _orderName ? _orderName : `<span class="ph">Tap your name…</span>`;
   const pb=$("#placeBtn"); if(pb) pb.classList.toggle("disabled", !_orderName.trim());
 }
+/* ---- Thirsty Maze prize code (from the website arcade) ----
+   Six digits after MAZE-. Checked live against the prize server; the kiosk
+   server re-checks and burns it when the order is created. ---- */
+let _prizeCode = "", _prizeDigits = "", _lastUpsize = false;
+const PRIZE_ENDPOINT = "/prize";
+function askPrize(){ _prizeDigits = ""; renderPrizePad(); $("#overlay").classList.add("show"); }
+function clearPrize(){ _prizeCode = ""; openCart(); }
+function renderPrizePad(msg){
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  const kb = `<div class="krow numpad">`+keys.map(k=>k===""?`<span class="kkey kblank"></span>`:`<button class="kkey" onclick="prizeKey('${k}')">${k}</button>`).join("")+`</div>`;
+  const shown = ("MAZE-" + _prizeDigits.padEnd(6,"_")).replace(/_/g,"<i>_</i>");
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div><h3>Thirsty Maze code</h3><p>Won a free upsize on thirstybeaches.com? Type the code from your screen.</p></div>
+      <button class="close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="namebox prizebox" id="prizeBox">${shown}</div>
+    <div class="prizemsg" id="prizeMsg">${msg||""}</div>
+    <div class="keyboard">${kb}</div>
+    <div class="sheet-ft">
+      <button class="linkbtn" onclick="openCart()">Back</button>
+      <button class="btn-primary" id="prizeBtn" onclick="checkPrize()">Apply code</button>
+    </div>`;
+  const pb=$("#prizeBtn"); if(pb) pb.classList.toggle("disabled", _prizeDigits.length<6);
+}
+function prizeKey(k){
+  if(k==="⌫") _prizeDigits = _prizeDigits.slice(0,-1);
+  else if(_prizeDigits.length<6) _prizeDigits += k;
+  renderPrizePad();
+}
+async function checkPrize(){
+  if(_prizeDigits.length<6) return;
+  const code = "MAZE-"+_prizeDigits;
+  const pb=$("#prizeBtn"); if(pb){ pb.textContent="Checking…"; pb.classList.add("disabled"); }
+  let r = {ok:false,status:"offline"};
+  try{ r = await (await fetch(PRIZE_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code})})).json(); }catch(e){}
+  if(r.ok){ _prizeCode = code; openCart(); return; }
+  const why = r.status==="used" ? "That code has already been used." : r.status==="offline" ? "Can't reach the prize server — show the code at the window instead." : "That code isn't valid today.";
+  renderPrizePad(why);
+}
 /* ---- Beach-name generator: a random, kid-clean beach alter-ego ---- */
 const BEACH_FIRST=["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral",
   "Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Sir Splash","Lady"];
@@ -2331,7 +2384,7 @@ async function placeOrder(){
   try{
     const res = await fetch(ORDER_ENDPOINT, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({cart, name:_orderName.trim()})
+      body: JSON.stringify({cart, name:_orderName.trim(), code:_prizeCode||undefined})
     });
     if(!res.ok) throw new Error("HTTP "+res.status);
     const d = await res.json();
@@ -2341,7 +2394,7 @@ async function placeOrder(){
     recordSales(cart);
     const amountCents = Math.round(cartTotals().sub * 100);  // subtotal (before tax) in cents
     cart = []; updateCartBtn(); closeSheet();
-    _orderName = "";
+    _orderName = ""; _lastUpsize = !!d.upsize; _prizeCode = "";
 
     // Check if tap-to-pay is live on the server (cheap local fetch, no Flex involved yet)
     let flexReady = false;
@@ -2390,6 +2443,8 @@ function showConfirm(order, paid){
     }
   }
 
+  const up = $("#confirm .upsizenote");
+  if(up) up.style.display = _lastUpsize ? "block" : "none";
   $("#confirm").classList.add("show");
   fireConfetti();
 }
