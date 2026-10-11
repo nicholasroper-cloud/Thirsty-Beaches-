@@ -301,7 +301,7 @@ const ingColor=x=>{const n=norm(x);for(const [k,v] of ING)if(n.includes(norm(k))
 const dot=x=>{const c=ingColor(x);return c?`<i class="dot" style="color:${c}"></i>`:'';};
 const ingList=arr=>`<span class="ingl">${arr.map(x=>dot(x)+esc(x)).join('<span class="sep">·</span>')}</span>`;
 const catColor=c=>{const n=norm(c);for(const [k,v] of Object.entries(CAT_COLOR))if(n.includes(k))return v;return"";};
-let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),firstLoad=true,checks={};
+let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),announced=new Set(),firstLoad=true,checks={};
 /* ---- mod classification from addons.json (same groups the kiosk + Register use) ---- */
 const SET={size:new Set(),base:new Set(),flavor:new Set(),puree:new Set(),cream:new Set(),style:new Set(),extra:new Set(),topper:new Set(),cap:new Set(),boost:new Set(),serve:new Set(),top:new Set(),temp:new Set(),milk:new Set()};
 const EXTRA_BASES=["Coca-Cola","Coke","Diet Coke","Pepsi","Dr Pepper","Diet Dr Pepper","Sprite","Sprite Zero","Mountain Dew","Diet Mtn Dew","Root Beer","Cream Soda","Fanta Orange","Big Red","Squirt","Fresca","Red Bull","Sugar-Free Red Bull","Alani Nu","Monster","Lemonade","Sparkling Water"];
@@ -470,17 +470,20 @@ let VOICE=false;try{VOICE=localStorage.getItem('tb-voice')==='1';}catch(e){}
 function setVoice(v){VOICE=v;$('#voiceBtn').setAttribute('aria-pressed',v);$('#voiceBtn').textContent=v?'Voice on':'Voice off';try{localStorage.setItem('tb-voice',v?'1':'0');}catch(e){}}
 $('#voiceBtn').onclick=()=>{setVoice(!VOICE);if(VOICE)say('Voice on. I will read new tickets.');};
 function say(text){try{if(!VOICE||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.rate=1;u.pitch=1;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
-function announce(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>classify(m)==='size');const s=sz?(/small/i.test(sz)?'small':/medium/i.test(sz)?'medium':/large/i.test(sz)?'large':sz):'';return (it.qty>1?it.qty+' ':'')+(it.kind==='grab'?'grab ':'')+it.name+(s?', '+s:'');});
- say('New order'+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.');}
+function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>classify(m)==='size');const s=sz?(/small/i.test(sz)?'small':/medium/i.test(sz)?'medium':/large/i.test(sz)?'large':sz):'';return (it.qty>1?it.qty+' ':'')+(it.kind==='grab'?'grab ':'')+it.name+(s?', '+s:'');});
+ return 'New order'+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.';}
+/* one spoken announcement per poll, each ticket read at most once ever (tracked in `announced`, separate from the NEW badge) */
+function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
 async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw new Error(r.status);queue=await r.json();
   $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
   if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
-  const freshOnes=queue.waiting.filter(o=>!seen.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
-  if(firstLoad){queue.waiting.forEach(o=>seen.add(o.id));firstLoad=false;}
-  if(fresh){hideSaver();ding();freshOnes.slice(0,2).forEach(o=>setTimeout(()=>announce(o),400));if(!$('#tickets').classList.contains('on'))setMode('tickets');}
+  const freshOnes=queue.waiting.filter(o=>!announced.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
+  if(firstLoad){queue.waiting.forEach(o=>{seen.add(o.id);announced.add(o.id);});firstLoad=false;}
+  freshOnes.forEach(o=>announced.add(o.id));
+  if(fresh){hideSaver();ding();setTimeout(()=>announce(freshOnes),400);if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
   else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
  catch(e){$('#bar').hidden=false;$('#bar').textContent='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';}}

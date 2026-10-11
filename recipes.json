@@ -239,7 +239,7 @@
    "note": ""
   },
   "Pink Flamingo": {
-   "c": "Dirty Sodas",
+   "c": "Lemonades",
    "i": [
     "Lemonade",
     "Guava",
@@ -253,7 +253,7 @@
    "i": [
     "Root Beer",
     "Butterscotch",
-    "Vanilla Creme"
+    "Vanilla Cream"
    ],
    "note": ""
   },
@@ -291,8 +291,13 @@
   },
   "Peach Please": {
    "c": "Dirty Sodas",
-   "i": [],
-   "note": "Recipe not on file yet"
+   "i": [
+    "Sprite",
+    "Peach",
+    "Strawberry Puree",
+    "Coconut Cream"
+   ],
+   "note": ""
   },
   "Golden Hour": {
    "c": "New Waves",
@@ -1600,6 +1605,16 @@
    "c": "Treats",
    "i": [],
    "note": "Freeze-dried candy — crunchy, made in-house"
+  },
+  "Peach Out": {
+   "c": "Energy",
+   "i": [
+    "Blended Swig Energy",
+    "Peach",
+    "Coconut",
+    "Coconut Cream"
+   ],
+   "note": "Blend energy base with ice, then syrups and cream"
   }
  }
 }
