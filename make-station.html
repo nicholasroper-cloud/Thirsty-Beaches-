@@ -30,6 +30,7 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .mode .n{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:999px;background:var(--sun);color:#14292B;font-family:var(--display);font-size:.95rem;margin-left:8px;padding:0 6px}
 .top .spacer{flex:1}
 .mode.voice{border:1.5px solid var(--line);background:var(--pane);margin-right:14px;font-family:var(--mono);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+.mode.vsel{border:1.5px solid var(--line);background:var(--pane);color:inherit;margin-right:14px;font-family:var(--mono);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;max-width:190px;cursor:pointer}
 .mode.voice[aria-pressed=true]{background:transparent;border-color:var(--accent);color:var(--accent);box-shadow:0 0 14px rgba(0,240,255,.35)}
 .prep{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 24px 0;font-family:var(--mono);font-size:.85rem;color:var(--mute);letter-spacing:.04em}
 .prep b{color:var(--fg);font-family:var(--display);font-weight:400;letter-spacing:.06em;font-size:.8rem;margin-right:4px}
@@ -261,6 +262,7 @@ input[type=search]::placeholder{color:var(--mute)}
     <div class="spacer"></div>
     <button class="mode fs" id="fsBtn" title="Fill the whole screen">Full screen</button>
     <button class="mode voice" id="voiceBtn" aria-pressed="false" title="Read new tickets out loud">Voice off</button>
+    <select class="mode vsel" id="voiceSel" title="Pick the voice"><option value="auto">Seasonal</option></select>
     <div class="stat" id="stOldest"><b>–</b><span>Longest wait</span></div>
     <div class="stat"><b id="stMade">0</b><span>Made today</span></div>
     <div class="clock" id="clock"></div>
@@ -468,10 +470,29 @@ $('#mTickets').onclick=()=>setMode('tickets');$('#mLookup').onclick=()=>setMode(
 let audioCtx=null;document.addEventListener('pointerdown',()=>{try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();}catch(e){}},{once:true});
 let VOICE=false;try{VOICE=localStorage.getItem('tb-voice')==='1';}catch(e){}
 function setVoice(v){VOICE=v;$('#voiceBtn').setAttribute('aria-pressed',v);$('#voiceBtn').textContent=v?'Voice on':'Voice off';try{localStorage.setItem('tb-voice',v?'1':'0');}catch(e){}}
-$('#voiceBtn').onclick=()=>{setVoice(!VOICE);if(VOICE)say('Voice on. I will read new tickets.');};
-function say(text){try{if(!VOICE||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.rate=1;u.pitch=1;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+$('#voiceBtn').onclick=()=>{setVoice(!VOICE);if(VOICE)say(persona().intro);};
+/* Voice personas. "Seasonal" = Pumpkin King in October, Santa in December, Barry the rest of the year.
+   Web Speech can't do impressions, so each persona = deepest male voice on the device + its own pitch, pace and lines. Saved in localStorage tb-voice-name. */
+const VOICE_DEEP=['Daniel','Google UK English Male','Microsoft Ryan','Microsoft Guy','Microsoft Davis','Microsoft David','Microsoft Mark','Alex','Fred','Aaron','Arthur','Rishi','Reed'];
+const PERSONAS={
+ barry:{label:'Barry',pitch:.45,rate:.8,intro:"Oh yeah. Barry's on the station. Keep it smooth, beaches.",head:'Oh yeah. New order',tail:" Let's make it smooth.",up:'Oh yeah. Order up'},
+ pumpkin:{label:'Pumpkin King',pitch:.7,rate:.92,intro:"Greetings, beaches! The Pumpkin King has arrived. Let the frightful sipping begin.",head:'Mwa ha ha. A new order rises',tail:' Deliciously frightful.',up:'Beware! Order up'},
+ santa:{label:'Santa',pitch:.8,rate:.9,intro:"Ho ho ho! Santa's checking the list, and every beach is on the nice side.",head:'Ho ho ho! A new order',tail:' Merry sipping!',up:'Ho ho ho! Order up'},
+ default:{label:'Default',pitch:1,rate:1,intro:'Voice on. I will read new tickets.',head:'New order',tail:'',up:'Order up'}};
+function seasonKey(){const m=new Date().getMonth();return m===9?'pumpkin':m===11?'santa':'barry';}
+let VOICE_NAME='auto';try{VOICE_NAME=localStorage.getItem('tb-voice-name')||'auto';}catch(e){}
+function persona(){const k=VOICE_NAME==='auto'?seasonKey():VOICE_NAME;return PERSONAS[k]||Object.assign({},PERSONAS.default,{voice:k});}
+function voices(){try{return (speechSynthesis.getVoices()||[]).filter(v=>/^en/i.test(v.lang));}catch(e){return [];}}
+function deepVoice(){const vs=voices();for(const n of VOICE_DEEP){const v=vs.find(x=>x.name===n||x.name.startsWith(n+' '));if(v)return v;}return vs.find(v=>/male|\bman\b/i.test(v.name)&&!/female|woman/i.test(v.name))||vs.find(v=>/en-GB/i.test(v.lang))||null;}
+function voiceFor(u){const p=persona();const v=p.voice?voices().find(x=>x.name===p.voice):(p===PERSONAS.default?null:deepVoice());if(v)u.voice=v;u.pitch=p.pitch;u.rate=p.rate;}
+function buildVoiceSel(){const s=$('#voiceSel');if(!s)return;const vs=voices();const opt=(v,t)=>`<option value="${v.replace(/"/g,'&quot;')}">${t.replace(/</g,'&lt;')}</option>`;
+ s.innerHTML=opt('auto','Seasonal ('+PERSONAS[seasonKey()].label+')')+['barry','pumpkin','santa','default'].map(k=>opt(k,PERSONAS[k].label)).join('')+vs.map(v=>opt(v.name,v.name)).join('');s.value=VOICE_NAME;if(s.value!==VOICE_NAME)s.value='auto';}
+function setVoiceName(n){VOICE_NAME=n;try{localStorage.setItem('tb-voice-name',n);}catch(e){}}
+try{buildVoiceSel();speechSynthesis.onvoiceschanged=buildVoiceSel;}catch(e){}
+$('#voiceSel').onchange=e=>{setVoiceName(e.target.value);if(!VOICE)setVoice(true);say(persona().intro);};
+function say(text){try{if(!VOICE||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);voiceFor(u);speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
 function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>classify(m)==='size');const s=sz?(/small/i.test(sz)?'small':/medium/i.test(sz)?'medium':/large/i.test(sz)?'large':sz):'';return (it.qty>1?it.qty+' ':'')+(it.kind==='grab'?'grab ':'')+it.name+(s?', '+s:'');});
- return 'New order'+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.';}
+ const p=persona();return p.head+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.'+p.tail;}
 /* one spoken announcement per poll, each ticket read at most once ever (tracked in `announced`, separate from the NEW badge) */
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}

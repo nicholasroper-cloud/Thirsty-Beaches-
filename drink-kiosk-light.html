@@ -698,6 +698,41 @@
     padding:10px 20px;border-radius:999px;cursor:pointer;letter-spacing:.01em;
     transition:background .12s,border-color .12s;}
   .designbtn.show{display:block;}
+  /* ---- Snap a pic (AI drink from a photo; same stage pattern as the Vibe Reader) ---- */
+  .snapbtn{font-family:"Outfit",sans-serif;font-weight:800;font-size:clamp(13px,1.6vw,18px);color:#fff;cursor:pointer;white-space:nowrap;
+    background:var(--grad-brand);border:none;border-radius:999px;padding:12px 22px;box-shadow:var(--glow-warm);}
+  #snap{position:fixed;inset:0;z-index:82;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5vh 28px;overflow-y:auto;
+    background:radial-gradient(900px 600px at 50% 2%,#ffd884,transparent 58%),linear-gradient(180deg,#9fdcff 0%,#ffe6a8 52%,#ffc09c 100%);}
+  #snap.show{display:flex;}
+  #snap .snap-logo{width:min(240px,44vw);height:auto;margin-bottom:20px;filter:drop-shadow(0 12px 28px rgba(0,0,0,.18));}
+  #snap h2{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(32px,5.6vw,56px);margin:0 0 12px;color:var(--ink);line-height:1.05;}
+  #snap p{font-size:18px;color:#5a4632;margin:0 0 16px;max-width:560px;line-height:1.5;}
+  #snap .stage{display:none;flex-direction:column;align-items:center;width:100%;}
+  #snap .stage.on{display:flex;}
+  #snap .snap-actions{display:flex;flex-direction:column;gap:12px;margin-top:18px;width:min(420px,88vw);}
+  #snap .snap-priv{font-size:14px;color:#7a5a3a;max-width:460px;margin:14px 0 0;opacity:.9;}
+  .kidtog{display:inline-flex;align-items:center;gap:12px;margin:4px auto 0;padding:12px 20px;border-radius:999px;border:1.5px solid var(--border-2);
+    background:var(--panel);font-family:"Outfit",sans-serif;font-weight:700;font-size:17px;color:var(--ink);cursor:pointer;}
+  .kidtog .sw{width:46px;height:26px;border-radius:999px;background:#cfd8e3;position:relative;transition:background .15s;flex:none;}
+  .kidtog .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;}
+  .kidtog.on .sw{background:#2E8BFF;} .kidtog.on .sw::after{left:23px;}
+  .snap-frame{position:relative;border-radius:30px;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.28);border:3px solid #fff;background:#0b1020;}
+  .snap-cam{width:min(520px,84vw);aspect-ratio:3/4;object-fit:cover;transform:scaleX(-1);display:block;}
+  .snap-count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-family:"Fraunces",serif;font-weight:900;
+    font-size:clamp(120px,28vw,220px);color:#fff;text-shadow:0 8px 30px rgba(0,0,0,.45);background:rgba(0,0,0,.18);}
+  .snap-count.on{display:flex;}
+  .snap-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;}
+  .snap-flash.go{animation:snapflash .45s ease-out;}
+  @keyframes snapflash{0%{opacity:.95}100%{opacity:0}}
+  .shutter{width:110px;height:110px;border-radius:50%;border:6px solid #fff;background:var(--grad-brand);box-shadow:0 14px 34px rgba(0,0,0,.28);cursor:pointer;margin-top:22px;transition:transform .1s;}
+  .shutter:active{transform:scale(.94);}
+  .shutter.disabled{opacity:.4;pointer-events:none;}
+  .snap-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:720px;}
+  .snap-cup{width:min(220px,40vw);margin:0 auto 6px;filter:drop-shadow(0 16px 30px rgba(0,0,0,.2));}
+  #snap .drinkname{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(40px,7vw,70px);line-height:1.02;margin:4px 0;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  #snap .recipe{font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(17px,2.2vw,22px);color:var(--ink);max-width:640px;margin:4px 0 8px;}
+  #snap .snapprice{display:inline-block;margin:4px auto 2px;padding:8px 20px;border-radius:999px;background:rgba(255,255,255,.75);font-family:"Outfit",sans-serif;font-weight:800;font-size:22px;color:var(--ink);}
+  .snap-spinner{width:52px;height:52px;border:4px solid rgba(255,255,255,.6);border-top-color:#2E8BFF;border-radius:50%;animation:spin .9s linear infinite;margin:16px auto;}
   .designbtn:hover{background:rgba(46,139,255,.22);border-color:rgba(46,139,255,.5);}
   @media (orientation: portrait){
     .dd-chip{font-size:22px;padding:18px 28px;gap:12px;}
@@ -796,6 +831,7 @@
     <p class="tagline" id="tagline" style="display:none">Stay Thirsty, Beaches</p>
     <div class="tap-cta">Tap to begin</div>
     <button class="vibe-attract" onclick="event.stopPropagation(); start(); vibeStart();">Not sure? Let us match your drink</button>
+    <button class="vibe-attract" onclick="event.stopPropagation(); start(); snapStart();">Snap a pic, we'll pick your drink</button>
     <div class="dotd" id="dotd" style="display:none" onclick="event.stopPropagation();"></div>
   </div>
 </div>
@@ -810,6 +846,7 @@
     </div>
     <button class="designbtn" id="designBtn" onclick="openDesignDrink()">Design Your Own</button>
     <button class="vibebtn" onclick="vibeStart()">Match My Vibe</button>
+    <button class="snapbtn" onclick="snapStart()">Snap a pic</button>
     <button class="cartbtn empty" id="cartBtn" onclick="openCart()">
       View Order <span class="count" id="cartCount">0</span>
     </button>
@@ -977,6 +1014,68 @@
       <button class="btn-primary" id="vibeAddBtn" onclick="vibeAddToOrder()">Add it to my order</button>
       <button class="btn-primary" onclick="vibeAllow()" style="opacity:.9">Try again</button>
       <button class="ghostbtn" onclick="vibeClose()">Show me the full menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- SNAP A PIC — AI invents a drink from one photo (privacy: used once, never saved) -->
+<div id="snap">
+  <img src="assets/logo.png?v=5" class="snap-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <div class="stage on" id="snapIntro">
+    <h2>Snap a pic, we'll pick your drink</h2>
+    <p>One quick photo of you, your crew or the view. Our AI reads the colors and the mood and invents a drink just for it.</p>
+    <button class="kidtog" id="snapKid" onclick="snapToggleKid()"><span class="sw"></span>It's for a kid (no camera, no caffeine)</button>
+    <div class="snap-actions">
+      <button class="btn-primary" id="snapCamBtn" onclick="snapAllow()">Open the camera</button>
+      <button class="btn-primary" onclick="snapMoodStage()" style="opacity:.9">Skip the photo, just ask me</button>
+      <button class="ghostbtn" onclick="snapClose()">No thanks</button>
+    </div>
+    <p class="snap-priv">Your photo is used once to pick a drink and never saved.</p>
+  </div>
+  <div class="stage" id="snapCam">
+    <h2>Say "Thirsty!"</h2>
+    <div class="snap-frame">
+      <video id="snapVideo" class="snap-cam" autoplay playsinline muted></video>
+      <div class="snap-count" id="snapCount">3</div>
+      <div class="snap-flash" id="snapFlash"></div>
+    </div>
+    <button class="shutter" id="snapShutter" onclick="snapCountdown()" aria-label="Take the photo"></button>
+    <div class="snap-actions"><button class="ghostbtn" onclick="snapClose()">Cancel</button></div>
+    <p class="snap-priv">Your photo is used once to pick a drink and never saved. The camera turns off the moment you leave this screen.</p>
+  </div>
+  <div class="stage" id="snapMood">
+    <h2>What's the mood?</h2>
+    <p>Tap one or two. We'll do the rest.</p>
+    <div class="snap-chips" id="snapMoodChips"></div>
+    <div class="snap-actions">
+      <button class="btn-primary disabled" id="snapMoodBtn" onclick="snapSend(null)">Pick my drink</button>
+      <button class="ghostbtn" onclick="snapClose()">Cancel</button>
+    </div>
+  </div>
+  <div class="stage" id="snapLoading">
+    <h2>Mixing it up</h2>
+    <div class="snap-spinner"></div>
+    <p id="snapLoadMsg">Reading the vibe and inventing your drink&hellip;</p>
+  </div>
+  <div class="stage" id="snapResult">
+    <div class="snap-cup" id="snapCup"></div>
+    <div class="drinkname" id="snapName"></div>
+    <div class="recipe" id="snapRecipe"></div>
+    <p id="snapWhy"></p>
+    <div class="snapprice" id="snapPrice"></div>
+    <div class="snap-actions">
+      <button class="btn-primary" onclick="snapAdd()">Add to my order</button>
+      <button class="btn-primary" onclick="snapAgain()" style="opacity:.9">Try again</button>
+      <button class="ghostbtn" onclick="snapClose()">Show me the full menu</button>
+    </div>
+  </div>
+  <div class="stage" id="snapError">
+    <h2>Wiped out</h2>
+    <p id="snapErrMsg"></p>
+    <div class="snap-actions">
+      <button class="btn-primary" onclick="snapAgain()">Try again</button>
+      <button class="btn-primary" onclick="snapClose(); openItem('dirtysodas','pour-decisions')" style="opacity:.9">Build my own instead</button>
+      <button class="ghostbtn" onclick="snapClose()">Back to the menu</button>
     </div>
   </div>
 </div>
@@ -1632,6 +1731,172 @@ function stopVibeCam(){
 function vibeClose(){ stopVibeCam(); $("#vibe").classList.remove('show'); }
 function showStage(id){ document.querySelectorAll('#vibe .stage').forEach(s=>s.classList.toggle('on', s.id===id)); }
 
+/* ============ SNAP A PIC — AI drink from one photo ============
+   intro (kid toggle) → front camera + 3-2-1 → 768px JPEG → POST /mix (the kiosk server
+   forwards it to the website AI; same-origin CORS there) → result → "Add to my order"
+   builds a cart line the same way a Pour Decisions build does (option groups + linePrice
+   math; the AI's price is never used). No camera / denied / kid → mood-only path.
+   PRIVACY: the frame goes canvas → request → dropped. Nothing is stored anywhere. */
+const SNAP_ENDPOINT = "/mix";
+const SNAP_IDLE_MS  = 60000;                       // hands-off for 60 s → back to the menu
+const SNAP_MOODS = ["Sunny","Chill","Hyped","Sweet tooth","Tropical","Fruity","Creamy","Bold","Cozy","Adventurous","Tangy","Classic"];
+let _snapStream=null, _snapKid=false, _snapResult=null, _snapMood=new Set(), _snapIdle=null, _snapBusy=false, _snapUsedCam=false;
+
+function snapStage(id){ document.querySelectorAll('#snap .stage').forEach(s=>s.classList.toggle('on', s.id===id)); snapArm(); }
+function snapArm(){ clearTimeout(_snapIdle); if($("#snap").classList.contains("show")) _snapIdle=setTimeout(()=>{ snapClose(); goHome(); }, SNAP_IDLE_MS); }
+function snapStart(){ _snapResult=null; _snapMood.clear(); _snapUsedCam=false; snapRenderKid(); snapStage('snapIntro'); $("#snap").classList.add('show'); snapArm(); armIdle(); }
+function snapToggleKid(){ _snapKid=!_snapKid; snapRenderKid(); }
+function snapRenderKid(){
+  const k=$("#snapKid"); if(k) k.classList.toggle('on',_snapKid);
+  const cb=$("#snapCamBtn"); if(cb) cb.style.display=_snapKid?'none':'';     // kid build: camera hidden, kid:true sent
+}
+async function snapAllow(){
+  if(_snapKid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ snapMoodStage(); return; }
+  snapStage('snapCam'); $("#snapCount").classList.remove('on'); $("#snapShutter").classList.remove('disabled');
+  try{
+    _snapStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:{ideal:1024}, height:{ideal:1024}}, audio:false});
+    $("#snapVideo").srcObject=_snapStream; _snapUsedCam=true;
+  }catch(e){ stopSnapCam(); showToast("No camera here — tell us the mood instead."); snapMoodStage(); }
+}
+function snapMoodStage(){ stopSnapCam(); _snapUsedCam=false; snapRenderMood(); snapStage('snapMood'); }
+function snapRenderMood(){
+  const c=$("#snapMoodChips"); if(!c) return;
+  c.innerHTML = SNAP_MOODS.map(m=>`<button class="dd-chip${_snapMood.has(m)?' sel':''}" onclick="snapMoodPick('${m}')">${m}</button>`).join("");
+  const b=$("#snapMoodBtn"); if(b) b.classList.toggle('disabled', !_snapMood.size);
+}
+function snapMoodPick(m){ if(_snapMood.has(m)) _snapMood.delete(m); else if(_snapMood.size<2) _snapMood.add(m); snapRenderMood(); }
+function snapCountdown(){
+  if(_snapBusy) return; _snapBusy=true;
+  $("#snapShutter").classList.add('disabled');
+  const cd=$("#snapCount"); let n=3; cd.textContent=n; cd.classList.add('on');
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){ cd.textContent=n; return; }
+    clearInterval(tick); cd.classList.remove('on');
+    const fl=$("#snapFlash"); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    const img=snapCapture();
+    stopSnapCam(); _snapBusy=false;
+    snapSend(img);
+  },1000);
+}
+function snapCapture(){
+  const v=$("#snapVideo"); const vw=v.videoWidth||0, vh=v.videoHeight||0;
+  if(!vw||!vh) return null;
+  const scale=Math.min(1, 768/Math.max(vw,vh));                 // longest side 768px
+  const c=document.createElement('canvas'); c.width=Math.round(vw*scale); c.height=Math.round(vh*scale);
+  const ctx=c.getContext('2d');
+  try{ ctx.translate(c.width,0); ctx.scale(-1,1); ctx.drawImage(v,0,0,c.width,c.height); }catch(e){ return null; }   // un-mirror
+  let q=0.85, url=c.toDataURL('image/jpeg',q);
+  while(url.length>1.4e6 && q>0.4){ q-=0.15; url=c.toDataURL('image/jpeg',q); }   // stay well under the 1.5 MB cap
+  return url;
+}
+async function snapSend(img){
+  snapStage('snapLoading');
+  $("#snapLoadMsg").textContent = img ? "Reading the vibe and inventing your drink…" : "Inventing your drink…";
+  const body={};
+  if(img && !_snapKid) body.image=img;
+  if(_snapMood.size) body.mood=[..._snapMood].join(", ");
+  if(_snapKid) body.kid=true;
+  let d=null, status=0;
+  try{
+    const res=await fetch(SNAP_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    status=res.status; d=await res.json().catch(()=>null);
+  }catch(e){}
+  img=null; delete body.image;                                   // drop the photo the moment it's sent
+  if(!d || d.error || !d.name){
+    $("#snapErrMsg").textContent = status===429 ? "The AI is catching its breath — give it a minute."
+      : (d && d.error) ? String(d.error).slice(0,140) : "Couldn't reach the AI right now.";
+    snapStage('snapError'); return;
+  }
+  _snapResult=d; snapRender(d);
+}
+function snapAgain(){ _snapResult=null; if(_snapUsedCam && !_snapKid) snapAllow(); else snapMoodStage(); }
+function snapRender(d){
+  const line=snapToLine(d);
+  if(!line){ $("#snapErrMsg").textContent="That soda base just sold out — let's try another."; snapStage('snapError'); return; }
+  $("#snapCup").innerHTML=snapCupArt(d);
+  $("#snapName").textContent=line.name;
+  $("#snapRecipe").textContent=line.mods.filter(m=>!/^(Small|Medium|Large) /.test(m)).join(" · ");   // what the window will actually build
+  $("#snapWhy").textContent=d.why||"";
+  $("#snapPrice").textContent="$"+line.unit.toFixed(2)+" · "+(d.size||"16oz");
+  snapStage('snapResult');
+}
+function snapAdd(){
+  const d=_snapResult; if(!d) return;
+  const line=snapToLine(d); if(!line){ snapRender(d); return; }
+  cart.push(line); updateCartBtn(); snapClose();
+  showToast(line.name+" added to your order.");
+  const offers = buildUpsellOffers(line);                       // same post-add path as addToCart()
+  if(offers.length) showUpsell(offers); else openCart();
+}
+function stopSnapCam(){ if(_snapStream){ _snapStream.getTracks().forEach(t=>t.stop()); _snapStream=null; } const v=$("#snapVideo"); if(v) v.srcObject=null; }
+function snapClose(){ stopSnapCam(); clearTimeout(_snapIdle); _snapBusy=false; _snapResult=null; _snapMood.clear(); _snapKid=false; $("#snap").classList.remove('show'); }
+document.getElementById('snap').addEventListener('pointerdown', snapArm, {passive:true});
+
+/* Map the AI build (website builder vocabulary) onto the kiosk's own option groups so the
+   cart line looks and prices exactly like a customer-built Pour Decisions. A lemonade base
+   lands in the Lemonades category (its groups: lemonade base + purée + extras + topper).
+   Anything the kiosk doesn't sell as a priced option rides along as a $0 note mod. */
+const SNAP_MAP = {
+  base:   {"Coke":"Coca-Cola","Dr Pepper":"Dr Pepper","Sprite":"Sprite","Mountain Dew":"Mountain Dew","Root Beer":"Root Beer","Fanta Orange":"Fanta Orange","Lemonade":"Classic Lemonade","Strawberry Lemonade":"Strawberry Lemonade"},
+  syrup:  {"Coconut Cream":["flavor","Coconut"],"Vanilla":["flavor","Vanilla"],"Raspberry":["flavor","Raspberry"],"Blue Raspberry":["flavor","Blue Raspberry"],"Peach":["flavor","Peach"],"Strawberry":["puree","Strawberry"],"Mango":["puree","Mango"]},
+  cream:  {"Coconut Cream":"Coconut Cream","Half & Half":"Vanilla Sweet Cream","Heavy Cream":"Vanilla Sweet Cream"},
+  topper: {"Lime":["extra","Fresh lime"]}
+};
+function snapToLine(d){
+  const lemon = /lemonade/i.test(d.base||"") && MENU.lemonades;
+  const catKey = lemon ? "lemonades" : "dirtysodas";
+  const cat = MENU[catKey]; if(!cat) return null;
+  const byo = (MENU.dirtysodas && MENU.dirtysodas.items.find(i=>i.id==="pour-decisions")) || {price:3.49};
+  const item = {id:"snap-"+Date.now(), name:String(d.name||"Beach Special").replace(/[<>]/g,"").slice(0,28), desc:String(d.why||"").slice(0,120), price:byo.price, _ai:true};
+  const sel={}; cat.options.forEach(o=>{ sel[o.key]=o.multi?[]:null; });
+  const notes=[];
+  function put(key,name){
+    const o=cat.options.find(x=>x.key===key); if(!o) return false;
+    if(!o.choices.some(c=>c.name===name) || SOLD_OPTS.has(key+":"+name)) return false;
+    if(o.multi){ if(!sel[key].includes(name)) sel[key].push(name); } else sel[key]=name;
+    return true;
+  }
+  put("size","Small 16oz");
+  const baseName = SNAP_MAP.base[d.base] || d.base;
+  if(!put("base", baseName)) return null;                                      // base missing or sold out → caller shows "try again"
+  (d.syrups||[]).forEach(s=>{ const m=SNAP_MAP.syrup[s]; if(!(m && put(m[0],m[1]))) notes.push(s+" syrup"); });
+  if(d.cream && !/^no cream$/i.test(d.cream)){ const m=SNAP_MAP.cream[d.cream]; if(!(m && put("cream",m))) notes.push(d.cream); }
+  if(d.topper && !/^nothing$/i.test(d.topper)){ const m=SNAP_MAP.topper[d.topper]; if(!(m && put(m[0],m[1]))) notes.push(d.topper+" garnish"); }
+  let unit=item.price; const mods=[];
+  cat.options.forEach(o=>{ const v=sel[o.key];
+    if(o.multi){ v.forEach(n=>{ const ch=o.choices.find(c=>c.name===n); if(ch){ unit+=ch.d; mods.push(n); } }); }
+    else if(v){ const ch=o.choices.find(c=>c.name===v); if(ch){ unit+=ch.d; mods.push(v); } } });
+  sel._notes = notes.map(n=>n.replace(/[<>]/g,"").slice(0,40));
+  mods.push(...sel._notes);
+  return {icon:iconFor(item), img:null, name:item.name, desc:item.desc, mods, unit:+unit.toFixed(2), qty:1, catKey, itemId:item.id, basePrice:item.price, sel};
+}
+/* Cup art: a drawn cup tinted by the AI's base + syrups, cream cap and garnish (no emoji). */
+const SNAP_COLORS={
+  base:{"Dr Pepper":"#5a2417","Coke":"#3a1a10","Sprite":"#dff7e3","Mountain Dew":"#c6ef5a","Root Beer":"#5c3317","Fanta Orange":"#ff8a1f","Lemonade":"#fff2a8","Strawberry Lemonade":"#ff7da0"},
+  syrup:{"Coconut Cream":"#fff4dd","Vanilla":"#f6e3a8","Raspberry":"#d62f6d","Blue Raspberry":"#2e8bff","Strawberry":"#ff4d6d","Peach":"#ffb27a","Mango":"#ffc53d"},
+  top:{"Strawberry":"#ff4d6d","Pineapple":"#ffd84a","Lime":"#7ed957","Cherry":"#b3122e"} };
+function snapCupArt(d){
+  const liq=SNAP_COLORS.base[d.base]||"#ff8a2b";
+  const sy=(d.syrups||[]).map(s=>SNAP_COLORS.syrup[s]||"#ff3d97");
+  const cream=!!d.cream && !/^no cream$/i.test(d.cream);
+  const top=SNAP_COLORS.top[d.topper];
+  const id="sg"+Math.floor(Math.random()*1e6);
+  const cup='M22 34 L98 34 L88 150 Q60 156 32 150 Z';
+  return `<svg viewBox="0 0 120 160" width="100%" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sy[0]||liq}"/><stop offset=".45" stop-color="${liq}"/><stop offset="1" stop-color="${sy[1]||sy[0]||liq}"/></linearGradient>
+    <clipPath id="${id}c"><path d="${cup}"/></clipPath></defs>
+    <path d="${cup}" fill="url(#${id})"/>
+    <g clip-path="url(#${id}c)">${cream?'<path d="M20 34 L100 34 L96 64 Q60 76 24 64 Z" fill="rgba(255,255,255,.88)"/>':''}
+      <circle cx="44" cy="100" r="5" fill="rgba(255,255,255,.35)"/><circle cx="72" cy="124" r="4" fill="rgba(255,255,255,.3)"/><circle cx="60" cy="86" r="3" fill="rgba(255,255,255,.3)"/>
+      <rect x="25" y="36" width="11" height="112" fill="rgba(255,255,255,.18)"/></g>
+    <path d="${cup}" fill="none" stroke="#fff" stroke-width="4"/>
+    <path d="M16 28 Q60 20 104 28 L100 36 L20 36 Z" fill="#fff"/>
+    <path d="M70 30 L86 4" stroke="#ff3d97" stroke-width="6" stroke-linecap="round"/>
+    ${top?`<circle cx="93" cy="30" r="9" fill="${top}" stroke="#fff" stroke-width="3"/>`:''}
+  </svg>`;
+}
+
 /* ============ DESIGN YOUR OWN — AI chip-picker flow ============
    Flag-gated: only visible when /aiconfig returns {enabled:true}.
    Customer input: chips only at launch (no free-text field).
@@ -2042,8 +2307,9 @@ function addToCart(){
     if(o.multi && v.length) mods.push(...v);
     else if(!o.multi && v) mods.push(v);
   });
+  if(Array.isArray(sel._notes)) mods.push(...sel._notes);        // $0 note mods from a Snap-a-pic line survive an edit
   const line = {icon:iconFor(item), img:item.img, name:item.name, mods, unit:linePrice(), qty,
-                catKey, itemId:item.id, sel:JSON.parse(JSON.stringify(sel))};
+                catKey, itemId:item.id, basePrice:item.price, desc:item.desc, sel:JSON.parse(JSON.stringify(sel))};
   const wasEdit = editing.idx!=null && cart[editing.idx];
   if(wasEdit) cart[editing.idx] = line; else cart.push(line);
   closeSheet();
@@ -2214,7 +2480,9 @@ function closeUpsell() {
 function editCartLine(i){
   const c = cart[i]; if(!c) return;
   const cat = MENU[c.catKey]; if(!cat) return;
-  const item = cat.items.find(it=>it.id===c.itemId); if(!item) return;
+  const item = cat.items.find(it=>it.id===c.itemId)
+    || (c.basePrice!=null ? {id:c.itemId, name:c.name, desc:c.desc||"", price:c.basePrice, _ai:true} : null);   // Snap-a-pic / AI lines
+  if(!item) return;
   editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i};
   renderSheet();
   $("#overlay").classList.add("show");
@@ -2547,6 +2815,7 @@ function resetAll(){
   closeUpsell();                                          // clear any dangling upsell prompt
   delete MENU.secret; _tap=0; _phone=""; _orderName="";  // hide secret menu again for the next customer
   stopVibeCam(); $("#vibe").classList.remove("show");     // camera off + close the vibe reader (privacy)
+  snapClose();                                             // Snap-a-pic: camera off, photo/result state cleared
   closeDesignDrink();                                      // clear chip state + close design picker (COPPA)
   closePayScreen(); _payOrder=null; _payAmount=0;         // clear pay screen state
   activeCat=Object.keys(MENU)[0];
