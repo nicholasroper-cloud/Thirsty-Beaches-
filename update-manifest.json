@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -24,6 +24,18 @@
     {
       "path": "assets/logo.png",
       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/logo.png"
+    },
+    {
+      "path": "assets/icon-192.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-192.png"
+    },
+    {
+      "path": "assets/icon-512.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-512.png"
+    },
+    {
+      "path": "assets/icon-maskable.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-maskable.png"
     }
   ]
 }
