@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thirsty Beaches — Order Here</title>
-<link rel="icon" type="image/png" href="assets/logo.png?v=5">
-<link rel="apple-touch-icon" href="assets/logo.png?v=5">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=logo20261018">
+<link rel="apple-touch-icon" href="assets/icon-512.png?v=logo20261018">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -806,6 +806,16 @@
     #payscreen .pay-window{font-size:clamp(23px,3vw,30px);padding:28px;}
     #payscreen .pay-amount{font-size:clamp(66px,11vw,110px);}
   }
+  /* Approved neon identity: preserve the beach scene and keep the glow legible. */
+  #attract .attract-logo,
+  #confirm .confirm-logo,
+  #payscreen .pay-logo,
+  #vibe .vibe-logo,
+  #snap .snap-logo,
+  .brand .logo-img{
+    box-sizing:border-box;background:#08011c;border-radius:18px;padding:10px;
+  }
+  .brand .logo-img{padding:4px;border-radius:10px;}
 </style>
 </head>
 <body>
@@ -825,7 +835,7 @@
     </div>
   </div>
   <div class="attract-inner">
-    <img src="assets/logo.png?v=5" alt="Thirsty Beaches" class="attract-logo"
+    <img src="assets/logo.png?v=logo20261018" alt="Thirsty Beaches. Stay thirsty, beaches." class="attract-logo"
          onerror="this.remove();document.getElementById('wordmark').style.display='flex';document.getElementById('tagline').style.display='block';">
     <div class="wordmark" id="wordmark"><span>Thirsty</span><span>Beaches</span></div>
     <p class="tagline" id="tagline" style="display:none">Stay Thirsty, Beaches</p>
@@ -840,7 +850,7 @@
 <div class="app">
   <header>
     <div class="brand" onclick="brandTap()">
-      <img src="assets/logo.png?v=5" alt="Thirsty Beaches" class="logo-img"
+      <img src="assets/logo.png?v=logo20261018" alt="Thirsty Beaches" class="logo-img"
            onerror="this.remove();document.getElementById('brandFallback').style.display='block';">
       <span id="brandFallback" style="display:none;">Thirsty Beaches</span>
     </div>
@@ -873,7 +883,7 @@
 <!-- CONFIRM -->
 <div id="confirm">
   <div class="confetti" id="confetti" aria-hidden="true"></div>
-  <img src="assets/logo.png?v=5" class="confirm-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <img src="assets/logo.png?v=logo20261018" class="confirm-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="check">✓</div>
   <h2>You're in, Beaches</h2>
   <p>Your order's on the way — listen for your name at the window.</p>
@@ -923,7 +933,7 @@
 <!-- State is driven by data-state attribute on #payscreen: prompt | working | declined | cancelled | error | timeout -->
 <!-- Falls back silently to pay-at-window on any non-approved outcome or if PAY_ENABLED is off -->
 <div id="payscreen" data-state="prompt">
-  <img src="assets/logo.png?v=5" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="pay-amount" id="payAmount">$0.00</div>
   <div class="pay-label">Total</div>
   <div class="reader-icon">
@@ -988,7 +998,7 @@
 
 <!-- VIBE READER — camera drink match (privacy-first: photo never saved or sent) -->
 <div id="vibe">
-  <img src="assets/logo.png?v=5" class="vibe-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <img src="assets/logo.png?v=logo20261018" class="vibe-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="stage on" id="vibeIntro">
     <h2>What's your vibe?</h2>
     <p>Let the beach read your energy and match you a drink. We take <b>one quick photo</b> to read your vibe — it's used only to pick your drink and <b>isn't saved.</b></p>
@@ -1020,7 +1030,7 @@
 
 <!-- SNAP A PIC — AI invents a drink from one photo (privacy: used once, never saved) -->
 <div id="snap">
-  <img src="assets/logo.png?v=5" class="snap-logo" alt="Thirsty Beaches" onerror="this.remove()">
+  <img src="assets/logo.png?v=logo20261018" class="snap-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="stage on" id="snapIntro">
     <h2>Snap a pic, we'll pick your drink</h2>
     <p>One quick photo of you, your crew or the view. Our AI reads the colors and the mood and invents a drink just for it.</p>

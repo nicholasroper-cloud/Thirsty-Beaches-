@@ -29,7 +29,9 @@ page("pickup-board.html", "board.html");
 for (const f of ["recipes.json"]) fs.copyFileSync(path.join(root, f), path.join(pub, f));
 const addons = [path.join(root, "addons.json"), path.join(root, "..", "addons.json")].find(f => fs.existsSync(f));
 if (addons) fs.copyFileSync(addons, path.join(pub, "addons.json"));
-fs.copyFileSync(path.join(root, "assets", "logo.png"), path.join(pub, "assets", "logo.png"));
+for (const name of ["logo.png", "icon-192.png", "icon-512.png", "icon-maskable.png"]) {
+  fs.copyFileSync(path.join(root, "assets", name), path.join(pub, "assets", name));
+}
 
 // bump PAGE_VERSION in wrangler.toml so open screens reload themselves after a deploy
 const tomlPath = path.join(__dirname, "wrangler.toml");
