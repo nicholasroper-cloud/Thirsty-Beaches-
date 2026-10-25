@@ -273,6 +273,9 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 /* M5: a quantity above 1 is a loud "MAKE 2" in the card header, not a small corner pill */
 .makeqty{display:flex;align-items:baseline;gap:12px;margin:-4px -6px 0 -4px;padding:8px 14px;border-radius:10px;background:var(--sun);color:#08011c;font-family:var(--display);font-size:1.6rem;letter-spacing:.04em;line-height:1.1;box-shadow:0 0 18px rgba(255,209,102,.4)}
 .makeqty small{font-family:var(--body);font-weight:800;font-size:.95rem;letter-spacing:0}
+/* M6: GRAB tag readable (was pink on yellow, 1.33:1) and the grab card no longer stretches to the row height */
+.card.grab{align-self:start}
+.card.grab .tag{background:#ff9adf;color:#08011c;font-size:.9rem;padding:4px 10px}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
