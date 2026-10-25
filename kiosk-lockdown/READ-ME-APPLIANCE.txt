@@ -1,0 +1,98 @@
+THIRSTY BEACHES — APPLIANCE MODE (nothing but the kiosk app)
+============================================================
+
+Goal: the PC powers on and goes STRAIGHT into the Thirsty Beaches kiosk,
+full screen, and a customer can't get to the desktop, settings, browser bar,
+or any other app. If it crashes or loses power, it comes right back on its own.
+
+This is for Windows 10/11 PRO (you confirmed Pro). It uses Windows' built-in
+"Assigned Access" single-app kiosk + a dedicated locked account.
+
+------------------------------------------------------------
+WHAT YOU'LL HAVE WHEN DONE
+------------------------------------------------------------
+  - A dedicated, password-less, NON-admin account: "ThirstyKiosk"
+  - The kiosk server running as an auto-start task that RESTARTS itself if it
+    ever stops (so the menu/orders engine is always up)
+  - Edge locked to the kiosk, full screen, no way to escape to Windows
+  - No sleep, no lock screen, no USB autorun, no surprise Update reboots
+  - Camera ("Match My Vibe") pre-allowed — no popup
+  - Power flicker -> reboots straight back into the kiosk, no human needed
+  - YOUR normal admin account stays untouched for maintenance
+
+------------------------------------------------------------
+SETUP — do this once, on the kiosk PC (about 5 minutes)
+------------------------------------------------------------
+STEP 0.  Copy the whole kiosk folder onto the PC's hard drive, e.g.
+         C:\ThirstyBeaches\  (don't run it from the USB stick for a permanent
+         install). Make sure node.exe, clover-menu-server.js, and
+         kiosk-config.env are all there.
+
+STEP 0.5 MAKE SURE YOU HAVE A MAINTENANCE ADMIN ACCOUNT (your way back in).
+         - Already have an admin account you know the password to? You're set —
+           skip to Step 1.
+         - Want a clean dedicated one? In kiosk-lockdown, right-click
+           Create-Admin.ps1 > "Run with PowerShell" (as admin). It asks for a
+           username + password (you type them on the PC; nobody else sees them).
+           WRITE THE PASSWORD DOWN — it's your only door back into Windows once
+           the kiosk is locked.
+
+STEP 1.  Open the "kiosk-lockdown" folder. Right-click  Setup-Appliance.ps1
+         and choose "Run with PowerShell".  If it asks, allow admin.
+            - If Windows blocks scripts, open PowerShell as admin and run:
+                 Set-ExecutionPolicy -Scope Process Bypass -Force
+              then run:  .\Setup-Appliance.ps1
+         This creates the account, installs the always-on server, and hardens
+         Windows. It will print the ONE manual step (Step 2) at the end.
+
+STEP 2.  Turn on the single-app LOCK (1 screen):
+            Settings > Accounts > Other users > "Set up a kiosk" (Get started)
+            - Use existing account:  ThirstyKiosk
+            - Choose app:            Microsoft Edge
+            - Pick:                  "As a digital sign or interactive display"
+            - URL:                   http://localhost:8137
+            - Restart Edge after idle: 5 minutes  (optional but nice)
+         Finish the wizard.
+
+STEP 3.  Reboot. The PC should auto-sign-in to ThirstyKiosk and open the kiosk
+         full screen. Test: order a drink, try the camera, try to escape (you
+         shouldn't be able to).
+
+That's it. Leave it on; it runs itself.
+
+------------------------------------------------------------
+HOW TO GET BACK IN (maintenance)  -- IMPORTANT, don't skip
+------------------------------------------------------------
+At the kiosk: press  Ctrl + Alt + Del  >  "Sign out"  (or "Switch user"),
+then sign in with YOUR ADMIN account. Now you have a normal desktop.
+(Keep your admin password somewhere safe — it's your only way back in.)
+
+To make changes then return to kiosk mode: just sign out of admin; signing
+back into ThirstyKiosk (or rebooting) drops you back into the locked kiosk.
+
+------------------------------------------------------------
+UPDATING THE MENU LATER
+------------------------------------------------------------
+Two ways, both already built in:
+  - REMOTE (best): turn on auto-update (see ..\remote-update-SETUP.txt) and the
+    locked kiosk pulls new menus/prices by itself. You never touch the PC.
+  - HANDS-ON: sign in as admin, replace drink-kiosk.html, sign out.
+
+------------------------------------------------------------
+TURNING IT OFF / UNDO
+------------------------------------------------------------
+Sign in as admin, open kiosk-lockdown, right-click  Uninstall-Appliance.ps1 >
+Run with PowerShell (as admin). It removes the lock, the server task, and the
+hardening, returning a normal PC. Add  -RemoveUser  to also delete the account.
+
+------------------------------------------------------------
+NOTES
+------------------------------------------------------------
+  - In appliance mode you do NOT use Run-Kiosk.bat — the server runs as a task
+    and Edge is launched by the kiosk lock. (The .bat is still there for manual
+    testing from your admin account.)
+  - The server binds to localhost only; orders still need internet to reach
+    Clover, but the screen keeps working if wifi drops.
+  - First boot after setup may take a few extra seconds while the server task
+    and Edge both come up. If you ever see "can't reach localhost" briefly,
+    the Edge restart timer (Step 2) clears it; or reboot once.

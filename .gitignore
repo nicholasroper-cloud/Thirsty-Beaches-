@@ -1,0 +1,10 @@
+# Kiosk PC local files: secrets and state never go in this public repo
+*.env
+!kiosk-config.example.env
+update-state.json
+flex-pairing.json
+.tb/
+node.exe
+node_modules/
+*.bak
+*.tmp

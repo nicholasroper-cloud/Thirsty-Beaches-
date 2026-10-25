@@ -1,0 +1,72 @@
+THIRSTY BEACHES — REMOTE UPDATES (push menu/code without the USB drive)
+=======================================================================
+
+WHAT IT DOES
+------------
+With this on, the kiosk checks the internet for a newer version of the screen
+and downloads it by itself — so you can change the menu, prices, drink names,
+or features from anywhere. You update ONE place online; every kiosk picks it up
+on its next check (default: every 60 minutes) and refreshes between customers.
+
+The kiosk still runs its own local server, so if the beach wifi drops it keeps
+working — it just updates whenever it has a connection again.
+
+WHAT STAYS PRIVATE
+------------------
+Only the page files (drink-kiosk.html / drink-kiosk-light.html) are fetched.
+Your Clover token stays in kiosk-config.env on the kiosk and is NEVER uploaded
+or downloaded. The page files contain no secrets, so it's safe to host them.
+
+SECURITY — IMPORTANT
+--------------------
+Whoever can change the files at your update link controls what runs on the
+kiosk. So:
+  - Use an HTTPS link only.
+  - Keep the account that hosts those files private to you (don't share the login).
+  - If that account is ever compromised, change the link in kiosk-config.env.
+
+------------------------------------------------------------------------
+ONE-TIME SETUP
+------------------------------------------------------------------------
+
+You need two things online that YOU control: the page file(s), and a small
+"manifest" file that tells the kiosk the current version + where to get them.
+
+Easiest free option — GitHub (recommended):
+  1. Make a free account at github.com and create a new PUBLIC repo, e.g.
+     "thirsty-beaches-kiosk".  (Public is fine — no secrets are in these files.)
+  2. Upload your drink-kiosk.html and drink-kiosk-light.html to the repo.
+  3. Upload an update-manifest.json (copy update-manifest.example.json in this
+     folder and fill in the URLs). The raw file URLs look like:
+       https://raw.githubusercontent.com/<you>/thirsty-beaches-kiosk/main/drink-kiosk.html
+     The manifest's own raw URL is what you paste into the kiosk.
+  4. On the kiosk, open kiosk-config.env and set:
+       UPDATE_MANIFEST_URL=https://raw.githubusercontent.com/<you>/thirsty-beaches-kiosk/main/update-manifest.json
+  5. Restart the kiosk (Run-Kiosk.bat). The server window will say
+     "Auto-update ON". Done.
+
+Other hosts work too (Dropbox/Google Drive direct-download links, an S3 or
+Cloudflare R2 bucket, any static web host) — anything that gives a stable
+HTTPS link to each file.
+
+------------------------------------------------------------------------
+HOW TO PUSH AN UPDATE (after setup)
+------------------------------------------------------------------------
+  1. Replace drink-kiosk.html (and -light) at your host with the new version.
+  2. In update-manifest.json, bump "version" to a HIGHER number (2 -> 3 -> 4 ...).
+     The kiosk only updates when the manifest version is higher than what it has.
+  3. Wait for the next check (within UPDATE_INTERVAL_MIN), or restart the kiosk
+     to apply immediately. The screen refreshes itself between customers.
+
+That's it — change the file, bump the number.
+
+------------------------------------------------------------------------
+NOTES
+------------------------------------------------------------------------
+  - The kiosk keeps a one-step backup (e.g. drink-kiosk.html.bak) so the last
+    version is recoverable.
+  - It will NOT overwrite the server, kiosk-config.env, or your token — only the
+    page/asset files listed in the manifest.
+  - Updating the SERVER program itself (clover-menu-server.js) is rare and still
+    done by USB on purpose, so a bad push can't break the engine remotely.
+  - To turn auto-update off, blank out UPDATE_MANIFEST_URL and restart.
