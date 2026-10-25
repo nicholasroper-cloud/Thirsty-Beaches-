@@ -1,0 +1,137 @@
+/* "Order ahead" phone layout. Loaded AFTER the kiosk's own styles in public/order.html, so these
+   win over the kiosk's portrait (1080x1920 touchscreen) sizes. Targets 360-430px phones; nothing
+   here may make the page scroll sideways; every tap target is at least 44px tall. */
+/* The kiosk scrolls only its menu panel; a phone scrolls the page (the browser bars can collapse),
+   with the header and the category strip pinned. */
+html,body{height:auto;}
+body{overflow-x:hidden;overflow-y:auto;-webkit-text-size-adjust:100%;}
+.app{height:auto;min-height:100vh;min-height:100dvh;}
+main{flex:none;overflow:visible;}
+#attract,.helprow,#designDrink,#vibe,#snap,#payscreen,#qrpay,#confirm,.vibe-attract{display:none!important;}
+input,textarea{-webkit-user-select:text;user-select:text;}
+
+/* header + status banner */
+header{position:sticky;top:0;z-index:20;height:calc(60px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 16px 0;gap:10px;
+  background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
+.brand .logo-img{height:44px;}
+.brand #brandFallback{font-size:22px;}
+.cartbtn{font-size:15px;padding:10px 16px;min-height:44px;gap:8px;}
+.cartbtn .count{min-width:24px;height:24px;font-size:13px;}
+.oa-banner{position:relative;z-index:3;margin:10px 16px 0;padding:10px 14px;border-radius:16px;font-family:"Outfit",sans-serif;font-size:15px;line-height:1.35;
+  background:rgba(255,255,255,.86);border:1.5px solid rgba(22,58,95,.16);color:var(--ink);box-shadow:0 10px 24px -16px rgba(22,58,95,.5);}
+.oa-banner[hidden]{display:none;}
+.oa-banner p{margin:0;}
+.oa-banner a{color:#c2185b;font-weight:700;text-underline-offset:3px;}
+.oa-banner.off{border-color:rgba(255,61,151,.45);background:#fff4f8;}
+.oa-banner .oa-open{display:flex;align-items:center;gap:8px;font-weight:700;color:#0d6b43;}
+.oa-dot{flex:none;width:10px;height:10px;border-radius:50%;background:#1fbf6a;box-shadow:0 0 0 4px rgba(31,191,106,.2);}
+.oa-banner .oa-track{display:flex;align-items:center;min-height:44px;margin:-6px 0 4px;font-size:16px;}
+
+/* tabs, specials, menu grid */
+.tabs{position:sticky;top:calc(60px + env(safe-area-inset-top));z-index:19;display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:8px 16px;gap:8px;margin-top:6px;
+  background:rgba(255,248,238,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;white-space:nowrap;font-size:15px;padding:0 14px;border-radius:14px;min-height:44px;}
+.tab .ico{font-size:17px;}
+.tab .catdot{width:10px;height:10px;margin-right:6px;}
+#specials-section{padding:10px 16px 0;}
+.specials-head{gap:10px;margin-bottom:10px;}
+.specials-head h3{font-size:22px;}
+.specials-grid{grid-template-columns:1fr;gap:10px;}
+.special-card{padding:14px 16px;}
+.special-card-name{font-size:19px;}
+.special-card-price{font-size:18px;}
+main{padding:8px 16px calc(112px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch;}
+.cat-head{flex-wrap:wrap;gap:4px 12px;margin:10px 2px 14px;}
+.cat-head h2{font-size:26px;line-height:1.1;}
+.cat-head span{font-size:14px;}
+.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.card{padding:8px 8px 12px;border-radius:18px;min-width:0;}
+.card .art{border-radius:13px;margin-bottom:8px;}
+.card h3{font-size:16px;line-height:1.2;margin:0 2px;overflow-wrap:anywhere;}
+.card .desc{font-size:12.5px;line-height:1.35;min-height:0;margin:3px 2px 0;}
+.card .pricechip{font-size:14px;padding:4px 9px;}
+
+/* bottom order bar */
+.orderbar{padding:12px 16px calc(12px + env(safe-area-inset-bottom));gap:10px;min-height:60px;}
+.orderbar .ob-count{font-size:14px;}
+.orderbar .ob-cta{font-size:16px;text-align:center;}
+.orderbar .ob-total{font-size:18px;}
+
+/* sheets: customizer, cart, name */
+.overlay{align-items:flex-end;}
+.sheet{max-width:none;width:100%;border-radius:22px 22px 0 0;max-height:92vh;max-height:92dvh;overscroll-behavior:contain;padding-bottom:0;}
+.sheet-hd{padding:14px 16px 12px;gap:12px;}
+.sheet-hd h3{font-size:22px;line-height:1.15;}
+.sheet-hd p{font-size:14px;}
+.sheet-hd .art{width:60px;height:60px;border-radius:14px;}
+.sheet-hd .art span{font-size:28px;}
+.sheet-hd .art .emoji{font-size:34px;}
+.close{width:44px;height:44px;font-size:18px;flex:none;}
+.opt-group{padding:14px 16px 2px;}
+.opt-group h4{font-size:16px;margin-bottom:10px;flex-wrap:wrap;}
+.opt-group h4 em{font-size:12px;}
+.opt-row{gap:8px;}
+.opt{font-size:15px;padding:10px 13px;border-radius:14px;min-height:44px;}
+.opt .add{font-size:13px;}
+.opt.soldopt::after{top:2px;right:4px;font-size:10px;}
+.sheet-ft{padding:12px 16px calc(12px + env(safe-area-inset-bottom));gap:10px;}
+.qty{padding:4px;gap:2px;}
+.qty button{width:44px;height:44px;font-size:22px;}
+.qty span{font-size:19px;min-width:30px;}
+.btn-primary{font-size:17px;padding:14px 12px;border-radius:16px;min-height:52px;}
+#sheet > div[style*="padding"]{padding:4px 16px 0!important;}
+.cart-line{padding:12px 0;gap:10px;}
+.cart-line .art{width:50px;height:50px;border-radius:12px;}
+.cart-line .art span{font-size:22px;}
+.cart-line .art .emoji{font-size:28px;}
+.cart-line .info{min-width:0;}
+.cart-line .info b{font-size:16px;}
+.cart-line .info .mods{font-size:13px;overflow-wrap:anywhere;}
+.cart-line .info .price{font-size:15px;}
+.linkbtn{font-size:15px;min-height:44px;padding:10px 4px;}
+.prizerow{margin-top:10px;padding:4px 12px;}
+.totals{padding:12px 0 4px;}
+.totals .row{font-size:16px;}
+.totals .row.grand{font-size:24px;padding-top:12px;}
+.sheet-ft.payfork{align-items:center;}
+.payfork .btn-primary{min-height:64px;padding:10px 12px;}
+.payfork .pf-t{font-size:19px;}
+.payfork .pf-s{font-size:12.5px;}
+
+/* name + pay step (order-post.js) */
+.ph-namewrap{padding:12px 16px 4px;}
+.ph-lbl{display:block;font-family:"Outfit",sans-serif;font-weight:700;font-size:15px;color:var(--ink);margin:0 0 6px;}
+.ph-name{display:block;width:100%;height:54px;padding:0 16px;border-radius:14px;border:1.5px solid var(--border-2);background:#fff;color:var(--ink);
+  font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;outline:none;}
+.ph-name:focus{border-color:#2E8BFF;box-shadow:0 0 0 3px rgba(46,139,255,.25);}
+.ph-name.bad{border-color:#e0245e;}
+.btn-primary.needname{opacity:.6;filter:grayscale(.3);}
+.ph-hint{min-height:1.2em;margin:6px 2px 0;font-size:14px;font-weight:700;color:#c2185b;}
+.ph-hint:empty{min-height:0;margin:0;}
+.beachname{margin:10px 0 0;width:100%;min-height:44px;font-size:15px;}
+.ph-pickup{margin:12px 0 2px;padding:10px 12px;border-radius:12px;background:rgba(46,139,255,.1);font-family:"Outfit",sans-serif;font-size:15px;line-height:1.35;color:var(--ink);}
+.oa-closed{margin:10px 16px 0;padding:12px 14px;border-radius:14px;background:#fff4f8;border:1.5px solid rgba(255,61,151,.4);
+  font-family:"Outfit",sans-serif;font-size:15px;line-height:1.4;color:var(--ink);}
+.oa-closed p{margin:0;}
+.oa-closed a{color:#c2185b;font-weight:700;}
+
+/* upsell */
+#upsellOverlay{align-items:flex-end;}
+.upsell-sheet{max-width:none;width:100%;border-radius:22px 22px 0 0;max-height:92dvh;overflow-y:auto;}
+.upsell-hd{padding:16px 16px 12px;}
+.upsell-hd h3{font-size:21px;}
+.upsell-hd p{font-size:14px;}
+.upsell-offers{gap:10px;padding:12px 16px 4px;}
+.upsell-card{border-radius:16px;padding:10px 12px;gap:12px;min-height:56px;}
+.upsell-card .uc-icon{width:46px;height:46px;border-radius:12px;}
+.upsell-card .uc-name{font-size:16px;}
+.upsell-card .uc-desc{font-size:13px;}
+.upsell-card .uc-price{font-size:16px;}
+.upsell-ft{padding:12px 16px calc(12px + env(safe-area-inset-bottom));gap:10px;}
+.upsell-add{font-size:17px;padding:15px;min-height:52px;}
+.upsell-skip{font-size:16px;padding:14px 18px;min-height:52px;}
+
+/* toast */
+.toast{bottom:calc(84px + env(safe-area-inset-bottom));font-size:15px;padding:12px 18px;border-radius:18px;width:max-content;max-width:calc(100vw - 32px);text-align:center;line-height:1.35;}

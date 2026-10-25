@@ -2,7 +2,7 @@
 /* Builds ./public for the Worker from the station files one level up (the repo root):
    make-station.html -> public/index.html, pickup-board.html -> public/board.html,
    recipes.json, addons.json, assets/logo.png, and src/kiosk-menu.js (phone-pay prices) from
-   drink-kiosk.html. Adds the access key plumbing: the page
+   drink-kiosk.html, plus public/order.html ("Order ahead": the kiosk page in phone mode). Adds the access key plumbing: the page
    reads ?k=... from its own address once, remembers it, and sends it on every data call. */
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
@@ -30,6 +30,33 @@ function page(src, dst) {
 }
 page("make-station.html", "index.html");
 page("pickup-board.html", "board.html");
+
+// "Order ahead": public/order.html = the kiosk page itself in phone mode, so the menu, prices, options,
+// upsells, Secret menu, specials and sold-out greying are exactly the kiosk's. phone/order-pre.js runs
+// before the kiosk script (answers the trailer-PC-only endpoints), phone/order-post.js after it (name +
+// Clover checkout + open/closed), phone/order.css on top of the kiosk styles. See src/order-ahead.js.
+function orderPage() {
+  let h = fs.readFileSync(path.join(root, "drink-kiosk.html"), "utf8");
+  const read = f => fs.readFileSync(path.join(__dirname, "phone", f), "utf8");
+  // the kiosk functions phone mode replaces or calls; if one is renamed, stop the build instead of shipping a broken page
+  for (const fn of ["renderNamePad", "refreshName", "askName", "placeOrder", "startQr", "qrProbe", "qrShown", "qrFetch", "askPrize", "idleReset",
+    "armIdle", "openCart", "closeSheet", "selectCat", "checkControl", "applyControl", "showToast", "cartTotals", "recordSales", "beachName", "escK"])
+    if (!new RegExp("\\bfunction " + fn + "\\(").test(h)) throw new Error("order.html: kiosk function " + fn + "() not found");
+  for (const v of ["let orderInFlight", "let _orderName", "let cart", "const QR_API = \"https://station.thirstybeaches.com/api/qr\""])
+    if (!h.includes(v)) throw new Error("order.html: kiosk no longer has " + v);
+  const vp = /<meta name="viewport"[^>]*>/;
+  if (!vp.test(h)) throw new Error("order.html: viewport meta not found");
+  h = h.replace(vp, '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="theme-color" content="#080B16">');
+  h = h.replace(/<title>[^<]*<\/title>/, "<title>Order ahead · Thirsty Beaches</title>");
+  h = h.replace("</head>", "<style>\n/* phone mode (cloud/phone/order.css) */\n" + read("order.css") + "\n</style>\n</head>");
+  const i = h.lastIndexOf("<script>");                                              // the kiosk's main script
+  h = h.slice(0, i) + "<script>\n" + read("order-pre.js") + "\n</script>\n" + h.slice(i);
+  const j = h.lastIndexOf("</body>");
+  h = h.slice(0, j) + "<script>\n" + read("order-post.js") + "\n</script>\n" + h.slice(j);
+  if (!h.includes("window.TB_PHONE = true") || !h.includes("window.startOnline")) throw new Error("order.html: phone shims not inserted");
+  fs.writeFileSync(path.join(pub, "order.html"), h);
+}
+orderPage();
 for (const f of ["recipes.json"]) fs.copyFileSync(path.join(root, f), path.join(pub, f));
 const addons = [path.join(root, "addons.json"), path.join(root, "..", "addons.json")].find(f => fs.existsSync(f));
 if (addons) fs.copyFileSync(addons, path.join(pub, "addons.json"));
