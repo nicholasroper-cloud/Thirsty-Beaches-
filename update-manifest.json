@@ -1,17 +1,17 @@
 {
-  "version": 25,
+  "version": 26,
   "files": [
     {
       "path": "drink-kiosk.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html?v=648a4f9d6bc1",
-      "sha256": "648a4f9d6bc1d549e5add578b702738ac4dbfbd488cc016d49feea5509212419",
-      "size": 234431
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html?v=3f5957eaa935",
+      "sha256": "3f5957eaa935b414d71bbfc9f190ebe3f27670bd2dd802f8f98eccbd9c6fe827",
+      "size": 234534
     },
     {
       "path": "drink-kiosk-light.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html?v=57763d4b7220",
-      "sha256": "57763d4b7220ea7dae23942b97056a563681fd94b98ef6a681f888d0bb532d9e",
-      "size": 233676
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html?v=44453cefcd0a",
+      "sha256": "44453cefcd0aa2d715e1e02bf437663db4f65cce693864e1223dcd67fbf6f004",
+      "size": 233779
     },
     {
       "path": "make-station.html",
@@ -156,6 +156,18 @@
       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-lockdown/READ-ME-APPLIANCE.txt?v=7787d69ea335",
       "sha256": "7787d69ea33575bb2503b8d08f28d4c5664880ebd0761dfddae169b73827485b",
       "size": 5544
+    },
+    {
+      "path": "Install-AutoStart.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Install-AutoStart.bat?v=5bdc67943439",
+      "sha256": "5bdc67943439be741d7cc7b6f058367005bbd801a993237e51785e16fa22a7cc",
+      "size": 1701
+    },
+    {
+      "path": "Remove-AutoStart.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Remove-AutoStart.bat?v=e9688a82d815",
+      "sha256": "e9688a82d815f532a8b7f7c6eeec046119702dedacd60af18b0d4c219f5c3fb7",
+      "size": 269
     },
     {
       "path": "tb-bootstrap.json",
