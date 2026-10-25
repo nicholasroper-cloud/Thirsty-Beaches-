@@ -74,8 +74,11 @@ back into ThirstyKiosk (or rebooting) drops you back into the locked kiosk.
 UPDATING THE MENU LATER
 ------------------------------------------------------------
 Two ways, both already built in:
-  - REMOTE (best): turn on auto-update (see ..\remote-update-SETUP.txt) and the
-    locked kiosk pulls new menus/prices by itself. You never touch the PC.
+  - REMOTE (best): auto-update (see ..\remote-update-SETUP.txt): the locked
+    kiosk pulls new menus, prices AND server updates by itself, and rolls back
+    a bad one. You never touch the PC. The server task below is unchanged: it
+    still starts clover-menu-server.js, which is now the launcher that keeps
+    the real server (kiosk-server.js) running.
   - HANDS-ON: sign in as admin, replace drink-kiosk.html, sign out.
 
 ------------------------------------------------------------

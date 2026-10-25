@@ -5,6 +5,9 @@ echo ============================================================
 echo   DEBUG MODE - this runs the server in THIS window so you
 echo   can read any error. Leave it open and visit the kiosk at
 echo   http://localhost:8137 in a browser to test.
+echo   If it says the kiosk is ALREADY RUNNING, run Stop-Kiosk.bat
+echo   first (the appliance task may be running it in the background).
+echo   Status log: .tb\supervisor.log   Status page: http://localhost:8137/kiosk-status
 echo ============================================================
 echo.
 if not exist "%~dp0node.exe" echo  [X] node.exe is MISSING from this folder!

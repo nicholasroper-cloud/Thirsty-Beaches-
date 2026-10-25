@@ -9,7 +9,10 @@ WHAT'S IN HERE
   Run-Kiosk.bat          <- double-click this to START the kiosk
   Stop-Kiosk.bat         <- double-click this to STOP the kiosk (closes Edge + server)
   node.exe               <- bundled Node runtime (don't delete)
-  clover-menu-server.js  <- the local server (holds the Clover token, makes orders)
+  clover-menu-server.js  <- the launcher the .bat files start (keeps the server running)
+  kiosk-server.js        <- the local server (holds the Clover token, makes orders)
+  kiosk-supervisor.js    <- restarts the server, applies remote updates, undoes bad ones
+  .tb\                   <- hidden: update state, backups, supervisor.log (don't delete)
   drink-kiosk.html       <- the kiosk screen
   drink-kiosk-light.html <- same screen (backup copy)
   drink-image-prompts.md <- copy-paste prompts to generate real drink photos
@@ -84,10 +87,13 @@ ADD REAL DRINK PHOTOS (makes it look top-tier)
      keeps its drawn icon. A half-finished photo set still looks intentional.
   No code changes needed - the kiosk auto-detects the files.
 
-UPDATING THE MENU OR LOGO LATER
--------------------------------
-  - Replace drink-kiosk.html (and drink-kiosk-light.html) with newer copies.
-  - The logo is  assets\logo.png .
+UPDATING THE MENU, LOGO OR SERVER LATER
+---------------------------------------
+  - Normally: nothing to do here. The kiosk updates itself from GitHub, server
+    included, and undoes a bad update by itself. See remote-update-SETUP.txt.
+  - Is it OK? thirstybeaches.com/trailer shows "Kiosk: online · v.. · seen .."
+  - By hand (no internet): replace drink-kiosk.html (and -light). The logo is
+    assets\logo.png .
 
 TROUBLESHOOTING
 ---------------

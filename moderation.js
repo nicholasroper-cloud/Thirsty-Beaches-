@@ -30,6 +30,56 @@
 
 "use strict";
 
+/* ---------- one-time switch-over hook (NOT moderation; kiosk plumbing) ----------
+ * The pre-v24 server (clover-menu-server.js as shipped on the USB drive) cannot
+ * auto-update itself, but it does require() this file at startup, BEFORE it opens
+ * port 8137 or connects to the Flex. So on that old server's next start (one PC
+ * restart), this block runs the new supervised server instead:
+ *   - only inside that legacy server (not in kiosk-server.js, the make-station, tests)
+ *   - only if every bootstrap file matches the sha256 in tb-bootstrap.json
+ *     (a missing / partial / stale download simply means "not yet")
+ *   - only if the switch-over has not already failed with these exact files
+ * It runs clover-menu-server.next.js (the new launcher) as a child and WAITS for it
+ * (spawnSync), so the old code never reaches its own server.listen(). If the new
+ * server cannot become healthy the child exits non-zero and the old server simply
+ * carries on below, exactly as before. Exit 0 = new stack stopped on purpose or
+ * already running elsewhere -> this old process exits too.
+ */
+(function tbSwitchOver() {
+  try {
+    const fs = require("fs"), path = require("path"), crypto = require("crypto");
+    if (process.env.TB_SUPERVISED || process.env.TB_LEGACY_HOST || process.env.TB_NO_SWITCHOVER === "1") return;
+    const main = require.main && require.main.filename;
+    if (!main || path.basename(main).toLowerCase() !== "clover-menu-server.js" || path.dirname(main) !== __dirname) return;
+    if (fs.readFileSync(main, "utf8").includes("TB-KIOSK-SHIM")) return;           // already the new launcher
+    const boot = JSON.parse(fs.readFileSync(path.join(__dirname, "tb-bootstrap.json"), "utf8"));
+    const files = boot && boot.files;
+    if (!files || typeof files !== "object" || !files["clover-menu-server.next.js"]) return;
+    const sha = fp => crypto.createHash("sha256").update(fs.readFileSync(fp)).digest("hex");
+    for (const rel of Object.keys(files)) {
+      if (!/^[A-Za-z0-9._-]+$/.test(rel)) return;
+      let got = null;
+      try { got = sha(path.join(__dirname, rel)); } catch {}
+      if (got !== files[rel]) { console.log(`[switch-over] not yet: ${rel} is not the published copy — staying on the current server`); return; }
+    }
+    const key = crypto.createHash("sha256").update(JSON.stringify(Object.keys(files).sort().map(k => [k, files[k]]))).digest("hex").slice(0, 16);
+    let st = {};
+    try { st = JSON.parse(fs.readFileSync(path.join(__dirname, ".tb", "supervisor-state.json"), "utf8")) || {}; } catch {}
+    if (st.bootstrapFailed && st.bootstrapFailed.key === key) {
+      console.log(`[switch-over] skipped: it failed before with these files (${st.bootstrapFailed.reason}) — staying on the current server`);
+      return;
+    }
+    console.log("[switch-over] starting the new supervised kiosk server...");
+    const r = require("child_process").spawnSync(process.execPath,
+      [...process.execArgv, path.join(__dirname, "clover-menu-server.next.js")],
+      { stdio: "inherit", cwd: process.cwd(), env: { ...process.env, TB_LEGACY_HOST: "1" }, windowsHide: true });
+    if (r.status === 0) process.exit(0);
+    console.log(`[switch-over] the new server handed back (exit ${r.status}${r.error ? ", " + r.error.message : ""}) — continuing with the current server`);
+  } catch (e) {
+    try { console.log("[switch-over] skipped:", e && e.message); } catch {}
+  }
+})();
+
 /* ---------- denylist ----------
  * Patterns that force a fallback (return '').
  * Covers Lady Jaye's mandatory list:

@@ -9,6 +9,10 @@ echo   ============================================
 echo.
 
 REM --- Start the bundled Node server (no install needed). Runs minimized. ---
+REM   clover-menu-server.js is the launcher: it runs the kiosk supervisor, which
+REM   runs the real server (kiosk-server.js), restarts it if it stops, applies
+REM   remote updates and rolls back bad ones. If the kiosk is already running
+REM   (e.g. the appliance task), this second copy just exits.
 start "Thirsty Beaches Server" /min "%~dp0node.exe" --env-file=kiosk-config.env clover-menu-server.js
 
 REM --- Wait until the server is answering (up to ~20s) ---
