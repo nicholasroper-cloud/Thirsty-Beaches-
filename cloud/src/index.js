@@ -10,6 +10,7 @@
 import { handleQr } from "./qr.js";
 import { cloverGet, getCatalog } from "./clover.js";
 import { REPORT_CRON, runDailyReport, handleReport } from "./report.js";
+import { MONITOR_CRON, runMonitor, handleMonitor } from "./monitor.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const text = (s, status = 200) => new Response(s, { status, headers: { "content-type": "text/plain" } });
@@ -98,6 +99,10 @@ export default {
       if (!authorized(req, env)) return json({ error: "key required" }, 401);
       return handleReport(req, env, url);
     }
+    if (p === "/api/monitor") {                                 // owner: site monitoring state (monitor.js)
+      if (!authorized(req, env)) return json({ error: "key required" }, 401);
+      return handleMonitor(req, env, url);
+    }
     if (p === "/queue" || p === "/done" || p === "/undo") {
       if (!authorized(req, env)) return json({ error: "key required" }, 401);
       let done = await getDone(env);
@@ -140,6 +145,7 @@ export default {
   async scheduled(event, env, ctx) {
     const jobs = [];
     if (event.cron === REPORT_CRON) jobs.push(runDailyReport(env, event.scheduledTime || Date.now()).then(r => console.log("daily report", JSON.stringify(r))));
+    if (event.cron === MONITOR_CRON) jobs.push(runMonitor(env, event.scheduledTime || Date.now()).then(r => { if (r.changes && r.changes.length) console.log("monitor", JSON.stringify(r)); }));
     await Promise.all(jobs.map(j => j.catch(e => console.error("cron job failed", event.cron, e && e.message))));
   }
 };
