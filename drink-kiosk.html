@@ -865,6 +865,20 @@
   #confirm .ordernum b{color:#0b2545;}
   #confirm .orderfor{margin-top:14px;}
   @media (orientation:portrait){ #confirm .orderfor{font-size:46px;} }
+  /* K6: "Help me choose" row under the category tabs (was crammed into the header and overflowed at 768px) */
+  .helprow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:8px 34px 0;}
+  .helprow .help-l{font-family:"Outfit",sans-serif;font-weight:800;font-size:17px;color:var(--ink);margin-right:4px;}
+  .helprow .designbtn,.helprow .vibebtn,.helprow .snapbtn{min-height:48px;font-size:17px;padding:0 22px;}
+  .helprow .designbtn.show{display:inline-flex;align-items:center;}
+  @media (orientation:portrait){
+    .helprow{padding:10px 44px 0;gap:12px 16px;}
+    .helprow .help-l{font-size:24px;}
+    .helprow .designbtn,.helprow .vibebtn,.helprow .snapbtn{min-height:64px;font-size:23px;padding:0 28px;}
+  }
+  @media (orientation:portrait) and (max-width:900px){
+    .helprow{gap:10px;} .helprow .help-l{font-size:20px;margin-right:0;}
+    .helprow .designbtn,.helprow .vibebtn,.helprow .snapbtn{font-size:19px;padding:0 16px;}
+  }
   /* Approved neon identity: preserve the beach scene and keep the glow legible. */
   #attract .attract-logo,
   #confirm .confirm-logo,
@@ -913,15 +927,20 @@
            onerror="this.remove();document.getElementById('brandFallback').style.display='block';">
       <span id="brandFallback" style="display:none;">Thirsty Beaches</span>
     </div>
-    <button class="designbtn" id="designBtn" onclick="openDesignDrink()">Design Your Own</button>
-    <button class="vibebtn" onclick="vibeStart()">Match My Vibe</button>
-    <button class="snapbtn" onclick="snapStart()">Snap a pic</button>
     <button class="cartbtn empty" id="cartBtn" onclick="openCart()">
       View Order <span class="count" id="cartCount">0</span>
     </button>
   </header>
 
   <div class="tabs" id="tabs"></div>
+
+  <!-- "Help me choose": the AI / camera helpers, moved out of the header so it never overflows -->
+  <div class="helprow" id="helpRow">
+    <span class="help-l">Help me choose</span>
+    <button class="designbtn" id="designBtn" onclick="openDesignDrink()">Design Your Own</button>
+    <button class="vibebtn" onclick="vibeStart()">Match My Vibe</button>
+    <button class="snapbtn" onclick="snapStart()">Snap a pic</button>
+  </div>
 
   <!-- Today's Specials — hidden when empty, populated by applyControl() -->
   <div id="specials-section" style="display:none;"></div>
