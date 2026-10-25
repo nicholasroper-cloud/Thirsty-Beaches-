@@ -29,6 +29,8 @@ PAGE_VERSION = "13"
 # "Pay on my phone": TIPS = "1" turns on Clover's tip screen; QR_ENABLED = "0" switches phone pay off.
 TIPS = "0"
 QR_RATE_PER_HOUR = "60"
+# "Order ahead" (station.thirstybeaches.com/order) is OFF unless ORDER_AHEAD = "true" is added in the
+# Cloudflare dashboard (not here: a value in this file would override the dashboard on every deploy). See OPS.md.
 
 [[kv_namespaces]]
 binding = "STATE"
