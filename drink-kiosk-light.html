@@ -2528,12 +2528,18 @@ function buildUpsellOffers(line) {
   if (FLOAT_CATS.has(line.catKey)) return [];
   if (FLOAT_PAT.test(line.name + " " + (line.mods||[]).join(" "))) return [];
   if ((line.mods||[]).some(m => /dole whip|vanilla|twist|swirl/i.test(m))) return [];
+  // Only offer what the item can actually take: nothing for candy bags (Treats) or option-less items,
+  // a topper only where the menu has "Top It Off", a size-up / float only for drinks that come in sizes.
+  const catOpts = (MENU[line.catKey] && MENU[line.catKey].options) || [];
+  if (line.catKey === "treats" || !catOpts.length) return [];
+  const hasOpt = k => catOpts.some(o => o.key === k);
 
   const offers = [];
 
   // Offer 1: make it a float — only if they don't already have a "Float" or "cap" mod
   const alreadyFloat = (line.mods||[]).some(m => /float/i.test(m));
-  if (!alreadyFloat) {
+  const hot = (line.mods||[]).includes("Hot");
+  if (!alreadyFloat && hasOpt("size") && !hot) {
     offers.push({
       id: "float",
       name: "Make it a Float",
@@ -2547,7 +2553,7 @@ function buildUpsellOffers(line) {
   // Offer 2: topper — only if no topper already on this line
   const topperChoices = ["Whipped cream","Sweet cream cold foam","Vanilla cold foam","Salted caramel cold foam"];
   const alreadyTopper = (line.mods||[]).some(m => topperChoices.some(t => m.includes(t.split(" ")[0])));
-  if (!alreadyTopper) {
+  if (!alreadyTopper && hasOpt("topper")) {
     offers.push({
       id: "topper",
       name: "Add a Topper",
@@ -2561,7 +2567,7 @@ function buildUpsellOffers(line) {
   // Offer 3: size up — only if current item has a size option and they didn't already pick Large/32oz
   const bigSizes = /large|32oz|24oz|medium/i;
   const alreadyBig = (line.mods||[]).some(m => bigSizes.test(m));
-  if (!alreadyBig) {
+  if (!alreadyBig && hasOpt("size")) {
     offers.push({
       id: "size",
       name: "Size Up",
