@@ -188,7 +188,8 @@ async function createQr(req, env) {
   if (viaRelay && total > RELAY_LIMITS.cents) return jsonC(req, { error: "too-big" }, 400);
   let data, status = 0;
   if (viaRelay) {                                                    // Salty Dog Tags' Hosted Checkout key, same merchant
-    const res = await relayPost(env, { kind: "checkout", ...checkout, merchantId: env.CLOVER_MERCHANT_ID });
+    const res = await relayPost(env, { kind: "checkout", lineItems, customer: checkout.customer, redirectUrls: checkout.redirectUrls,
+      tips: checkout.tips, merchantId: env.CLOVER_MERCHANT_ID });
     status = res.status; data = res.data;
   } else try {
     const r = await fetch(`${env.CLOVER_BASE_URL || "https://api.clover.com"}/invoicingcheckoutservice/v1/checkouts`, {

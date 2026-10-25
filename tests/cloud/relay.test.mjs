@@ -71,11 +71,12 @@ assert.equal(rc[0].init.method, "POST");
 assert.equal(rc[0].init.headers.authorization, "Bearer " + KEY);
 let p = JSON.parse(rc[0].init.body);
 assert.equal(p.kind, "checkout"); assert.equal(p.merchantId, "MQKMTFBRXFP21");
+assert.deepEqual(Object.keys(p).sort(), ["customer", "kind", "lineItems", "merchantId", "redirectUrls", "tips"], "the relay's body shape (functions/api/relay.js)");
 assert.deepEqual(p.customer, { firstName: "Nick" });
 assert.deepEqual(p.tips, { enabled: false });
-assert.equal(p.shoppingCart.lineItems.length, 3, "one line per drink");
-assert.deepEqual(p.shoppingCart.lineItems.map(l => [l.name, l.price, l.unitQty]), [["Sandy Bottom", 650, 1], ["Thicc & Thirsty", 750, 1], ["Thicc & Thirsty", 750, 1]]);
-assert.equal(p.shoppingCart.lineItems[0].note, `KQ-${r.json.ref} · Nick`);
+assert.equal(p.lineItems.length, 3, "one line per drink");
+assert.deepEqual(p.lineItems.map(l => [l.name, l.price, l.unitQty]), [["Sandy Bottom", 650, 1], ["Thicc & Thirsty", 750, 1], ["Thicc & Thirsty", 750, 1]]);
+assert.equal(p.lineItems[0].note, `KQ-${r.json.ref} · Nick`);
 assert.deepEqual(p.redirectUrls, { success: `https://station.thirstybeaches.com/r/${r.json.ref}?paid=1`, failure: `https://station.thirstybeaches.com/r/${r.json.ref}?failed=1` });
 const rec = JSON.parse(env.STATE._m.get("qr:" + r.json.ref));
 assert.equal(rec.sid, "s1"); assert.equal(rec.href, "https://www.clover.com/checkout/s1"); assert.equal(rec.status, "pending");
@@ -150,7 +151,7 @@ r = await qr(envOa, "POST", cart({ source: "online" }), { origin: "https://stati
 assert.equal(r.status, 200, JSON.stringify(r.json));
 assert.equal(r.json.checkoutUrl, "https://www.clover.com/checkout/s2");
 p = JSON.parse(sent.find(s => s.url.includes("/api/relay")).init.body);
-assert.equal(p.shoppingCart.lineItems[0].note, `KQ-${r.json.ref} · Online · Nick`);
+assert.equal(p.lineItems[0].note, `KQ-${r.json.ref} · Online · Nick`);
 
 /* --- owner alerts --- */
 let relayNote = () => new Response('{"ok":true,"sent":1}');
