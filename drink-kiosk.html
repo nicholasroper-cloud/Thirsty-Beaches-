@@ -435,6 +435,8 @@
   #confirm .tl-consent{display:flex;align-items:flex-start;gap:10px;justify-content:center;text-align:left;font-size:14px;color:var(--ink-soft);margin:0 auto 16px;max-width:420px;}
   #confirm .tl-consent input{width:22px;height:22px;flex:none;margin-top:1px;}
   #confirm .ordernum b{letter-spacing:.08em;}
+  #confirm .tl-msg{min-height:1.4em;margin:0 0 12px;font-size:18px;font-weight:700;color:#9a1b10;max-width:460px;}
+  @media (orientation:portrait){ #confirm .tl-msg{font-size:24px;max-width:700px;} }
   /* ---- Vibe Reader (camera drink-match) ---- */
   .vibebtn{font-family:"Outfit",sans-serif;font-weight:800;font-size:clamp(13px,1.6vw,18px);color:var(--ink);cursor:pointer;white-space:nowrap;
     background:linear-gradient(#fff,#fff) padding-box,var(--grad-brand) border-box;border:2px solid transparent;border-radius:999px;padding:12px 22px;}
@@ -975,6 +977,7 @@
       <div class="tl-num" id="tlNum">(•••) •••-••••</div>
       <div class="keypad" id="keypad"></div>
       <label class="tl-consent"><input type="checkbox" id="tlConsent" onchange="tideRecalc()"> Text me the day's spot &amp; deals. Msg &amp; data rates may apply.</label>
+      <p class="tl-msg" id="tlMsg" role="alert"></p>
       <button class="btn-primary disabled" id="tlSubmit" onclick="tideJoin()">Join</button>
       <button class="ghostbtn" onclick="resetAll()">Skip</button>
     </div>
@@ -1666,9 +1669,11 @@ function renderLeaderboard(){
   box.style.display="block";
 }
 
-/* ---- The Tide List (Beach Club) — front-end capture only (NOT transmitted/stored).
-       Wiring real SMS needs a backend + TCPA consent before going live. ---- */
-let _phone="";
+/* ---- The Tide List (Beach Club) — joins the same alert list as the website's signup form:
+       POST tb-where /subscribe {contact, consent:true, smsConsent:true} (the text-me box must be ticked).
+       Only a real {ok:true} answer shows "You're on The Tide List!"; anything else says what went wrong. ---- */
+const TIDE_API = "https://tb-where.nicholasroper.workers.dev/subscribe";
+let _phone="", _tideReq=0;
 function fmtPhone(p){ const a=p.padEnd(10,"•"); return `(${a.slice(0,3)}) ${a.slice(3,6)}-${a.slice(6,10)}`; }
 function buildKeypad(){
   const k=$("#keypad"); if(!k) return;
@@ -1686,15 +1691,30 @@ function tideKey(d){
   tideRecalc();
 }
 function tideOpen(){
-  _phone=""; buildKeypad();
-  $("#tlNum").textContent=fmtPhone("");
+  _phone=""; buildKeypad(); _tideReq=0;
+  $("#tlNum").textContent=fmtPhone(""); $("#tlMsg").textContent=""; $("#tlSubmit").textContent="Join";
   $("#tlConsent").checked=false; $("#tlSubmit").classList.add("disabled");
-  $("#tlPitch").style.display="none"; $("#tlForm").style.display="block";
+  $("#tlPitch").style.display="none"; $("#tlForm").style.display="flex";
 }
-function tideJoin(){
-  if(_phone.length!==10 || !$("#tlConsent").checked) return;
-  _phone="";                                  // front-end only — nothing sent anywhere yet
-  $("#tlForm").style.display="none"; $("#tlDone").style.display="block";
+async function tideJoin(){
+  if(_tideReq || _phone.length!==10 || !$("#tlConsent").checked) return;
+  const me = _tideReq = Date.now();
+  const btn=$("#tlSubmit"), msg=$("#tlMsg");
+  btn.textContent="Adding you…"; btn.classList.add("disabled"); msg.textContent="";
+  let ok=false, err="";
+  try{
+    const r = await qrFetch(TIDE_API, { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ contact:_phone, consent:true, smsConsent:true }) }, 10000);
+    let d=null; try{ d = await r.json(); }catch(e){}
+    if(r.ok && d && d.ok) ok = true;
+    else err = (d && d.error==="bad-contact") ? "That doesn't look like a US mobile number. Check it and tap Join again."
+                                              : "Something went wrong on our end. Tap Join to try again.";
+  }catch(e){ err = "We can't reach the internet right now. Tap Join to try again in a moment."; }
+  if(_tideReq !== me) return;                 // the screen was reset while we waited
+  _tideReq = 0; btn.textContent = "Join";
+  if(!ok){ msg.textContent = err; tideRecalc(); return; }
+  _phone="";
+  $("#tlForm").style.display="none"; $("#tlDone").style.display="flex";
   fireConfetti();
 }
 
@@ -3044,7 +3064,7 @@ function resetAll(){
   clearTimeout(idleTimer);
   cart=[]; updateCartBtn();
   closeUpsell();                                          // clear any dangling upsell prompt
-  delete MENU.secret; _tap=0; _phone=""; _orderName="";  // hide secret menu again for the next customer
+  delete MENU.secret; _tap=0; _phone=""; _tideReq=0; _orderName="";  // hide secret menu again for the next customer
   stopVibeCam(); $("#vibe").classList.remove("show");     // camera off + close the vibe reader (privacy)
   snapClose();                                             // Snap-a-pic: camera off, photo/result state cleared
   closeDesignDrink();                                      // clear chip state + close design picker (COPPA)
@@ -3054,7 +3074,7 @@ function resetAll(){
   closeSheet();
   $("#confirm").classList.remove("show");
   const tp=$("#tlPitch"), tf=$("#tlForm"), td=$("#tlDone");  // reset Tide List back to its pitch
-  if(tp) tp.style.display="block"; if(tf) tf.style.display="none"; if(td) td.style.display="none";
+  if(tp) tp.style.display="flex"; if(tf) tf.style.display="none"; if(td) td.style.display="none";
   renderLeaderboard();                                    // refresh Today's Top Sips
   $("#attract").style.display="flex";
   goHome();
