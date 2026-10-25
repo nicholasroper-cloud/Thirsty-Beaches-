@@ -855,6 +855,10 @@
     #qrpay .qr-timer{font-size:30px;}
     #qrpay .qr-btn{font-size:30px;padding:28px 60px;}
   }
+  /* K2: order number in dark navy (pink #ff177e was 3.6:1 on the light card) */
+  #confirm .ordernum b{color:#0b2545;}
+  #confirm .orderfor{margin-top:14px;}
+  @media (orientation:portrait){ #confirm .orderfor{font-size:46px;} }
   /* Approved neon identity: preserve the beach scene and keep the glow legible. */
   #attract .attract-logo,
   #confirm .confirm-logo,
@@ -2741,6 +2745,7 @@ async function placeOrder(){
     // Order created — record sales for leaderboard, then decide payment path
     recordSales(cart);
     const amountCents = Math.round(cartTotals().sub * 100);  // subtotal (before tax) in cents
+    d.name = _orderName.trim();                               // keep the name for the confirm screen ("listen for your name")
     cart = []; updateCartBtn(); closeSheet();
     _orderName = ""; _lastUpsize = !!d.upsize; _prizeCode = "";
 
@@ -2778,7 +2783,7 @@ function showConfirm(order, paid){
   const o = order || _payOrder;
   if(!o) return;
   $("#orderNum").textContent    = o.ticket || o.orderId.slice(-4).toUpperCase();
-  $("#orderForName").textContent = "";  // _orderName already cleared above
+  $("#orderForName").textContent = o.name ? "Order for " + o.name : "";
   resetSpin();
 
   // Swap the pay-at-window banner copy depending on whether the customer already paid
@@ -3021,11 +3026,12 @@ function qrBackToCart(msg){
 }
 function qrPaid(ticket){
   qrStop();
+  const who = _orderName.trim();
   // same wrap-up as a placed order (see placeOrder), then the shared confirm screen
   recordSales(cart);
   cart = []; updateCartBtn(); closeSheet();
   _orderName = ""; _lastUpsize = false; _prizeCode = "";
-  showConfirm({ ticket: String(ticket), orderId: String(ticket) }, true);
+  showConfirm({ ticket: String(ticket), orderId: String(ticket), name: who }, true);
   const banner = $("#confirm .paywindow");
   if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it buzzes when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
   armIdle();
