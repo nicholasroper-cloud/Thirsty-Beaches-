@@ -96,7 +96,7 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .prog .pip.ok{background:var(--accent)}
 .big{font-weight:800;font-size:1.25rem;min-height:68px;padding:12px 28px;border-radius:16px;border:none;background:var(--accent);color:var(--accent-ink)}
 .big.ready{box-shadow:0 0 0 4px var(--sun)}
-.items{overflow-y:auto;min-height:0;padding:16px 24px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:14px;align-content:start;overscroll-behavior:contain}
+.items{overflow-y:auto;min-height:0;padding:16px 24px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-content:start;overscroll-behavior:contain}
 .card{background:var(--card);border:2px solid var(--line);border-left:10px solid var(--cat,var(--line));border-radius:16px;padding:14px 16px 14px 14px;display:grid;gap:10px;align-content:start}
 .card.ok{opacity:.5}
 .chead{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
@@ -249,6 +249,19 @@ input[type=search]::placeholder{color:var(--mute)}
 .rrow span,.rrow b{min-width:0}
 .rrow{min-width:0;overflow:hidden}
 .chead .cup .ingl{font-size:.8rem}
+/* M1: "more below" pill when a ticket's cards don't fit, and a check before Done with unticked items */
+.make>.morebelow{position:absolute;left:50%;transform:translateX(-50%);bottom:62px;z-index:4;display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 26px;border-radius:999px;border:2px solid var(--sun);background:#1f1142;color:#fff;font-family:var(--display);font-size:1.05rem;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 18px rgba(255,209,102,.35)}
+.make>.morebelow[hidden]{display:none}
+.make>.morebelow::before{content:"";width:12px;height:12px;border-right:3px solid var(--sun);border-bottom:3px solid var(--sun);transform:rotate(45deg) translateY(-3px)}
+.ask{position:fixed;inset:0;z-index:40;background:rgba(8,1,28,.78);display:flex;align-items:center;justify-content:center;padding:20px}
+.ask[hidden]{display:none}
+.ask .box{background:var(--card);border:2px solid var(--sun);border-radius:20px;padding:26px 28px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.ask h3{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:1.6rem;color:#fff}
+.ask p{margin:0 0 20px;color:var(--fg);font-size:1.05rem}
+.ask .btns{display:flex;gap:12px;flex-wrap:wrap}
+.ask .btns button{flex:1;min-height:64px;border-radius:14px;font-weight:800;font-size:1.1rem;padding:10px 18px}
+.ask .keep{background:var(--accent);color:var(--accent-ink);border:none}
+.ask .anyway{background:transparent;border:2px solid var(--line);color:var(--fg)}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -289,6 +302,7 @@ input[type=search]::placeholder{color:var(--mute)}
   </section>
 </div>
 <div class="bar" id="bar" hidden></div>
+<div class="ask" id="doneAsk" hidden role="dialog" aria-modal="true" aria-labelledby="doneAskT"><div class="box"><h3 id="doneAskT"></h3><p>Tick each item as you hand it over, or finish anyway.</p><div class="btns"><button class="keep">Keep making</button><button class="anyway">Done anyway</button></div></div></div>
 <div class="saver" id="saver" aria-hidden="true"><div class="grid"></div><div class="sun"></div><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches. Stay thirsty, beaches." onerror="this.remove()"><div class="time" id="saverTime"></div><div class="line">Stay thirsty, beaches</div><div class="made" id="saverMade"></div><div class="tap">Tap anywhere, or a new ticket wakes it</div></div>
 <script>
 /* ---- keep the Echo Show from closing the browser: a silent audio loop makes Silk treat the page as active (starts after the first touch) ---- */
@@ -416,11 +430,24 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
  m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
-  <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>`;
- $('#doneBtn').onclick=()=>{post('/done',o.id);delete checks[o.id];};
+  <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>
+  <button class="morebelow" id="moreBelow" hidden></button>`;
+ const finish=()=>{post('/done',o.id);delete checks[o.id];};
+ $('#doneBtn').onclick=()=>{const left=[...m.querySelectorAll('.items .card')].filter(c=>!c.classList.contains('ok')).length;
+  if(!left){finish();return;}
+  const a=$('#doneAsk');a.querySelector('h3').textContent=left+(left===1?' item':' items')+' not ticked. Done anyway?';a.hidden=false;
+  a.querySelector('.keep').onclick=()=>{a.hidden=true;};a.querySelector('.anyway').onclick=()=>{a.hidden=true;finish();};};
+ const its=m.querySelector('.items');its.onscroll=moreBelow;$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
- progress(o,ck);renderPrep(o);}
+ progress(o,ck);renderPrep(o);moreBelow();}
+/* "N more below": counts cards whose top edge is under the visible part of the items list */
+function moreBelow(){const b=$('#moreBelow'),it=$('#make .items');if(!b||!it)return;
+ const up=$('#make .upnext');if(up)b.style.bottom=(up.offsetHeight+12)+'px';
+ if(it.scrollHeight-it.scrollTop-it.clientHeight<8){b.hidden=true;return;}
+ const lim=it.getBoundingClientRect().bottom-24;const n=[...it.querySelectorAll('.card')].filter(c=>c.getBoundingClientRect().top>lim).length;
+ b.textContent=n?n+(n===1?' more item below':' more items below'):'More below';b.hidden=false;}
+addEventListener('resize',moreBelow);
 function renderPrep(cur){const others=queue.waiting.filter(x=>x.id!==cur.id);const el=$('#prep');if(!el)return;
  if(!others.length){el.innerHTML='';return;}
  const bases={},same={};
