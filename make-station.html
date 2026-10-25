@@ -277,6 +277,8 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 .card.grab{align-self:start}
 .card.grab .tag{background:#ff9adf;color:#08011c;font-size:.9rem;padding:4px 10px}
 /* M7: a late ticket (over 6 min) is unmistakable: LATE badge + red border; one ding when it turns late */
+/* "Order ahead" tickets (customer ordered + paid on their own phone, picks up at the window) */
+.onl{display:inline-block;vertical-align:.12em;margin-right:7px;font-family:var(--display);font-size:.72rem;letter-spacing:.1em;background:#00f0ff;color:#08011c;padding:2px 7px;border-radius:6px;line-height:1.2}
 .lateb{display:inline-flex;align-items:center;font-family:var(--display);font-size:.85rem;letter-spacing:.1em;background:var(--alert);color:#08011c;padding:3px 9px;border-radius:7px;line-height:1.1}
 .tk .lateb{position:absolute;top:-10px;left:14px;box-shadow:0 0 12px rgba(255,107,107,.7)}
 .tk.late{border:3px solid var(--alert);box-shadow:0 0 0 1px var(--alert) inset,0 0 18px rgba(255,107,107,.35)}
@@ -447,7 +449,7 @@ function renderQueue(){const w=queue.waiting;
  $('#nWait').textContent=w.length;$('#stMade').textContent=queue.madeToday;
  const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
  $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${queue.now-o.created>LATE_MS?' late':''}" data-id="${esc(o.id)}">
-   ${queue.now-o.created>LATE_MS?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
+   ${queue.now-o.created>LATE_MS?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
    <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
  let newlyLate=false;for(const o of w)if(queue.now-o.created>LATE_MS&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
@@ -463,7 +465,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
    ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
- m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+ m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
   <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>
