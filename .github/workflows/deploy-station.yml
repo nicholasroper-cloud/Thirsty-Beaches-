@@ -1,0 +1,56 @@
+# Deploys the station Worker (thirsty-beaches-station at station.thirstybeaches.com: make station,
+# pickup board, "Pay on my phone") whenever its source or the files cloud/build.js copies change on
+# main, or on demand. Needs the CLOUDFLARE_API_TOKEN repo secret (Account > Workers Scripts > Edit);
+# without it the run is skipped with a warning. Secrets (CLOVER_API_TOKEN, STATION_KEY,
+# CLOVER_ECOMM_TOKEN) and the KV namespace live in Cloudflare and are untouched by a deploy;
+# keep_vars = true in wrangler.toml keeps dashboard variables too.
+name: Deploy station
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloud/**'
+      - 'make-station.html'
+      - 'pickup-board.html'
+      - 'recipes.json'
+      - 'assets/**'
+      - 'drink-kiosk.html'          # the phone-pay price book is generated from the kiosk menu
+      - '.github/workflows/deploy-station.yml'
+  workflow_dispatch:
+concurrency: { group: deploy-station, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip (no CLOUDFLARE_API_TOKEN secret yet)
+        if: env.HAS_TOKEN != 'true'
+        run: echo "::warning::Add the CLOUDFLARE_API_TOKEN repo secret to enable automatic station deploys."
+      - uses: actions/setup-node@v4
+        if: env.HAS_TOKEN == 'true'
+        with:
+          node-version: '22'
+      - name: Build public/ and the phone-pay price book
+        if: env.HAS_TOKEN == 'true'
+        working-directory: cloud
+        run: |
+          node build.js
+          for f in src/*.js; do node --input-type=module --check < "$f"; done
+      # The live station's recipes.json / addons.json are published separately and differ from this
+      # repo (addons.json isn't in it at all). Keep the live ones; stops the deploy if they can't be read.
+      - name: Keep the live station menu files
+        if: env.HAS_TOKEN == 'true'
+        working-directory: cloud
+        run: node preserve-live-menu.js
+      - name: Deploy thirsty-beaches-station
+        if: env.HAS_TOKEN == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 0447644183772258fcca2756230134f6
+          wranglerVersion: '4'
+          workingDirectory: cloud
+          # a fresh PAGE_VERSION per run so open station screens reload after each deploy
+          command: deploy --var PAGE_VERSION:ci${{ github.run_number }}

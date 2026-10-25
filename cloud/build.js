@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /* Builds ./public for the Worker from the station files one level up (the repo root):
    make-station.html -> public/index.html, pickup-board.html -> public/board.html,
-   recipes.json, addons.json, assets/logo.png. Adds the access key plumbing: the page
+   recipes.json, addons.json, assets/logo.png, and src/kiosk-menu.js (phone-pay prices) from
+   drink-kiosk.html. Adds the access key plumbing: the page
    reads ?k=... from its own address once, remembers it, and sends it on every data call. */
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
 const pub = path.join(__dirname, "public");
 fs.mkdirSync(path.join(pub, "assets"), { recursive: true });
+
+// "Pay on my phone" price book: read straight from the kiosk page's menu (fails the build if it can't).
+require("./menu-from-kiosk.js").writeMenu(root);
 
 const keyShim = `<script>
 (function(){try{var u=new URL(location.href);var k=u.searchParams.get('k');if(k){localStorage.setItem('tb-key',k);}

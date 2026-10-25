@@ -2,10 +2,14 @@
 # Deploy:  cd cloud && node build.js && npx wrangler deploy
 # Secrets (set once, never in this file):  npx wrangler secret put CLOVER_API_TOKEN
 #                                          npx wrangler secret put STATION_KEY
+#                                          npx wrangler secret put CLOVER_ECOMM_TOKEN   ("Pay on my phone"; Hosted Checkout private key)
 name = "thirsty-beaches-station"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
 workers_dev = true
+# Deploys (by hand or from .github/workflows/deploy-station.yml) keep any variables added in the
+# Cloudflare dashboard instead of deleting them. Secrets are never touched by a deploy.
+keep_vars = true
 routes = [
   { pattern = "station.thirstybeaches.com", custom_domain = true }
 ]
@@ -22,6 +26,9 @@ CLOVER_BASE_URL = "https://api.clover.com"
 MAKE_LOOKBACK_HOURS = "16"
 GRAB_CATEGORIES = "Treats"
 PAGE_VERSION = "13"
+# "Pay on my phone": TIPS = "1" turns on Clover's tip screen; QR_ENABLED = "0" switches phone pay off.
+TIPS = "0"
+QR_RATE_PER_HOUR = "60"
 
 [[kv_namespaces]]
 binding = "STATE"

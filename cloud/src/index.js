@@ -3,7 +3,11 @@
    the Worker reads Clover orders on demand, remembers which tickets are done
    in KV, and serves the station + pickup board pages from ./public.
    The Clover token lives only in the Worker's secrets. Every data route needs
-   the STATION_KEY (as ?k=... or X-Key header) so the ticket feed isn't public. */
+   the STATION_KEY (as ?k=... or X-Key header) so the ticket feed isn't public.
+   Exception, on purpose: the "Pay on my phone" routes in qr.js (/api/qr, /api/qr/<ref>, /r/<ref>)
+   are public; they only ever reveal one order to whoever holds its random 8-character ref. */
+
+import { handleQr } from "./qr.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const text = (s, status = 200) => new Response(s, { status, headers: { "content-type": "text/plain" } });
@@ -48,7 +52,9 @@ function normalizeLine(li, catalog, grabCats) {
   const itemId = li.item && li.item.id;
   const cat = itemId && catalog.byId[itemId] ? catalog.byId[itemId].category : (catalog.byName[name.toLowerCase()] || {}).category || "";
   const grab = cat.split(" / ").some(c => grabCats.has(c.toLowerCase()));
-  return { name, mods, category: cat, kind: grab ? "grab" : "drink", note: String(li.note || "").trim(), price: li.price || 0 };
+  let note = String(li.note || "").trim();
+  if (/^KQ-[A-Z0-9]{8}( · .*)?$/.test(note)) note = "";     // "Pay on my phone" reference tag, not a drink note
+  return { name, mods, category: cat, kind: grab ? "grab" : "drink", note, price: li.price || 0 };
 }
 function groupLines(lines) {
   const out = [];
@@ -64,6 +70,10 @@ function parseCustomer(o) {
   const m = note.match(/^(.+?)\s+—\s+Kiosk order/);
   if (m) return { name: m[1].trim(), source: "Kiosk" };
   if (/kiosk order/i.test(note)) return { name: "", source: "Kiosk" };
+  for (const li of (((o.lineItems || {}).elements) || [])) {              // "Pay on my phone" order (Clover Hosted Checkout)
+    const q = String(li.note || "").match(/^KQ-[A-Z0-9]{8} · (.+)$/);
+    if (q) return { name: q[1].trim() === "Kiosk" ? "" : q[1].trim(), source: "Kiosk" };
+  }
   return { name: String(o.title || "").trim(), source: "Register" };
 }
 
@@ -107,6 +117,10 @@ export default {
 
     if (p === "/health") {
       return json({ ok: true, cloud: true, version: env.PAGE_VERSION || "1", keyRequired: !!env.STATION_KEY });
+    }
+    if (p === "/api/qr" || p.startsWith("/api/qr/") || p.startsWith("/r/")) {   // public: phone pay + tracker
+      const res = await handleQr(req, env, url);
+      if (res) return res;
     }
     if (p === "/queue" || p === "/done" || p === "/undo") {
       if (!authorized(req, env)) return json({ error: "key required" }, 401);
