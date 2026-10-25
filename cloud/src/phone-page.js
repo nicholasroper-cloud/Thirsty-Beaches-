@@ -163,7 +163,7 @@ function render(){
     v.innerHTML = '<div class="check">&#10003;</div><h1>Paid! We\\u2019re making it</h1>' +
       '<div class="ticket"><small>ORDER</small>#' + esc(S.ticket) + '</div>' +
       '<p class="funny" id="funny"></p><div class="dots"><i></i><i></i><i></i></div>' + itemsHtml() +
-      '<p class="fine">Keep this page open. Your phone buzzes when it\\u2019s ready.</p><div id="rv"></div>';
+      '<p class="fine">Keep this page open. It turns green when it\\u2019s ready.</p><div id="rv"></div>';
     reviewSlot(true);
     const f = $("#funny"); f.textContent = pick(MAKING_LINES, "m");
     funnyTimer = setInterval(() => { f.classList.add("fade"); setTimeout(() => { f.textContent = pick(MAKING_LINES, "m"); f.classList.remove("fade"); }, 350); }, 6000);

@@ -828,6 +828,8 @@
   .btn-qr{border:none;cursor:pointer;font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;color:#fff;
     background:var(--grad-cool);border-radius:16px;box-shadow:var(--glow-cool);
     display:flex;justify-content:center;align-items:center;transition:transform .12s;}
+  .btn-qr{background:linear-gradient(120deg,#0f2f52,#174f88);}
+  .payfork .btn-primary{background:#fff;color:#163a5f;border:3px solid #163a5f;box-shadow:none;}
   .btn-qr:active{transform:scale(.98);}
   .btn-qr.disabled{opacity:.45;filter:grayscale(.4);pointer-events:none;box-shadow:none;}
   .payfork .pf-t{display:block;line-height:1.1;}
@@ -844,7 +846,7 @@
   #qrpay .qr-box{background:#fff;padding:16px;border-radius:24px;width:min(380px,72vw);box-shadow:0 20px 60px -20px rgba(22,58,95,.55);}
   #qrpay .qr-box svg{display:block;width:100%;height:auto;}
   #qrpay .qr-total{margin:20px 0 4px;font-family:"Outfit",sans-serif;font-weight:600;color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;font-size:clamp(14px,2vw,18px);}
-  #qrpay .qr-total b{display:block;font-family:"Fraunces",serif;font-weight:900;font-size:clamp(44px,7vw,72px);letter-spacing:0;color:#ff177e;line-height:1.05;}
+  #qrpay .qr-total b{display:block;font-family:"Fraunces",serif;font-weight:900;font-size:clamp(44px,7vw,72px);letter-spacing:0;color:#163a5f;line-height:1.05;}
   #qrpay .qr-timer{font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(16px,2.2vw,22px);color:var(--ink);margin:6px 0 22px;font-variant-numeric:tabular-nums;}
   #qrpay .qr-btn{border:1px solid var(--border-2);background:var(--panel);color:var(--ink);font-family:"Outfit",sans-serif;font-weight:700;
     font-size:clamp(16px,2vw,20px);padding:18px 40px;border-radius:16px;cursor:pointer;min-width:min(380px,80vw);}
@@ -1016,7 +1018,7 @@
   <img src="assets/logo.png?v=logo20261018" class="confirm-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="check">✓</div>
   <h2>You're in, Beaches</h2>
-  <p>Your order's on the way — listen for your name at the window.</p>
+  <p id="confirmSub">Your order's on the way — listen for your name at the window.</p>
   <div id="orderForName" class="orderfor"></div>
   <div class="ordernum"><span>Your order number</span><b id="orderNum">42</b></div>
   <div class="paywindow">Head to the window to pay &amp; grab your order<span class="paychevrons"><i></i><i></i><i></i></span></div>
@@ -1093,7 +1095,7 @@
 <div id="qrpay" data-state="pending" aria-live="polite">
   <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <h2 class="qr-hl" id="qrHl">Scan with your phone camera</h2>
-  <p class="qr-sub" id="qrSub">Pay with Apple Pay, Google Pay or card. Keep the page open: your phone buzzes when your drink is ready.</p>
+  <p class="qr-sub" id="qrSub">Pay with Apple Pay, Google Pay or card. Keep the page open: it turns green when your drink is ready.</p>
   <div class="qr-box" id="qrBox"></div>
   <div class="qr-total">Total<b id="qrTotal">$0.00</b></div>
   <div class="qr-timer" id="qrTimer"></div>
@@ -2902,6 +2904,8 @@ function showConfirm(order, paid){
 
   // Swap the pay-at-window banner copy depending on whether the customer already paid
   const banner = $("#confirm .paywindow");
+  const cs = $("#confirmSub");
+  if(cs) cs.textContent = (paid && _qrPaidNow) ? "Your order's on the way — watch your phone, it turns green when it's ready." : "Your order's on the way — listen for your name at the window.";
   if(banner){
     if(paid){
       banner.innerHTML = 'Grab your order at the window <span class="paychevrons"><i></i><i></i><i></i></span>';
@@ -3024,6 +3028,7 @@ const QR_POLL_MS = 3000;
 const QR_GIVEUP_MS = 20 * 60000;     // stop waiting this long after the code was made
 let _qrOn = false;                   // station says phone pay is available (probed at load + every 5 min)
 let _qrSkip = false;                 // phone pay failed for this customer: just offer the window until reset
+let _qrPaidNow = false;            // showConfirm: this paid order was paid on the customer's phone
 let _qr = null;                      // {ref, payUrl, total, expires, started, tick, poll} while a QR is up
 function qrShown(){ return _qrOn && !_qrSkip; }
 function qrBusy(){ return !!_qr; }
@@ -3077,7 +3082,7 @@ async function startQr(){
   const el = $("#qrpay");
   el.setAttribute("data-state","pending");
   $("#qrHl").textContent = "Scan with your phone camera";
-  $("#qrSub").textContent = "Pay with Apple Pay, Google Pay or card. Keep the page open: your phone buzzes when your drink is ready.";
+  $("#qrSub").textContent = "Pay with Apple Pay, Google Pay or card. Keep the page open: it turns green when your drink is ready.";
   $("#qrCancelBtn").textContent = "Cancel";
   $("#qrBox").innerHTML = qrSvg(d.payUrl);
   $("#qrBox").setAttribute("data-url", d.payUrl);
@@ -3090,7 +3095,7 @@ async function startQr(){
 function qrTick(){
   if(!_qr) return;
   const now = Date.now(), el = $("#qrpay");
-  if(now - _qr.started > QR_GIVEUP_MS){ qrGiveUp(); return; }
+  if(now - _qr.started > QR_GIVEUP_MS || (_qr.expires && now > _qr.expires + 60000)){ qrGiveUp(); return; }
   const left = _qr.expires - now;
   if(left > 0){
     const m = Math.floor(left/60000), s = Math.floor(left/1000) % 60;
@@ -3128,9 +3133,11 @@ function qrGiveUp(){
   $("#qrHl").textContent = "We couldn't confirm a payment";
   $("#qrSub").textContent = "If you paid on your phone, show it at the window and we'll sort it out. Otherwise, start a new order.";
   $("#qrCancelBtn").textContent = "OK";
+  const me = _qr;
+  me.leave = setTimeout(()=>{ if(_qr === me){ qrStop(); resetAll(); } }, 90000);   // nobody tapped OK: free the kiosk
 }
 function qrStop(){
-  if(_qr){ clearInterval(_qr.tick); clearTimeout(_qr.poll); }
+  if(_qr){ clearInterval(_qr.tick); clearTimeout(_qr.poll); clearTimeout(_qr.leave); }
   _qr = null;
   const el = $("#qrpay"); if(el){ el.classList.remove("show"); el.setAttribute("data-state","pending"); }
   const b = $("#qrBox"); if(b){ b.innerHTML = ""; b.removeAttribute("data-url"); }
@@ -3148,9 +3155,11 @@ function qrPaid(ticket){
   recordSales(cart);
   cart = []; updateCartBtn(); closeSheet();
   _orderName = ""; _lastUpsize = false; _prizeCode = "";
+  _qrPaidNow = true;
   showConfirm({ ticket: String(ticket), orderId: String(ticket), name: who }, true);
+  _qrPaidNow = false;
   const banner = $("#confirm .paywindow");
-  if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it buzzes when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
+  if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it turns green when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
   armIdle();
 }
 function resetAll(){
