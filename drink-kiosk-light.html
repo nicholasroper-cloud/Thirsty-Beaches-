@@ -1160,7 +1160,7 @@
     <p class="vibe-priv">Your photo is used once to match a drink and isn't stored. The camera turns off the moment you leave this screen.</p>
   </div>
   <div class="stage" id="vibeResult">
-    <h2>The beach has spoken</h2>
+    <h2 id="vibeHl">The beach has spoken</h2>
     <div class="reading" id="vibeReading"></div>
     <div class="matchname" id="vibeMatchName"></div>
     <p id="vibeWhy"></p>
@@ -1847,7 +1847,7 @@ async function vibeAllow(){
     _vibeStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}, audio:false});
     $("#vibeVideo").srcObject=_vibeStream;
   }catch(e){
-    vibeSurprise();   // no camera / denied → still fun: a surprise match
+    vibeShy();        // no camera / denied → say so honestly, then still hand them a pick
   }
 }
 function analyzeFrame(video){
@@ -1859,10 +1859,11 @@ function analyzeFrame(video){
   r/=n; g/=n; b/=n;
   return {r,g,b, bright:(r+g+b)/3, warm:r-b, sat:Math.max(r,g,b)-Math.min(r,g,b)};
 }
-function vibeReveal(t){
+function vibeReveal(t, shy){
   _vibeMatch={cat:t.cat, id:t.id};
   const item = MENU[t.cat] && MENU[t.cat].items.find(i=>i.id===t.id);
-  $("#vibeReading").textContent=t.reading;
+  $("#vibeHl").textContent = shy ? "Camera's shy today" : "The beach has spoken";
+  $("#vibeReading").textContent = shy ? "We couldn't read your vibe, so here's a pick for you:" : t.reading;
   $("#vibeMatchName").textContent=item?item.name:"Thirst Trap";
   $("#vibeWhy").textContent=t.why;
   stopVibeCam();
@@ -1876,6 +1877,7 @@ function vibeCandidates(){
   return out;
 }
 function showVibeLoading(){
+  $("#vibeHl").textContent="The beach has spoken";
   $("#vibeReading").textContent="Reading your vibe…";
   $("#vibeMatchName").textContent="…";
   $("#vibeWhy").textContent="";
@@ -1906,9 +1908,11 @@ async function vibeSnap(){
       }
     }catch(e){}
   }
+  if(!img && !localV){ vibeShy(); return; }   // never got a frame: don't pretend we read one
   vibeReveal(vibePick(localV));   // fallback: on-device pick (no AI key, or AI failed)
 }
 function vibeSurprise(){ vibeReveal(vibePick(null)); }
+function vibeShy(){ stopVibeCam(); vibeReveal(vibePick(null), true); }   // camera failed: honest message + a random pick
 function vibeAddToOrder(){ const m=_vibeMatch; vibeClose(); if(m) openItem(m.cat,m.id); }
 function stopVibeCam(){
   if(_vibeStream){ _vibeStream.getTracks().forEach(t=>t.stop()); _vibeStream=null; }
