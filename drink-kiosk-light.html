@@ -503,6 +503,10 @@
     background:rgba(255,255,255,.82);color:var(--ink);font-family:"Outfit",sans-serif;font-weight:700;font-size:clamp(16px,2.2vw,22px);cursor:pointer;}
   .kkey:active{transform:scale(.94);}
   .kkey.kwide{max-width:200px;flex:2 1 0;font-size:16px;font-weight:600;}
+  /* K3: prize-code keypad is a real 3x4 grid (.krow's flex was overriding .numpad's grid) */
+  .krow.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:440px;margin:0 auto 8px;}
+  .krow.numpad .kkey{max-width:none;min-height:76px;padding:0;font-size:30px;font-weight:800;}
+  @media (orientation:portrait){ .krow.numpad{max-width:620px;gap:16px;} .krow.numpad .kkey{min-height:104px;font-size:42px;border-radius:18px;} }
   #confirm .orderfor{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(24px,3.6vw,32px);color:var(--ink);margin:6px 0 0;}
   /* ---- "Pay at the window" animated banner ---- */
   #confirm .paywindow{position:relative;z-index:3;display:inline-flex;align-items:center;gap:14px;margin:18px 0 2px;padding:16px 30px;border-radius:999px;
