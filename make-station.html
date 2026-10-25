@@ -276,6 +276,14 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 /* M6: GRAB tag readable (was pink on yellow, 1.33:1) and the grab card no longer stretches to the row height */
 .card.grab{align-self:start}
 .card.grab .tag{background:#ff9adf;color:#08011c;font-size:.9rem;padding:4px 10px}
+/* M7: a late ticket (over 6 min) is unmistakable: LATE badge + red border; one ding when it turns late */
+.lateb{display:inline-flex;align-items:center;font-family:var(--display);font-size:.85rem;letter-spacing:.1em;background:var(--alert);color:#08011c;padding:3px 9px;border-radius:7px;line-height:1.1}
+.tk .lateb{position:absolute;top:-10px;left:14px;box-shadow:0 0 12px rgba(255,107,107,.7)}
+.tk.late{border:3px solid var(--alert);box-shadow:0 0 0 1px var(--alert) inset,0 0 18px rgba(255,107,107,.35)}
+.tk.late.on{box-shadow:0 0 0 2px var(--accent) inset,0 0 18px rgba(255,107,107,.5)}
+.mhead .mlate{display:none;font-size:1.1rem;padding:6px 12px}
+.mhead.late .mlate{display:inline-flex}
+.mhead.late .code{color:var(--alert);text-shadow:0 0 12px rgba(255,107,107,.6)}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -333,7 +341,7 @@ const ingColor=x=>{const n=norm(x);for(const [k,v] of ING)if(n.includes(norm(k))
 const dot=x=>{const c=ingColor(x);return c?`<i class="dot" style="color:${c}"></i>`:'';};
 const ingList=arr=>`<span class="ingl">${arr.map(x=>dot(x)+esc(x)).join('<span class="sep">·</span>')}</span>`;
 const catColor=c=>{const n=norm(c);for(const [k,v] of Object.entries(CAT_COLOR))if(n.includes(k))return v;return"";};
-let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),announced=new Set(),firstLoad=true,checks={};
+let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,seen=new Set(),announced=new Set(),firstLoad=true,checks={},lateSeen=new Set();
 /* ---- mod classification from addons.json (same groups the kiosk + Register use) ---- */
 const SET={size:new Set(),base:new Set(),flavor:new Set(),puree:new Set(),cream:new Set(),style:new Set(),extra:new Set(),topper:new Set(),cap:new Set(),boost:new Set(),serve:new Set(),top:new Set(),temp:new Set(),milk:new Set()};
 const EXTRA_BASES=["Coca-Cola","Coke","Diet Coke","Pepsi","Dr Pepper","Diet Dr Pepper","Sprite","Sprite Zero","Mountain Dew","Diet Mtn Dew","Root Beer","Cream Soda","Fanta Orange","Big Red","Squirt","Fresca","Red Bull","Sugar-Free Red Bull","Alani Nu","Monster","Lemonade","Sparkling Water"];
@@ -428,9 +436,12 @@ function renderQueue(){const w=queue.waiting;
  $('#nWait').textContent=w.length;$('#stMade').textContent=queue.madeToday;
  const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
  $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${queue.now-o.created>LATE_MS?' late':''}" data-id="${esc(o.id)}">
-   <span class="code">${esc(o.ticket)}</span><span class="who">${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
+   ${queue.now-o.created>LATE_MS?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
    <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
+ let newlyLate=false;for(const o of w)if(queue.now-o.created>LATE_MS&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
+ if(newlyLate)lateDing();
+ const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh)mh.classList.toggle('late',!!so2&&queue.now-so2.created>LATE_MS);
  const r=queue.ready;const rec=$('#recent');rec.hidden=!r.length;
  if(r.length)rec.innerHTML=`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button></div>`).join(''),
   rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post('/undo',b.dataset.id));}
@@ -441,7 +452,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
    ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
- m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+ m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
   <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>
@@ -454,7 +465,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
  const its=m.querySelector('.items');its.onscroll=moreBelow;$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
- progress(o,ck);renderPrep(o);moreBelow();}
+ progress(o,ck);renderPrep(o);moreBelow();m.querySelector('.mhead').classList.toggle('late',queue.now-o.created>LATE_MS);}
 /* "N more below": counts cards whose top edge is under the visible part of the items list */
 function moreBelow(){const b=$('#moreBelow'),it=$('#make .items');if(!b||!it)return;
  const up=$('#make .upnext');if(up)b.style.bottom=(up.offsetHeight+12)+'px';
@@ -539,6 +550,7 @@ function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>clas
 /* one spoken announcement per poll, each ticket read at most once ever (tracked in `announced`, separate from the NEW badge) */
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
+function lateDing(){try{if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=523;g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.7);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.7);}catch(e){}}
 async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
 /* M2: a wrong/missing access key (401, cloud edition) and a dropped connection get different messages */
 const KEY_MSG='Need the access key. Open the station from the link with ?k= on the end.';
@@ -548,7 +560,7 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
   const freshOnes=queue.waiting.filter(o=>!announced.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
-  if(firstLoad){queue.waiting.forEach(o=>{seen.add(o.id);announced.add(o.id);});firstLoad=false;}
+  if(firstLoad){queue.waiting.forEach(o=>{seen.add(o.id);announced.add(o.id);if(queue.now-o.created>LATE_MS)lateSeen.add(o.id);});firstLoad=false;}
   freshOnes.forEach(o=>announced.add(o.id));
   if(fresh){hideSaver();ding();setTimeout(()=>announce(freshOnes),400);if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
