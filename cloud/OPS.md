@@ -108,8 +108,6 @@ All of this fits the free Workers plan: 2 cron triggers (Cloudflare allows 5 per
 free plan), about 2,000 outbound checks a day, one KV read per check and a KV write only when
 something changes. Cron runs show up under the Worker's **Logs** tab.
 
-# Station owner features (OPS)
-
 <!-- Merge note: feat/station-ops also adds cloud/OPS.md (daily report, review ask, monitoring).
      Keep both: this "Order ahead" section goes after that file's sections. -->
 
