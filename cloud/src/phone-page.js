@@ -1,13 +1,25 @@
 /* The customer's phone page for "Pay on my phone": /r/<ref>.
    Pending: order summary + Pay button (Clover Hosted Checkout). Paid: "we're making it" with
    rotating funny lines. Ready: big green "Ready at the window!" + buzz. Polls /api/qr/<ref>.
+   Review ask: with the REVIEW_URL variable set (an https link, e.g. the Google review link), a
+   quiet "Leave us a review" link on the paid screen and a button on the ready screen; one tap
+   opens it in a new tab, then it's gone for that order (and for 120 days on that phone).
+   Without REVIEW_URL nothing about reviews is on the page.
    No external scripts. The funny lines come from funny-lines.js (the one place to edit them). */
 import { READY_LINES, MAKING_LINES, fillLine } from "./funny-lines.js";
 
 const safeJson = v => JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")
   .replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 
-export function phonePage(view) {
+export function reviewLink(raw) {
+  try {
+    const u = new URL(String(raw || "").trim());
+    return u.protocol === "https:" && u.href.length <= 500 ? u.href : "";
+  } catch { return ""; }
+}
+
+export function phonePage(view, opts = {}) {
+  const reviewUrl = reviewLink(opts.reviewUrl);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -57,6 +69,11 @@ h1{font-family:var(--display);font-weight:400;font-size:1.9rem;line-height:1.1;l
 .muted h1{color:var(--mute);text-shadow:none}
 .check{width:78px;height:78px;border-radius:50%;margin:8px auto 0;display:flex;align-items:center;justify-content:center;font-size:44px;color:#08011c;background:var(--green);box-shadow:0 0 30px rgba(59,224,138,.6)}
 .hide{display:none!important}
+.rv{margin:18px 0 4px}
+.rv a{display:inline-block;text-decoration:none;font-weight:700;font-size:1.02rem;color:var(--sun);padding:12px 22px;border-radius:999px;
+ border:1.5px solid rgba(255,209,102,.7);background:rgba(255,209,102,.08)}
+.rv.soft a{border:0;background:none;padding:6px 8px;font-weight:500;font-size:.92rem;color:var(--mute);text-decoration:underline;text-underline-offset:3px}
+.rv .thx{color:var(--mute);font-size:.95rem}
 @media (prefers-reduced-motion:reduce){.dots i,.ready .ticket{animation:none}}
 </style>
 </head>
@@ -71,6 +88,7 @@ const READY_LINES = ${safeJson(READY_LINES)};
 const MAKING_LINES = ${safeJson(MAKING_LINES)};
 const fillLine = ${fillLine.toString()};
 let S = ${safeJson(view)};
+const REVIEW_URL = ${safeJson(reviewUrl)};
 const POLL_MS = 4000, READY_STOP_MS = 30 * 60000;
 const q = new URLSearchParams(location.search);
 const back = q.get("paid") === "1" ? "paid" : q.get("failed") === "1" ? "failed" : "";
@@ -90,6 +108,20 @@ function itemsHtml(){
   const rows = (S.items || []).map(it => '<div class="item"><span class="q">' + esc(it.qty) + '&times;</span><div><b>' + esc(it.name) + '</b>' +
     (it.mods && it.mods.length ? '<small>' + esc(it.mods.join(" · ")) + '</small>' : '') + '</div></div>').join("");
   return '<div class="card">' + rows + '<div class="total"><span>Total</span><b>' + money(S.total) + '</b></div></div>';
+}
+/* Review ask: once per order. Tapping it hides it for this order, and for 120 days on this phone. */
+function store(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
+function reviewSlot(soft){
+  const el = $("#rv"); if(!el || !REVIEW_URL || !S) return;
+  const recent = +store("tb-review-at") || 0;
+  if(store("tb-review-" + S.ref) || (recent && Date.now() - recent < 120 * 864e5)) return;
+  el.className = "rv" + (soft ? " soft" : "");
+  el.innerHTML = '<a href="' + esc(REVIEW_URL) + '" target="_blank" rel="noopener noreferrer">' +
+    'Loved it? Leave us a review \u2b50</a>';
+  el.firstChild.addEventListener("click", () => {
+    store("tb-review-" + S.ref, "1"); store("tb-review-at", String(Date.now()));
+    setTimeout(() => { el.className = "rv"; el.innerHTML = '<span class="thx">Thank you! That really helps a small beach business. \ud83d\udc9b</span>'; }, 300);
+  });
 }
 function render(){
   const st = !S ? "missing" : S.status;
@@ -123,13 +155,15 @@ function render(){
     v.innerHTML = '<div class="check">&#10003;</div><h1>Paid! We\\u2019re making it</h1>' +
       '<div class="ticket"><small>ORDER</small>#' + esc(S.ticket) + '</div>' +
       '<p class="funny" id="funny"></p><div class="dots"><i></i><i></i><i></i></div>' + itemsHtml() +
-      '<p class="fine">Keep this page open. Your phone buzzes when it\\u2019s ready.</p>';
+      '<p class="fine">Keep this page open. Your phone buzzes when it\\u2019s ready.</p><div id="rv"></div>';
+    reviewSlot(true);
     const f = $("#funny"); f.textContent = pick(MAKING_LINES, "m");
     funnyTimer = setInterval(() => { f.classList.add("fade"); setTimeout(() => { f.textContent = pick(MAKING_LINES, "m"); f.classList.remove("fade"); }, 350); }, 6000);
   } else if(st === "ready"){
     document.title = "\\u2705 READY! Order #" + S.ticket + " · Thirsty Beaches";
     v.innerHTML = '<h1>Ready at the window!</h1><p class="funny" id="funny"></p>' +
-      '<div class="ticket"><small>SHOW THIS</small>#' + esc(S.ticket) + '</div>' + itemsHtml();
+      '<div class="ticket"><small>SHOW THIS</small>#' + esc(S.ticket) + '</div>' + itemsHtml() + '<div id="rv"></div>';
+    reviewSlot(false);
     $("#funny").textContent = pick(READY_LINES, "r");
     if(!buzzed){ buzzed = true; try{ navigator.vibrate && navigator.vibrate([300, 120, 300, 120, 600]); }catch(e){} }
   } else if(st === "expired"){

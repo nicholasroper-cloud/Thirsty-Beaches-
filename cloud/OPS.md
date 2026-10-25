@@ -53,3 +53,17 @@ Options (Text variables, all optional):
 | `OWNER_TZ` | `America/Denver` | Time zone for "yesterday", hours and times in messages. If you change it, the cron times in `wrangler.toml` may need to move too. |
 
 Uses the existing `CLOVER_API_TOKEN` secret; nothing new is needed from Clover.
+
+## 3. Review ask on the phone tracker
+
+Customers who pay on their phone keep a tracker page open (`/r/<ref>`). With `REVIEW_URL` set:
+
+- while the drink is being made, a quiet "Loved it? Leave us a review ⭐" link under the order;
+- when it is ready, the same as a small button under the order.
+
+One tap opens your review page in a new tab, then it says thanks and doesn't ask again for that
+order, or on that phone for 120 days. Nothing pops up and nothing is shown before payment.
+
+| Setting | Type | What it is |
+| --- | --- | --- |
+| `REVIEW_URL` | Text | Your Google review link (Google Business Profile → "Ask for reviews" → copy link). Must start with `https://`. Leave it unset to hide the ask completely. |
