@@ -8,10 +8,11 @@
                               same kiosk-control.json the trailer kiosk uses (nothing else from it)
      onlineGate()          -> the extra checks qr.js runs for a cart with source:"online"
 
-   Off until Nick sets the ORDER_AHEAD variable to "true" (see OPS.md). Needs CLOVER_ECOMM_TOKEN too.
+   Off until Nick sets the ORDER_AHEAD variable to "true" (see OPS.md). Needs CLOVER_ECOMM_TOKEN or RELAY_KEY too.
    Orders are only taken while the trailer is live: tb-where /where says open:true (cached 60 s).
    Kiosk carts (no source) never come through here.                                              */
 import { norm } from "./pricebook.js";
+import { checkoutConfigured } from "./relay.js";
 
 const WHERE_URL = "https://tb-where.nicholasroper.workers.dev/where";
 const CONTROL_URL = "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-Control/main/kiosk-control.json";
@@ -21,7 +22,7 @@ const CONTROL_TTL_MS = 60000;
 export const oaMemo = { where: null, whereAt: 0, control: null, controlAt: 0 };   // per-isolate caches
 
 const truthy = v => /^(1|true|yes|on)$/i.test(String(v == null ? "" : v).trim());
-export const orderAheadOn = env => truthy(env.ORDER_AHEAD) && !!env.CLOVER_ECOMM_TOKEN && env.QR_ENABLED !== "0";
+export const orderAheadOn = env => truthy(env.ORDER_AHEAD) && checkoutConfigured(env) && env.QR_ENABLED !== "0";
 const intVar = (v, def, min, max) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def; };
 export const limits = env => ({
   maxItems: intVar(env.ORDER_AHEAD_MAX_ITEMS, 8, 1, 30),                 // drinks + treats per order

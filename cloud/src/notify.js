@@ -4,16 +4,24 @@
      NTFY_TOPIC                                   -> push to the ntfy app (free; use a long random topic)
      PUSHOVER_TOKEN + PUSHOVER_USER               -> Pushover app push
      TWILIO_SID + TWILIO_TOKEN + TWILIO_FROM + NOTIFY_TO -> SMS via Twilio
-   With none of them set, notifyConfigured() is false and the owner features do nothing at all.
+   With none of them set but RELAY_KEY set, messages go through the Salty Dog Tags relay instead
+   (saltydogtags.com/api/relay, see relay.js): the Pushover/Twilio channels that site already has.
+   Our own channels always win: as soon as one is set here, the relay is not used for alerts.
+   With none of them and no RELAY_KEY, notifyConfigured() is false and the owner features do nothing at all.
    notify() never throws; it returns the list of channel errors (empty = all good). */
+import { relayOn, relayPost } from "./relay.js";
 
 const has = (env, ...k) => k.every(n => env[n] && String(env[n]).trim());
 const ntfyOn = env => has(env, "NTFY_TOPIC");
 const pushoverOn = env => has(env, "PUSHOVER_TOKEN", "PUSHOVER_USER");
 const twilioOn = env => has(env, "TWILIO_SID", "TWILIO_TOKEN", "TWILIO_FROM", "NOTIFY_TO");
 
-export const notifyConfigured = env => ntfyOn(env) || pushoverOn(env) || twilioOn(env);
-export const notifyChannels = env => [ntfyOn(env) && "ntfy", pushoverOn(env) && "pushover", twilioOn(env) && "sms"].filter(Boolean);
+const ownOn = env => ntfyOn(env) || pushoverOn(env) || twilioOn(env);
+const viaRelay = env => !ownOn(env) && relayOn(env);
+
+export const notifyConfigured = env => ownOn(env) || relayOn(env);
+export const notifyChannels = env => viaRelay(env) ? ["relay"]
+  : [ntfyOn(env) && "ntfy", pushoverOn(env) && "pushover", twilioOn(env) && "sms"].filter(Boolean);
 
 /* msg = { title, body, priority: "low"|"normal"|"high", tags: [ntfy emoji tags], click: url } */
 async function ntfy(env, msg) {
@@ -49,9 +57,20 @@ async function twilio(env, msg) {
   if (!r.ok) throw new Error("twilio " + r.status + " " + (await r.text()).slice(0, 120));
 }
 
+/* One message for the relay: title <= 120, message <= 1000, https link only (the relay refuses anything else). */
+async function relay(env, msg) {
+  const cut = (s, n) => { s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+  const payload = { kind: "notify", source: "tb-station", title: cut(msg.title, 120) || "Thirsty Beaches", message: cut(msg.body, 1000) || "-",
+    priority: msg.priority === "high" || msg.priority === "low" ? msg.priority : "normal" };
+  if (msg.click && /^https:\/\//.test(msg.click)) payload.url = msg.click;
+  const r = await relayPost(env, payload);
+  if (r.status !== 200 || !(r.data && r.data.ok)) throw new Error("relay " + r.status + " " + String((r.data && r.data.error) || "").slice(0, 40));
+}
+
 export async function notify(env, msg) {
   if (!notifyConfigured(env)) return ["no channel configured"];
-  const rs = await Promise.allSettled([ntfy(env, msg), pushover(env, msg), twilio(env, msg)]);
+  const jobs = viaRelay(env) ? [relay(env, msg)] : [ntfy(env, msg), pushover(env, msg), twilio(env, msg)];
+  const rs = await Promise.allSettled(jobs);
   const errs = rs.filter(r => r.status === "rejected").map(r => String(r.reason && r.reason.message || r.reason).slice(0, 200));
   if (errs.length) console.warn("notify failed", errs.join(" | "));
   return errs;

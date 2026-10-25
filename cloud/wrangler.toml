@@ -5,6 +5,8 @@
 #                                          npx wrangler secret put CLOVER_ECOMM_TOKEN   ("Pay on my phone"; Hosted Checkout private key)
 # Owner alerts (daily report, site monitoring) stay off until a notify channel is set; see OPS.md:
 #   NTFY_TOPIC, or PUSHOVER_TOKEN + PUSHOVER_USER, or TWILIO_SID + TWILIO_TOKEN + TWILIO_FROM + NOTIFY_TO
+# Or neither: RELAY_KEY (set by the "Set up relay key" workflow in thirsty-beaches-website) uses Salty Dog Tags'
+# Clover key and phone alerts through saltydogtags.com/api/relay. Our own CLOVER_ECOMM_TOKEN / channels win.
 name = "thirsty-beaches-station"
 main = "src/index.js"
 compatibility_date = "2025-09-01"

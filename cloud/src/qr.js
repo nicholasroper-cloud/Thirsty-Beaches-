@@ -5,12 +5,14 @@
      GET  /r/<ref>         -> the customer's phone page (pay button + "your drink is ready" tracker)
    Payment is detected by polling Clover REST orders for a line item whose note carries KQ-<ref>
    (the merchant's one checkout webhook belongs to Salty Dog Tags). Money is only ever charged
-   at the price computed by pricebook.js. Needs secrets CLOVER_API_TOKEN (REST, read) and
-   CLOVER_ECOMM_TOKEN (Hosted Checkout private key); without the latter the feature is off.   */
+   at the price computed by pricebook.js. Needs secrets CLOVER_API_TOKEN (REST, read) and either
+   CLOVER_ECOMM_TOKEN (Hosted Checkout private key) or RELAY_KEY (the checkout is then made with the
+   Salty Dog Tags site's key through its relay, see relay.js); with neither the feature is off.   */
 import { KIOSK_MENU } from "./kiosk-menu.js";
 import { kioskCandidates, cloverCandidates, buildCloverBook, pickPrice } from "./pricebook.js";
 import { phonePage } from "./phone-page.js";
 import { onlineGate, onlineAfterPricing, trailerStatus } from "./order-ahead.js";
+import { checkoutConfigured, checkoutViaRelay, relayPost, RELAY_LIMITS } from "./relay.js";
 
 const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";          // no 0/O/1/I/L
 const REF_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
@@ -27,7 +29,7 @@ const ALLOWED_ORIGINS = new Set([
 export const qrMemo = { inv: null, invAt: 0, orders: null, lastCheck: new Map() };   // per-isolate caches
 
 const stationOrigin = env => (env.STATION_ORIGIN || "https://station.thirstybeaches.com").replace(/\/+$/, "");
-const qrOn = env => !!env.CLOVER_ECOMM_TOKEN && env.QR_ENABLED !== "0";
+const qrOn = env => checkoutConfigured(env) && env.QR_ENABLED !== "0";
 
 function cors(req, extra = {}) {
   const h = { "content-type": "application/json", "cache-control": "no-store", vary: "Origin", ...extra };
@@ -181,8 +183,14 @@ async function createQr(req, env) {
     redirectUrls: { success: `${site}/r/${ref}?paid=1`, failure: `${site}/r/${ref}?failed=1` },
     tips: { enabled: env.TIPS === "1" || env.TIPS === "true" },
   };
+  const viaRelay = checkoutViaRelay(env);
+  if (viaRelay && lineItems.length > RELAY_LIMITS.items) return jsonC(req, { error: "too-big", max: RELAY_LIMITS.items }, 400);
+  if (viaRelay && total > RELAY_LIMITS.cents) return jsonC(req, { error: "too-big" }, 400);
   let data, status = 0;
-  try {
+  if (viaRelay) {                                                    // Salty Dog Tags' Hosted Checkout key, same merchant
+    const res = await relayPost(env, { kind: "checkout", ...checkout, merchantId: env.CLOVER_MERCHANT_ID });
+    status = res.status; data = res.data;
+  } else try {
     const r = await fetch(`${env.CLOVER_BASE_URL || "https://api.clover.com"}/invoicingcheckoutservice/v1/checkouts`, {
       method: "POST",
       headers: { accept: "application/json", "content-type": "application/json", "X-Clover-Merchant-Id": env.CLOVER_MERCHANT_ID, authorization: "Bearer " + env.CLOVER_ECOMM_TOKEN },
@@ -195,7 +203,7 @@ async function createQr(req, env) {
   let hrefOk = false;
   try { const u = new URL(data && data.href); hrefOk = u.protocol === "https:" && (u.hostname === "clover.com" || u.hostname.endsWith(".clover.com")); } catch {}
   if (status < 200 || status >= 300 || !hrefOk || !data.checkoutSessionId) {
-    console.error("QR checkout failed", status, JSON.stringify(data).slice(0, 300));
+    console.error("QR checkout failed", viaRelay ? "(relay)" : "", status, JSON.stringify(data).slice(0, 300));
     return jsonC(req, { error: "checkout-failed" }, 502);
   }
   let expires = typeof data.expirationTime === "number" ? (data.expirationTime < 1e12 ? data.expirationTime * 1000 : data.expirationTime) : Date.parse(data.expirationTime || "");

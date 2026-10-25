@@ -4,6 +4,35 @@ The station Worker (`thirsty-beaches-station`, station.thirstybeaches.com) can a
 Everything here is **off until you add its settings**. With nothing set it makes no requests and
 sends nothing, so deploying this code changes nothing by itself.
 
+## Uses Salty Dog Tags' Clover key and alerts (RELAY_KEY)
+
+**Uses Salty Dog Tags' Clover key and alerts automatically once `RELAY_KEY` is set (one-click workflow).**
+Salty Dog Tags already has the Clover "Hosted Checkout" key (same Clover account, MQKMTFBRXFP21) and your
+phone alerts (Pushover / Twilio). The station borrows both through saltydogtags.com, so there is nothing to
+copy from Clover or Pushover:
+
+- "Pay on my phone" and "Order ahead" checkouts are made with Salty Dog Tags' key. Customers still pay
+  Thirsty Beaches' Clover account and come back to the station's tracker; nothing Salty Dog shows up.
+- The daily report and site-down alerts below arrive on the same phone channels as Salty Dog orders.
+
+How to switch it on (once):
+
+1. GitHub → **thirsty-beaches-website** repo → **Actions** → **Set up relay key** → **Run workflow**.
+   It makes a random key and saves it as `RELAY_KEY` on Salty Dog Tags and on this Worker (and tb-where).
+   You never see or type it. Running it again makes a new key everywhere.
+2. Deploy Salty Dog Tags (merge to main). Its key only goes live with that deploy.
+3. Deploy the station (merge to main).
+
+Your own settings always win: with `CLOVER_ECOMM_TOKEN` set here, checkouts go straight to Clover; with
+any channel from section 1 set here, alerts go only there. Limits through the relay: at most 30 drinks
+and $200 per phone checkout (bigger carts get "pay at the window"). If saltydogtags.com is down or the
+key doesn't match, phone pay fails cleanly, the kiosk offers "Pay at the window", and an alert that
+couldn't be sent is retried on the next run. A "Salty Dog Tags is down" alert can't get through while
+Salty Dog Tags itself is down; set `NTFY_TOPIC` here too if you want that one covered.
+
+Check it: `https://station.thirstybeaches.com/api/qr` says `{"enabled":true}`, and
+`/api/report?k=YOUR_STATION_KEY&send=1` pushes yesterday's report to your phone.
+
 ## Where settings go
 
 Cloudflare dashboard → **Workers & Pages** → `thirsty-beaches-station` → **Settings** →
@@ -27,6 +56,7 @@ Same channels as the Salty Dog Tags site. You can reuse the same values.
 | `TWILIO_SID` + `TWILIO_TOKEN` + `TWILIO_FROM` + `NOTIFY_TO` | Secret | Text messages via Twilio (optional; costs per text). |
 
 As soon as one channel is complete, the daily report and the monitoring below switch on.
+With none of these set, `RELAY_KEY` (see the top of this page) sends them through Salty Dog Tags' channels.
 
 ## 2. Daily sales report
 
@@ -140,8 +170,9 @@ a value there would overwrite the dashboard on every deploy.
 
 Before you turn it on, check:
 
-1. **`CLOVER_ECOMM_TOKEN` secret is set** (the Hosted Checkout private key; the same one "Pay on my
-   phone" uses). Without it ordering ahead stays off even with `ORDER_AHEAD=true`.
+1. **`CLOVER_ECOMM_TOKEN` or `RELAY_KEY` secret is set** (the Hosted Checkout key, or Salty Dog Tags'
+   one through the relay; the same one "Pay on my phone" uses). Without either, ordering ahead stays off
+   even with `ORDER_AHEAD=true`.
 2. **Clover dashboard redirect URLs are cleared.** Clover web dashboard → Hosted Checkout settings:
    leave the Success / Failure redirect URL fields empty, so Clover uses the tracker link each order
    sends. If they're filled in, customers land on that page instead of their tracker.
