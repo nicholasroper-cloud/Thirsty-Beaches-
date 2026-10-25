@@ -382,7 +382,7 @@ function plan(name,mods){
  const tagOf=x=>CH[norm(x)]||"";
  for(const m of mods){
   const noM=m.match(/^(no|without|hold)\s+(.+)$/i);
-  if(noM){const t=norm(noM[2]);const before=ing.length;ing=ing.filter(x=>!norm(x).includes(t));if(ing.length<before||true)removed.push(noM[2]);continue;}
+  if(noM){const t=norm(noM[2]);ing=ing.filter(x=>!(' '+norm(x)+' ').includes(' '+t+' '));removed.push(noM[2]);continue;}   // whole words: "No ice" must not drop "Apple Juice"
   const k=classify(m);
   if(k==="size"){cup=m;i=sizeIdx(m);}
   else if(k==="base"){if(ing.length){if(norm(ing[0])!==norm(m)){CH[norm(m)]="sub:"+ing[0];ing[0]=m;}}else if(!r||!r.how){ing.unshift(m);CH[norm(m)]="add";}else asOrdered.push(m);}
@@ -395,6 +395,9 @@ function plan(name,mods){
   else if(k==="other"){unknown.push(m);}
   else asOrdered.push(m);}
  const steps=[];
+ /* M9: "No ice" wins over the ice steps: no Ice fill, a blend without ice, and a single "No ice" line */
+ const noIce=removed.some(x=>norm(x)==='ice');if(noIce)removed=removed.filter(x=>norm(x)!=='ice');
+ const NOICE=['No ice','Leave the ice out','–','no'];
  if(ing.length){
   if(blended&&!/^blended/i.test(ing[0]))ing[0]="Blended "+ing[0];
   const base=ing[0],adds=ing.slice(1).map(a=>({a,k:kind(a)}));const nSyr=Math.max(1,adds.filter(x=>x.k==='syrup').length);const bl=/^blended/i.test(base);
@@ -403,8 +406,9 @@ function plan(name,mods){
   of(['syrup']).forEach(x=>steps.push([x.a,HOW.syrup,amt(x.k,i,nSyr),tagOf(x.a)]));
   of(['puree']).forEach(x=>steps.push([x.a,HOW.puree,amt(x.k,i,nSyr),tagOf(x.a)]));
   of(['fresh']).forEach(x=>steps.push([x.a,HOW.fresh,amt(x.k,i,nSyr),tagOf(x.a)]));
-  if(bl){of(['frozen']).forEach(x=>steps.push([x.a,'Into the blender',amt(x.k,i,nSyr),tagOf(x.a)]));steps.push(['Blend with '+bt,HOW.blend,'Fill',baseTag]);}
-  else{of(['frozen']).forEach(x=>steps.push([x.a,HOW.frozen,amt(x.k,i,nSyr),tagOf(x.a)]));steps.push(['Ice',HOW.ice,'Fill','']);
+  if(bl){of(['frozen']).forEach(x=>steps.push([x.a,'Into the blender',amt(x.k,i,nSyr),tagOf(x.a)]));
+   steps.push(noIce?['Blend with '+bt+', no ice','NO ICE: base and mix-ins only in the blender, 30 seconds until smooth','Fill',baseTag||'no']:['Blend with '+bt,HOW.blend,'Fill',baseTag]);}
+  else{of(['frozen']).forEach(x=>steps.push([x.a,HOW.frozen,amt(x.k,i,nSyr),tagOf(x.a)]));steps.push(noIce?NOICE:['Ice',HOW.ice,'Fill','']);
    of(['mixer']).forEach(x=>steps.push([x.a,HOW.mixer,amt(x.k,i,nSyr),tagOf(x.a)]));steps.push([base,HOW.base,'Fill',baseTag]);}
   of(['cream']).forEach(x=>steps.push([x.a,HOW.cream,amt(x.k,i,nSyr),tagOf(x.a)]));
   of(['pearls']).forEach(x=>steps.push([x.a,HOW.pearls,amt(x.k,i,nSyr),tagOf(x.a)]));
@@ -415,16 +419,18 @@ function plan(name,mods){
   for(const m of removed)steps.push(['No '+m,'Leave it out','–','no']);
   steps.push(['Lid + straw',HOW.lid,'✓','']);
  }else if(r&&r.how){
-  for(const s of r.how)steps.push(s.slice());
+  let iceDone=false;for(const s of r.how){if(noIce&&/^ice$/i.test(s[0])){steps.push(NOICE.slice());iceDone=true;continue;}steps.push(s.slice());}
+  if(noIce&&!iceDone)steps.splice(steps.length-1,0,NOICE.slice());
   const extra=asOrdered.concat(unknown).map(m=>[m,'Customer added this','✓','add']).concat(removed.map(m=>['No '+m,'Leave it out','–','no']));
   if(extra.length)steps.splice(steps.length-1,0,...extra);
  }else{
   steps.push([r&&r.note?r.note:'House recipe','No build on file yet. Make it the usual way.','','']);
+  if(noIce)steps.push(NOICE.slice());
   for(const m of asOrdered.concat(unknown))steps.push([m,'Customer added this','✓','add']);
   for(const m of removed)steps.push(['No '+m,'Leave it out','–','no']);
   steps.push(['Lid + straw',HOW.lid,'✓','']);
  }
- const changed=Object.keys(CH).length+removed.length+asOrdered.length+unknown.length+(blended&&std.length?1:0);
+ const changed=Object.keys(CH).length+removed.length+(noIce?1:0)+asOrdered.length+unknown.length+(blended&&std.length?1:0);
  return{cup,steps,ingredients:ing,recipe:r,CH,removed,changed};}
 /* ---- shared step list behaviour ---- */
 function wireSteps(ol,key,ck,onChange){ol.querySelectorAll('li').forEach((li,j)=>{li.onclick=()=>{ck[key+':'+j]=!ck[key+':'+j];markSteps(ol,key,ck);onChange&&onChange();};});markSteps(ol,key,ck);}
