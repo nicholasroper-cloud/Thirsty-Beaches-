@@ -3,6 +3,8 @@
 # Secrets (set once, never in this file):  npx wrangler secret put CLOVER_API_TOKEN
 #                                          npx wrangler secret put STATION_KEY
 #                                          npx wrangler secret put CLOVER_ECOMM_TOKEN   ("Pay on my phone"; Hosted Checkout private key)
+# Owner alerts (daily report, site monitoring) stay off until a notify channel is set; see OPS.md:
+#   NTFY_TOPIC, or PUSHOVER_TOKEN + PUSHOVER_USER, or TWILIO_SID + TWILIO_TOKEN + TWILIO_FROM + NOTIFY_TO
 name = "thirsty-beaches-station"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
@@ -33,3 +35,8 @@ QR_RATE_PER_HOUR = "60"
 [[kv_namespaces]]
 binding = "STATE"
 id = "a8cce29686e94412bef46bfb1778cb0f"
+
+# Cron times are UTC. "30 13,14 * * *" = the daily sales report: 7:30 am Denver time in summer
+# (13:30 UTC) and in winter (14:30 UTC); the earlier run that is past 7 am local sends it, once.
+[triggers]
+crons = ["30 13,14 * * *"]
