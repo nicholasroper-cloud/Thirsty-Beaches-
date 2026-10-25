@@ -54,6 +54,9 @@ h2 svg{width:1em;height:1em;flex:none}
 .wait .code{font-size:4rem;line-height:1}
 .wait .who{font-size:2.2rem}
 .wait .who small{font-size:1.1rem}
+/* P4: on the TV the waiting list is code + name only (the drink line was 12.8px, unreadable at distance);
+   register orders have no name, so they show just their code instead of "Walk-up" */
+@media (min-width:901px){.wait .who small{display:none}}
 /* P3: "+N more" when a list is longer than the screen, and the newest ready order glows for its first minute */
 h2 .more{margin-left:auto;font-family:var(--mono);font-size:1.6rem;letter-spacing:.04em;padding:8px 18px;border-radius:999px;border:2px solid currentColor;text-shadow:none;white-space:nowrap}
 h2 .more[hidden]{display:none}
@@ -123,8 +126,8 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
   const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
   more('#moreReady',q.ready.length-ready.length,'ready');more('#moreWait',q.waiting.length-wait.length,'waiting');
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
-  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
   first=false;}
  catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?'Need the access key. Open the board from the link with ?k= on the end.':'Board can’t reach the station. Check the Wi-Fi.';}}
