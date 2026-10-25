@@ -55,6 +55,8 @@ h2 svg{width:1em;height:1em;flex:none}
 .wait .who{font-size:2.2rem}
 .wait .who small{font-size:1.1rem}
 @media (max-width:900px){h2{font-size:2.2rem}.ready .code{font-size:4.5rem}.ready .who{font-size:2.2rem}.wait .code{font-size:2.6rem}.wait .who{font-size:1.5rem}}
+/* P2: on phones and small tablets the page scrolls instead of clipping the lists */
+@media (max-width:900px){html,body{height:auto}body{overflow-x:hidden;overflow-y:auto}.app{height:auto;min-height:100vh}.list{overflow:visible}#ready{height:auto;grid-template-rows:none!important;grid-auto-rows:auto}body::after{position:fixed}.ready{padding:12px 20px;gap:20px}.ready .who{font-size:1.7rem}.ready .who small{font-size:1rem}}
 @media (max-width:900px){main{grid-template-columns:1fr}.ready .code{font-size:2.4rem}.ready .who{font-size:1.4rem}header img{height:60px}}
 @media (max-width:480px){
  html{overflow-x:hidden}
