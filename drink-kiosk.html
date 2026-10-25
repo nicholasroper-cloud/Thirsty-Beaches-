@@ -879,6 +879,14 @@
     .helprow{gap:10px;} .helprow .help-l{font-size:20px;margin-right:0;}
     .helprow .designbtn,.helprow .vibebtn,.helprow .snapbtn{font-size:19px;padding:0 16px;}
   }
+  /* K7: every category visible at once: tabs wrap into a grid instead of a hidden-scrollbar strip */
+  .tabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;overflow:visible;}
+  .tab{justify-content:center;text-align:center;white-space:normal;line-height:1.1;min-height:64px;padding:8px 12px;gap:0;color:var(--ink);}
+  .tab .catdot{flex:none;}
+  @media (orientation:portrait){
+    .tabs{gap:12px;padding:24px 44px 6px;}
+    .tab{font-size:23px;min-height:76px;padding:8px 10px;border-radius:18px;}
+  }
   /* Approved neon identity: preserve the beach scene and keep the glow legible. */
   #attract .attract-logo,
   #confirm .confirm-logo,
