@@ -289,8 +289,10 @@ function cleanupOrphan() {
   let ours = false;
   try {
     if (process.platform === "win32") {
-      const r = cp.spawnSync("tasklist", ["/FI", `PID eq ${info.pid}`, "/FO", "CSV", "/NH"], { encoding: "utf8", windowsHide: true, timeout: 10000 });
-      ours = /"node\.exe"/i.test(r.stdout || "");
+      // the command line must name kiosk-server.js: a reused pid (e.g. the make-station server) is left alone
+      const q = `(Get-CimInstance Win32_Process -Filter ProcessId=${parseInt(info.pid, 10)}).CommandLine`;
+      const r = cp.spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", q], { encoding: "utf8", windowsHide: true, timeout: 20000 });
+      ours = /node(\.exe)?"?\s.*kiosk-server\.js/i.test(r.stdout || "");
     } else {
       ours = /kiosk-server\.js/.test(fs.readFileSync(`/proc/${info.pid}/cmdline`, "utf8"));
     }
@@ -361,7 +363,9 @@ function markGood() {
   const tr = S.state.trial;
   const v = currentVersion();
   if (tr.kind === "bootstrap") {
-    try { installShim(); } catch (e) { log("could not install the new launcher shim yet (will retry next start): " + e.message); return; }
+    if (Date.now() - (S.shimTryAt || 0) < 60000) return;
+    S.shimTryAt = Date.now();
+    try { installShim(); } catch (e) { log("could not install the new launcher shim yet (retrying every minute): " + e.message); return; }
   }
   try {
     const good = path.join(S.tb, "good");

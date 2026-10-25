@@ -69,9 +69,9 @@
     },
     {
       "path": "kiosk-supervisor.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-supervisor.js?v=cb07a249418a",
-      "sha256": "cb07a249418a32b45c238016428c08e53d61743e71a587e3cd6672080a7def14",
-      "size": 31308
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-supervisor.js?v=0ede26e0b821",
+      "sha256": "0ede26e0b8210b3d4b7e6149e8546b0b55497317636282134ab5729d7576fe31",
+      "size": 31640
     },
     {
       "path": "flex-pay.js",
@@ -159,8 +159,8 @@
     },
     {
       "path": "tb-bootstrap.json",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/tb-bootstrap.json?v=c01efc311b7e",
-      "sha256": "c01efc311b7e40b95ae25a1e6b217a17a1c7e5a75a8a3db306ac3a0cacd6003a",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/tb-bootstrap.json?v=bad901acfefc",
+      "sha256": "bad901acfefc3687d3f643f41742c60d51ff7960ddcb2fb1e735db7eb5afd5c2",
       "size": 546
     },
     {
