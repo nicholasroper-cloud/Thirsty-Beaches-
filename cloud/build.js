@@ -60,7 +60,7 @@ orderPage();
 for (const f of ["recipes.json"]) fs.copyFileSync(path.join(root, f), path.join(pub, f));
 const addons = [path.join(root, "addons.json"), path.join(root, "..", "addons.json")].find(f => fs.existsSync(f));
 if (addons) fs.copyFileSync(addons, path.join(pub, "addons.json"));
-for (const name of ["logo.png", "icon-192.png", "icon-512.png", "icon-maskable.png", "cup-80s-shell.webp", "cup-80s-cream.png", "logo-480.webp"]) {
+for (const name of ["logo.png", "icon-192.png", "icon-512.png", "icon-maskable.png", "cup-80s-shell.webp", "cup-80s-cream.png", "cup-80s-liquid.png", "logo-480.webp"]) {
   fs.copyFileSync(path.join(root, "assets", name), path.join(pub, "assets", name));
 }
 

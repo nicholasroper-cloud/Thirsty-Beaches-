@@ -1050,7 +1050,9 @@
   /* ---- Fun cup (Match My Vibe + Snap a pic): the website's neon cup, fizzing ---- */
   .funcupbox{width:min(300px,42vw);margin:6px auto 4px;}
   .funcup{width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 26px rgba(255,60,172,.45));}
-  .funcup .fc-liq{mix-blend-mode:color;opacity:.92;transform-box:fill-box;transform-origin:50% 100%;}
+  .funcup .fc-liqbox{mix-blend-mode:color;}
+  .funcup .fc-glaze{mix-blend-mode:normal;opacity:.68;}   /* lifts light drinks (lemonade, Sprite, cream) above the dark cup art */
+  .funcup .fc-liq{opacity:.95;transform-box:fill-box;transform-origin:50% 100%;}
   .funcup.filling .fc-liq{animation:fcFill 1.5s cubic-bezier(.4,0,.2,1) both;}
   .funcup.thinking{animation:fcShake .55s ease-in-out infinite;transform-origin:50% 90%;}
   .funcup.popped{animation:fcPop .7s cubic-bezier(.3,1.6,.5,1) both;transform-origin:50% 90%;}
@@ -2042,10 +2044,12 @@ function fcMount(el, opts){
       <clipPath id="${id}c"><path d="${FC_CUP}"/></clipPath>
       <clipPath id="${id}s"><path d="${FC_SURF}"/></clipPath>
       <mask id="${id}m" x="0" y="0" width="1024" height="1536" maskUnits="userSpaceOnUse" style="mask-type:alpha"><image href="assets/cup-80s-cream.png" width="1024" height="1536"/></mask>
+      <mask id="${id}q" x="0" y="0" width="1024" height="1536" maskUnits="userSpaceOnUse" style="mask-type:alpha"><image href="assets/cup-80s-liquid.png" width="1024" height="1536"/></mask>
     </defs>
     <g transform="translate(5 0) scale(.09765625)">
       <image href="assets/cup-80s-shell.webp" width="1024" height="1536"/>
-      <g clip-path="url(#${id}c)"><rect class="fc-liq" x="240" y="420" width="540" height="1040" fill="url(#${id}l)"/></g>
+      <g class="fc-liqbox" mask="url(#${id}q)"><rect class="fc-liq" x="200" y="300" width="624" height="1180" fill="url(#${id}l)"/></g>
+      <g class="fc-liqbox fc-glaze" mask="url(#${id}q)"><rect class="fc-liq" x="200" y="300" width="624" height="1180" fill="url(#${id}l)"/></g>
       <g class="fc-cream" fill="${o.cream || "#fff6e8"}" style="display:${o.cream ? "block" : "none"}"><rect width="1024" height="1536" mask="url(#${id}m)"/></g>
       <g class="fc-body" clip-path="url(#${id}c)"></g>
       <g class="fc-surf" clip-path="url(#${id}s)"></g>
@@ -2352,7 +2356,7 @@ const SNAP_COLORS={
 /* Snap a pic: the fun cup's colour from the AI build (base + syrups, like the website builder) */
 function fcSnapColors(d){
   let liq = SNAP_COLORS.base[d.base] || "#ff8a2b";
-  (d.syrups || []).forEach((sy, i) => { const c = SNAP_COLORS.syrup[sy]; if(c) liq = fcMix(liq, c, i ? .14 : .28); });
+  (d.syrups || []).forEach((sy, i) => { const c = SNAP_COLORS.syrup[sy]; if(c) liq = fcMix(liq, c, i ? .25 : .5); });   // brighter than the website builder so the cup reads at a glance
   const cream = d.cream && !/^no cream$/i.test(d.cream) ? (/coconut/i.test(d.cream) ? "#fff4dd" : "#fff6e8") : "";
   return { liq, cream };
 }
