@@ -1,0 +1,19 @@
+{
+  "name": "thirsty-beaches-kiosk-server",
+  "version": "1.0.0",
+  "description": "Thirsty Beaches kiosk server — portable Node.js, loopback-only",
+  "main": "clover-menu-server.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "remote-pay-cloud": "4.1.2",
+    "ws": "^8.0.0"
+  },
+  "notes": {
+    "remote-pay-cloud": "Clover official SNPD SDK. Loaded ONLY when PAY_ENABLED=true in kiosk-config.env.",
+    "ws": "Node WebSocket polyfill required by the remote-pay-cloud SDK (browser-first library). Pure JS — no native .node addons needed.",
+    "zero-dep-posture": "These packages are the single deliberate exception to the zero-dependency ethos. They load lazily inside flex-pay.js and are never touched when PAY_ENABLED=false."
+  }
+}

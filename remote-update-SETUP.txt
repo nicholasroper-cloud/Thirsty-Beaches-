@@ -1,0 +1,169 @@
+THIRSTY BEACHES — REMOTE UPDATES, REMOTE CONTROL, AND STATUS
+==============================================================
+
+THE SHORT VERSION
+-----------------
+The kiosk updates itself from the internet. You (or Claude) change files in
+the GitHub repo "Thirsty-Beaches-", run one command that refreshes the update
+list, and push. Within an hour (or right away, see "Check for update now"
+below) the kiosk downloads the change, checks every file, and puts it live
+between customers. That now includes the kiosk's own server program, not
+just the screen.
+
+If an update is broken, the kiosk notices within a minute and puts the
+previous version back by itself. You will see that on the status card.
+
+You never need the USB drive for updates any more.
+
+
+ONE-TIME SWITCH-OVER (the first time only)
+------------------------------------------
+Kiosks set up before version 24 run an older server that can only update the
+screen. When version 24 (or later) is published, that older server quietly
+downloads the new server files in the background. To finish the switch:
+
+    RESTART THE KIOSK PC ONCE.  That's it.
+
+Nothing else: no USB, no settings, no Run-Kiosk changes. It works whether the
+kiosk starts from Run-Kiosk.bat or from appliance mode (the locked-down setup).
+After the restart the status card on thirstybeaches.com/trailer says
+"Kiosk: online · v24 · seen ... ago". About 10 minutes later the switch is
+marked permanent.
+
+If the new server had a problem, the kiosk simply keeps running the old server
+(same screen, same orders) and the status card shows "switch-over failed".
+Publishing a fixed version then needs TWO restarts: the first lets the old
+server download the fix, the second switches over.
+
+
+WHAT STAYS PRIVATE
+------------------
+Your Clover token, Anthropic key and other secrets stay ONLY in
+kiosk-config.env on the kiosk PC. They are never uploaded, never downloaded,
+and an update can never overwrite that file (or update-state.json,
+flex-pairing.json, node.exe, or anything in the hidden .tb folder).
+The GitHub repos are public, so never put a secret in them.
+
+Whoever can change the GitHub repo controls what the kiosk runs. Keep your
+GitHub login (and its 2-factor) to yourself.
+
+
+HOW TO PUSH AN UPDATE
+---------------------
+  1. Change the files in the Thirsty-Beaches- repo (screen, pictures, server…).
+  2. In the repo folder run:      node tools/publish-manifest.js
+     It bumps the version number, records a fingerprint (sha256) of every
+     file, and refuses to publish broken code or anything that looks like a
+     secret.
+  3. Commit and push to main.
+  4. Optional, a few minutes later:   node tools/publish-manifest.js --verify-remote
+     (checks that GitHub is serving exactly what you published).
+
+The kiosk checks every 60 minutes. Screen-only changes go live right away and
+the screen refreshes the next time nobody is using it. Server changes wait
+until the kiosk has been idle for 2 minutes (never during an order or a card
+tap), restart the server in a couple of seconds, and are watched:
+  - not answering within 60 seconds, or crashing 3 times in 10 minutes
+    -> the previous version is put back automatically, and that version
+       number is never tried again (publish a fixed, higher version)
+  - healthy for 10 minutes -> marked "known good"
+
+
+REMOTE CONTROL (from the Owner Control app, or by editing kiosk-control.json
+in the Thirsty-Beaches-Control repo)
+----------------------------------------------------------------------------
+  Check for update now    the kiosk checks GitHub within ~90 seconds
+  Reload screen           the screen refreshes the next time it is idle
+  Restart kiosk server    restarts the server program when the kiosk is idle
+  Kiosk settings          a short list of safe, non-secret settings (tap-to-pay
+                          on/off, Flex address, AI design on/off, hidden menu
+                          categories, update interval...). They override
+                          kiosk-config.env until you remove them. Anything not
+                          on the list is ignored. See control-schema.md in the
+                          control repo.
+
+If the kiosk keeps crashing right after a settings change, it goes into
+"safe mode": it ignores those remote settings and runs on kiosk-config.env
+alone until you change them.
+
+
+STATUS — "is the kiosk OK?"
+---------------------------
+  thirstybeaches.com/trailer   shows "Kiosk: online · v24 · seen 1 min ago".
+                               With your staff secret saved there it also
+                               shows recent errors, the last update, any
+                               rollback, tap-to-pay and Clover status.
+  healthchecks.io              still pinged every 5 minutes (unchanged).
+  At the kiosk PC:             http://localhost:8137/kiosk-status
+                               and the log file .tb\supervisor.log
+
+
+IF SOMETHING LOOKS WRONG
+------------------------
+  - Status card says "offline": the PC is off or has no internet. The kiosk
+    keeps taking orders when it gets internet back; nothing is lost.
+  - "rolled back v25": that update was bad and was undone; fix it and publish
+    a higher version.
+  - To turn auto-update off: blank out UPDATE_MANIFEST_URL in kiosk-config.env
+    and restart.
+
+
+------------------------------------------------------------------------
+FOR WHOEVER MAINTAINS THE CODE (technical)
+------------------------------------------------------------------------
+Processes on the PC (both launch modes run the same command as before:
+node.exe --env-file=kiosk-config.env clover-menu-server.js):
+
+  clover-menu-server.js  "TB-KIOSK-SHIM": tiny, stable launcher. Single
+                         instance lock on 127.0.0.1:PORT+2 (8139). Loads
+                         kiosk-supervisor.js in-process; falls back to
+                         .tb/good/kiosk-supervisor.js if that will not load or
+                         does not get the server healthy in 5 min; last resort
+                         runs kiosk-server.js in-process (no rollback).
+  kiosk-supervisor.js    runs kiosk-server.js as a child (TB_SUPERVISED=1,
+                         --env-file re-read on every start). Exit codes from
+                         the server: 75 = apply staged update, 76 = restart
+                         (settings/command), 77 = port busy, anything else =
+                         crash. Applies .tb/pending.json while the server is
+                         stopped: sha256 of every staged file, node --check for
+                         .js, JSON.parse for addons.json, self-tests for the
+                         supervisor and the shim; backup to .tb/backup/; swap
+                         (journaled: backup -> swap -> trial, survives a power
+                         cut); trial; rollback restores the backup, rewrites
+                         update-state.json and quarantines the version.
+                         A supervisor update reloads the supervisor in place.
+  kiosk-server.js        the real server (ex clover-menu-server.js) + updater,
+                         remote settings/commands, heartbeat. kiosk-lib.js holds
+                         the pure helpers (path rules, validation, scrubbing).
+
+Update rules (kiosk-server.js checkForUpdates):
+  - every manifest file needs a sha256 (missing -> whole update refused)
+  - unchanged files (same sha256 as on disk) are skipped
+  - refused paths are skipped: *.env, update-state.json, flex-pairing.json,
+    .tb/ and other dot paths, node.exe/.dll/.node, node_modules/, "..",
+    backslashes, ":" / "~", names ending in "." (Windows strips it),
+    CON/NUL/COM1...
+  - root *.js (except make-station-server.js, clover-menu-server.next.js)
+    and addons.json are "server code" -> staged + idle restart + trial;
+    everything else is swapped in place immediately.
+
+Switch-over from a pre-v24 kiosk (one restart):
+  The old server refuses to download clover-menu-server.js / flex-pay.js, but
+  downloads everything else, including moderation.js, which it require()s at
+  startup before it opens port 8137. The new moderation.js (same
+  sanitizeDrinkText) checks tb-bootstrap.json, and if kiosk-server.js,
+  kiosk-lib.js, kiosk-supervisor.js and clover-menu-server.next.js match their
+  sha256 it runs clover-menu-server.next.js (the shim) with spawnSync and waits.
+  The old code never reaches server.listen(). When the new server has been
+  good for 10 min the supervisor copies the shim over clover-menu-server.js
+  (old one kept in .tb/legacy/), so later starts run the shim directly. If the
+  switch-over fails the shim exits 78 and the old server continues; the same
+  bootstrap is not retried (key = hash of tb-bootstrap.json's file list).
+  tools/publish-manifest.js keeps tb-bootstrap.json and moderation.js LAST in
+  the manifest (old servers write files in order) and every file >= 32 bytes
+  (old servers abort the whole update on smaller files).
+
+Tests (Linux/macOS, no Windows needed):
+  node tests/kiosk/unit.js
+  node tests/kiosk/e2e.js --legacy-dir <copy of the Oct 12 USB drive> \
+       [--worker <thirsty-beaches-website>/worker-tb-where/src/worker.js]

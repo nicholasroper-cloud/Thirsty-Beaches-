@@ -3,39 +3,171 @@
   "files": [
     {
       "path": "drink-kiosk.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html?v=0e2d3f801ff6",
+      "sha256": "0e2d3f801ff6a83d5e8229cbacef08bf584024852b527c009a2a13b3858c8adf",
+      "size": 190428
     },
     {
       "path": "drink-kiosk-light.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html?v=0e2d3f801ff6",
+      "sha256": "0e2d3f801ff6a83d5e8229cbacef08bf584024852b527c009a2a13b3858c8adf",
+      "size": 190428
     },
     {
       "path": "make-station.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html?v=7af2687fcc39",
+      "sha256": "7af2687fcc390307c1616436584cc1fc39eac85815be6696b669a9c5c0683641",
+      "size": 62075
     },
     {
       "path": "pickup-board.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html?v=59b84b0ed16f",
+      "sha256": "59b84b0ed16f29814266ecda10a695ca62e3abcb103ccfb544774357e7c7b021",
+      "size": 16309
     },
     {
       "path": "recipes.json",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/recipes.json"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/recipes.json?v=26ed4f83b491",
+      "sha256": "26ed4f83b4914ad2476c1543525cad86259452b782e8722823b544519ace545f",
+      "size": 25830
     },
     {
       "path": "assets/logo.png",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/logo.png"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/logo.png?v=3118152f3458",
+      "sha256": "3118152f34580c1aaaca6928c936a4ec4d1951b1af6673a0e43df5160797e3e3",
+      "size": 807082
     },
     {
       "path": "assets/icon-192.png",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-192.png"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-192.png?v=88f71ee6f4c7",
+      "sha256": "88f71ee6f4c7b956769dfc1c8a1194e792e12b0778a85972b81dc004334a0fa6",
+      "size": 39162
     },
     {
       "path": "assets/icon-512.png",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-512.png"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-512.png?v=0631a51b3c37",
+      "sha256": "0631a51b3c37485045c5b7f97cf885d3b1cd0c1072e2b8a5f3cadcae3f7d6e82",
+      "size": 206043
     },
     {
       "path": "assets/icon-maskable.png",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-maskable.png"
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/icon-maskable.png?v=02e30b102628",
+      "sha256": "02e30b102628ca5cb210eafcbc4977a65569e45993a150645530f5a553bd6c39",
+      "size": 142143
+    },
+    {
+      "path": "kiosk-server.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-server.js?v=ce56652f5530",
+      "sha256": "ce56652f5530a6802430f77fcebd74a23bbc6eeb2294815c6378ad0b44f132cf",
+      "size": 61433
+    },
+    {
+      "path": "kiosk-lib.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-lib.js?v=9a7174f6d43f",
+      "sha256": "9a7174f6d43f659a2da0da8b3ff79338bf9b067f0f43e5d47cb54154a356963e",
+      "size": 10620
+    },
+    {
+      "path": "kiosk-supervisor.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-supervisor.js?v=0ede26e0b821",
+      "sha256": "0ede26e0b8210b3d4b7e6149e8546b0b55497317636282134ab5729d7576fe31",
+      "size": 31640
+    },
+    {
+      "path": "flex-pay.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/flex-pay.js?v=c56cd5df651e",
+      "sha256": "c56cd5df651e20e3a3cdf371191d41358b17abbb6308afa27f83df2d415ca5a6",
+      "size": 24550
+    },
+    {
+      "path": "addons.json",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/addons.json?v=755ca83b732a",
+      "sha256": "755ca83b732a09a7f8502a31841ec49d1148d06192e11c71ab26160f2ad5ca8b",
+      "size": 7931
+    },
+    {
+      "path": "package.json",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/package.json?v=2aa432ed675d",
+      "sha256": "2aa432ed675d6bfd657894fca3947e38822a8297e92d08f76871e085cd80dc26",
+      "size": 779
+    },
+    {
+      "path": "clover-menu-server.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/clover-menu-server.js?v=ad5481b2bba5",
+      "sha256": "ad5481b2bba59a68d4731cd92c373f4fa5d81a7d1948033cba1a688affa863bb",
+      "size": 6109
+    },
+    {
+      "path": "clover-menu-server.next.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/clover-menu-server.js?v=ad5481b2bba5",
+      "sha256": "ad5481b2bba59a68d4731cd92c373f4fa5d81a7d1948033cba1a688affa863bb",
+      "size": 6109
+    },
+    {
+      "path": "Run-Kiosk.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Run-Kiosk.bat?v=3a7c721ed20d",
+      "sha256": "3a7c721ed20d962077d37087830adf635f1e0d79b9336ab2cf53cfb302e573b3",
+      "size": 1807
+    },
+    {
+      "path": "Stop-Kiosk.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Stop-Kiosk.bat?v=d3d565b0903b",
+      "sha256": "d3d565b0903b2484b5f519aba588a96776023de110ee875a3aa8c043114cfe40",
+      "size": 377
+    },
+    {
+      "path": "Debug-Kiosk.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Debug-Kiosk.bat?v=a7e1e89c8299",
+      "sha256": "a7e1e89c82991107980350f6e4f21e97366d967a386ee4aab6773dd1450b2449",
+      "size": 1067
+    },
+    {
+      "path": "Fix-And-Run.bat",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/Fix-And-Run.bat?v=845ab9310ab6",
+      "sha256": "845ab9310ab680d5daeaf232b001f81aace2f29b849ddec7e3d1f6ee7923c039",
+      "size": 1804
+    },
+    {
+      "path": "READ-ME-FIRST.txt",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/READ-ME-FIRST.txt?v=1822452fcbc5",
+      "sha256": "1822452fcbc5bb2a7161f5d02c352114c492e8bf89876bfa3c59e75367571c9b",
+      "size": 5415
+    },
+    {
+      "path": "remote-update-SETUP.txt",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/remote-update-SETUP.txt?v=ff5c528e5b50",
+      "sha256": "ff5c528e5b50a1bb9e074e15e31ea7179ee46984b790345ff779240b6fe55177",
+      "size": 9130
+    },
+    {
+      "path": "kiosk-lockdown/Setup-Appliance.ps1",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-lockdown/Setup-Appliance.ps1?v=f79830264da6",
+      "sha256": "f79830264da6dd2b8be147e73c56c82d4e061999ed6276e84a82b5de05c83de6",
+      "size": 8131
+    },
+    {
+      "path": "kiosk-lockdown/Uninstall-Appliance.ps1",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-lockdown/Uninstall-Appliance.ps1?v=bcdf395023a4",
+      "sha256": "bcdf395023a4357aac3c119dea76504b8379747ad5f1894c1e82a494e4c4fc3d",
+      "size": 2903
+    },
+    {
+      "path": "kiosk-lockdown/READ-ME-APPLIANCE.txt",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-lockdown/READ-ME-APPLIANCE.txt?v=7787d69ea335",
+      "sha256": "7787d69ea33575bb2503b8d08f28d4c5664880ebd0761dfddae169b73827485b",
+      "size": 5544
+    },
+    {
+      "path": "tb-bootstrap.json",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/tb-bootstrap.json?v=bad901acfefc",
+      "sha256": "bad901acfefc3687d3f643f41742c60d51ff7960ddcb2fb1e735db7eb5afd5c2",
+      "size": 546
+    },
+    {
+      "path": "moderation.js",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/moderation.js?v=8be7575b4f53",
+      "sha256": "8be7575b4f53e286e1ff47477e4af564d2490cc8f12a3ef924fcd8cb62b2858f",
+      "size": 9572
     }
   ]
 }
