@@ -1196,6 +1196,7 @@ let orderInFlight = false;
 let _payEnabled = false;   // true only if server says PAY_ENABLED=true
 let _payOrder   = null;    // { orderId, ticket } from the last /order response
 let _payAmount  = 0;       // cents — matches the order total on the Flex
+let _payInFlight = false;  // a POST /pay is waiting on the card reader: the idle reset must not fire
 
 const FALLBACK_MENU = {
   coffee: { label:"Coffee", icon:"☕", title:"Coffee & Espresso", blurb:"Hot or iced, made to order",
@@ -1564,7 +1565,14 @@ function armIdle(){
 ["pointerdown","touchstart","keydown"].forEach(ev =>
   document.addEventListener(ev, armIdle, {passive:true, capture:true}));
 
-function idleReset(){ if(qrBusy()){ armIdle(); return; } resetAll(); }   // never wipe a pending phone payment
+function idleReset(){
+  if(qrBusy() || orderInFlight || _payInFlight){ armIdle(); return; }   // never wipe a pending phone/card payment or an order being sent
+  // A customer paying on the card reader never touches the screen, so the pay screen keeps the session alive.
+  // If it then sits on a retry prompt (declined / cancelled / hiccup) with nobody touching it, their order already
+  // exists: send them to the pay-at-window confirm (which times out normally) instead of wiping it.
+  if($("#payscreen").classList.contains("show")){ payAtWindow(); armIdle(); return; }
+  resetAll();
+}
 function start(){ $("#attract").style.display="none"; armIdle(); }
 function goHome(){ closeSheet(); renderTabs(); renderMenu(); }
 
@@ -2866,8 +2874,9 @@ function setPayState(state){
    safe to call doPay() again on "Try again" — the server returns the cached
    approved result if the card was already charged.                           */
 async function doPay(){
-  if(!_payOrder || !_payAmount) return;
+  if(!_payOrder || !_payAmount || _payInFlight) return;
   setPayState("working");
+  _payInFlight = true;
 
   let out;
   try{
@@ -2881,6 +2890,8 @@ async function doPay(){
     // Transport failure (server unreachable) → treat as unavailable → pay-at-window
     out = { result:"unavailable" };
   }
+  _payInFlight = false;
+  armIdle();                                   // idle clock starts again from the reader's answer
 
   switch(out.result){
     case "approved":
