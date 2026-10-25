@@ -42,6 +42,19 @@ h2.wk{color:var(--sun);text-shadow:0 0 16px rgba(255,209,102,.6)}
 .wait .who small{display:block;font-family:var(--mono);font-size:.8rem;color:var(--mute);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .empty{font-family:var(--mono);color:var(--mute);letter-spacing:.08em;padding:20px 4px}
 .bar{position:fixed;left:0;right:0;bottom:0;padding:8px;background:#c4177a;color:#fff;font-weight:700;text-align:center;z-index:9;font-family:var(--mono)}
+/* P1: readable from across the beach: 120px ready codes, 60px names, 56px headers with an icon, ready cards fill the column */
+h2{display:flex;align-items:center;gap:18px;font-size:3.5rem;line-height:1;letter-spacing:.04em}
+h2 svg{width:1em;height:1em;flex:none}
+#ready{grid-auto-rows:minmax(0,1fr);height:100%;gap:16px}
+.ready{padding:12px 32px;gap:32px;border-width:3px}
+.ready .code{font-size:7.5rem;letter-spacing:.04em}
+.ready .who{font-size:3.75rem}
+.ready .who small{font-size:1.5rem;margin-top:8px}
+.wait{padding:12px 22px;gap:22px}
+.wait .code{font-size:4rem;line-height:1}
+.wait .who{font-size:2.2rem}
+.wait .who small{font-size:1.1rem}
+@media (max-width:900px){h2{font-size:2.2rem}.ready .code{font-size:4.5rem}.ready .who{font-size:2.2rem}.wait .code{font-size:2.6rem}.wait .who{font-size:1.5rem}}
 @media (max-width:900px){main{grid-template-columns:1fr}.ready .code{font-size:2.4rem}.ready .who{font-size:1.4rem}header img{height:60px}}
 @media (max-width:480px){
  html{overflow-x:hidden}
@@ -60,8 +73,8 @@ h2.wk{color:var(--sun);text-shadow:0 0 16px rgba(255,209,102,.6)}
 <div class="app">
   <header><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches" onerror="this.remove()"><div class="t">Order Up<small>Stay thirsty, beaches</small></div><div class="sp"></div><div class="clock" id="clock"></div></header>
   <main>
-    <section><h2 class="up">Ready, come grab it</h2><div class="list" id="ready"></div></section>
-    <section><h2 class="wk">In the works</h2><div class="list" id="wait"></div></section>
+    <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it</h2><div class="list" id="ready"></div></section>
+    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works</h2><div class="list" id="wait"></div></section>
   </main>
 </div>
 <div class="bar" id="bar" hidden></div>
@@ -73,6 +86,7 @@ document.addEventListener('pointerdown',kick,{capture:true});setInterval(()=>{if
 
 const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let seenReady=new Set(),first=true;
+const READY_MAX=5,WAIT_MAX=7;   // what fits on a 1080p TV at the P1 sizes
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
 /* Voice personas. "Seasonal" = Pumpkin King in October, Santa in December, Barry the rest of the year.
    Web Speech can't do impressions, so each persona = deepest male voice on the device + its own pitch, pace and lines. Saved in localStorage tb-voice-name. */
@@ -94,7 +108,8 @@ function setVoiceName(n){VOICE_NAME=n;try{localStorage.setItem('tb-voice-name',n
 try{buildVoiceSel();speechSynthesis.onvoiceschanged=buildVoiceSel;}catch(e){}
 function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);voiceFor(u);speechSynthesis.speak(u);}catch(e){}}
 async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
-  const ready=q.ready.slice(0,6),wait=q.waiting.slice(0,10);
+  const ready=q.ready.slice(0,READY_MAX),wait=q.waiting.slice(0,WAIT_MAX);
+  $('#ready').style.gridTemplateRows=ready.length?'repeat('+Math.max(ready.length,3)+',minmax(0,1fr))':'';
   $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
