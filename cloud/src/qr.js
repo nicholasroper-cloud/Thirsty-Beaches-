@@ -298,7 +298,7 @@ export async function handleQr(req, env, url) {
   if (p.startsWith("/r/")) {
     const ref = p.slice(3).replace(/\/$/, "");
     const s = REF_RE.test(ref) ? await qrStatus(env, ref) : null;
-    const html = phonePage(s ? publicView(ref, s) : null);
+    const html = phonePage(s ? publicView(ref, s) : null, { reviewUrl: env.REVIEW_URL });
     return new Response(html, { status: s ? 200 : 404, headers: {
       "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer",
       "x-content-type-options": "nosniff",
