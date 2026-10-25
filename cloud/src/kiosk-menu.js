@@ -2305,7 +2305,7 @@ export const KIOSK_MENU = {
   },
   {
    "mod": "Whipped cream",
-   "price": 75
+   "price": 50
   },
   {
    "mod": "Size up",

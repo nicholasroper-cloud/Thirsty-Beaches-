@@ -455,6 +455,10 @@
   .vibe-scan::after{content:"";position:absolute;left:5%;right:5%;height:3px;top:8%;border-radius:3px;background:linear-gradient(90deg,transparent,#34d7ff,#ff3d8b,transparent);box-shadow:0 0 18px #34d7ff;animation:scanline 1.5s ease-in-out infinite;}
   @keyframes scanline{0%{top:8%}50%{top:88%}100%{top:8%}}
   #vibe .reading{font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:clamp(22px,3.4vw,30px);color:var(--ink);margin:6px 0;max-width:540px;}
+  #vibe .matchnick{font-size:clamp(24px,3.6vw,34px);font-weight:800;color:var(--ink);margin:-2px 0 10px;}
+  #vibe .matchnick b{color:var(--gold,#FFD166);}
+  .cart-line .nick{font-weight:800;font-size:17px;color:var(--gold,#FFD166);margin:2px 0;}
+  @media (orientation:portrait){ .cart-line .nick{font-size:22px;} #vibe p{font-size:22px;max-width:760px;} }
   #vibe .matchname{font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:clamp(42px,7.5vw,72px);line-height:1.02;margin:8px 0;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
   #vibe .vibe-actions{display:flex;flex-direction:column;gap:12px;margin-top:18px;width:min(380px,86vw);}
   #vibe .vibe-priv{font-size:13px;color:#7a5a3a;max-width:420px;margin-top:16px;opacity:.9;}
@@ -815,7 +819,7 @@
   /* K1: pay screen legible on the cream theme: dark amount + icon, and a clear "tap here" pointer */
   #payscreen .pay-amount{color:#163a5f;}
   #payscreen .pay-point{display:none;align-items:center;gap:14px;margin:-6px auto 26px;padding:14px 26px;border-radius:999px;
-    background:#fff;border:2px solid #163a5f;color:#163a5f;font-family:"Outfit",sans-serif;font-weight:800;
+    background:#fff;border:2px solid #163a5f;color:#163a5f;font-family:"Archivo",system-ui,sans-serif;font-weight:800;
     font-size:clamp(18px,2.4vw,24px);box-shadow:0 12px 30px -14px rgba(22,58,95,.45);}
   #payscreen .pay-point svg{width:1.6em;height:1.6em;flex:none;}
   #payscreen[data-state="prompt"] .pay-point,#payscreen[data-state="working"] .pay-point{display:inline-flex;}
@@ -844,7 +848,7 @@
   #qrpay .qr-box{background:#fff;padding:16px;border-radius:24px;width:min(380px,72vw);box-shadow:0 20px 60px -20px rgba(22,58,95,.55);}
   #qrpay .qr-box svg{display:block;width:100%;height:auto;}
   #qrpay .qr-total{margin:20px 0 4px;font-family:"Archivo",system-ui,sans-serif;font-weight:600;color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;font-size:clamp(14px,2vw,18px);}
-  #qrpay .qr-total b{display:block;font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:clamp(44px,7vw,72px);letter-spacing:0;color:#ff177e;line-height:1.05;}
+  #qrpay .qr-total b{display:block;font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:clamp(44px,7vw,72px);letter-spacing:0;color:var(--ink);line-height:1.05;}
   #qrpay .qr-timer{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:clamp(16px,2.2vw,22px);color:var(--ink);margin:6px 0 22px;font-variant-numeric:tabular-nums;}
   #qrpay .qr-btn{border:1px solid var(--border-2);background:var(--panel);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;font-weight:700;
     font-size:clamp(16px,2vw,20px);padding:18px 40px;border-radius:16px;cursor:pointer;min-width:min(380px,80vw);}
@@ -867,7 +871,7 @@
   @media (orientation:portrait){ #confirm .orderfor{font-size:46px;} }
   /* K6: "Help me choose" row under the category tabs (was crammed into the header and overflowed at 768px) */
   .helprow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:8px 34px 0;}
-  .helprow .help-l{font-family:"Outfit",sans-serif;font-weight:800;font-size:17px;color:var(--ink);margin-right:4px;}
+  .helprow .help-l{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:17px;color:var(--ink);margin-right:4px;}
   .helprow .designbtn,.helprow .vibebtn,.helprow .snapbtn{min-height:48px;font-size:17px;padding:0 22px;}
   .helprow .designbtn.show{display:inline-flex;align-items:center;}
   @media (orientation:portrait){
@@ -993,7 +997,7 @@
     linear-gradient(180deg,#FFD166 0%,#FF8A3D 45%,#FF3CAC 100%);box-shadow:0 0 90px rgba(255,60,172,.55);opacity:.9;}
   #attract .wave-back{color:rgba(42,245,228,.14);} #attract .wave-mid{color:rgba(138,63,252,.22);} #attract .wave-front{color:rgba(255,60,172,.20);}
   #attract .tagline{color:var(--ink-soft);}
-  #attract .vibe-attract{color:var(--cyan);font-weight:600;}
+  #attract .vibe-attract{color:var(--cyan);font-weight:700;background:rgba(9,1,15,.78);border:2px solid rgba(42,245,228,.7);box-shadow:0 0 22px -6px rgba(42,245,228,.55);}
   #attract .attract-logo,#confirm .confirm-logo,#payscreen .pay-logo,#qrpay .pay-logo,#vibe .vibe-logo,#snap .snap-logo,.brand .logo-img{
     background:transparent;padding:0;border-radius:0;filter:drop-shadow(0 0 28px rgba(255,60,172,.35));}
   .tap-cta{background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box,var(--grad-brand) border-box;color:var(--ink);border-width:3px;}
@@ -1025,7 +1029,7 @@
   .cartbtn .count{background:var(--magenta);color:#08011c;}
   .vibebtn{background:#150b31;color:var(--cyan);border:2px solid var(--cyan);}
   .beachname{background:#150b31;color:var(--cyan);border:2px solid var(--cyan);box-shadow:none;}
-  .linkbtn{color:#FF7CC4;}
+  .linkbtn{color:#FF7CC4;background:rgba(255,60,172,.10);border:2px solid rgba(255,124,196,.5);}
   .prizerow{border-color:var(--border-2);}
   #confirm{background:radial-gradient(900px 620px at 50% 0%,#3a1261 0%,#1a0838 48%,var(--bg) 82%),var(--bg);}
   #confirm p,#confirm .ordernum span,.spintide p,.spintide .prize span,.tl-consent,#vibe p,#snap p,#vibe .vibe-priv,#snap .snap-priv{color:var(--ink-soft);}
@@ -1043,6 +1047,34 @@
   #payscreen .tap-rings span{border-color:var(--cyan);}
   #vibe,#snap{background:radial-gradient(900px 620px at 50% 0%,#3a1261 0%,#1a0838 48%,var(--bg) 82%),var(--bg);}
   .toast{background:#150b31;color:var(--ink);border:1px solid var(--border-2);}
+  /* ---- Fun cup (Match My Vibe + Snap a pic): the website's neon cup, fizzing ---- */
+  .funcupbox{width:min(300px,42vw);margin:6px auto 4px;}
+  .funcup{width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 26px rgba(255,60,172,.45));}
+  .funcup .fc-liq{mix-blend-mode:color;opacity:.92;transform-box:fill-box;transform-origin:50% 100%;}
+  .funcup.filling .fc-liq{animation:fcFill 1.5s cubic-bezier(.4,0,.2,1) both;}
+  .funcup.thinking{animation:fcShake .55s ease-in-out infinite;transform-origin:50% 90%;}
+  .funcup.popped{animation:fcPop .7s cubic-bezier(.3,1.6,.5,1) both;transform-origin:50% 90%;}
+  .funcup .bubble{fill:#83eaff12;stroke:#8fefff;stroke-width:2.7}
+  .funcup .bubble--pink{stroke:#ff8ce1;fill:#ff73da0c}
+  .funcup .bubble-shine{fill:none;stroke:#fff2ff;stroke-width:2;stroke-linecap:round}
+  .funcup .bubble-pop{fill:none;stroke:#8fefff;stroke-width:2}
+  @keyframes fcFill{from{transform:scaleY(.05)}to{transform:scaleY(1)}}
+  @keyframes fcShake{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-6px)}}
+  @keyframes fcPop{0%{transform:scale(.85) rotate(-6deg)}60%{transform:scale(1.08) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+  .fc-slam{animation:fcSlam .5s cubic-bezier(.3,1.7,.5,1) both;}
+  @keyframes fcSlam{0%{transform:scale(1.35);filter:brightness(1.8)}100%{transform:scale(1);filter:none}}
+  .fc-fade{animation:fcFade .45s ease both;}
+  @keyframes fcFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .fc-confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+  .fc-confetti span{position:absolute;top:-26px;width:12px;height:18px;border-radius:2px;opacity:.92;animation:confetti-fall linear forwards;}
+  #vibe .stage,#snap .stage{position:relative;z-index:1;}
+  @media (orientation:portrait){ .funcupbox{width:min(380px,40vw);} }
+  @media (prefers-reduced-motion: reduce){ .funcup,.funcup .fc-liq,.fc-slam,.fc-fade{animation:none !important;} }
+  #vibeResult.loading .vibe-actions,#vibeResult.loading #vibeWhy,#vibeResult.loading .matchnick{visibility:hidden;}
+  .snap-cup.funcupbox{filter:none;}
+  #snap .snapprice{background:rgba(255,209,102,.12);border:2px solid rgba(255,209,102,.6);color:#FFD166;}
+  #snapLoadMsg,#vibeResult.loading #vibeReading{font-size:24px;min-height:2.6em;}
+  @media (orientation:portrait){ #snapLoadMsg,#vibeResult.loading #vibeReading{font-size:30px;} }
 </style>
 </head>
 <body>
@@ -1118,7 +1150,7 @@
   <img src="assets/logo.png?v=logo20261018" class="confirm-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="check">✓</div>
   <h2>You're in, Beaches</h2>
-  <p>Your order's on the way — listen for your name at the window.</p>
+  <p id="confirmSub">Your order's on the way — listen for your name at the window.</p>
   <div id="orderForName" class="orderfor"></div>
   <div class="ordernum"><span>Your order number</span><b id="orderNum">42</b></div>
   <div class="paywindow">Head to the window to pay &amp; grab your order<span class="paychevrons"><i></i><i></i><i></i></span></div>
@@ -1195,7 +1227,7 @@
 <div id="qrpay" data-state="pending" aria-live="polite">
   <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <h2 class="qr-hl" id="qrHl">Scan with your phone camera</h2>
-  <p class="qr-sub" id="qrSub">Pay with Apple Pay, Google Pay or card. Keep the page open: your phone buzzes when your drink is ready.</p>
+  <p class="qr-sub" id="qrSub">Pay with Apple Pay, Google Pay or card. Keep the page open: it turns green when your drink is ready.</p>
   <div class="qr-box" id="qrBox"></div>
   <div class="qr-total">Total<b id="qrTotal">$0.00</b></div>
   <div class="qr-timer" id="qrTimer"></div>
@@ -1262,9 +1294,11 @@
     <p class="vibe-priv">Your photo is used once to match a drink and isn't stored. The camera turns off the moment you leave this screen.</p>
   </div>
   <div class="stage" id="vibeResult">
+    <div class="funcupbox" id="vibeCup"></div>
     <h2 id="vibeHl">The beach has spoken</h2>
     <div class="reading" id="vibeReading"></div>
     <div class="matchname" id="vibeMatchName"></div>
+    <div class="matchnick" id="vibeNick" hidden></div>
     <p id="vibeWhy"></p>
     <div class="vibe-actions">
       <button class="btn-primary" id="vibeAddBtn" onclick="vibeAddToOrder()">Add it to my order</button>
@@ -1310,11 +1344,11 @@
   </div>
   <div class="stage" id="snapLoading">
     <h2>Mixing it up</h2>
-    <div class="snap-spinner"></div>
+    <div class="funcupbox" id="snapThinkCup"></div>
     <p id="snapLoadMsg">Reading the vibe and inventing your drink&hellip;</p>
   </div>
   <div class="stage" id="snapResult">
-    <div class="snap-cup" id="snapCup"></div>
+    <div class="snap-cup funcupbox" id="snapCup"></div>
     <div class="drinkname" id="snapName"></div>
     <div class="recipe" id="snapRecipe"></div>
     <p id="snapWhy"></p>
@@ -1962,15 +1996,156 @@ function analyzeFrame(video){
   return {r,g,b, bright:(r+g+b)/3, warm:r-b, sat:Math.max(r,g,b)-Math.min(r,g,b)};
 }
 function vibeReveal(t, shy){
-  _vibeMatch={cat:t.cat, id:t.id};
   const item = MENU[t.cat] && MENU[t.cat].items.find(i=>i.id===t.id);
+  _vibeMatch={cat:t.cat, id:t.id, nick:vibeCleanNick(t.nick) || fcLocalNick()};   // always a funny name (the AI's, or a local one if it was offline)
+  const nk=$("#vibeNick");
+  if(nk){ if(_vibeMatch.nick){ nk.innerHTML='Your drink: <b>'+escK(item?item.name:"")+'</b>'; nk.hidden=false; } else { nk.textContent=""; nk.hidden=true; } }
   $("#vibeHl").textContent = shy ? "Camera's shy today" : "The beach has spoken";
+  clearInterval(_fcThinkTimer); _fcThinkTimer = null;
   $("#vibeReading").textContent = shy ? "We couldn't read your vibe, so here's a pick for you:" : t.reading;
-  $("#vibeMatchName").textContent=item?item.name:"Thirst Trap";
   $("#vibeWhy").textContent=t.why;
   stopVibeCam();
+  $("#vibeResult").classList.remove("loading");
   showStage('vibeResult');
+  const cup = fcMount($("#vibeCup"), {color:fcColorFor(t.cat), fill:true}); if(cup) cup.classList.add("popped");
+  fcScramble($("#vibeMatchName"), _vibeMatch.nick, 1300).then(() => fcConfetti($("#vibe")));   // the AI's funny name leads; the real drink sits under it
 }
+/* ============ FUN CUP — the website's neon 80s cup, tinted to the drink and fizzing ============
+   Used by Match My Vibe and Snap a pic: the cup shakes while the AI thinks, fills with the drink's
+   colour, the funny name scrambles in like a slot machine, then confetti. Same art as the website
+   (assets/cup-80s-*.webp/png, bubbles ported from site/cup-bubbles.js). Reduced motion: no animation. */
+const FC_REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FC_CUP = "M272 586 L748 586 L641 1400 Q512 1436 367 1400 Z";
+const FC_SURF = "M258 431 Q506 470 767 430 L750 540 Q508 592 271 539 Z";
+const FC_NS = "http://www.w3.org/2000/svg";
+const FC_THINK = ["Consulting the tide charts…","Asking a seagull for a second opinion…","Measuring your beach energy…",
+  "Shaking the magic soda ball…","Checking your vibe against the sunset…","Counting the bubbles…","Running it past the lifeguard…"];
+const FC_NICK_A = ["Sunburnt","Salty","Sandy","Tidal","Breezy","Sparkly","Fizzy","Cosmic","Turbo","Radical","Golden Hour","Neon"];
+const FC_NICK_B = ["Optimist","Sea Legend","Wave Boss","Beach Wizard","Sandcastle Royalty","Tide Rider","Brain Freezer","Flip-Flop Hero","Sun Chaser","Surf Captain","Boogie Boarder","Pelican Whisperer"];
+let _fcUid = 0, _fcLoops = new Set(), _fcThinkTimer = null;
+function fcLocalNick(){ const a = FC_NICK_A[Math.random()*FC_NICK_A.length|0], b = FC_NICK_B[Math.random()*FC_NICK_B.length|0]; return ("The " + a + " " + b).slice(0, 28); }
+function fcMix(a, b, t){ const p = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16)); const x = p(a), y = p(b);
+  return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join(""); }
+function fcColorFor(catKey){
+  const C = {floats:"#a07bff",dirtysodas:"#ff3d97",seasonal:"#ff8a2b",refreshers:"#ff5f8f",newwaves:"#28cdff",energy:"#ffb300",lemonades:"#ffcf33",
+    italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#b07a45",beachbabies:"#8fe0ff",blended:"#56c8e8",secret:"#cda44e"};
+  return C[catKey] || "#ff3d97";
+}
+/* el: container. opts: {color, cream (colour or ""), fill (animate filling), think (shake + colour cycling)} */
+function fcMount(el, opts){
+  if(!el) return;
+  fcStop(el);
+  const o = opts || {}, id = "fc" + (++_fcUid), c = /^#[0-9a-f]{6}$/i.test(o.color || "") ? o.color : "#ff3d97";
+  el.innerHTML = `<svg class="funcup${o.think ? " thinking" : ""}${o.fill ? " filling" : ""}" viewBox="0 0 110 150" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop class="fc-top" offset="0" stop-color="${fcMix(c, "#ffffff", .25)}"/><stop class="fc-bot" offset="1" stop-color="${c}"/></linearGradient>
+      <clipPath id="${id}c"><path d="${FC_CUP}"/></clipPath>
+      <clipPath id="${id}s"><path d="${FC_SURF}"/></clipPath>
+      <mask id="${id}m" x="0" y="0" width="1024" height="1536" maskUnits="userSpaceOnUse" style="mask-type:alpha"><image href="assets/cup-80s-cream.png" width="1024" height="1536"/></mask>
+    </defs>
+    <g transform="translate(5 0) scale(.09765625)">
+      <image href="assets/cup-80s-shell.webp" width="1024" height="1536"/>
+      <g clip-path="url(#${id}c)"><rect class="fc-liq" x="240" y="420" width="540" height="1040" fill="url(#${id}l)"/></g>
+      <g class="fc-cream" fill="${o.cream || "#fff6e8"}" style="display:${o.cream ? "block" : "none"}"><rect width="1024" height="1536" mask="url(#${id}m)"/></g>
+      <g class="fc-body" clip-path="url(#${id}c)"></g>
+      <g class="fc-surf" clip-path="url(#${id}s)"></g>
+      <image href="assets/logo-480.webp" x="312" y="737" width="399" height="266"/>
+    </g>
+  </svg>`;
+  const svg = el.querySelector("svg");
+  if(!FC_REDUCED) fcFizz(svg);
+  if(o.think && !FC_REDUCED){
+    const hues = ["#ff3d97","#28cdff","#ffcf33","#46e9c4","#a07bff","#ff8a2b"]; let i = 0;
+    svg._cycle = setInterval(() => { i = (i + 1) % hues.length; fcTint(svg, hues[i]); }, 650);
+  }
+  return svg;
+}
+function fcTint(svg, color, cream){
+  if(!svg) return;
+  const t = svg.querySelector(".fc-top"), b = svg.querySelector(".fc-bot");
+  if(t) t.setAttribute("stop-color", fcMix(color, "#ffffff", .25));
+  if(b) b.setAttribute("stop-color", color);
+  if(cream !== undefined){ const g = svg.querySelector(".fc-cream"); if(g){ g.setAttribute("fill", cream || "#fff6e8"); g.style.display = cream ? "block" : "none"; } }
+}
+function fcStop(el){
+  const svg = el && el.querySelector && el.querySelector("svg.funcup");
+  if(svg){ clearInterval(svg._cycle); if(svg._loop){ svg._loop.stop(); _fcLoops.delete(svg._loop); } }
+}
+function fcStopAll(){ _fcLoops.forEach(l => l.stop()); _fcLoops.clear(); clearInterval(_fcThinkTimer); _fcThinkTimer = null;
+  document.querySelectorAll("svg.funcup").forEach(s => clearInterval(s._cycle)); }
+/* bubbles: same motion as the website's cup (site/cup-bubbles.js) */
+function fcFizz(svg){
+  const body = svg.querySelector(".fc-body"), surface = svg.querySelector(".fc-surf"), parts = [];
+  const mk = (tag, attrs) => { const e = document.createElementNS(FC_NS, tag); for(const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, String(v)); return e; };
+  function particle(i, top){
+    const g = mk("g"), pink = i % 5 === 0;
+    const ring = mk("circle", {class: "bubble" + (pink ? " bubble--pink" : ""), r: 1}), shine = mk("path", {class: "bubble-shine", d: ""}), pop = mk("path", {class: "bubble-pop", d: "", opacity: 0});
+    g.append(ring, shine, pop); (top ? surface : body).append(g);
+    parts.push({g, ring, shine, pop, top, x: top ? [287,490,722][i%3] : [395,457,565,627][i%4], start: top ? 549 : 1370, end: top ? 438 : 558,
+      radius: top ? 5 + (i%4)*2 : 5 + (i%6)*1.7, duration: top ? 1900 + (i%4)*390 : 4900 + (i%7)*440, offset: (i*.173) % 1, seed: i});
+  }
+  for(let i = 0; i < 28; i++) particle(i, false);
+  for(let i = 0; i < 12; i++) particle(i, true);
+  let clock = 0, last = 0, frame = 0, live = true;
+  function draw(){
+    for(const p of parts){
+      const t = (clock / p.duration + p.offset) % 1, peak = p.top ? .74 : .84;
+      const y = p.start + (p.end - p.start) * Math.min(t / peak, 1), x = p.x + Math.sin(t*Math.PI*3 + p.seed) * (p.top ? 6 : 14);
+      const fadeIn = Math.min(1, t*9), popPhase = Math.max(0, (t - peak) / (1 - peak)), r = p.radius * 2.2 * (.5 + .5*Math.min(t/peak, 1));
+      p.g.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      p.g.setAttribute("opacity", String((p.top ? .8 : .6) * fadeIn * (1 - popPhase)));
+      p.ring.setAttribute("r", r.toFixed(1)); p.ring.setAttribute("opacity", popPhase ? 0 : 1);
+      p.shine.setAttribute("d", `M${-r*.6} ${-r*.1} Q${-r*.65} ${-r*.55} ${-r*.15} ${-r*.63}`); p.shine.setAttribute("opacity", popPhase ? 0 : .72);
+      const a = r * (1 + popPhase*2), b = a + r*.48;
+      p.pop.setAttribute("d", `M${-a} 0H${-b} M${a} 0H${b} M0 ${-a}V${-b} M0 ${a}V${b}`); p.pop.setAttribute("opacity", popPhase ? 1 : 0);
+    }
+  }
+  function tick(now){ if(!live) return; if(!svg.isConnected){ loop.stop(); return; } if(last) clock += Math.min(now - last, 80); last = now; draw(); frame = requestAnimationFrame(tick); }
+  const loop = { stop(){ live = false; cancelAnimationFrame(frame); } };
+  svg._loop = loop; _fcLoops.add(loop); draw(); frame = requestAnimationFrame(tick);
+}
+/* "thinking" lines under the shaking cup */
+function fcThink(el){
+  clearInterval(_fcThinkTimer); if(!el) return;
+  let i = Math.random()*FC_THINK.length|0; el.textContent = FC_THINK[i];
+  _fcThinkTimer = setInterval(() => { i = (i + 1) % FC_THINK.length; el.textContent = FC_THINK[i]; el.classList.remove("fc-fade"); void el.offsetWidth; el.classList.add("fc-fade"); }, 1500);
+}
+/* slot-machine reveal: letters spin, then lock in left to right */
+function fcScramble(el, text, ms){
+  if(!el) return Promise.resolve();
+  clearInterval(_fcThinkTimer); _fcThinkTimer = null;
+  if(FC_REDUCED || !text){ el.textContent = text || ""; return Promise.resolve(); }
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!?#&", t0 = performance.now(), dur = ms || 1300;
+  el.classList.remove("fc-slam");
+  return new Promise(res => {
+    (function f(now){
+      const p = Math.min(1, (now - t0) / dur), n = Math.floor(p * text.length);
+      let s = text.slice(0, n);
+      for(let i = n; i < text.length; i++) s += text[i] === " " ? " " : chars[Math.random()*chars.length|0];
+      el.textContent = s;
+      if(p < 1) requestAnimationFrame(f);
+      else { el.textContent = text; void el.offsetWidth; el.classList.add("fc-slam"); res(); }
+    })(t0);
+  });
+}
+/* confetti inside any overlay */
+function fcConfetti(host){
+  if(FC_REDUCED || !host) return;
+  let box = host.querySelector(":scope > .fc-confetti");
+  if(!box){ box = document.createElement("div"); box.className = "fc-confetti"; box.setAttribute("aria-hidden", "true"); host.prepend(box); }
+  box.innerHTML = "";
+  const colors = ["#FF3CAC","#2AF5E4","#FFD166","#8A3FFC","#FF7A45","#46e9c4"];
+  for(let i = 0; i < 46; i++){
+    const s = document.createElement("span");
+    s.style.left = (Math.random()*100) + "%"; s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random()*.4).toFixed(2) + "s"; s.style.animationDuration = (2 + Math.random()*1.6).toFixed(2) + "s";
+    box.appendChild(s);
+  }
+  setTimeout(() => { if(box.isConnected) box.innerHTML = ""; }, 4500);
+}
+
+/* The AI's funny name for this person's cup: letters/numbers/spaces and . ' ! & - only (it rides to the window as a mod) */
+function vibeCleanNick(s){ return String(s||"").normalize("NFC").replace(/[^\p{L}\p{N} .'!&-]/gu,"").replace(/\s+/g," ").trim().slice(0,28); }
 function vibeCandidates(){
   const out=[];
   for(const [cat,c] of Object.entries(MENU)){
@@ -1979,9 +2154,12 @@ function vibeCandidates(){
   return out;
 }
 function showVibeLoading(){
-  $("#vibeHl").textContent="The beach has spoken";
-  $("#vibeReading").textContent="Reading your vibe…";
-  $("#vibeMatchName").textContent="…";
+  $("#vibeResult").classList.add("loading");
+  fcMount($("#vibeCup"), {think:true});
+  $("#vibeHl").textContent="Reading your vibe";
+  fcThink($("#vibeReading"));
+  $("#vibeMatchName").textContent="? ? ?";
+  { const nk=$("#vibeNick"); if(nk){ nk.textContent=""; nk.hidden=true; } }
   $("#vibeWhy").textContent="";
   showStage('vibeResult');
 }
@@ -2005,7 +2183,7 @@ async function vibeSnap(){
         const d=await res.json();
         if(d&&d.ai&&d.id){
           const t=cands.find(x=>x.id===d.id);
-          if(t){ vibeReveal({cat:t.cat,id:t.id,reading:d.reading||"The beach has read you.",why:d.why||""}); return; }
+          if(t){ vibeReveal({cat:t.cat,id:t.id,nick:d.nickname||"",reading:d.reading||"The beach has read you.",why:d.why||""}); return; }
         }
       }
     }catch(e){}
@@ -2015,12 +2193,12 @@ async function vibeSnap(){
 }
 function vibeSurprise(){ vibeReveal(vibePick(null)); }
 function vibeShy(){ stopVibeCam(); vibeReveal(vibePick(null), true); }   // camera failed: honest message + a random pick
-function vibeAddToOrder(){ const m=_vibeMatch; vibeClose(); if(m) openItem(m.cat,m.id); }
+function vibeAddToOrder(){ const m=_vibeMatch; vibeClose(); if(m){ openItem(m.cat,m.id); if(editing && m.nick) editing.nick=m.nick; } }
 function stopVibeCam(){
   if(_vibeStream){ _vibeStream.getTracks().forEach(t=>t.stop()); _vibeStream=null; }
   const vid=$("#vibeVideo"); if(vid) vid.srcObject=null;
 }
-function vibeClose(){ stopVibeCam(); $("#vibe").classList.remove('show'); }
+function vibeClose(){ stopVibeCam(); fcStopAll(); $("#vibe").classList.remove('show'); }
 function showStage(id){ document.querySelectorAll('#vibe .stage').forEach(s=>s.classList.toggle('on', s.id===id)); }
 
 /* ============ SNAP A PIC — AI drink from one photo ============
@@ -2084,7 +2262,8 @@ function snapCapture(){
 }
 async function snapSend(img){
   snapStage('snapLoading');
-  $("#snapLoadMsg").textContent = img ? "Reading the vibe and inventing your drink…" : "Inventing your drink…";
+  fcMount($("#snapThinkCup"), {think:true});
+  fcThink($("#snapLoadMsg"));
   const body={};
   if(img && !_snapKid) body.image=img;
   if(_snapMood.size) body.mood=[..._snapMood].join(", ");
@@ -2106,8 +2285,10 @@ function snapAgain(){ _snapResult=null; if(_snapUsedCam && !_snapKid) snapAllow(
 function snapRender(d){
   const line=snapToLine(d);
   if(!line){ $("#snapErrMsg").textContent="That soda base just sold out — let's try another."; snapStage('snapError'); return; }
-  $("#snapCup").innerHTML=snapCupArt(d);
-  $("#snapName").textContent=line.name;
+  fcStopAll();
+  const fc = fcSnapColors(d);
+  const cup = fcMount($("#snapCup"), {color:fc.liq, cream:fc.cream, fill:true}); if(cup) cup.classList.add("popped");
+  fcScramble($("#snapName"), line.name, 1200).then(() => fcConfetti($("#snap")));
   $("#snapRecipe").textContent=line.mods.filter(m=>!/^(Small|Medium|Large) /.test(m)).join(" · ");   // what the window will actually build
   $("#snapWhy").textContent=d.why||"";
   $("#snapPrice").textContent="$"+line.unit.toFixed(2)+" · "+(d.size||"16oz");
@@ -2122,7 +2303,7 @@ function snapAdd(){
   if(offers.length) showUpsell(offers); else openCart();
 }
 function stopSnapCam(){ if(_snapStream){ _snapStream.getTracks().forEach(t=>t.stop()); _snapStream=null; } const v=$("#snapVideo"); if(v) v.srcObject=null; }
-function snapClose(){ stopSnapCam(); clearTimeout(_snapIdle); _snapBusy=false; _snapResult=null; _snapMood.clear(); _snapKid=false; $("#snap").classList.remove('show'); }
+function snapClose(){ stopSnapCam(); fcStopAll(); clearTimeout(_snapIdle); _snapBusy=false; _snapResult=null; _snapMood.clear(); _snapKid=false; $("#snap").classList.remove('show'); }
 document.getElementById('snap').addEventListener('pointerdown', snapArm, {passive:true});
 
 /* Map the AI build (website builder vocabulary) onto the kiosk's own option groups so the
@@ -2168,6 +2349,13 @@ const SNAP_COLORS={
   base:{"Dr Pepper":"#5a2417","Coke":"#3a1a10","Sprite":"#dff7e3","Mountain Dew":"#c6ef5a","Root Beer":"#5c3317","Fanta Orange":"#ff8a1f","Lemonade":"#fff2a8","Strawberry Lemonade":"#ff7da0"},
   syrup:{"Coconut Cream":"#fff4dd","Vanilla":"#f6e3a8","Raspberry":"#d62f6d","Blue Raspberry":"#2e8bff","Strawberry":"#ff4d6d","Peach":"#ffb27a","Mango":"#ffc53d"},
   top:{"Strawberry":"#ff4d6d","Pineapple":"#ffd84a","Lime":"#7ed957","Cherry":"#b3122e"} };
+/* Snap a pic: the fun cup's colour from the AI build (base + syrups, like the website builder) */
+function fcSnapColors(d){
+  let liq = SNAP_COLORS.base[d.base] || "#ff8a2b";
+  (d.syrups || []).forEach((sy, i) => { const c = SNAP_COLORS.syrup[sy]; if(c) liq = fcMix(liq, c, i ? .14 : .28); });
+  const cream = d.cream && !/^no cream$/i.test(d.cream) ? (/coconut/i.test(d.cream) ? "#fff4dd" : "#fff6e8") : "";
+  return { liq, cream };
+}
 function snapCupArt(d){
   const liq=SNAP_COLORS.base[d.base]||"#ff8a2b";
   const sy=(d.syrups||[]).map(s=>SNAP_COLORS.syrup[s]||"#ff3d97");
@@ -2600,8 +2788,10 @@ function addToCart(){
     else if(!o.multi && v) mods.push(v);
   });
   if(Array.isArray(sel._notes)) mods.push(...sel._notes);        // $0 note mods from a Snap-a-pic line survive an edit
+  const nick = vibeCleanNick(editing.nick);
+  if(nick) mods.push("AKA " + nick);                               // Match My Vibe: the AI's funny name for this cup ($0)
   const line = {icon:iconFor(item), img:item.img, name:item.name, mods, unit:linePrice(), qty,
-                catKey, itemId:item.id, basePrice:item.price, desc:item.desc, sel:JSON.parse(JSON.stringify(sel))};
+                catKey, itemId:item.id, basePrice:item.price, desc:item.desc, sel:JSON.parse(JSON.stringify(sel)), nick:nick||undefined};
   const wasEdit = editing.idx!=null && cart[editing.idx];
   if(wasEdit) cart[editing.idx] = line; else cart.push(line);
   closeSheet();
@@ -2686,7 +2876,8 @@ function buildUpsellOffers(line) {
       id: "topper",
       name: "Add a Topper",
       desc: "Whipped cream or cold foam",
-      price: ((TOPPER.choices.find(c => c.name === "Whipped cream") || {d:0.50}).d),   // same price as the menu / Clover
+      // same as "Whipped cream" in TOPPER (menu / Clover); keep "price: <number>, mod:" for cloud/menu-from-kiosk.js
+      price: 0.50,
       mod: "Whipped cream",
       icon: "topper",
     });
@@ -2781,7 +2972,7 @@ function editCartLine(i){
   const item = cat.items.find(it=>it.id===c.itemId)
     || (c.basePrice!=null ? {id:c.itemId, name:c.name, desc:c.desc||"", price:c.basePrice, _ai:true} : null);   // Snap-a-pic / AI lines
   if(!item) return;
-  editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i};
+  editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i, nick:c.nick};
   renderSheet();
   $("#overlay").classList.add("show");
 }
@@ -2812,7 +3003,8 @@ function openCart(){
       <div class="art"${c.img?` style="background-image:url('${c.img}')"`:''}>${c.img?'':`<span class="cicon shdicon">${drinkIcon((MENU[c.catKey]&&MENU[c.catKey].items.find(x=>x.id===c.itemId))||{id:c.itemId||'x',name:c.name,desc:''}, c.catKey)}</span>`}</div>
       <div class="info">
         <b>${c.name}</b>
-        ${c.mods.length?`<div class="mods">${c.mods.join(" &middot; ")}</div>`:''}
+        ${c.nick?`<div class="nick">a.k.a. ${escK(c.nick)}</div>`:''}
+        ${c.mods.filter(m=>!/^AKA /.test(m)).length?`<div class="mods">${c.mods.filter(m=>!/^AKA /.test(m)).join(" &middot; ")}</div>`:''}
         <div class="price">$${(c.unit*c.qty).toFixed(2)}</div>
         <button class="linkbtn editbtn" onclick="editCartLine(${i})">Edit</button>
       </div>
@@ -3004,6 +3196,8 @@ function showConfirm(order, paid){
 
   // Swap the pay-at-window banner copy depending on whether the customer already paid
   const banner = $("#confirm .paywindow");
+  const cs = $("#confirmSub");
+  if(cs) cs.textContent = (paid && _qrPaidNow) ? "Your order's on the way — watch your phone, it turns green when it's ready." : "Your order's on the way — listen for your name at the window.";
   if(banner){
     if(paid){
       banner.innerHTML = 'Grab your order at the window <span class="paychevrons"><i></i><i></i><i></i></span>';
@@ -3126,6 +3320,7 @@ const QR_POLL_MS = 3000;
 const QR_GIVEUP_MS = 20 * 60000;     // stop waiting this long after the code was made
 let _qrOn = false;                   // station says phone pay is available (probed at load + every 5 min)
 let _qrSkip = false;                 // phone pay failed for this customer: just offer the window until reset
+let _qrPaidNow = false;            // showConfirm: this paid order was paid on the customer's phone
 let _qr = null;                      // {ref, payUrl, total, expires, started, tick, poll} while a QR is up
 function qrShown(){ return _qrOn && !_qrSkip; }
 function qrBusy(){ return !!_qr; }
@@ -3179,7 +3374,7 @@ async function startQr(){
   const el = $("#qrpay");
   el.setAttribute("data-state","pending");
   $("#qrHl").textContent = "Scan with your phone camera";
-  $("#qrSub").textContent = "Pay with Apple Pay, Google Pay or card. Keep the page open: your phone buzzes when your drink is ready.";
+  $("#qrSub").textContent = "Pay with Apple Pay, Google Pay or card. Keep the page open: it turns green when your drink is ready.";
   $("#qrCancelBtn").textContent = "Cancel";
   $("#qrBox").innerHTML = qrSvg(d.payUrl);
   $("#qrBox").setAttribute("data-url", d.payUrl);
@@ -3192,7 +3387,7 @@ async function startQr(){
 function qrTick(){
   if(!_qr) return;
   const now = Date.now(), el = $("#qrpay");
-  if(now - _qr.started > QR_GIVEUP_MS){ qrGiveUp(); return; }
+  if(now - _qr.started > QR_GIVEUP_MS || (_qr.expires && now > _qr.expires + 60000)){ qrGiveUp(); return; }
   const left = _qr.expires - now;
   if(left > 0){
     const m = Math.floor(left/60000), s = Math.floor(left/1000) % 60;
@@ -3230,9 +3425,11 @@ function qrGiveUp(){
   $("#qrHl").textContent = "We couldn't confirm a payment";
   $("#qrSub").textContent = "If you paid on your phone, show it at the window and we'll sort it out. Otherwise, start a new order.";
   $("#qrCancelBtn").textContent = "OK";
+  const me = _qr;
+  me.leave = setTimeout(()=>{ if(_qr === me){ qrStop(); resetAll(); } }, 90000);   // nobody tapped OK: free the kiosk
 }
 function qrStop(){
-  if(_qr){ clearInterval(_qr.tick); clearTimeout(_qr.poll); }
+  if(_qr){ clearInterval(_qr.tick); clearTimeout(_qr.poll); clearTimeout(_qr.leave); }
   _qr = null;
   const el = $("#qrpay"); if(el){ el.classList.remove("show"); el.setAttribute("data-state","pending"); }
   const b = $("#qrBox"); if(b){ b.innerHTML = ""; b.removeAttribute("data-url"); }
@@ -3250,9 +3447,11 @@ function qrPaid(ticket){
   recordSales(cart);
   cart = []; updateCartBtn(); closeSheet();
   _orderName = ""; _lastUpsize = false; _prizeCode = "";
+  _qrPaidNow = true;
   showConfirm({ ticket: String(ticket), orderId: String(ticket), name: who }, true);
+  _qrPaidNow = false;
   const banner = $("#confirm .paywindow");
-  if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it buzzes when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
+  if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it turns green when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
   armIdle();
 }
 function resetAll(){

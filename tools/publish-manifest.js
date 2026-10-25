@@ -35,6 +35,7 @@ const KIOSK_FILES = [
   "kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "flex-pay.js", "addons.json", "package.json",
   "clover-menu-server.js", "clover-menu-server.next.js",
   "Run-Kiosk.bat", "Stop-Kiosk.bat", "Debug-Kiosk.bat", "Fix-And-Run.bat", "Install-AutoStart.bat", "Remove-AutoStart.bat",
+  "assets/cup-80s-shell.webp", "assets/cup-80s-cream.png", "assets/logo-480.webp",
   "READ-ME-FIRST.txt", "remote-update-SETUP.txt",
   "kiosk-lockdown/Setup-Appliance.ps1", "kiosk-lockdown/Uninstall-Appliance.ps1", "kiosk-lockdown/READ-ME-APPLIANCE.txt",
 ];

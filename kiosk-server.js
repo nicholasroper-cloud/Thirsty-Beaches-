@@ -319,14 +319,31 @@ async function createOrder(cart, custName, prizeCode) {
    Sends the camera frame to Claude vision; returns a matched drink + reason.
    No ANTHROPIC_API_KEY (or any failure) -> {ai:false}, kiosk falls back to its
    on-device picker. The photo is NOT stored anywhere. */
+// No key on the PC (the usual case): the website's /api/vibe does the AI call instead (same answer shape).
+const VIBE_URL = (process.env.VIBE_URL || "https://thirstybeaches.com/api/vibe").trim();
+async function vibeForward(image, candidates) {
+  if (!VIBE_URL || VIBE_URL === "off" || typeof image !== "string" || !image || image.length > 600000) return { ai: false };
+  const cands = (Array.isArray(candidates) ? candidates : []).slice(0, 160).map(c => ({
+    id: String((c && c.id) || "").slice(0, 48), name: String((c && c.name) || "").slice(0, 48), desc: String((c && c.desc) || "").slice(0, 120) }));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const r = await fetch(VIBE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image, candidates: cands }), signal: ctl.signal });
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d || d.ai !== true || typeof d.id !== "string") return { ai: false };
+    return { ai: true, id: d.id, nickname: String(d.nickname || "").slice(0, 28), reading: String(d.reading || "").slice(0, 60), why: String(d.why || "").slice(0, 140) };
+  } finally { clearTimeout(t); }
+}
 async function vibeMatch(image, candidates) {
   const KEY = process.env.ANTHROPIC_API_KEY;
-  if (!KEY || !image) return { ai: false };
+  if (!image) return { ai: false };
+  if (!KEY) return vibeForward(image, candidates);
   const model = CFG.VIBE_MODEL;
   const cands = (candidates || []).slice(0, 80);
   const ids = cands.map(c => c.id);
   const list = cands.map(c => `${c.id}: ${c.name} — ${c.desc}`).join("\n");
-  const prompt = `You are a fun, cheeky drink-matcher at "Thirsty Beaches," a beach drink trailer. Look at the person and pick the ONE drink whose vibe fits them best. Be playful and flattering. Do NOT describe their appearance, age, gender, or identity, and don't make assumptions about them — go on overall energy only. Menu (id: name — description):\n${list}\n\nReturn JSON: id (one menu id), reading (a 3-6 word vibe read like "Cool, calm, sun-chaser"), why (one short cheeky sentence on the match).`;
+  const prompt = `You are a fun, cheeky drink-matcher at "Thirsty Beaches," a beach drink trailer. Look at the person and pick the ONE drink whose vibe fits them best. Be playful and flattering. Do NOT describe their appearance, age, gender, or identity, and don't make assumptions about them — go on overall energy only. Menu (id: name — description):\n${list}\n\nReturn JSON: id (one menu id), nickname (a funny, family-friendly 2-4 word name for THEIR cup, max 28 characters, not the drink's real name, e.g. "The Sunburnt Optimist"), reading (a 3-6 word vibe read like "Cool, calm, sun-chaser"), why (one short cheeky sentence on the match).`;
   const body = {
     model, max_tokens: 220,
     messages: [{ role: "user", content: [
@@ -335,8 +352,8 @@ async function vibeMatch(image, candidates) {
     ]}],
     output_config: { format: { type: "json_schema", schema: {
       type: "object",
-      properties: { id: { type: "string", enum: ids }, reading: { type: "string" }, why: { type: "string" } },
-      required: ["id", "reading", "why"], additionalProperties: false,
+      properties: { id: { type: "string", enum: ids }, nickname: { type: "string" }, reading: { type: "string" }, why: { type: "string" } },
+      required: ["id", "nickname", "reading", "why"], additionalProperties: false,
     }}},
   };
   const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -349,7 +366,7 @@ async function vibeMatch(image, candidates) {
   if (data.stop_reason === "refusal") return { ai: false };
   const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
   const p = JSON.parse(txt);
-  return { ai: true, id: p.id, reading: p.reading, why: p.why };
+  return { ai: true, id: p.id, nickname: String(p.nickname || "").slice(0, 28), reading: p.reading, why: p.why };
 }
 
 /* ---- moderation seam (Lady Jaye's compliance policy) ---- */

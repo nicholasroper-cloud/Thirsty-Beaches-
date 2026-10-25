@@ -108,6 +108,7 @@ button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 .qty{font-family:var(--display);font-weight:700;font-size:1.3rem;background:var(--pane);border-radius:999px;padding:4px 14px;white-space:nowrap}
 .qty.many{background:var(--sun);color:#14292B}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
+.aka{font-weight:800;font-size:1.05rem;color:var(--now-ink,inherit);margin:2px 0 4px}
 .chip{font-size:.85rem;font-weight:700;border:1.5px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--mute)}
 .chip.hot{border-color:var(--now-line);color:var(--fg);background:var(--now)}
 .tag{display:inline-block;font-family:var(--display);font-weight:700;font-size:.72rem;letter-spacing:.08em;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:2px;color:#14292B;background:var(--sun)}
@@ -497,10 +498,10 @@ function renderPrep(cur){const others=queue.waiting.filter(x=>x.id!==cur.id);con
 function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];const ok=cards.filter(c=>c.classList.contains('ok')).length;
  $('#prog').innerHTML=cards.map(c=>`<span class="pip${c.classList.contains('ok')?' ok':''}"></span>`).join('')+`<span>${ok}/${cards.length}</span>`;
  $('#doneBtn').classList.toggle('ready',cards.length>0&&ok===cards.length);}
-function drinkCard(it,ix,ck){const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
+function drinkCard(it,ix,ck){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
  const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
   return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
- return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
+ return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
   ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
  return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}

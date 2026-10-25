@@ -468,7 +468,7 @@ scenarios.legacyonly = async () => {
   const L = logOf(p);
   const skipped = (L.match(/update: skipped (\S+)/g) || []).map(s => s.split(" ").pop()).sort();
   check(skipped.join() === "clover-menu-server.js,flex-pay.js", "only the two refused files skipped: " + skipped.join(","));
-  check(/applied v24 \(26 files\)/.test(L), "applied every other file (26 of " + m.files.length + ")");
+  check(new RegExp("applied v24 \\(" + (m.files.length - 2) + " files\\)").test(L), "applied every other file (" + (m.files.length - 2) + " of " + m.files.length + ")");
   check(await health(pc) === "legacy" && (await order(pc)).json.ok, "legacy keeps serving and taking orders");
   check(m.files.every(f => f.size >= 32), "every manifest file >= 32 bytes (legacy aborts on smaller)");
   await reboot(pc);

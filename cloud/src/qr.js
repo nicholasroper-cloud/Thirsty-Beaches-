@@ -110,7 +110,11 @@ export async function validateCart(env, body) {
   const out = [];
   let inv = null, invErr = null;
   for (const [i, raw] of body.lines.entries()) {
-    const line = { name: raw.name.trim(), unit: raw.unit, qty: raw.qty, mods: (raw.mods || []).map(m => m.trim()), catKey: raw.catKey || null };
+    const allMods = (raw.mods || []).map(m => m.trim());
+    // Match My Vibe: at most one "AKA <funny name>" mod rides along at $0; it is set aside for pricing.
+    const aka = allMods.filter(m => /^AKA /.test(m));
+    if (aka.length > 1 || (aka.length && !/^AKA [\p{L}\p{N} .'!&-]{1,28}$/u.test(aka[0]))) return { ok: false, status: 400, error: "bad-cart", line: i, detail: "bad nickname" };
+    const line = { name: raw.name.trim(), unit: raw.unit, qty: raw.qty, mods: allMods.filter(m => !/^AKA /.test(m)), catKey: raw.catKey || null };
     const cents = Math.round(line.unit * 100);
     let k;
     try { k = kioskCandidates(line, KIOSK_MENU); } catch { return { ok: false, status: 400, error: "bad-cart", line: i, detail: "too complex" }; }
@@ -129,7 +133,7 @@ export async function validateCart(env, body) {
       if (!inv && invErr && !k.found) return { ok: false, status: 503, error: "validate-unavailable", line: i };
       return { ok: false, status: 400, line: i, error: !found ? "unknown-item" : !anyTotals ? "unknown-modifier" : "price-mismatch" };
     }
-    out.push({ name: line.name, mods: line.mods, qty: line.qty, price });
+    out.push({ name: line.name, mods: aka.length ? [...line.mods, aka[0]] : line.mods, qty: line.qty, price });
   }
   return { ok: true, lines: out };
 }
