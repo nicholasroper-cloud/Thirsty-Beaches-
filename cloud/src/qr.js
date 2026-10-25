@@ -10,6 +10,7 @@
 import { KIOSK_MENU } from "./kiosk-menu.js";
 import { kioskCandidates, cloverCandidates, buildCloverBook, pickPrice } from "./pricebook.js";
 import { phonePage } from "./phone-page.js";
+import { onlineGate, onlineAfterPricing, trailerStatus } from "./order-ahead.js";
 
 const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";          // no 0/O/1/I/L
 const REF_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
@@ -151,19 +152,29 @@ async function createQr(req, env) {
   const raw = await req.text();
   if (raw.length > 32000) return jsonC(req, { error: "bad-cart", detail: "too large" }, 413);
   let body; try { body = JSON.parse(raw); } catch { return jsonC(req, { error: "bad json" }, 400); }
+  const site = stationOrigin(env);
+  const online = !!body && body.source === "online";                 // "Order ahead" (/order); kiosk carts carry no source
+  if (online) {
+    const g = await onlineGate(req, env, body, site);
+    if (g) return jsonC(req, g.body, g.status);
+    if (!cleanName(body.name)) return jsonC(req, { error: "name-required" }, 400);
+  }
   if (await rateLimited(env, req)) return jsonC(req, { error: "rate-limited" }, 429);
 
   const v = await validateCart(env, body);
   if (!v.ok) return jsonC(req, { error: v.error, line: v.line, detail: v.detail }, v.status);
+  if (online) {
+    const g = await onlineAfterPricing(env, v.lines, KIOSK_MENU);
+    if (g) return jsonC(req, g.body, g.status);
+  }
 
   const name = cleanName(body.name);
   const ref = makeRef();
   const created = Date.now();
   const lineItems = [];
   for (const l of v.lines) for (let q = 0; q < l.qty; q++) lineItems.push({ name: lineName(l), price: l.price, unitQty: 1 });   // one line per drink, like the local server
-  lineItems[0].note = `KQ-${ref} · ${name || "Kiosk"}`;
+  lineItems[0].note = online ? `KQ-${ref} · Online · ${name}` : `KQ-${ref} · ${name || "Kiosk"}`;
   const total = v.lines.reduce((a, l) => a + l.price * l.qty, 0);
-  const site = stationOrigin(env);
   const checkout = {
     customer: { firstName: name || "Kiosk" },
     shoppingCart: { lineItems },
@@ -191,7 +202,9 @@ async function createQr(req, env) {
   if (!isFinite(expires) || expires < created || expires > created + SESSION_MS + 60000) expires = created + SESSION_MS;
   const rec = { sid: data.checkoutSessionId, href: data.href, total, name, created, expires, status: "pending",
     lines: v.lines.map(l => ({ name: l.name, mods: l.mods, qty: l.qty, price: l.price })) };
+  if (online) { rec.source = "online"; rec.pickup = (await trailerStatus(env)).label || ""; }
   await env.STATE.put("qr:" + ref, JSON.stringify(rec), { expirationTtl: 86400 });
+  if (online) return jsonC(req, { ref, payUrl: `${site}/r/${ref}`, checkoutUrl: data.href, total, expires });   // the phone goes straight to Clover
   return jsonC(req, { ref, payUrl: `${site}/r/${ref}`, total, expires });
 }
 
@@ -261,6 +274,7 @@ function publicView(ref, s) {
   const items = r.lines.map(l => ({ name: l.name, mods: l.mods, qty: l.qty }));
   const v = { ref, status: s.status, ticket: (s.status === "paid" || s.status === "ready") ? r.ticket : null, total: r.total,
     name: r.name || "", items, created: r.created, expires: r.expires, readyAt: s.readyAt };
+  if (r.source === "online") { v.online = true; v.pickup = r.pickup || ""; }
   if (s.status === "pending") v.href = r.href;
   return v;
 }

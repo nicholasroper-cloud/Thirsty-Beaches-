@@ -5,8 +5,10 @@
    The Clover token lives only in the Worker's secrets. Every data route needs
    the STATION_KEY (as ?k=... or X-Key header) so the ticket feed isn't public.
    Exception, on purpose: the "Pay on my phone" routes in qr.js (/api/qr, /api/qr/<ref>, /r/<ref>)
-   are public; they only ever reveal one order to whoever holds its random 8-character ref. */
+   are public; they only ever reveal one order to whoever holds its random 8-character ref.
+   Also public: "Order ahead" (/order page, /api/order-ahead, /api/control; see order-ahead.js). */
 
+import { handleOrderAhead } from "./order-ahead.js";
 import { handleQr } from "./qr.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -72,6 +74,8 @@ function parseCustomer(o) {
   if (/kiosk order/i.test(note)) return { name: "", source: "Kiosk" };
   for (const li of (((o.lineItems || {}).elements) || [])) {              // "Pay on my phone" order (Clover Hosted Checkout)
     const q = String(li.note || "").match(/^KQ-[A-Z0-9]{8} · (.+)$/);
+    const online = q && q[1].match(/^Online · (.+)$/);                  // "Order ahead" from the customer's own phone
+    if (online) return { name: online[1].trim(), source: "Online" };
     if (q) return { name: q[1].trim() === "Kiosk" ? "" : q[1].trim(), source: "Kiosk" };
   }
   return { name: String(o.title || "").trim(), source: "Register" };
@@ -118,6 +122,10 @@ export default {
     if (p === "/health") {
       return json({ ok: true, cloud: true, version: env.PAGE_VERSION || "1", keyRequired: !!env.STATION_KEY });
     }
+    if (p === "/api/order-ahead" || p === "/api/control") {     // public: "Order ahead" switch + sold-out list (order-ahead.js)
+      const res = await handleOrderAhead(req, env, url);
+      if (res) return res;
+    }
     if (p === "/api/qr" || p.startsWith("/api/qr/") || p.startsWith("/r/")) {   // public: phone pay + tracker
       const res = await handleQr(req, env, url);
       if (res) return res;
@@ -154,6 +162,7 @@ export default {
     // everything else: the static pages + files in ./public
     let areq = req;
     if (p === "/board" || p === "/board/") areq = new Request(new URL("/board.html", req.url), req);
+    if (p === "/order" || p === "/order/") areq = new Request(new URL("/order.html", req.url), req);
     const res = await env.ASSETS.fetch(areq);
     if (res.status === 404) return text("Not found", 404);
     const h = new Headers(res.headers); h.set("cache-control", "no-cache");
