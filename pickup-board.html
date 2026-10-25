@@ -54,6 +54,14 @@ h2 svg{width:1em;height:1em;flex:none}
 .wait .code{font-size:4rem;line-height:1}
 .wait .who{font-size:2.2rem}
 .wait .who small{font-size:1.1rem}
+/* P3: "+N more" when a list is longer than the screen, and the newest ready order glows for its first minute */
+h2 .more{margin-left:auto;font-family:var(--mono);font-size:1.6rem;letter-spacing:.04em;padding:8px 18px;border-radius:999px;border:2px solid currentColor;text-shadow:none;white-space:nowrap}
+h2 .more[hidden]{display:none}
+.ready.newest{position:relative;background:#0f3a26;border-color:#7dffb5;border-width:5px;animation:glow 1.6s ease-in-out infinite}
+.ready.newest::before{content:"JUST READY";position:absolute;top:14px;right:24px;font-family:var(--mono);font-weight:500;font-size:1.3rem;letter-spacing:.14em;background:var(--green);color:#08011c;padding:4px 14px;border-radius:999px}
+@keyframes glow{0%,100%{box-shadow:0 0 24px rgba(59,224,138,.45)}50%{box-shadow:0 0 60px rgba(59,224,138,.9)}}
+@media (prefers-reduced-motion:reduce){.ready.newest{animation:none;box-shadow:0 0 40px rgba(59,224,138,.7)}}
+@media (max-width:900px){h2 .more{font-size:1rem;padding:4px 10px}.ready.newest::before{font-size:.8rem;top:8px;right:12px}}
 @media (max-width:900px){h2{font-size:2.2rem}.ready .code{font-size:4.5rem}.ready .who{font-size:2.2rem}.wait .code{font-size:2.6rem}.wait .who{font-size:1.5rem}}
 /* P2: on phones and small tablets the page scrolls instead of clipping the lists */
 @media (max-width:900px){html,body{height:auto}body{overflow-x:hidden;overflow-y:auto}.app{height:auto;min-height:100vh}.list{overflow:visible}#ready{height:auto;grid-template-rows:none!important;grid-auto-rows:auto}body::after{position:fixed}.ready{padding:12px 20px;gap:20px}.ready .who{font-size:1.7rem}.ready .who small{font-size:1rem}}
@@ -75,8 +83,8 @@ h2 svg{width:1em;height:1em;flex:none}
 <div class="app">
   <header><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches" onerror="this.remove()"><div class="t">Order Up<small>Stay thirsty, beaches</small></div><div class="sp"></div><div class="clock" id="clock"></div></header>
   <main>
-    <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it</h2><div class="list" id="ready"></div></section>
-    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works</h2><div class="list" id="wait"></div></section>
+    <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it<span class="more" id="moreReady" hidden></span></h2><div class="list" id="ready"></div></section>
+    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works<span class="more" id="moreWait" hidden></span></h2><div class="list" id="wait"></div></section>
   </main>
 </div>
 <div class="bar" id="bar" hidden></div>
@@ -112,7 +120,10 @@ function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesi
 async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
   const ready=q.ready.slice(0,READY_MAX),wait=q.waiting.slice(0,WAIT_MAX);
   $('#ready').style.gridTemplateRows=ready.length?'repeat('+Math.max(ready.length,3)+',minmax(0,1fr))':'';
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
+  const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
+  more('#moreReady',q.ready.length-ready.length,'ready');more('#moreWait',q.waiting.length-wait.length,'waiting');
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
   first=false;}
