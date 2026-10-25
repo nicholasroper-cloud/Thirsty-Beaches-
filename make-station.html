@@ -284,6 +284,10 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 .mhead .mlate{display:none;font-size:1.1rem;padding:6px 12px}
 .mhead.late .mlate{display:inline-flex}
 .mhead.late .code{color:var(--alert);text-shadow:0 0 12px rgba(255,107,107,.6)}
+/* M8: Undo is a real button, and Done / Undo say so when they could not be saved */
+.undo{min-height:48px;min-width:88px;padding:8px 16px;font-size:.95rem;border-color:#4a3480}
+.savemsg{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:45;max-width:min(720px,92vw);padding:14px 24px;border-radius:14px;background:var(--alert);color:#08011c;font-weight:800;font-size:1.1rem;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.savemsg[hidden]{display:none}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -324,6 +328,7 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
   </section>
 </div>
 <div class="bar" id="bar" hidden></div>
+<div class="savemsg" id="saveMsg" role="alert" hidden></div>
 <div class="ask" id="doneAsk" hidden role="dialog" aria-modal="true" aria-labelledby="doneAskT"><div class="box"><h3 id="doneAskT"></h3><p>Tick each item as you hand it over, or finish anyway.</p><div class="btns"><button class="keep">Keep making</button><button class="anyway">Done anyway</button></div></div></div>
 <div class="saver" id="saver" aria-hidden="true"><div class="grid"></div><div class="sun"></div><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches. Stay thirsty, beaches." onerror="this.remove()"><div class="time" id="saverTime"></div><div class="line">Stay thirsty, beaches</div><div class="made" id="saverMade"></div><div class="tap">Tap anywhere, or a new ticket wakes it</div></div>
 <script>
@@ -457,7 +462,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
   <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>
   <button class="morebelow" id="moreBelow" hidden></button>`;
- const finish=()=>{post('/done',o.id);delete checks[o.id];};
+ const finish=async()=>{if(await post('/done',o.id))delete checks[o.id];};
  $('#doneBtn').onclick=()=>{const left=[...m.querySelectorAll('.items .card')].filter(c=>!c.classList.contains('ok')).length;
   if(!left){finish();return;}
   const a=$('#doneAsk');a.querySelector('h3').textContent=left+(left===1?' item':' items')+' not ticked. Done anyway?';a.hidden=false;
@@ -551,7 +556,11 @@ function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>clas
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 function lateDing(){try{if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=523;g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.7);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.7);}catch(e){}}
-async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
+async function post(p,id){let st=0;try{const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});st=r.status;if(!r.ok)throw 0;}
+ catch(e){const what=p==='/undo'?'Undo':'Done';const el=$('#saveMsg');
+  el.textContent=st===401?'Not saved: the access key is missing. Open the station from the ?k= link.':st?'Not saved (station error '+st+'). Tap '+what+' again.':'Not saved, offline. Tap '+what+' again when the Wi-Fi is back.';
+  el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>{el.hidden=true;},9000);await poll();return false;}
+ $('#saveMsg').hidden=true;await poll();return true;}
 /* M2: a wrong/missing access key (401, cloud edition) and a dropped connection get different messages */
 const KEY_MSG='Need the access key. Open the station from the link with ?k= on the end.';
 const NET_MSG='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';
