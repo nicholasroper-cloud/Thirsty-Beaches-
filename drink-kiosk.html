@@ -1250,7 +1250,7 @@ var TBQR=function(){var t=function(){var t=function(t,r){var e=t,n=g[r],o=null,i
 </script>
 <script>
 /* ============ MENU DATA ============ */
-const TAX = 0.0725; // edit to your local sales tax rate
+const TAX = 0.0725; // NOT charged: the kiosk server posts the menu prices as-is (cartTotals().tax is never used or shown)
 
 /* Where the kiosk gets its menu. This points at YOUR backend (clover-menu-server.js),
    NOT at Clover directly — the API token must never live in this file.
@@ -2724,10 +2724,11 @@ function openCart(){
       <div class="prizerow" id="prizeRow">${_prizeCode
         ? `<span class="prize-ok">🎮 Free upsize unlocked · ${_prizeCode}</span><button class="linkbtn" onclick="clearPrize()">Remove</button>`
         : `<button class="linkbtn prizebtn" onclick="askPrize()">🎮 Have a Thirsty Maze code?</button>`}</div>
+      <!-- One total: it is exactly what the window / card reader / phone-pay charges. The kiosk server sends the
+           line prices as-is and adds no tax (TAX above is not applied anywhere); if tax is ever added at the
+           register, bring back a Subtotal + Tax breakdown here. -->
       <div class="totals">
-        <div class="row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
         <div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>
-        <div class="row"><span></span><span style="font-size:.6em;opacity:.65">+ tax added at checkout</span></div>
       </div>
       <button class="linkbtn" onclick="clearCart()">Clear order</button>
     </div>
