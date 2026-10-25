@@ -2586,7 +2586,7 @@ function buildUpsellOffers(line) {
       id: "topper",
       name: "Add a Topper",
       desc: "Whipped cream or cold foam",
-      price: 0.75,
+      price: ((TOPPER.choices.find(c => c.name === "Whipped cream") || {d:0.50}).d),   // same price as the menu / Clover
       mod: "Whipped cream",
       icon: "topper",
     });
