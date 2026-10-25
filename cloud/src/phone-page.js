@@ -42,6 +42,8 @@ h1{font-family:var(--display);font-weight:400;font-size:1.9rem;line-height:1.1;l
  background:linear-gradient(110deg,#2E8BFF 0%,#FF3D97 54%,#FF8A2B 108%);box-shadow:0 14px 40px -12px rgba(255,61,151,.7);margin:16px 0 8px}
 .pay:active{transform:scale(.98)}
 .fine{font-family:var(--mono);font-size:.8rem;color:var(--mute);letter-spacing:.02em}
+.pickup{margin:12px 0 4px;padding:12px 14px;border-radius:16px;border:1.5px solid rgba(0,240,255,.45);background:rgba(0,240,255,.07);font-weight:700;font-size:1.05rem;line-height:1.35}
+.pickup small{display:block;font-family:var(--mono);font-weight:400;font-size:.72rem;letter-spacing:.14em;color:var(--accent);margin-bottom:3px}
 .ticket{display:inline-block;font-family:var(--display);font-size:3.4rem;line-height:1;letter-spacing:.06em;color:#fff;padding:14px 24px;border-radius:20px;border:2px solid var(--sun);
  background:var(--card);text-shadow:0 0 16px rgba(255,209,102,.7);margin:4px 0 6px}
 .ticket small{display:block;font-family:var(--mono);font-size:.75rem;letter-spacing:.16em;color:var(--mute);text-shadow:none;margin-bottom:6px}
@@ -86,10 +88,16 @@ function pick(list, key){
   lastPick[key] = i;
   return fillLine(list[i], S && S.name);
 }
+/* "Order ahead" orders (from /order): where to collect it. */
+function pickupHtml(){
+  if(!S || !S.online) return "";
+  const at = S.pickup ? " at " + esc(S.pickup) : "";
+  return '<div class="pickup" id="pickup"><small>ORDERED AHEAD</small>Pick up at the window' + at + '. We\u2019ll call your name.</div>';
+}
 function itemsHtml(){
   const rows = (S.items || []).map(it => '<div class="item"><span class="q">' + esc(it.qty) + '&times;</span><div><b>' + esc(it.name) + '</b>' +
     (it.mods && it.mods.length ? '<small>' + esc(it.mods.join(" · ")) + '</small>' : '') + '</div></div>').join("");
-  return '<div class="card">' + rows + '<div class="total"><span>Total</span><b>' + money(S.total) + '</b></div></div>';
+  return '<div class="card">' + rows + '<div class="total"><span>Total</span><b>' + money(S.total) + '</b></div></div>' + pickupHtml();
 }
 function render(){
   const st = !S ? "missing" : S.status;
