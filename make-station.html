@@ -270,6 +270,9 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 .cupb{width:78px;height:78px;gap:2px}.cupb b{font-size:2rem}.cupb small{font-size:.95rem;font-weight:800}
 /* M4: "Done, next ticket" (and Next drink): dark ink on a lighter pink, >=7:1, bigger */
 .big{background:linear-gradient(90deg,#ff6ab5,#ff9fd0);color:#08011c;text-shadow:none;font-size:1.3rem;min-height:76px;padding:12px 34px}
+/* M5: a quantity above 1 is a loud "MAKE 2" in the card header, not a small corner pill */
+.makeqty{display:flex;align-items:baseline;gap:12px;margin:-4px -6px 0 -4px;padding:8px 14px;border-radius:10px;background:var(--sun);color:#08011c;font-family:var(--display);font-size:1.6rem;letter-spacing:.04em;line-height:1.1;box-shadow:0 0 18px rgba(255,209,102,.4)}
+.makeqty small{font-family:var(--body);font-weight:800;font-size:.95rem;letter-spacing:0}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -470,7 +473,7 @@ function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];co
 function drinkCard(it,ix,ck){const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
  const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
   return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
- return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}"><div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div><span class="qty${it.qty>1?' many':''}">×${it.qty}</span></div>
+ return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2><div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
   ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
  return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}
