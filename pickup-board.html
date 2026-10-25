@@ -93,13 +93,13 @@ function buildVoiceSel(){const s=$('#voiceSel');if(!s)return;const vs=voices();c
 function setVoiceName(n){VOICE_NAME=n;try{localStorage.setItem('tb-voice-name',n);}catch(e){}}
 try{buildVoiceSel();speechSynthesis.onvoiceschanged=buildVoiceSel;}catch(e){}
 function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);voiceFor(u);speechSynthesis.speak(u);}catch(e){}}
-async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
+async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
   const ready=q.ready.slice(0,6),wait=q.waiting.slice(0,10);
   $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'Walk-up')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
   first=false;}
- catch(e){$('#bar').hidden=false;$('#bar').textContent='Board can’t reach the station. Check the Wi-Fi.';}}
+ catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?'Need the access key. Open the board from the link with ?k= on the end.':'Board can’t reach the station. Check the Wi-Fi.';}}
 function tick(){$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
 $('#clock').onclick=()=>{try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}catch(e){}};$('#clock').title='Tap for full screen';$('#clock').style.cursor='pointer';
 tick();poll();setInterval(poll,4000);setInterval(tick,15000);

@@ -526,7 +526,10 @@ function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>clas
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 async function post(p,id){try{await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});}catch(e){}await poll();}
-async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r.ok)throw new Error(r.status);queue=await r.json();
+/* M2: a wrong/missing access key (401, cloud edition) and a dropped connection get different messages */
+const KEY_MSG='Need the access key. Open the station from the link with ?k= on the end.';
+const NET_MSG='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';
+async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw new Error(r.status);queue=await r.json();
   $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
   if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
@@ -536,7 +539,7 @@ async function poll(){try{const r=await fetch('/queue',{cache:'no-store'});if(!r
   if(fresh){hideSaver();ding();setTimeout(()=>announce(freshOnes),400);if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
   else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
- catch(e){$('#bar').hidden=false;$('#bar').textContent='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';}}
+ catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?KEY_MSG:st?'Station server error ('+st+'). Showing the last tickets received.':NET_MSG;}}
 /* ---- full screen ---- */
 $('#fsBtn').onclick=()=>{try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}catch(e){}};
 /* ---- screensaver: after SAVER_MIN idle minutes with nothing waiting; any touch or a new ticket wakes it ---- */

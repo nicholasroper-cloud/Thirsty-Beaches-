@@ -23,9 +23,9 @@ function page(src, dst) {
   const i = h.lastIndexOf("<script>");                                              // the page's main script is the last one
   h = h.slice(0, i) + keyShim + "\n" + h.slice(i);
   if (!h.includes("tb-key")) throw new Error("key shim not inserted into " + src);
-  // 401 (missing key) -> clear message instead of "server not reachable"
-  h = h.replace("Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?", "Need the access key. Open the station from the link with ?k= on the end.");
-  h = h.replace("Board can’t reach the station. Check the Wi-Fi.", "Need the access key. Open the board from the link with ?k= on the end.");
+  // The pages themselves show "Need the access key" only on a 401. A dropped connection keeps its own message;
+  // in the cloud there is no kiosk PC, so reword that one for the station.
+  h = h.replace("Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?", "Can’t reach the station online. Check the Wi-Fi or mobile data.");
   fs.writeFileSync(path.join(pub, dst), h);
 }
 page("make-station.html", "index.html");
