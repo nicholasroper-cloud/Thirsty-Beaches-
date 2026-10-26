@@ -1037,6 +1037,14 @@
   #confirm .ordernum b{text-shadow:0 0 18px rgba(255,209,102,.6);}
   #confirm .check{background:var(--grad-cool);color:#08011c;box-shadow:var(--glow-cool);}
   #confirm .paywindow{background:#150b31;color:var(--ink);border:2px solid var(--magenta);}
+  /* Punch card QR after a phone-paid order (station GET /api/qr/<ref>/punch); hidden unless the station answers */
+  #confirm .punchqr{position:relative;z-index:3;display:flex;align-items:center;gap:18px;margin:16px auto 0;padding:12px 22px 12px 12px;max-width:520px;
+    border-radius:20px;background:#150b31;border:2px solid var(--cyan);box-shadow:var(--glow-cool);text-align:left;}
+  #confirm .punchqr[hidden]{display:none;}
+  #confirm .punchqr .pq-code{flex:none;width:132px;height:132px;border-radius:12px;overflow:hidden;background:#fff;}
+  #confirm .punchqr .pq-code svg{display:block;width:100%;height:100%;}
+  #confirm .punchqr b{display:block;font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-synthesis:none;font-size:28px;line-height:1.1;color:var(--cyan);}
+  #confirm .punchqr span{display:block;font-size:22px;line-height:1.35;color:var(--ink-soft);margin-top:6px;}
   .spintide h3,.dotd h4,.dotd .nm,#confirm .tidelist h3,#confirm .tl-num,.upsell-hd h3,.upsell-card .uc-name{color:var(--ink);}
   .dotd{background:rgba(21,11,49,.8);border-color:var(--border);} .dotd .ct{color:var(--ink-soft);} .dotd .row:nth-child(2) .nm{color:var(--gold);}
   .wheelwrap .pointer{border-top-color:var(--cyan);} .wheelwrap .hub{background:#150b31;border-color:var(--cyan);color:var(--cyan);}
@@ -1156,6 +1164,7 @@
   <div id="orderForName" class="orderfor"></div>
   <div class="ordernum"><span>Your order number</span><b id="orderNum">42</b></div>
   <div class="paywindow">Head to the window to pay &amp; grab your order<span class="paychevrons"><i></i><i></i><i></i></span></div>
+  <div class="punchqr" id="punchQr" hidden></div>
   <div class="upsizenote" style="display:none">🎮 Thirsty Maze free upsize applied — tell the window which drink to size up.</div>
 
   <!-- Spin the Tide — one free spin per order -->
@@ -3194,6 +3203,7 @@ async function placeOrder(){
 function showConfirm(order, paid){
   const o = order || _payOrder;
   if(!o) return;
+  punchQrClear();
   $("#orderNum").textContent    = o.ticket || o.orderId.slice(-4).toUpperCase();
   $("#orderForName").textContent = o.name ? "Order for " + o.name : "";
   resetSpin();
@@ -3348,12 +3358,12 @@ function qrFooter(sub){
       </div>
     </div>`;
 }
-function qrSvg(text){
+function qrSvg(text, label){
   const q = TBQR(0, "M"); q.addData(text); q.make();
   const n = q.getModuleCount(), m = 4, size = n + m * 2;
   let d = "";
   for(let r=0; r<n; r++) for(let c=0; c<n; c++) if(q.isDark(r,c)) d += "M"+(c+m)+" "+(r+m)+"h1v1h-1z";
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="QR code to pay on your phone"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="${label || "QR code to pay on your phone"}"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
 async function startQr(){
   if(_qr || orderInFlight || !cart.length || _prizeCode || !_orderName.trim()) return;
@@ -3445,6 +3455,7 @@ function qrBackToCart(msg){
   armIdle();
 }
 function qrPaid(ticket){
+  const ref = _qr && _qr.ref;
   qrStop();
   const who = _orderName.trim();
   // same wrap-up as a placed order (see placeOrder), then the shared confirm screen
@@ -3457,6 +3468,25 @@ function qrPaid(ticket){
   const banner = $("#confirm .paywindow");
   if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it turns green when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
   armIdle();
+  if(ref) punchQr(ref);
+}
+/* Punch card: a small QR for the station's one-time punch link ("Scan for your punch"). Never blocks or slows the
+   confirm screen: one quick fetch after it is up; any failure (punch off, offline, slow) simply shows nothing. */
+let _punchSeq = 0;
+function punchQrClear(){ _punchSeq++; const el = $("#punchQr"); if(el){ el.hidden = true; el.innerHTML = ""; } }
+async function punchQr(ref){
+  const seq = ++_punchSeq;
+  let d = null;
+  try{ const r = await qrFetch(QR_API + "/" + encodeURIComponent(ref) + "/punch", {}, 3500); if(r.ok) d = await r.json(); }catch(e){}
+  const el = $("#punchQr");
+  if(seq !== _punchSeq || !el || !$("#confirm").classList.contains("show")) return;     // the kiosk moved on meanwhile
+  if(!d || typeof d.url !== "string" || d.url.indexOf("https://thirstybeaches.com/card?claim=") !== 0) return;
+  const n = Math.max(1, Math.min(5, d.drinks | 0));
+  try{
+    el.innerHTML = '<div class="pq-code">' + qrSvg(d.url, "QR code to add your punch card punches") + '</div>' +
+      '<div><b>Scan for your punch</b><span>+' + n + (n === 1 ? ' punch' : ' punches') + ' on your Thirsty Beaches card. 10 punches = a free drink.</span></div>';
+    el.hidden = false;
+  }catch(e){ el.hidden = true; el.innerHTML = ""; }
 }
 function resetAll(){
   clearTimeout(idleTimer);
@@ -3470,7 +3500,7 @@ function resetAll(){
   qrStop(); _qrSkip=false;                                 // clear any phone-pay (QR) screen
   activeCat=Object.keys(MENU)[0];
   closeSheet();
-  $("#confirm").classList.remove("show");
+  $("#confirm").classList.remove("show"); punchQrClear();
   const tp=$("#tlPitch"), tf=$("#tlForm"), td=$("#tlDone");  // reset Tide List back to its pitch
   if(tp) tp.style.display="flex"; if(tf) tf.style.display="none"; if(td) td.style.display="none";
   renderLeaderboard();                                    // refresh Today's Top Sips

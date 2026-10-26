@@ -80,6 +80,14 @@ async function putDone(env, done) {
   await env.STATE.put("done", JSON.stringify(done));
 }
 
+/* CORS for GET /api/report: only the owner app's origin; the STATION_KEY (X-Key header or ?k=) is still required. */
+const OWNER_ORIGINS = new Set(["https://nicholasroper-cloud.github.io"]);
+function reportCors(req) {
+  const o = req.headers.get("origin") || "";
+  if (!OWNER_ORIGINS.has(o)) return { vary: "Origin" };
+  return { "access-control-allow-origin": o, "access-control-allow-methods": "GET, OPTIONS", "access-control-allow-headers": "X-Key, Content-Type",
+    "access-control-max-age": "600", vary: "Origin" };
+}
 function authorized(req, env) {
   if (!env.STATION_KEY) return true;                        // no key configured = open (not recommended)
   const url = new URL(req.url);
@@ -104,8 +112,13 @@ export default {
       if (res) return res;
     }
     if (p === "/api/report") {                                  // owner: daily sales numbers (report.js)
-      if (!authorized(req, env)) return json({ error: "key required" }, 401);
-      return handleReport(req, env, url);
+      // The owner app (GitHub Pages) reads this from the browser with the key in the X-Key header.
+      const ownerCors = OWNER_ORIGINS.has(req.headers.get("origin") || "");
+      if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: reportCors(req) });
+      const res = !authorized(req, env) ? json({ error: "key required" }, 401) : await handleReport(req, env, url);
+      if (!ownerCors) return res;
+      const h = new Headers(res.headers); for (const [k, v] of Object.entries(reportCors(req))) h.set(k, v);
+      return new Response(res.body, { status: res.status, headers: h });
     }
     if (p === "/api/monitor") {                                 // owner: site monitoring state (monitor.js)
       if (!authorized(req, env)) return json({ error: "key required" }, 401);

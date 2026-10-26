@@ -8,7 +8,7 @@
                               same kiosk-control.json the trailer kiosk uses (nothing else from it)
      onlineGate()          -> the extra checks qr.js runs for a cart with source:"online"
 
-   Off until Nick sets the ORDER_AHEAD variable to "true" (see OPS.md). Needs CLOVER_ECOMM_TOKEN or RELAY_KEY too.
+   On when ORDER_AHEAD is "true" (set in wrangler.toml [vars], see OPS.md). Needs CLOVER_ECOMM_TOKEN or RELAY_KEY too.
    Orders are only taken while the trailer is live: tb-where /where says open:true (cached 60 s).
    Kiosk carts (no source) never come through here.                                              */
 import { norm } from "./pricebook.js";

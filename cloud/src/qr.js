@@ -2,6 +2,7 @@
      GET  /api/qr          -> {enabled:true} or 503 {error:'qr-off'}   (the kiosk's "show the QR choice?" probe)
      POST /api/qr          -> checks the cart, creates a Clover Hosted Checkout, returns {ref, payUrl, total, expires}
      GET  /api/qr/<ref>    -> {status:'pending'|'paid'|'ready'|'expired', ticket, total, ...}
+     GET  /api/qr/<ref>/punch -> {url, drinks}: punch-card link for a paid order (punch.js; 503 punch-off without PUNCH_KEY)
      GET  /r/<ref>         -> the customer's phone page (pay button + "your drink is ready" tracker)
    Payment is detected by polling Clover REST orders for a line item whose note carries KQ-<ref>
    (the merchant's one checkout webhook belongs to Salty Dog Tags). Money is only ever charged
@@ -13,6 +14,7 @@ import { kioskCandidates, cloverCandidates, buildCloverBook, pickPrice } from ".
 import { phonePage } from "./phone-page.js";
 import { onlineGate, onlineAfterPricing, trailerStatus } from "./order-ahead.js";
 import { checkoutConfigured, checkoutViaRelay, relayPost, RELAY_LIMITS } from "./relay.js";
+import { punchFor, punchOn } from "./punch.js";
 
 const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";          // no 0/O/1/I/L
 const REF_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
@@ -302,6 +304,13 @@ export async function handleQr(req, env, url) {
   }
   if (p.startsWith("/api/qr/")) {
     if (req.method !== "GET") return jsonC(req, { error: "method" }, 405);
+    if (p.endsWith("/punch")) {                                      // punch-card link for a paid order (punch.js)
+      const ref = p.slice(8, -6);
+      if (!punchOn(env)) return jsonC(req, { error: "punch-off" }, 503);
+      const s = REF_RE.test(ref) ? await qrStatus(env, ref) : null;
+      const r = await punchFor(env, ref, s);
+      return jsonC(req, r.body, r.status);
+    }
     const ref = p.slice(8);
     if (!REF_RE.test(ref)) return jsonC(req, { error: "not-found" }, 404);
     const s = await qrStatus(env, ref);
@@ -311,7 +320,7 @@ export async function handleQr(req, env, url) {
   if (p.startsWith("/r/")) {
     const ref = p.slice(3).replace(/\/$/, "");
     const s = REF_RE.test(ref) ? await qrStatus(env, ref) : null;
-    const html = phonePage(s ? publicView(ref, s) : null, { reviewUrl: env.REVIEW_URL });
+    const html = phonePage(s ? publicView(ref, s) : null, { reviewUrl: env.REVIEW_URL, punch: punchOn(env) });
     return new Response(html, { status: s ? 200 : 404, headers: {
       "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer",
       "x-content-type-options": "nosniff",

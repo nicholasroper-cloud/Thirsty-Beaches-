@@ -10,12 +10,12 @@
 <style>
 /* Customer-facing pickup board. Any TV, tablet or phone on the trailer Wi-Fi: http://<pc>:8140/board
    Left: ORDER UP (ready in the last 30 min). Right: in the works. Brand: thirstybeaches.com synthwave. */
-:root{color-scheme:dark;--bg:#08011c;--card:#150b31;--fg:#fff6e8;--mute:#a996cf;--line:#2c1b52;--accent:#00f0ff;--pink:#ff2d95;--sun:#ffd166;--green:#3be08a;
+:root{color-scheme:dark;--bg:#09010F;--card:#1B0538;--fg:#FFF4FA;--mute:#CBBEE6;--line:rgba(42,245,228,.28);--accent:#2AF5E4;--pink:#FF3CAC;--sun:#FFD166;--green:#3be08a;
 --display:'Bungee',system-ui,sans-serif;--body:'Archivo',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
-*{box-sizing:border-box}html,body{height:100%;margin:0}
-body{background:radial-gradient(1400px 700px at 50% -260px,#3a1261 0%,#1a0838 45%,var(--bg) 80%) fixed,var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden;position:relative}
+*{box-sizing:border-box}html,body{height:100%;margin:0}html{overflow-x:hidden}body{font-synthesis:none}
+body{background:radial-gradient(1400px 700px at 50% -260px,#3a1261 0%,#1B0538 45%,var(--bg) 80%) fixed,var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden;position:relative}
 body::after{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:34%;pointer-events:none;opacity:.5;z-index:0;
- background:repeating-linear-gradient(90deg,rgba(255,45,149,.35) 0 2px,transparent 2px 120px),repeating-linear-gradient(0deg,rgba(0,240,255,.28) 0 2px,transparent 2px 60px);
+ background:repeating-linear-gradient(90deg,rgba(255,60,172,.35) 0 2px,transparent 2px 120px),repeating-linear-gradient(0deg,rgba(42,245,228,.28) 0 2px,transparent 2px 60px);
  transform:perspective(700px) rotateX(58deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(to top,#000 20%,transparent);mask-image:linear-gradient(to top,#000 20%,transparent)}
 .app{position:relative;z-index:1;height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);padding:24px 36px;gap:18px}
 header{display:flex;align-items:center;gap:20px}
@@ -80,14 +80,33 @@ h2 .more[hidden]{display:none}
  header .clock{grid-column:2;font-size:1.25rem;white-space:nowrap}
  main{gap:16px}
 }
+/* T1 (tie-up): website look tokens, readable labels, the "+N more" pill moved under its list (it squeezed
+   "In the works" onto two lines), and the Match My Vibe nickname next to the name ("Sam" + “The Orange Crush Captain”). */
+header img{filter:drop-shadow(0 0 18px rgba(255,60,172,.45))}
+header .t{font-size:1.9rem}
+header .t small{font-size:1.1rem;letter-spacing:.1em;color:var(--mute)}
+.clock{font-size:2.2rem;color:var(--accent);text-shadow:0 0 12px rgba(42,245,228,.6)}
+section{grid-template-rows:auto minmax(0,1fr) auto}
+h2{white-space:nowrap}
+.more{justify-self:start;font-family:var(--mono);font-weight:500;font-size:1.6rem;letter-spacing:.02em;padding:6px 20px;border-radius:999px;border:2px solid currentColor;background:rgba(9,1,15,.7)}
+.more[hidden]{display:none}
+.more.up{color:var(--green)}.more.wk{color:var(--sun)}
+.ready{background:var(--card)}
+.ready .who .aka,.wait .who .aka{display:block;font-family:var(--body);font-weight:700;color:var(--sun);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 14px rgba(255,209,102,.35)}
+.ready .who .aka{font-size:2.3rem;margin-top:6px;line-height:1.1}
+.wait .who .aka{font-size:1.5rem;margin-top:2px;line-height:1.15}
+.wait{background:rgba(27,5,56,.78)}
+
+.empty{font-size:1.6rem;color:var(--mute);letter-spacing:.02em}
+@media (max-width:900px){header .t{font-size:1.3rem}header .t small{font-size:.85rem}.clock{font-size:1.4rem}.more{font-size:1rem}.ready .who .aka{font-size:1.2rem}.wait .who .aka{font-size:1.05rem}.empty{font-size:1.1rem}}
 </style>
 </head>
 <body>
 <div class="app">
   <header><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches" onerror="this.remove()"><div class="t">Order Up<small>Stay thirsty, beaches</small></div><div class="sp"></div><div class="clock" id="clock"></div></header>
   <main>
-    <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it<span class="more" id="moreReady" hidden></span></h2><div class="list" id="ready"></div></section>
-    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works<span class="more" id="moreWait" hidden></span></h2><div class="list" id="wait"></div></section>
+    <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it</h2><div class="list" id="ready"></div><div class="more up" id="moreReady" hidden></div></section>
+    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works</h2><div class="list" id="wait"></div><div class="more wk" id="moreWait" hidden></div></section>
   </main>
 </div>
 <div class="bar" id="bar" hidden></div>
@@ -101,6 +120,9 @@ const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/
 let seenReady=new Set(),first=true;
 const READY_MAX=5,WAIT_MAX=7;   // what fits on a 1080p TV at the P1 sizes
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
+/* Match My Vibe's funny name rides on a line as an "AKA <name>" mod; show it with the customer's name, never as a raw mod */
+const akaOf=o=>{for(const x of o.items||[]){const m=(x.mods||[]).find(m=>/^AKA /.test(m));if(m)return m.slice(4);}return'';};
+const akaHtml=o=>{const a=akaOf(o);return a?`<span class="aka">“${esc(a)}”</span>`:'';};
 /* Voice personas. "Seasonal" = Pumpkin King in October, Santa in December, Barry the rest of the year.
    Web Speech can't do impressions, so each persona = deepest male voice on the device + its own pitch, pace and lines. Saved in localStorage tb-voice-name. */
 const VOICE_DEEP=['Daniel','Google UK English Male','Microsoft Ryan','Microsoft Guy','Microsoft Davis','Microsoft David','Microsoft Mark','Alex','Fred','Aaron','Arthur','Rishi','Reed'];
@@ -126,8 +148,8 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
   const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
   more('#moreReady',q.ready.length-ready.length,'ready');more('#moreWait',q.waiting.length-wait.length,'waiting');
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
-  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}${akaOf(o)?akaHtml(o):`<small>${esc(summary(o))}</small>`}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}${akaHtml(o)}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
   first=false;}
  catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?'Need the access key. Open the board from the link with ?k= on the end.':'Board can’t reach the station. Check the Wi-Fi.';}}

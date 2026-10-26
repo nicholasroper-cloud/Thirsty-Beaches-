@@ -48,10 +48,22 @@
     try{ var d = JSON.parse(store(LAST_KEY) || "null"); if(d && /^[A-Z0-9]{8}$/.test(d.ref) && Date.now() - d.at < 4 * 3600000) return d; }catch(e){}
     return null;
   }
+  /* Why checkout is closed, in one place (banner, cart, name step). A failed check is not "off". */
+  var RETRY = '<button class="oa-retry" type="button" onclick="oaRetry()">Try again</button>';
+  function closedWhy(){
+    if(OA.failed) return '<b>Can’t reach us right now, try again.</b> Your order stays on this page.<br>' + RETRY;
+    if(!OA.enabled) return '<b>Ordering ahead is off right now.</b> Order at the window and we’ll make it just the same.';
+    return '<b>We’re not pouring right now.</b> Checkout opens the moment the trailer is live. <a href="' + SIGNUP_URL + '">Get a text when we roll up</a>.';
+  }
+  window.oaRetry = function(){
+    document.querySelectorAll(".oa-retry").forEach(function(b){ b.disabled = true; b.textContent = "Checking…"; });
+    oaProbe();
+  };
   function renderBanner(){
     var last = lastOrder(), html = "", cls = "oa-banner";
     if(last) html += '<a class="oa-track" href="/r/' + last.ref + '">Track your last order &rarr;</a>';
     if(!OA.known){ /* first check still running */ }
+    else if(OA.failed){ cls += " off"; html += '<p><b>Can’t reach us right now, try again.</b> The menu still works.</p>' + RETRY; }
     else if(!OA.enabled){ cls += " off"; html += '<p><b>Ordering ahead is off right now.</b> Have a look at the menu and order at the window.</p>'; }
     else if(!OA.open){ cls += " off"; html += '<p><b>We’re not pouring right now.</b> Browse the menu, and <a href="' + SIGNUP_URL + '">get a text when we roll up</a>.</p>'; }
     else html += '<p class="oa-open"><span class="oa-dot"></span>Open' + (OA.label ? ' at ' + esc(OA.label) : ' now') + ' &middot; order here, pick up at the window</p>';
@@ -65,7 +77,7 @@
   async function oaProbe(){
     if(probing) return probing;
     probing = (async function(){
-      var before = canOrder() + "|" + OA.label + "|" + OA.enabled + "|" + OA.known;
+      var before = canOrder() + "|" + OA.label + "|" + OA.enabled + "|" + OA.known + "|" + OA.failed;
       try{
         var r = await qrFetch(OA_API, {}, 8000);
         var d = await r.json();
@@ -76,8 +88,9 @@
       }catch(e){ OA.enabled = OA.enabled && OA.known; OA.open = false; OA.failed = true; }
       OA.known = true;
       renderBanner();
-      var after = canOrder() + "|" + OA.label + "|" + OA.enabled + "|" + OA.known;
-      if(before !== after && isNamePadOpen()) renderNamePad();
+      var after = canOrder() + "|" + OA.label + "|" + OA.enabled + "|" + OA.known + "|" + OA.failed;
+      if(isNamePadOpen()){ if(before !== after || !canOrder()) renderNamePad(); }
+      else if(isCartOpen() && (before !== after || !canOrder())) window.openCart();
     })();
     try{ await probing; } finally { probing = null; }
   }
@@ -95,10 +108,7 @@
     if(!OA.known){
       foot = '<div class="sheet-ft"><button class="linkbtn" onclick="openCart()">Back</button><button class="btn-primary disabled" id="placeBtn">Checking if we’re open…</button></div>';
     } else if(!canOrder()){
-      var why = !OA.enabled
-        ? '<b>Ordering ahead is off right now.</b> Order at the window and we’ll make it just the same.'
-        : '<b>We’re not pouring right now.</b> Checkout opens the moment the trailer is live. <a href="' + SIGNUP_URL + '">Get a text when we roll up</a>.';
-      foot = '<div class="oa-closed" id="oaClosed"><p>' + why + '</p></div><div class="sheet-ft"><button class="linkbtn" onclick="openCart()">Back</button>' +
+      foot = '<div class="oa-closed" id="oaClosed"><p>' + closedWhy() + '</p></div><div class="sheet-ft"><button class="linkbtn" onclick="openCart()">Back</button>' +
         '<button class="btn-primary disabled" id="placeBtn" aria-disabled="true">Checkout is closed</button></div>';
     } else if(n > OA.maxItems){
       foot = '<div class="oa-closed"><p><b>Online orders are up to ' + OA.maxItems + ' items.</b> Take a few out, and order the rest at the window.</p></div>' +
@@ -128,7 +138,24 @@
     inp.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); inp.blur(); } });
     window.refreshName();
   };
-  window.askName = function(){ renderNamePad(); $("#overlay").classList.add("show"); };
+  window.askName = function(){
+    if(OA.known && !canOrder()){ window.openCart(); return; }      // closed: stay on the cart, which says why
+    renderNamePad(); $("#overlay").classList.add("show");
+  };
+  /* Cart: while checkout is closed (or the check failed), "Next: add your name" becomes the reason, before any name step. */
+  var kioskOpenCart = window.openCart;
+  function isCartOpen(){ return document.getElementById("overlay").classList.contains("show") && !!document.querySelector('#sheet [data-oa-cart], #sheet button[onclick^="askName"]'); }
+  window.openCart = function(){
+    var r = kioskOpenCart.apply(this, arguments);
+    var next = document.querySelector('#sheet .sheet-ft button[onclick^="askName"]');
+    if(next && OA.known && !canOrder()){
+      var ft = next.closest(".sheet-ft");
+      ft.classList.add("gated"); ft.setAttribute("data-oa-cart", "1");
+      ft.innerHTML = '<div class="oa-closed cartgate" id="oaCartClosed"><p>' + closedWhy() + '</p></div>' +
+        '<div class="gate-row"><button class="btn-primary disabled" id="cartClosedBtn" aria-disabled="true">Checkout is closed</button></div>';
+    }
+    return r;
+  };
   window.refreshName = function(){
     var inp = $("#phName");
     if(inp && inp.value !== _orderName && document.activeElement !== inp) inp.value = _orderName;

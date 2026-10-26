@@ -13,8 +13,8 @@
    LOOKUP:  the Build Cards picker (search / category / cup) for walk-ups and training.
    Brand: Thirsty Beaches logo, sun-and-surf accents, category colors matched to the kiosk. Stacks on a phone. */
 /* Brand: thirstybeaches.com synthwave. Single dark theme by choice: the trailer screen matches the site, not the OS. */
-:root{color-scheme:dark;--bg:#08011c;--pane:#0d0526;--card:#150b31;--fg:#fff6e8;--mute:#a996cf;--line:#2c1b52;--accent:#00f0ff;--accent-ink:#08011c;
---pink:#ff2d95;--pink-deep:#c4177a;--now:#2a1e14;--now-line:#ffd166;--done:#0f2a22;--sun:#ffd166;--grab:#2a0c22;--grab-line:#ff3cac;--grab-ink:#ff9adf;--alert:#ff6b6b;--late:#2a0f1c;
+:root{color-scheme:dark;--bg:#09010F;--pane:#12032E;--card:#1B0538;--fg:#FFF4FA;--mute:#CBBEE6;--line:#3a2470;--accent:#2AF5E4;--accent-ink:#09010F;
+--pink:#FF3CAC;--pink-deep:#c4177a;--now:#2a1e14;--now-line:#ffd166;--done:#0f2a22;--sun:#ffd166;--grab:#2a0c22;--grab-line:#ff3cac;--grab-ink:#ff9adf;--alert:#ff6b6b;--late:#2a0f1c;
 --display:'Bungee','Fredoka',system-ui,sans-serif;--body:'Archivo',system-ui,-apple-system,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -291,6 +291,70 @@ ol li .what span{font-size:1rem;color:#cfc2ee;line-height:1.25;margin-top:2px}
 .undo{min-height:48px;min-width:88px;padding:8px 16px;font-size:.95rem;border-color:#4a3480}
 .savemsg{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:45;max-width:min(720px,92vw);padding:14px 24px;border-radius:14px;background:var(--alert);color:#08011c;font-weight:800;font-size:1.1rem;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)}
 .savemsg[hidden]{display:none}
+/* T1 (tie-up): the website look (void/cyan/magenta, dark ink on neon), labels >= 15px, and a 1280x800 tablet that
+   shows every drink on the ticket: a strip of the ticket's items under the header (tap one to jump to its card),
+   one-line "Coming up", a narrower queue, and the "N more below" button in the Up next bar instead of over the steps. */
+body{font-synthesis:none}
+.top img{filter:drop-shadow(0 0 14px rgba(255,60,172,.45))}
+.top .wordmark small{font-size:15px;letter-spacing:.04em;color:var(--mute)}
+.stat span{font-size:15px;letter-spacing:.04em;color:var(--mute)}
+.mode.fs,.mode.voice,.mode.vsel{font-size:15px;letter-spacing:.04em}
+.mode{color:var(--mute)}
+.mode[aria-pressed=true]{background:var(--pink);color:#09010F;box-shadow:0 0 18px rgba(255,60,172,.55)}
+.fchip[aria-pressed=true]{background:var(--pink);border-color:var(--pink);color:#09010F}
+.tk .sub{font-size:16px;color:#d9cff0}
+.tk .who{font-size:1.1rem}
+.onl{font-size:14px;padding:3px 8px;background:var(--accent)}
+.lateb{font-size:15px}
+.tk.new::after{font-size:14px;padding:2px 10px}
+.recent h3{font-size:15px;letter-spacing:.08em;color:var(--mute)}
+.rrow{font-size:16px}
+.rrow span{color:#d9cff0}
+.tag{font-size:14px}
+.chip .tag{font-size:14px}
+.upnext{font-size:16px;color:#d9cff0}
+.mhead .who small{font-size:16px;color:var(--mute)}
+.prep{font-size:15px;color:var(--mute);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.prep::-webkit-scrollbar{display:none}
+.prep .pc{white-space:nowrap;flex:none}
+.prep b{font-size:15px;flex:none}
+.prog{font-size:18px}
+.big{background:var(--grad,linear-gradient(110deg,#FF3CAC,#FF7A45));color:#09010F}
+.stats{font-size:16px;color:var(--mute)}
+.pick small{font-size:15px;color:#d9cff0}
+.lmake .sub{color:#d9cff0}
+.make{grid-template-rows:auto auto auto minmax(0,1fr) auto}
+/* ticket strip: every item on the ticket, always visible */
+.strip{display:flex;gap:8px;padding:8px 24px 6px;overflow-x:auto;scrollbar-width:none;align-items:stretch}
+.strip::-webkit-scrollbar{display:none}
+.strip:empty{padding:0}
+.sitem{flex:0 1 auto;min-width:0;max-width:300px;display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 14px 6px 6px;border-radius:14px;border:2px solid var(--line);border-left:8px solid var(--cat,var(--line));background:var(--card);color:var(--fg);text-align:left}
+.sitem .sb{flex:none;display:grid;place-items:center;min-width:38px;height:38px;padding:0 6px;border-radius:10px;background:var(--cat,#2a1658);color:#09010F;font-family:var(--display);font-size:1.05rem}
+.sitem .sn{min-width:0;font-weight:800;font-size:1.02rem;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sitem .sn small{display:block;font-weight:700;font-size:15px;color:var(--sun);overflow:hidden;text-overflow:ellipsis}
+.sitem .sq{flex:none;font-family:var(--display);font-size:1.1rem;color:var(--sun)}
+.sitem.ok{opacity:.6;border-color:#3be08a}
+.sitem.ok .sb{background:#3be08a}
+.sitem.ok .sb::after{content:"\2713";margin-left:2px}
+/* "N more below" lives in the Up next bar now, so it never covers a step */
+.upnext{justify-content:space-between}
+.upnext .un{display:flex;gap:12px;align-items:center;min-width:0;overflow:hidden}
+.upnext .morebelow{position:static;transform:none;flex:none;display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 18px;border-radius:999px;border:2px solid var(--sun);background:#2a1658;color:#fff;font-family:var(--display);font-size:1rem;letter-spacing:.03em;box-shadow:0 0 14px rgba(255,209,102,.3)}
+.upnext .morebelow[hidden]{display:none}
+.upnext .morebelow::before{content:"";width:10px;height:10px;border-right:3px solid var(--sun);border-bottom:3px solid var(--sun);transform:rotate(45deg) translateY(-3px)}
+.upnext{padding:6px 24px;min-height:60px}
+@media (max-width:1400px) and (min-width:1101px){
+  #tickets{grid-template-columns:310px minmax(0,1fr)}
+  .tk{grid-template-columns:auto minmax(0,1fr) auto;padding:10px 12px;gap:2px 10px}
+  .tk .code{font-size:1.45rem}
+  .items{grid-template-columns:repeat(auto-fill,minmax(400px,1fr));padding:12px 20px 16px}
+  .mhead{padding:10px 20px 8px;gap:14px}
+  .mhead .code{font-size:2.3rem}
+  .strip,.prep{padding-left:20px;padding-right:20px}
+  .chead .cup .ingw{display:none}
+  .top{gap:12px;padding:8px 14px}
+  .top .wordmark{display:none}
+}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
 </style>
 </head>
@@ -461,28 +525,28 @@ function renderQueue(){const w=queue.waiting;
   rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post('/undo',b.dataset.id));}
 function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
  if(!o){const t=queue.today||{};const fmt=s=>s?(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'–';const hr=t.busiestHour==null?'–':((t.busiestHour%12)||12)+(t.busiestHour<12?' am':' pm');
-  m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="items"><div class="blank">All caught up
+  m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="strip"></div><div class="items"><div class="blank">All caught up
    <div class="stats"><div><b>${t.made||0}</b>made today</div><div><b>${fmt(t.avgSec)}</b>avg ticket time</div><div><b>${hr}</b>busiest hour${t.busiestCount?' ('+t.busiestCount+')':''}</div>
    ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
  m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
+  <div class="strip" id="strip">${o.items.length>1?o.items.map((it,ix)=>stripItem(it,ix)).join(''):''}</div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
-  <div class="upnext">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div>
-  <button class="morebelow" id="moreBelow" hidden></button>`;
+  <div class="upnext"><div class="un">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div><button class="morebelow" id="moreBelow" hidden></button></div>`;
  const finish=async()=>{if(await post('/done',o.id))delete checks[o.id];};
  $('#doneBtn').onclick=()=>{const left=[...m.querySelectorAll('.items .card')].filter(c=>!c.classList.contains('ok')).length;
   if(!left){finish();return;}
   const a=$('#doneAsk');a.querySelector('h3').textContent=left+(left===1?' item':' items')+' not ticked. Done anyway?';a.hidden=false;
   a.querySelector('.keep').onclick=()=>{a.hidden=true;};a.querySelector('.anyway').onclick=()=>{a.hidden=true;finish();};};
- const its=m.querySelector('.items');its.onscroll=moreBelow;$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
+ const its=m.querySelector('.items');its.onscroll=moreBelow;
+ m.querySelectorAll('.sitem').forEach(b=>b.onclick=()=>{const c=its.querySelector('.card[data-k="'+b.dataset.k+'"]');if(c)its.scrollTo({top:c.offsetTop-its.offsetTop-8,behavior:'smooth'});});$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
  progress(o,ck);renderPrep(o);moreBelow();m.querySelector('.mhead').classList.toggle('late',queue.now-o.created>LATE_MS);}
 /* "N more below": counts cards whose top edge is under the visible part of the items list */
 function moreBelow(){const b=$('#moreBelow'),it=$('#make .items');if(!b||!it)return;
- const up=$('#make .upnext');if(up)b.style.bottom=(up.offsetHeight+12)+'px';
  if(it.scrollHeight-it.scrollTop-it.clientHeight<8){b.hidden=true;return;}
  const lim=it.getBoundingClientRect().bottom-24;const n=[...it.querySelectorAll('.card')].filter(c=>c.getBoundingClientRect().top>lim).length;
  b.textContent=n?n+(n===1?' more item below':' more items below'):'More below';b.hidden=false;}
@@ -496,12 +560,16 @@ function renderPrep(cur){const others=queue.waiting.filter(x=>x.id!==cur.id);con
  el.innerHTML=`<b>Coming up</b>`+top.map(([b,c])=>`<span class="pc"><em>${c}×</em>${dot(b)}${esc(b)}</span>`).join('')+
   Object.entries(same).map(([nm,c])=>`<span class="pc" style="border-color:var(--sun)"><em>+${c}</em>more ${esc(nm)} waiting, make together</span>`).join('');}
 function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];const ok=cards.filter(c=>c.classList.contains('ok')).length;
+ cards.forEach(c=>{const s=$('#make .sitem[data-k="'+c.dataset.k+'"]');if(s)s.classList.toggle('ok',c.classList.contains('ok'));});
  $('#prog').innerHTML=cards.map(c=>`<span class="pip${c.classList.contains('ok')?' ok':''}"></span>`).join('')+`<span>${ok}/${cards.length}</span>`;
  $('#doneBtn').classList.toggle('ready',cards.length>0&&ok===cards.length);}
+function stripItem(it,ix){const k=(it.kind==='grab'?'g':'d')+ix;const akaM=it.mods.find(m=>/^AKA /.test(m));const mods=it.mods.filter(m=>m!==akaM);
+ const c=catColor(it.category);const cb=it.kind==='grab'?{l:'G'}:cupBadge(mods.find(m=>classify(m)==='size'));
+ return`<button class="sitem" data-k="${k}" style="${c?`--cat:${c}`:''}"><span class="sb">${esc(cb.l)}</span><span class="sn">${esc(it.name)}${akaM?`<small>“${esc(akaM.slice(4))}”</small>`:''}</span>${it.qty>1?`<span class="sq">×${it.qty}</span>`:''}</button>`;}
 function drinkCard(it,ix,ck){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
  const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
   return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
- return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?' · '+ingList(p.ingredients):''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
+ return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?'<span class="ingw"> · '+ingList(p.ingredients)+'</span>':''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
   ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
  return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}

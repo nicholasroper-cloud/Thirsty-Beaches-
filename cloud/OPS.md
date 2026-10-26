@@ -157,18 +157,27 @@ these with "Phone/QR".
 The website (thirstybeaches.com, home page and menu) shows an **Order ahead** button only while
 it is switched on **and** the trailer is live.
 
-### It is OFF until you turn it on
+### It is ON, and follows the trailer
 
-| Setting | Type | What it does |
+`ORDER_AHEAD = "true"` is set in `cloud/wrangler.toml` (Nick said yes), so every deploy turns it on. It still only
+takes orders while the trailer is live (see "When it takes orders" below): open the trailer and ordering ahead
+opens; close it and checkout closes by itself. Nothing to do day to day.
+
+| Setting | Where | What it does |
 | --- | --- | --- |
-| `ORDER_AHEAD` | Text | `true` turns ordering ahead on. Unset (the default), `false` or `0` = off. |
+| `ORDER_AHEAD` | `cloud/wrangler.toml` `[vars]` | `true` = on (current). `false` or `0` = off. |
 
-Cloudflare dashboard → **Workers & Pages** → `thirsty-beaches-station` → **Settings** →
-**Variables and Secrets** → **Add** → Type **Text**, name `ORDER_AHEAD`, value `true` → **Deploy**.
-To turn it off again, set it to `false` (or delete it) and Deploy. Don't put it in `wrangler.toml`:
-a value there would overwrite the dashboard on every deploy.
+How it reaches the Worker: the **Deploy station** workflow (thirsty-beaches-website repo, Actions) runs
+`wrangler deploy` with this repo's `cloud/wrangler.toml`; every value in its `[vars]` is sent on every deploy and
+wins over a dashboard value of the same name (`keep_vars = true` only keeps dashboard variables that are *not* in
+the file). The workflow adds just `PAGE_VERSION` on top.
 
-Before you turn it on, check:
+- **Switch it off for good:** change it to `ORDER_AHEAD = "false"` in `cloud/wrangler.toml`, merge, run Deploy station.
+- **Emergency off without a deploy:** dashboard → `thirsty-beaches-station` → Variables → set `ORDER_AHEAD` to
+  `false` → Deploy. That lasts until the next Deploy station run puts `true` back. (Setting `QR_ENABLED` to `0`
+  instead switches off all phone payments, kiosk QR included, and survives deploys because it is not in the file.)
+
+Before the first busy day, check:
 
 1. **`CLOVER_ECOMM_TOKEN` or `RELAY_KEY` secret is set** (the Hosted Checkout key, or Salty Dog Tags'
    one through the relay; the same one "Pay on my phone" uses). Without either, ordering ahead stays off
@@ -187,6 +196,9 @@ pill green (tb-where `/where` says `open: true`, which goes stale after 90 minut
 update). The station checks it at most once a minute. When you close, the page says "We're not
 pouring right now" with a link to the text sign-up, the menu stays browsable, and checkout is closed.
 If the station can't reach tb-where, it treats the trailer as closed (no orders) until it can.
+If the customer's phone can't reach the station, the page says "Can't reach us right now, try again" (with a
+Try again button) instead of "ordering ahead is off". While checkout is closed the cart says why in place of
+"Next: add your name", so nobody types a name for an order that can't go through.
 
 ### Limits and safety (all optional Text variables)
 
@@ -211,3 +223,31 @@ If the station can't reach tb-where, it treats the trailer as closed (no orders)
 - `https://station.thirstybeaches.com/api/order-ahead` → `{"enabled":true,"open":true,"label":"…"}`
   when it is on and you're live.
 - The page: `https://station.thirstybeaches.com/order`.
+
+## Punch card from paid phone orders (PUNCH_KEY)
+
+Orders paid on the customer's phone (kiosk "Pay on my phone" and Order ahead) can add their punches to the
+customer's Thirsty Beaches punch card without staff:
+
+- the phone tracker (`/r/<ref>`) shows **Add my punch** once the order is paid (and when it's ready);
+- the kiosk's "You're in" screen shows a small **Scan for your punch** QR after a phone payment.
+
+Both open `https://thirstybeaches.com/card?claim=<token>`. The token is made only here, only for a paid order:
+`<ref>.<drinks>.<expiry ms>.<signature>`, signed with the `PUNCH_KEY` secret (HMAC-SHA256 of the first three parts,
+key = the secret string as stored, first 32 hex characters), good for 7 days. tb-where checks it and allows one
+claim per order. `drinks` counts drinks only (not Treats, the `GRAB_CATEGORIES` items), at most 5.
+Pay-at-window orders are unchanged: staff punch those.
+
+| Setting | Type | What it is |
+| --- | --- | --- |
+| `PUNCH_KEY` | Secret | Shared with tb-where. Set on both by the one-time **Set up punch key** workflow in the thirsty-beaches-website repo. Never type it anywhere. |
+
+Without `PUNCH_KEY` it is off: `GET /api/qr/<ref>/punch` answers 503 `punch-off`, and neither the tracker nor the
+kiosk shows anything. Check it: for a paid order, `https://station.thirstybeaches.com/api/qr/<ref>/punch` returns
+`{"url":"https://thirstybeaches.com/card?claim=…","drinks":N}` (404 unknown order, 409 not paid yet / no drinks).
+
+## Owner app: today's sales (CORS on /api/report)
+
+The owner app (https://nicholasroper-cloud.github.io) reads `GET /api/report` from the browser. It sends the
+`STATION_KEY` in the `X-Key` header; the Worker allows that origin (and only that one) for this route, with
+`OPTIONS` preflight. `?k=` links keep working. Without the right key it still answers 401.
