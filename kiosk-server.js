@@ -480,10 +480,25 @@ function validateDrink(ai) {
    AI_DESIGN_ENABLED=false (default) → immediate {ai:false}.
    Missing ANTHROPIC_API_KEY       → immediate {ai:false}.
 */
+// No key on the PC (the usual case): the website's /api/design makes the AI call; the answer still goes
+// through validateDrink() + moderation here, exactly like a local answer.
+const DESIGN_URL = (process.env.DESIGN_URL || "https://thirstybeaches.com/api/design").trim();
+const designOn = () => CFG.AI_DESIGN_ENABLED && (!!process.env.ANTHROPIC_API_KEY || (!!DESIGN_URL && DESIGN_URL !== "off"));
+async function designForward(moodChips, flavorChips) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const r = await fetch(DESIGN_URL, { method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
+      body: JSON.stringify({ mood: moodChips, flavors: flavorChips, cats: CAT_KEYS, bases: ALL_BASE_IDS, mods: ALL_MOD_IDS.filter(id => !BASE_ID_SET.has(id)) }) });
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d || d.ai !== true) return { ai: false };
+    const clean = validateDrink(d);
+    return clean ? { ai: true, ...clean } : { ai: false };
+  } finally { clearTimeout(t); }
+}
 async function designDrink(mood, flavors) {
-  if (!CFG.AI_DESIGN_ENABLED) return { ai: false };
+  if (!designOn() || !ALL_MOD_IDS.length) return { ai: false };
   const KEY = process.env.ANTHROPIC_API_KEY;
-  if (!KEY || !ALL_MOD_IDS.length) return { ai: false };
 
   // Input validation — chips are already bounded by the kiosk UI,
   // but re-enforce on the server: max 6 chips, max 24 chars each,
@@ -496,6 +511,7 @@ async function designDrink(mood, flavors) {
 
   const moodChips   = cleanChips(mood);
   const flavorChips = cleanChips(flavors);
+  if (!KEY) return designForward(moodChips, flavorChips);
 
   // Build the enum schema from the live palette — done per-request so a
   // server restart with a new addons.json picks up the new ids automatically.
@@ -1064,7 +1080,7 @@ const server = http.createServer(async (req, res) => {
   // Mirrors /payconfig: one-time read at page load so the "Design Your Own"
   // entry only appears when the feature is on. Safe default: returns {enabled:false}.
   if (req.method === "GET" && pathname === "/aiconfig")
-    return sendJSON(res, 200, { enabled: CFG.AI_DESIGN_ENABLED && !!process.env.ANTHROPIC_API_KEY });
+    return sendJSON(res, 200, { enabled: designOn() });
 
   // ---- POST /designdrink — customer "Design Your Own" AI drink (Feature A) ----
   // Input:  { mood:[string], flavors:[string] }  (chips only; no free text at launch)
