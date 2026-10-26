@@ -1,29 +1,29 @@
 {
-  "version": 28,
+  "version": 29,
   "files": [
     {
       "path": "drink-kiosk.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html?v=10dda566db18",
-      "sha256": "10dda566db187af9e87e2b42fe946470e3bf4c8c75bb9acdf460b59e790d95f1",
-      "size": 258922
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk.html?v=4453c4da43dc",
+      "sha256": "4453c4da43dcac649303e80b254fb8210195727738b40c726c06b5776be33a3f",
+      "size": 261213
     },
     {
       "path": "drink-kiosk-light.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html?v=10dda566db18",
-      "sha256": "10dda566db187af9e87e2b42fe946470e3bf4c8c75bb9acdf460b59e790d95f1",
-      "size": 258922
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/drink-kiosk-light.html?v=4453c4da43dc",
+      "sha256": "4453c4da43dcac649303e80b254fb8210195727738b40c726c06b5776be33a3f",
+      "size": 261213
     },
     {
       "path": "make-station.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html?v=60c5115a492a",
-      "sha256": "60c5115a492a435135190536985e946eab2f90ae28e044715765e3f1f9e3ba24",
-      "size": 70894
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html?v=057aa12ce2c6",
+      "sha256": "057aa12ce2c6041664045f0b8fdabca24a3ffd4ce00a55c380c9c968f6a3d958",
+      "size": 76157
     },
     {
       "path": "pickup-board.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html?v=74a553d3ee88",
-      "sha256": "74a553d3ee88bf5f3839c6bada6c49a224b1bb9ea0fcb3166f9cf1df0d08541c",
-      "size": 20013
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html?v=5d4a6c01ed27",
+      "sha256": "5d4a6c01ed27ceeada41787e6cd704458822ea2a06571a6fe0e7098bdffdc678",
+      "size": 21993
     },
     {
       "path": "recipes.json",
