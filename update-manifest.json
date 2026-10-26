@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -57,9 +57,9 @@
     },
     {
       "path": "kiosk-server.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-server.js?v=71f7105d8b7f",
-      "sha256": "71f7105d8b7fec5d608255bebd6856575e3950de588856fa18f9c03c183de6b3",
-      "size": 62936
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk-server.js?v=05a25fc5f594",
+      "sha256": "05a25fc5f59424b2c7c73fc6aeccd6f6cebdd8b9d0bb076468cee3f02db72c5f",
+      "size": 63981
     },
     {
       "path": "kiosk-lib.js",
@@ -195,8 +195,8 @@
     },
     {
       "path": "tb-bootstrap.json",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/tb-bootstrap.json?v=eb1865e6c625",
-      "sha256": "eb1865e6c62540578160062f8ca230e36d797d922f4d9923cce7e8e8f796d470",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/tb-bootstrap.json?v=202430037c4d",
+      "sha256": "202430037c4d63638ef36235c75041b403ba89ef579ded4a4e67177f3b531b7a",
       "size": 546
     },
     {
