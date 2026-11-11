@@ -117,6 +117,7 @@ Set-ItemProperty -Path $edge -Name "VideoCaptureAllowed"     -Value 1 -Type DWor
 $camUrls = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\VideoCaptureAllowedUrls"
 New-Item -Path $camUrls -Force | Out-Null
 Set-ItemProperty -Path $camUrls -Name "1" -Value "http://localhost:$Port" -Type String
+Set-ItemProperty -Path $edge -Name "AutoplayAllowed"         -Value 1 -Type DWord   # greeter can talk before the first tap
 OK "Edge first-run hidden; camera pre-allowed for http://localhost:$Port."
 
 # ============================================================

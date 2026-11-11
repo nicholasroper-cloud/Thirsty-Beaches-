@@ -3684,5 +3684,12 @@ setInterval(checkControl, 90000);           // re-check sold-out every 90s
 // loadMenu(); // re-enable when the Clover catalog holds the real dirty-soda menu
 if(location.hash.includes("menu")) start(); // deep-link straight to the menu (skips attract)
 </script>
+<!-- Kiosk greeter: the camera notices people near the trailer and the speakers say a funny line.
+     Only while the logo (attract) screen is showing; the camera is released as soon as someone starts.
+     Lines/characters: assets/greeter/greeter-lines.js. Switch off remotely: "greeter": {"enabled": false} in kiosk-control.json. -->
+<script>window.TB_GREETER = { tapToStart: false, controlUrl: "/control",
+  activeWhen: () => { const a = document.getElementById("attract"); return !!a && getComputedStyle(a).display !== "none"; } };</script>
+<script src="/assets/greeter/greeter-lines.js"></script>
+<script src="/assets/greeter/greeter.js"></script>
 </body>
 </html>

@@ -32,11 +32,12 @@ echo   Launching the kiosk display...
 REM --- Open Microsoft Edge fullscreen kiosk mode. ---
 REM   --use-fake-ui-for-media-stream auto-allows the camera (for "Match My Vibe")
 REM   using the REAL camera, with no permission popup.
+REM   --autoplay-policy=no-user-gesture-required lets the greeter talk before anyone taps.
 where msedge >nul 2>nul
 if %errorlevel%==0 (
-  start "" msedge --kiosk "http://localhost:8137/" --edge-kiosk-type=fullscreen --no-first-run --use-fake-ui-for-media-stream
+  start "" msedge --kiosk "http://localhost:8137/" --edge-kiosk-type=fullscreen --no-first-run --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required
 ) else (
-  start "" "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --kiosk "http://localhost:8137/" --edge-kiosk-type=fullscreen --no-first-run --use-fake-ui-for-media-stream
+  start "" "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --kiosk "http://localhost:8137/" --edge-kiosk-type=fullscreen --no-first-run --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required
 )
 
 REM Close this launcher window (the server keeps running, minimized).

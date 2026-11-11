@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thirsty Beaches — Greeter Demo</title>
+<style>
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 30%,#3a0a5e,#0b0220);color:#fff;font-family:system-ui,sans-serif;text-align:center}
+  h1{font-size:clamp(32px,6vw,80px);margin:0;background:linear-gradient(90deg,#ff2bd6,#00e5ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  p{opacity:.7}
+</style>
+</head>
+<body>
+  <div>
+    <h1>THIRSTY BEACHES</h1>
+    <p>Test page for the kiosk greeter (open it on a computer with a camera). Walk past the camera, then walk up to it.<br>Press <b>D</b> for debug, <b>T</b> to test a line, <b>V</b> for the next character, <b>M</b> to mute.</p>
+  </div>
+  <script src="greeter-lines.js"></script>
+  <script src="greeter.js"></script>
+</body>
+</html>
