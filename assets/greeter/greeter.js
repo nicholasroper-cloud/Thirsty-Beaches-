@@ -131,10 +131,11 @@
   function speakTTS(text, persona) {
     const u = new SpeechSynthesisUtterance(text);
     Object.assign(u, { volume: CFG.volume, rate: persona.rate, pitch: persona.pitch });
-    const v = voiceFor(persona); if (v) u.voice = v;
-    u.onstart = () => { S.speech = "ok"; };
+    const v = voiceFor(persona); if (v) u.voice = v; S.voiceName = v ? v.name.replace(/^Microsoft /, "").slice(0, 28) : "default";
+    u.onstart = () => { S.speech = "ok (talking)"; };
+    u.onend = () => { if (S.speech.startsWith("ok")) S.speech = "ok (finished)"; };
     u.onerror = e => { S.speech = e.error === "not-allowed" ? "BLOCKED - tap screen once" : "error: " + e.error; };
-    S.lastLine = text;
+    S.lastLine = text; S.speech = "queued, waiting for browser";
     speechSynthesis.speak(u);
   }
 
@@ -254,7 +255,7 @@
       maybeTalk();
 
     }
-    if (S.debug) dbgText.textContent = `GREETER v2  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}  speech ${S.speech}\nlast: ${S.lastLine.slice(0, 60)}\n` +
+    if (S.debug) dbgText.textContent = `GREETER v3  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
         `motion ${(S.motion * 100).toFixed(1)}%\nfaces  ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}%\n` +
         `on ${S.enabled}  active ${hostActive()}  cam ${!!S.stream}\nmuted ${S.muted}  quiet ${quiet()}\npaused ${Math.max(0, S.pausedUntil - Date.now()) / 1000 | 0}s\n` +
         `model ${S.detector ? "faces+motion" : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
