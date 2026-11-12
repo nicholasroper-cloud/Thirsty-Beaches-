@@ -19,14 +19,14 @@
 
   // ───────── SETTINGS ─────────
   const CFG = {
-    minGapMs: 18000,          // never talk more often than this
-    approachGapMs: 9000,      // a new face walking up can interrupt sooner
+    minGapMs: 12000,          // never talk more often than this
+    approachGapMs: 4000,      // a new face showing up can talk sooner
     motionThreshold: 0.035,   // fraction of pixels changed = "someone walked by"
-    approachFaceSize: 0.16,   // face width / frame width = "they're at the kiosk"
+    approachFaceSize: 0.05,   // face width / frame width = "someone is looking at the kiosk"
     lonelyAfterMs: 6 * 60000, // nobody around this long → occasional lonely line
     quietHours: null,         // e.g. [21, 9] = no talking 9pm–9am (PC clock). null = always on
     volume: 1.0,
-    pauseAfterTouchMs: 45000, // shut up while someone is ordering
+    pauseAfterTouchMs: 8000,  // quiet right after a tap (ordering itself is covered by activeWhen)
   };
 
   // ───────── CHARACTERS ─────────
@@ -174,7 +174,7 @@
     const now = Date.now();
     if (!S.armed || !S.enabled || quiet() || !hostActive() || now < S.pausedUntil || busy()) return;
     const since = now - S.lastSpoke;
-    const close = S.faceSize >= CFG.approachFaceSize;
+    const close = (S.faceStreak || 0) >= 2;
 
     if (close && !S.hadFace && since > CFG.approachGapMs) {          // someone just walked up
       S.hadFace = true;
@@ -251,11 +251,12 @@
         S.faces = r.length;
         S.faceSize = r.reduce((m, f) => Math.max(m, f.boundingBox.width / video.videoWidth), 0);
         if (S.faces) S.lastFaceSeen = Date.now();
+        S.faceStreak = S.faceSize >= CFG.approachFaceSize ? (S.faceStreak || 0) + 1 : 0;
       }
       maybeTalk();
 
     }
-    if (S.debug) dbgText.textContent = `GREETER v3  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
+    if (S.debug) dbgText.textContent = `GREETER v4  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
         `motion ${(S.motion * 100).toFixed(1)}%\nfaces  ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}%\n` +
         `on ${S.enabled}  active ${hostActive()}  cam ${!!S.stream}\nmuted ${S.muted}  quiet ${quiet()}\npaused ${Math.max(0, S.pausedUntil - Date.now()) / 1000 | 0}s\n` +
         `model ${S.detector ? "faces+motion" : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
@@ -282,7 +283,7 @@
   }
 
   function start() {
-    pollControl(); if (OPT.controlUrl) setInterval(pollControl, 120000);
+    pollControl(); if (OPT.controlUrl) setInterval(pollControl, 20000);
     loop();
   }
 
