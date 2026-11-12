@@ -1,5 +1,5 @@
 {
-  "version": 34,
+  "version": 35,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -201,9 +201,9 @@
     },
     {
       "path": "assets/greeter/greeter.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/greeter/greeter.js?v=dcc1a41883f9",
-      "sha256": "dcc1a41883f9bfadad8c65bf6cf48d2c22e84436e4e32fcf58ba91c6b2139178",
-      "size": 16556
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/assets/greeter/greeter.js?v=d38490f271e9",
+      "sha256": "d38490f271e9ed1f5b21ec3a0ee2b66e1b3181c7ea0caee8b822a019d5d27a0e",
+      "size": 18820
     },
     {
       "path": "tb-bootstrap.json",

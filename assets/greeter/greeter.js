@@ -22,7 +22,10 @@
     minGapMs: 12000,          // never talk more often than this
     approachGapMs: 4000,      // a new face showing up can talk sooner
     motionThreshold: 0.035,   // fraction of pixels changed = "someone walked by"
-    approachFaceSize: 0.05,   // face width / frame width = "someone is looking at the kiosk"
+    approachFaceSize: 0.05,   // (face fallback) face width / frame width that counts as someone there
+    closeSize: 0.55,          // person height / frame height = "they're right at the kiosk" (else "walking by")
+    stayRepeatMs: 30000,      // someone hanging around: another line this often...
+    stayMaxLines: 2,          // ...but at most this many extra lines per visit
     lonelyAfterMs: 6 * 60000, // nobody around this long → occasional lonely line
     quietHours: null,         // e.g. [21, 9] = no talking 9pm–9am (PC clock). null = always on
     volume: 1.0,
@@ -174,15 +177,21 @@
     const now = Date.now();
     if (!S.armed || !S.enabled || quiet() || !hostActive() || now < S.pausedUntil || busy()) return;
     const since = now - S.lastSpoke;
-    const close = (S.faceStreak || 0) >= 2;
+    const seen = (S.faceStreak || 0) >= 2;                               // someone in view (~0.4s, not a glitch)
+    const near = S.faceSize >= CFG.closeSize;
 
-    if (close && !S.hadFace && since > CFG.approachGapMs) {          // someone just walked up
-      S.hadFace = true;
-      return speak(S.faces > 1 ? "group" : Math.random() < 0.2 ? timeLine() : "approach");
+    if (!seen && now - S.lastFaceSeen > 4000) S.hadFace = false;          // they left; ready for the next one
+
+    if (seen && !S.hadFace && since > CFG.approachGapMs) {               // someone new showed up
+      S.hadFace = true; S.stayLines = 0; S.visitStart = now;
+      return speak(S.faces > 1 ? "group" : near ? (Math.random() < 0.2 ? timeLine() : "approach") : "passerby");
     }
-    if (!close && now - S.lastFaceSeen > 4000) S.hadFace = false;     // they left; re-arm
+    if (seen && S.hadFace && near && since > CFG.stayRepeatMs && (S.stayLines || 0) < CFG.stayMaxLines) {
+      S.stayLines = (S.stayLines || 0) + 1;                               // still standing right there
+      return speak("approach");
+    }
 
-    if (!close && S.motion > CFG.motionThreshold && since > CFG.minGapMs) // walk-by
+    if (!S.detector && S.motion > CFG.motionThreshold && since > CFG.minGapMs) // no detector: motion only
       return speak("passerby");
 
     if (now - S.lastMotion > CFG.lonelyAfterMs && since > CFG.lonelyAfterMs)
@@ -207,18 +216,29 @@
     return changed / cur.length;
   }
 
+  // Person detector (whole bodies, any angle). Falls back to faces, then to motion only.
   let loadFaces = async function () {
+    const V = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    let lib, fs;
     try {
-      const V = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-      const { FilesetResolver, FaceDetector } = await import(V + "/vision_bundle.mjs");
-      const fs = await FilesetResolver.forVisionTasks(V + "/wasm");
-      S.detector = await FaceDetector.createFromOptions(fs, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-          delegate: "GPU",
-        },
+      lib = await import(V + "/vision_bundle.mjs");
+      fs = await lib.FilesetResolver.forVisionTasks(V + "/wasm");
+    } catch (e) { console.warn("[greeter] vision library failed, motion-only mode", e); return; }
+    for (const delegate of ["GPU", "CPU"]) {
+      try {
+        S.detector = await lib.ObjectDetector.createFromOptions(fs, {
+          baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite", delegate },
+          runningMode: "VIDEO", scoreThreshold: 0.45, maxResults: 5, categoryAllowlist: ["person"],
+        });
+        S.detectorKind = "people"; return;
+      } catch (e) { console.warn("[greeter] person model failed (" + delegate + ")", e); }
+    }
+    try {
+      S.detector = await lib.FaceDetector.createFromOptions(fs, {
+        baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite", delegate: "CPU" },
         runningMode: "VIDEO", minDetectionConfidence: 0.6,
       });
+      S.detectorKind = "faces";
     } catch (e) { console.warn("[greeter] face model failed, motion-only mode", e); }
   };
 
@@ -247,19 +267,28 @@
       S.motion = motionLevel();
       if (S.motion > CFG.motionThreshold) S.lastMotion = Date.now();
       if (S.detector) {
-        const r = S.detector.detectForVideo(video, performance.now()).detections;
-        S.faces = r.length;
-        S.faceSize = r.reduce((m, f) => Math.max(m, f.boundingBox.width / video.videoWidth), 0);
+        let r = [];
+        try { r = S.detector.detectForVideo(video, performance.now()).detections || []; } catch (e) { console.warn("[greeter] detect", e); }
+        if (S.detectorKind === "people") {
+          r = r.filter(d => d.boundingBox && d.boundingBox.height / video.videoHeight > 0.15);   // ignore tiny far-off people
+          S.faces = r.length;                                                                 // = people in view
+          S.faceSize = r.reduce((m, d) => Math.max(m, d.boundingBox.height / video.videoHeight), 0);
+        } else {
+          S.faces = r.length;
+          const fw = r.reduce((m, d) => Math.max(m, d.boundingBox.width / video.videoWidth), 0);
+          S.faceSize = fw >= CFG.approachFaceSize ? Math.min(1, fw * 4) : 0;                // face → rough body size
+          if (!S.faceSize) S.faces = 0;
+        }
         if (S.faces) S.lastFaceSeen = Date.now();
-        S.faceStreak = S.faceSize >= CFG.approachFaceSize ? (S.faceStreak || 0) + 1 : 0;
+        S.faceStreak = S.faces ? (S.faceStreak || 0) + 1 : 0;
       }
       maybeTalk();
 
     }
-    if (S.debug) dbgText.textContent = `GREETER v4  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
-        `motion ${(S.motion * 100).toFixed(1)}%\nfaces  ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}%\n` +
+    if (S.debug) dbgText.textContent = `GREETER v5  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
+        `motion ${(S.motion * 100).toFixed(1)}%\npeople ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}% (close at ${CFG.closeSize * 100}%)\n` +
         `on ${S.enabled}  active ${hostActive()}  cam ${!!S.stream}\nmuted ${S.muted}  quiet ${quiet()}\npaused ${Math.max(0, S.pausedUntil - Date.now()) / 1000 | 0}s\n` +
-        `model ${S.detector ? "faces+motion" : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
+        `model ${S.detector ? S.detectorKind : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
     setTimeout(loop, 200); // 5 fps is plenty and keeps the PC cool
   }
 
@@ -277,6 +306,7 @@
       if (gr && "quietHours" in gr) CFG.quietHours = Array.isArray(gr.quietHours) ? gr.quietHours : null;
       if (gr && typeof gr.motionThreshold === "number") CFG.motionThreshold = gr.motionThreshold;
       if (gr && typeof gr.approachFaceSize === "number") CFG.approachFaceSize = gr.approachFaceSize;
+      if (gr && typeof gr.closeSize === "number") CFG.closeSize = gr.closeSize;
       if (gr && typeof gr.debug === "boolean" && gr.debug !== S.debug) { S.debug = gr.debug; dbg.style.display = S.debug ? "block" : "none"; }
       if (!S.enabled) stopAll();
     } catch {}
@@ -322,6 +352,7 @@
 
   window.TBGreeter = {
     say, speak, CFG, SHARED, PERSONAS,
+    _state: S,   // for testing
     pause: ms => (S.pausedUntil = Date.now() + (ms ?? CFG.pauseAfterTouchMs)),
     mute: (m = true) => { S.muted = m; if (m) stopAll(); },
   };
