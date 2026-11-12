@@ -87,8 +87,8 @@
     color:#fff;background:linear-gradient(135deg,#ff2bd6,#00e5ff);box-shadow:0 0 30px #ff2bd6aa;
     text-align:center;z-index:99999;pointer-events:none;transition:all .35s cubic-bezier(.2,1.4,.4,1)}
   #tbg-bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
-  #tbg-debug{position:fixed;top:8px;right:8px;z-index:99999;background:#000c;color:#0f0;
-    font:18px/1.35 monospace;padding:10px;border-radius:8px;display:none;width:420px;white-space:pre-wrap}
+  #tbg-debug{position:fixed;top:50%;left:8px;z-index:99999;background:#000c;color:#0f0;
+    font:18px/1.35 monospace;padding:10px;border-radius:8px;display:none;width:420px;white-space:pre-wrap;pointer-events:none;opacity:.85}
   #tbg-debug pre{white-space:pre-wrap;margin:6px 0 0}
   #tbg-debug video{width:100%;transform:scaleX(-1);border-radius:4px}
   #tbg-arm{position:fixed;inset:0;z-index:100000;background:#000d;color:#fff;display:flex;
