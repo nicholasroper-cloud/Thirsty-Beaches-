@@ -24,7 +24,7 @@
     motionThreshold: 0.035,   // fraction of pixels changed = "someone walked by"
     approachFaceSize: 0.16,   // face width / frame width = "they're at the kiosk"
     lonelyAfterMs: 6 * 60000, // nobody around this long → occasional lonely line
-    quietHours: [21, 9],      // no talking 9pm–9am
+    quietHours: null,         // e.g. [21, 9] = no talking 9pm–9am (PC clock). null = always on
     volume: 1.0,
     pauseAfterTouchMs: 45000, // shut up while someone is ordering
   };
@@ -64,7 +64,12 @@
   const hasClip = (key, id) => !!(window.TBG_AUDIO && window.TBG_AUDIO[key] && window.TBG_AUDIO[key].includes(id));
   let player = null;
   const stopAll = () => { speechSynthesis.cancel(); if (player) { player.pause(); player = null; } };
-  const busy = () => speechSynthesis.speaking || (player && !player.paused && !player.ended);
+  const busy = () => {
+    if (player && !player.paused && !player.ended) return true;
+    if (!speechSynthesis.speaking) return false;
+    if (Date.now() - S.lastSpoke > 12000) { speechSynthesis.cancel(); return false; }  // stuck/blocked utterance
+    return true;
+  };
   const clean = t => t.replace(/\[[^\]]*\]\s*/g, "").trim();
 
   // ───────── STATE ─────────
@@ -72,7 +77,7 @@
     lastSpoke: 0, lastFaceSeen: 0, lastMotion: Date.now(), pausedUntil: 0,
     muted: false, armed: false, recent: [], motion: 0, faceSize: 0, faces: 0,
     hadFace: false, detector: null, debug: false, voice: null,
-    enabled: true, stream: null, camStarting: false,
+    enabled: true, stream: null, camStarting: false, speech: "not tried yet", lastLine: "", camError: "",
   };
 
   // ───────── UI ─────────
@@ -83,7 +88,8 @@
     text-align:center;z-index:99999;pointer-events:none;transition:all .35s cubic-bezier(.2,1.4,.4,1)}
   #tbg-bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
   #tbg-debug{position:fixed;top:8px;right:8px;z-index:99999;background:#000c;color:#0f0;
-    font:12px monospace;padding:8px;border-radius:8px;display:none;width:200px}
+    font:18px/1.35 monospace;padding:10px;border-radius:8px;display:none;width:420px;white-space:pre-wrap}
+  #tbg-debug pre{white-space:pre-wrap;margin:6px 0 0}
   #tbg-debug video{width:100%;transform:scaleX(-1);border-radius:4px}
   #tbg-arm{position:fixed;inset:0;z-index:100000;background:#000d;color:#fff;display:flex;
     align-items:center;justify-content:center;font:700 32px system-ui;cursor:pointer}`;
@@ -126,6 +132,9 @@
     const u = new SpeechSynthesisUtterance(text);
     Object.assign(u, { volume: CFG.volume, rate: persona.rate, pitch: persona.pitch });
     const v = voiceFor(persona); if (v) u.voice = v;
+    u.onstart = () => { S.speech = "ok"; };
+    u.onerror = e => { S.speech = e.error === "not-allowed" ? "BLOCKED - tap screen once" : "error: " + e.error; };
+    S.lastLine = text;
     speechSynthesis.speak(u);
   }
 
@@ -148,6 +157,7 @@
   }
 
   function quiet() {
+    if (!CFG.quietHours) return false;
     const h = new Date().getHours(), [a, b] = CFG.quietHours;
     return a > b ? (h >= a || h < b) : (h >= a && h < b);
   }
@@ -218,9 +228,9 @@
     try {
       S.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
       if (!wantCam()) { stopCam(); return; }
-      video.srcObject = S.stream;
+      video.srcObject = S.stream; S.camError = "";
       if (!S.detector) loadFaces();
-    } catch (e) { camFailUntil = Date.now() + 15000; console.warn("[greeter] camera unavailable", e); }
+    } catch (e) { camFailUntil = Date.now() + 15000; S.camError = (e && (e.name || e.message)) || "failed"; console.warn("[greeter] camera unavailable", e); }
     finally { S.camStarting = false; }
   }
   function stopCam() {
@@ -244,7 +254,7 @@
       maybeTalk();
 
     }
-    if (S.debug) dbgText.textContent =
+    if (S.debug) dbgText.textContent = `GREETER v2  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}  speech ${S.speech}\nlast: ${S.lastLine.slice(0, 60)}\n` +
         `motion ${(S.motion * 100).toFixed(1)}%\nfaces  ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}%\n` +
         `on ${S.enabled}  active ${hostActive()}  cam ${!!S.stream}\nmuted ${S.muted}  quiet ${quiet()}\npaused ${Math.max(0, S.pausedUntil - Date.now()) / 1000 | 0}s\n` +
         `model ${S.detector ? "faces+motion" : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
@@ -262,6 +272,10 @@
       const gr = c && c.greeter;
       S.enabled = !(gr && gr.enabled === false);
       if (gr && typeof gr.volume === "number") CFG.volume = Math.max(0, Math.min(1, gr.volume));
+      if (gr && "quietHours" in gr) CFG.quietHours = Array.isArray(gr.quietHours) ? gr.quietHours : null;
+      if (gr && typeof gr.motionThreshold === "number") CFG.motionThreshold = gr.motionThreshold;
+      if (gr && typeof gr.approachFaceSize === "number") CFG.approachFaceSize = gr.approachFaceSize;
+      if (gr && typeof gr.debug === "boolean" && gr.debug !== S.debug) { S.debug = gr.debug; dbg.style.display = S.debug ? "block" : "none"; }
       if (!S.enabled) stopAll();
     } catch {}
   }
