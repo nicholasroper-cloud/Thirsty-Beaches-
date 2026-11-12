@@ -191,8 +191,10 @@
       return speak("approach");
     }
 
-    if (!S.detector && S.motion > CFG.motionThreshold && since > CFG.minGapMs) // no detector: motion only
-      return speak("passerby");
+    if (!seen && S.motion > CFG.motionThreshold && since > CFG.minGapMs) {  // movement but nobody detected: still say something
+      S.motionHits = (S.motionHits || 0) + 1;
+      if (S.motionHits >= 2) { S.motionHits = 0; return speak("passerby"); }
+    } else if (S.motion <= CFG.motionThreshold) S.motionHits = 0;
 
     if (now - S.lastMotion > CFG.lonelyAfterMs && since > CFG.lonelyAfterMs)
       return speak("lonely");
@@ -285,7 +287,7 @@
       maybeTalk();
 
     }
-    if (S.debug) dbgText.textContent = `GREETER v5  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
+    if (S.debug) dbgText.textContent = `GREETER v6  ${new Date().toLocaleTimeString()}\ncam ${S.stream ? "ON" : "off"}${S.camError ? " (" + S.camError + ")" : ""}\nspeech ${S.speech}\nvoices ${speechSynthesis.getVoices().length} (${S.voiceName || "-"})  activated ${!!(navigator.userActivation && navigator.userActivation.hasBeenActive)}\nlast: ${S.lastLine.slice(0, 60)}\n` +
         `motion ${(S.motion * 100).toFixed(1)}%\npeople ${S.faces}  size ${(S.faceSize * 100).toFixed(0)}% (close at ${CFG.closeSize * 100}%)\n` +
         `on ${S.enabled}  active ${hostActive()}  cam ${!!S.stream}\nmuted ${S.muted}  quiet ${quiet()}\npaused ${Math.max(0, S.pausedUntil - Date.now()) / 1000 | 0}s\n` +
         `model ${S.detector ? S.detectorKind : "motion only"}\nvoice ${PERSONAS[PERSONA_KEYS[personaIdx]].name}\nclips ${window.TBG_AUDIO ? Object.values(window.TBG_AUDIO).flat().length : 0}`;
