@@ -343,18 +343,19 @@ scenarios.main = async () => {
   svc.control = { ...svc.control, settings: { UPDATE_INTERVAL_MIN: 7, HIDE_CATEGORIES: ["Secret Menu"], AI_DESIGN_ENABLED: true, BOGUS: 1, PAY_TIMEOUT_MS: 5 } };
   const st = await waitFor(async () => { const s = await kstatus(pc); return s.settings.length === 3 ? s : null; }, 8000, "3 valid settings applied live");
   check(st && st.settings.sort().join() === "AI_DESIGN_ENABLED,HIDE_CATEGORIES,UPDATE_INTERVAL_MIN", "exactly the allowed + valid ones");
-  check(st && st.errors.some(e => /BOGUS is not allowed/.test(e)) && st.errors.some(e => /PAY_TIMEOUT_MS has an invalid value/.test(e)), "unknown key and out-of-range value rejected and reported");
+  check(st && st.errors.some(e => /BOGUS is not allowed/.test(e)) && st.errors.some(e => /PAY_TIMEOUT_MS is not allowed/.test(e)), "unknown key and a (now forbidden) pay key rejected and reported");
   check((await req(pc.port, "GET", "/aiconfig")).json.enabled === true, "AI_DESIGN_ENABLED live (/aiconfig)");
   const v1 = (await req(pc.port, "GET", "/version")).json.v;
   check(v1 !== v0 && String(v1).startsWith("32."), `screen asked to reload (/version ${v0} -> ${v1})`);
   check(st.pendingRestart === null && st.settings.length === 3, "live settings did not need a restart");
   let pidC = await health(pc);
-  svc.control = { ...svc.control, settings: { ...svc.control.settings, PAY_TIMEOUT_MS: 30000 } };
-  await waitFor(async () => { const h = await health(pc); return h && h !== pidC; }, 10000, "pay setting -> idle restart");
-  const st2 = await waitFor(async () => { const s = await kstatus(pc); return s && s.settings.includes("PAY_TIMEOUT_MS") ? s : null; }, 8000, "PAY_TIMEOUT_MS in force after restart");
-  const v2 = (await req(pc.port, "GET", "/version")).json.v;
-  check(v2 !== v1, `screen reload requested again after the pay change (${v1} -> ${v2})`);
-  check(st2 && st2.trial === false, "a settings restart is not a code trial");
+  // S1 (security review 2026-11-15): the public Control repo can no longer set PAY_ENABLED, FLEX_IP, FLEX_PORT or PAY_TIMEOUT_MS
+  svc.control = { ...svc.control, settings: { ...svc.control.settings, PAY_ENABLED: true, FLEX_IP: "10.0.0.9", PAY_TIMEOUT_MS: 30000 } };
+  const st2 = await waitFor(async () => { const s = await kstatus(pc); return s && s.errors.some(e => /PAY_ENABLED is not allowed/.test(e)) ? s : null; }, 8000, "remote pay settings rejected");
+  await sleep(2500);
+  check(await health(pc) === pidC, "a remote pay setting causes no restart");
+  check(st2 && !st2.settings.includes("PAY_TIMEOUT_MS") && !st2.settings.includes("PAY_ENABLED"), "and none of them is in force");
+  const v2 = v1;
 
   console.log("\n== remote commands");
   pidC = await health(pc);

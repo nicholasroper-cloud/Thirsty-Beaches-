@@ -113,6 +113,8 @@ function sendFile(res, fp) {
       const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
       // always re-validate the page + images so pushed updates (incl. a new logo) show up
       if ([".html", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"].includes(ext)) headers["Cache-Control"] = "no-cache";
+      headers["X-Content-Type-Options"] = "nosniff";
+      if (ext === ".html") { headers["Content-Security-Policy"] = lib.CSP; headers["Referrer-Policy"] = "no-referrer"; }   // S2: no framing, no form posts, only the hosts the page really uses
       res.writeHead(200, headers);
       res.end(data);
     });
@@ -805,7 +807,8 @@ function runRemoteCommands(raw) {
    Fails silently — a missed ping is recorded by the monitor, not the kiosk. */
 async function sendHealthPing() {
   // URL can come from the cloud control file (set remotely) OR the local env.
-  const url = (controlCache && controlCache.healthcheckUrl) || HEALTHCHECK_URL;
+  // the Control file may only name an https://hc-ping.com/ address (a free-form URL there was an SSRF into the trailer LAN); env is trusted
+  const url = lib.safeHealthUrl(controlCache && controlCache.healthcheckUrl) || HEALTHCHECK_URL;
   if (!url) return;
   try {
     const r = await fetch(url, { redirect: "follow" });
@@ -983,6 +986,10 @@ const server = http.createServer(async (req, res) => {
   let pathname = "/";
   try { pathname = decodeURIComponent(new URL(req.url, `http://localhost:${PORT}`).pathname); } catch {}
 
+  // S7: loopback Host only (DNS rebinding), same-origin only, JSON only for anything that changes state. No CORS headers anywhere.
+  const problem = lib.requestProblem(req, PORT);
+  if (problem) { console.warn("request refused:", problem); return send(res, 403, "forbidden"); }
+
   // customer activity: holds off idle restarts while an order/payment/AI call is in flight
   if (ACTIVITY_PATHS.has(pathname)) {
     inFlight++; lastActivity = Date.now();
@@ -1002,7 +1009,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/version") return sendJSON(res, 200, { v: versionTag() });
   // local diagnostics (the server only listens on 127.0.0.1): the same report the heartbeat sends
   if (req.method === "GET" && pathname === "/kiosk-status") return sendJSON(res, 200, heartbeatPayload());
-  if (req.method === "GET" && pathname === "/control") return sendJSON(res, 200, controlCache || { soldOut: [], special: null, updated: "" });
+  if (req.method === "GET" && pathname === "/control") return sendJSON(res, 200, lib.controlPublic(controlCache));
 
   if (req.method === "GET" && pathname.startsWith("/assets/")) {
     if (pathname.includes("\0") || pathname.includes("\\")) return send(res, 400, "bad request");

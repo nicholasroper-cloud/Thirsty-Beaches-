@@ -75,10 +75,9 @@ function asInt(v, lo, hi) {
 const MODEL_RE = /^claude-[a-z0-9][a-z0-9.\-]{0,60}$/;
 const IPV4_RE  = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 const SETTINGS_SPEC = {
-  PAY_ENABLED:         { live: false, parse: asBool },
-  FLEX_IP:             { live: false, parse: v => (typeof v === "string" && (v.trim() === "" || IPV4_RE.test(v.trim()))) ? v.trim() : undefined },
-  FLEX_PORT:           { live: false, parse: v => asInt(v, 1, 65535) },
-  PAY_TIMEOUT_MS:      { live: false, parse: v => asInt(v, 15000, 300000) },
+  /* PAY_ENABLED, FLEX_IP, FLEX_PORT and PAY_TIMEOUT_MS are NOT here on purpose (security review S1, 2026-11-15): the Control file
+     lives in a public repo, so it must never be able to turn tap-to-pay ON or point the kiosk at another card reader. They come from
+     kiosk-config.env only. The Control file can only switch pay OFF: see payKillFrom() below. */
   UPDATE_INTERVAL_MIN: { live: true,  parse: v => asInt(v, 5, 1440) },
   HIDE_CATEGORIES:     { live: true,  parse: v => {
     const arr = Array.isArray(v) ? v : (typeof v === "string" ? v.split(",") : null);
@@ -96,6 +95,93 @@ const SETTINGS_SPEC = {
   VIBE_MODEL:          { live: true,  parse: v => (typeof v === "string" && MODEL_RE.test(v.trim())) ? v.trim() : undefined },
   DRINK_MODEL:         { live: true,  parse: v => (typeof v === "string" && MODEL_RE.test(v.trim())) ? v.trim() : undefined },
 };
+/* Remote kill switch for tap-to-pay. The Control file may say payEnabled:false (the owner's "stop taking cards" button) and nothing else:
+   - the literal boolean false  -> kill
+   - anything else (true, "true", 1, missing, junk) -> not a kill, and NEVER an enable (env PAY_ENABLED still has to be true)
+   Returns true / false for a usable answer, or null when there is no control data to read (fetch failed), meaning "keep the last state". */
+function payKillFrom(control) {
+  if (!control || typeof control !== "object" || Array.isArray(control)) return null;
+  return control.payEnabled === false;
+}
+/* ---------------- what the PAGE may see of the Control file ----------------
+   The Control file lives in a public repo. The page used to get it raw (healthcheck URL, settings, commands included) and
+   interpolated specials ids into onclick strings (stored XSS, security review S2). Now the server hands the page only these
+   fields, each validated; anything that does not fit is dropped (one bad special never takes the others down). */
+const SPECIAL_ID_RE   = /^[a-z0-9-]{1,32}$/;
+const SPECIAL_TEXT_RE = /^[\p{L}\p{N} .,'’!?&+:;()\/-]*$/u;      // no < > " ` \ { } or control characters
+const SPECIAL_ITEM_RE = /^[a-z0-9-]{1,40}$/;
+const SPECIAL_CAT_RE  = /^[a-z]{2,20}$/;
+const SPECIAL_MOD_RE  = /^[a-z]{2,20}:[\p{L}\p{N} .,'’&+()\/-]{1,60}$/u;
+function cleanSpecial(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return null;
+  const text = (v, max, min = 0) => (typeof v === "string" && v.length >= min && v.length <= max && SPECIAL_TEXT_RE.test(v)) ? v : null;
+  const id = typeof s.id === "string" && SPECIAL_ID_RE.test(s.id) ? s.id : null;
+  const name = text(s.name, 40, 1), blurb = text(s.blurb == null ? "" : s.blurb, 160), label = text(s.label == null ? "" : s.label, 30);
+  const catKey = typeof s.catKey === "string" && SPECIAL_CAT_RE.test(s.catKey) ? s.catKey : null;
+  if (!id || name == null || blurb == null || label == null || !catKey) return null;
+  const mods = [];
+  for (const m of (Array.isArray(s.mods) ? s.mods.slice(0, 25) : [])) { if (typeof m !== "string" || !SPECIAL_MOD_RE.test(m)) return null; mods.push(m); }
+  const base = s.base == null || s.base === "" ? "" : (typeof s.base === "string" && SPECIAL_MOD_RE.test(s.base) ? s.base : null);
+  const baseItemId = s.baseItemId == null || s.baseItemId === "" ? "" : (typeof s.baseItemId === "string" && SPECIAL_ITEM_RE.test(s.baseItemId) ? s.baseItemId : null);
+  if (base === null || baseItemId === null) return null;
+  const updated = typeof s.updated === "string" && /^[0-9TZ:.+-]{0,40}$/.test(s.updated) ? s.updated : "";
+  return { id, name, blurb, label, catKey, base, baseItemId, mods, updated };
+}
+const strList = (a, n) => Array.isArray(a) ? a.filter(x => typeof x === "string" && x.length <= 120 && !/[\u0000-\u001f]/.test(x)).slice(0, n) : [];
+const num = (v, lo, hi) => (typeof v === "number" && isFinite(v) && v >= lo && v <= hi) ? v : undefined;
+function controlPublic(c) {
+  const src = (c && typeof c === "object" && !Array.isArray(c)) ? c : {};
+  const out = { soldOut: strList(src.soldOut, 500), soldOutOptions: strList(src.soldOutOptions, 500),
+    specials: (Array.isArray(src.specials) ? src.specials.slice(0, 20) : []).map(cleanSpecial).filter(Boolean),
+    updated: typeof src.updated === "string" ? src.updated.slice(0, 40) : "" };
+  // greeter: the camera is ON only for the literal boolean true (compliance gate 2026-11-15); the rest are tuning numbers
+  const g = src.greeter && typeof src.greeter === "object" && !Array.isArray(src.greeter) ? src.greeter : null;
+  out.greeter = { enabled: !!(g && g.enabled === true) };
+  if (g) {
+    for (const [k, lo, hi] of [["volume", 0, 1], ["motionThreshold", 0, 1], ["approachFaceSize", 0, 1], ["closeSize", 0, 1]]) { const v = num(g[k], lo, hi); if (v !== undefined) out.greeter[k] = v; }
+    if (typeof g.debug === "boolean") out.greeter.debug = g.debug;
+    if (Array.isArray(g.quietHours) && g.quietHours.length === 2 && g.quietHours.every(h => Number.isInteger(h) && h >= 0 && h <= 24)) out.greeter.quietHours = g.quietHours;
+  }
+  return out;
+}
+/* The health-check URL may come from the Control file only if it is a plain https://hc-ping.com/ address (security review S4:
+   an arbitrary URL there made the kiosk fetch whatever a stranger typed into a public repo, inside the trailer LAN). */
+function safeHealthUrl(u) {
+  if (typeof u !== "string" || u.length > 200) return "";
+  let url; try { url = new URL(u); } catch { return ""; }
+  return (url.protocol === "https:" && url.hostname === "hc-ping.com" && !url.username && !url.password && !url.port) ? url.href : "";
+}
+/* Request guard for the kiosk's local HTTP server (security review S7): DNS-rebinding and cross-site POSTs.
+   Host must be the loopback name with our port; every non-GET needs a same-origin Origin (missing = refused) and JSON. */
+function requestProblem(req, port) {
+  const hosts = new Set([`localhost:${port}`, `127.0.0.1:${port}`]);
+  if (String(port) === "80") { hosts.add("localhost"); hosts.add("127.0.0.1"); }
+  const h = req.headers || {};
+  if (!hosts.has(String(h.host || "").toLowerCase())) return "bad host";
+  const sfs = h["sec-fetch-site"];
+  if (sfs !== undefined && sfs !== "same-origin" && sfs !== "none") return "cross-site request";
+  const m = String(req.method || "GET").toUpperCase();
+  if (m !== "GET" && m !== "HEAD") {
+    const origins = new Set([`http://localhost:${port}`, `http://127.0.0.1:${port}`]);
+    if (!origins.has(String(h.origin || "").toLowerCase())) return "bad origin";
+    if (!/^application\/json\b/i.test(String(h["content-type"] || ""))) return "json only";
+  }
+  return null;
+}
+/* CSP for the kiosk page: no card-entry UI may ever exist here, nothing may post anywhere else, nothing may frame it.
+   The page uses inline scripts and onclick handlers (hence 'unsafe-inline'); the hosts are the ones it really loads. */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob: data:",
+  "worker-src 'self' blob:",
+  "connect-src 'self' https://station.thirstybeaches.com https://tb-where.nicholasroper.workers.dev https://thirstybeaches.com https://cdn.jsdelivr.net https://storage.googleapis.com",
+  "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
+].join("; ");
+
 function validateSettings(raw) {
   const settings = {}, errors = [];
   if (raw == null) return { settings, errors };
@@ -205,6 +291,6 @@ function readJson(fp, fallback) {
 
 module.exports = {
   sha256, sha256File, checkRelPath, blockedReason, safeUpdatePath, isRestartFile,
-  SETTINGS_SPEC, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
+  SETTINGS_SPEC, payKillFrom, controlPublic, cleanSpecial, safeHealthUrl, requestProblem, CSP, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
   scrub, maskCloverPath, ErrorRing, renameRetry, writeJsonAtomic, readJson, sleepSync,
 };

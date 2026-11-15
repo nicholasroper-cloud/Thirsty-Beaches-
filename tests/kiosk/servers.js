@@ -19,7 +19,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const freePort = () => new Promise(r => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); });
 
 /* ---------------- fake Clover ---------------- */
-const fake = { orders: [], posts: [], pageSizes: [] };
+const fake = { orders: [], posts: [], pageSizes: [], control: {} };
 let seqId = 0;
 const mkOrder = (o = {}) => ({ id: "ORD" + String(++seqId).padStart(6, "0"), createdTime: Date.now() - 1000, state: "open", paymentState: "OPEN", total: 0, note: "", lineItems: { elements: [{ name: "Thirst Trap", price: 349 }] }, ...o });
 const clover = http.createServer((req, res) => {
@@ -27,6 +27,7 @@ const clover = http.createServer((req, res) => {
   let body = ""; req.on("data", c => body += c); req.on("end", () => {
     const j = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
     const m = u.pathname.replace(/^\/v3\/merchants\/[^/]+/, "");
+    if (req.method === "GET" && u.pathname === "/control.json") return j(200, fake.control);
     if (req.method === "GET" && m === "/items") return j(200, { elements: [] });
     if (req.method === "GET" && m === "/orders") {
       const lim = +u.searchParams.get("limit") || 100, off = +u.searchParams.get("offset") || 0;
@@ -59,7 +60,7 @@ function get(port, p, headers = {}) {
 function post(port, p, obj, headers = {}) {
   return new Promise((resolve, reject) => {
     const data = typeof obj === "string" ? obj : JSON.stringify(obj);
-    const r = http.request({ host: "127.0.0.1", port, path: p, method: "POST", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data), ...headers } },
+    const r = http.request({ host: "127.0.0.1", port, path: p, method: "POST", headers: { "Content-Type": "application/json", Origin: "http://127.0.0.1:" + port, "Content-Length": Buffer.byteLength(data), ...headers } },
       res => { let b = ""; res.on("data", c => b += c); res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: b })); });
     r.on("error", reject); r.write(data); r.end();
   });
@@ -169,8 +170,17 @@ async function stationTests(cloverPort) {
 async function kioskTests(cloverPort) {
   const dir = stage(["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]);
   fake.orders = []; fake.posts = [];
+  fake.control = { soldOut: ["thirst-trap"], healthcheckUrl: "http://10.0.0.1/steal", settings: { UPDATE_INTERVAL_MIN: 30 }, commands: {},
+    greeter: { enabled: "true", volume: 0.5 },
+    specials: [
+      { id: "ok-special", name: "Sunset Fizz", blurb: "Peach and coconut", label: "NEW", catKey: "dirtysodas", base: "base:Dr Pepper", baseItemId: "pour-decisions", mods: ["flavor:Coconut"], updated: "2026-11-15T10:00:00Z" },
+      { id: "x');alert(1);//", name: "Evil", blurb: "", label: "", catKey: "dirtysodas", mods: [] },
+      { id: "ok-two", name: "<img src=x onerror=alert(1)>", blurb: "", label: "", catKey: "dirtysodas", mods: [] },
+      { id: "ok-three", name: "Fine", blurb: "x".repeat(500), label: "", catKey: "dirtysodas", mods: [] },
+      { id: "ok-four", name: "Fine", blurb: "", label: "", catKey: "dirtysodas", mods: ["flavor:<script>"] },
+    ] };
   const port = await freePort();
-  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off" });
+  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off", CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json" });
   ok(await waitUp(port), "kiosk server starts: " + c.out);
   try {
     eq((await get(port, "/assets/%00")).status, 400, "NUL byte in an asset path");
@@ -178,6 +188,29 @@ async function kioskTests(cloverPort) {
     const sib = await get(port, "/assets/..%2fassets-old%2fsecret.txt");
     ok(sib.status === 403 && !/SIBLING/.test(sib.body), "sibling folder not served: " + sib.status);
     eq((await get(port, "/assets/ok.txt")).body, "asset");
+    // ---- S7: Host / Origin / content type / Sec-Fetch-Site, no CORS ----
+    eq((await get(port, "/health", { Host: "evil.example:" + port })).status, 403, "wrong Host (DNS rebinding) refused");
+    eq((await get(port, "/health", { Host: "localhost:" + port })).status, 200, "localhost:PORT accepted");
+    eq((await get(port, "/health", { "Sec-Fetch-Site": "cross-site" })).status, 403, "cross-site fetch refused");
+    eq((await get(port, "/health", { "Sec-Fetch-Site": "same-origin" })).status, 200);
+    eq((await get(port, "/health", { "Sec-Fetch-Site": "none" })).status, 200);
+    const noOrigin = await new Promise((resolve, reject) => { const d = JSON.stringify({ cart: [] }); const r = http.request({ host: "127.0.0.1", port, path: "/order", method: "POST", headers: { "Content-Type": "application/json", "Content-Length": d.length } }, res => { res.resume(); resolve(res.statusCode); }); r.on("error", reject); r.end(d); });
+    eq(noOrigin, 403, "POST without Origin refused");
+    eq((await post(port, "/order", { cart: [] }, { Origin: "http://evil.example" })).status, 403, "POST from another origin refused");
+    eq((await post(port, "/order", { cart: [] }, { "Content-Type": "text/plain" })).status, 403, "text/plain POST refused (no-preflight CSRF)");
+    eq((await post(port, "/order", { cart: [] }, { Origin: "http://localhost:" + port })).status, 400, "same-origin JSON POST reaches the route (empty cart -> 400)");
+    const pg = await get(port, "/");
+    ok(!("access-control-allow-origin" in pg.headers), "no CORS headers");
+    const csp = pg.headers["content-security-policy"] || "";
+    for (const d of ["default-src 'self'", "connect-src 'self'", "frame-ancestors 'none'", "form-action 'none'", "object-src 'none'"]) ok(csp.includes(d), "CSP has " + d);
+    ok(!/connect-src[^;]*\*/.test(csp), "no wildcard connect-src");
+
+    // ---- S2: the page only gets validated control data ----
+    const ctl = JSON.parse((await get(port, "/control")).body);
+    eq(ctl.specials.map(x => x.id), ["ok-special"], "only the valid special survives (bad id, markup in name, long blurb, markup in a mod all dropped)");
+    eq(ctl.soldOut, ["thirst-trap"]);
+    ok(!("healthcheckUrl" in ctl) && !("settings" in ctl) && !("commands" in ctl), "the page never sees the health URL, settings or commands");
+    eq(ctl.greeter.enabled, false, 'greeter.enabled is true only for the literal boolean true ("true" is not)');
     ok(/process\.on\("unhandledRejection"/.test(fs.readFileSync(path.join(ROOT, "kiosk-server.js"), "utf8")), "unhandledRejection handler present");
 
     const mods = ["Medium 24oz", "Dr Pepper", "Coconut", "Vanilla", "Cherry", "Peach", "Raspberry", "Caramel", "Lime", "Blue Raspberry", "Strawberry", "Mango", "Pineapple", "Vanilla Sweet Cream", "Blended / frozen", "Fresh lime", "Popping boba", "Extra pump", "Whipped cream", "Sweet cream cold foam", "Freeze-dried candy", "Float: Dole Whip"];
