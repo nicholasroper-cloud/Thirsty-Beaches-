@@ -104,16 +104,22 @@ const MIME = { ".html":"text/html; charset=utf-8", ".png":"image/png", ".jpg":"i
 const send = (res, status, body, type) => { res.writeHead(status, { "Content-Type": type || "text/plain" }); res.end(body); };
 const sendJSON = (res, status, obj) => send(res, status, JSON.stringify(obj), "application/json");
 function sendFile(res, fp) {
-  fs.readFile(fp, (err, data) => {
-    if (err) return send(res, 404, "Not found");
-    const ext = path.extname(fp).toLowerCase();
-    const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
-    // always re-validate the page + images so pushed updates (incl. a new logo) show up
-    if ([".html", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"].includes(ext)) headers["Cache-Control"] = "no-cache";
-    res.writeHead(200, headers);
-    res.end(data);
-  });
+  // fs.readFile throws SYNCHRONOUSLY on a NUL byte (ERR_INVALID_ARG_VALUE), which used to end the process: reject those and guard the call
+  if (typeof fp !== "string" || fp.includes("\0")) return send(res, 400, "Bad request");
+  try {
+    fs.readFile(fp, (err, data) => {
+      if (err) return send(res, 404, "Not found");
+      const ext = path.extname(fp).toLowerCase();
+      const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
+      // always re-validate the page + images so pushed updates (incl. a new logo) show up
+      if ([".html", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"].includes(ext)) headers["Cache-Control"] = "no-cache";
+      res.writeHead(200, headers);
+      res.end(data);
+    });
+  } catch { send(res, 404, "Not found"); }
 }
+// A rejected promise in one request must never end the server (an in-flight payment would lose its state): log and keep serving.
+process.on("unhandledRejection", e => console.error("unhandled rejection (kept running):", (e && e.message) || e));
 function readBody(req) {
   return new Promise(resolve => { let d = ""; req.on("data", c => { d += c; if (d.length > 1e6) req.destroy(); }); req.on("end", () => resolve(d)); });
 }
@@ -280,6 +286,73 @@ async function prizeCheck(code, redeem) {
   } catch (e) { return { ok: false, status: "offline" }; }
 }
 
+/* ---- customer name on a public screen: moderated at the one server-side choke point (moderation.js), beach-name fallback ---- */
+const NAME_FIRST = ["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral","Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Lady"];
+const NAME_LAST  = ["Riptide","Sandcastle","Seabreeze","Sunchaser","Wavemaker","Beachcomber","Driftwood","Pufferfish","Starfish","Sandbar","Shoreline","Coconut","Seahorse","Castaway","Sailor","Dune","Marlin","Barnacle"];
+const beachNameServer = () => (NAME_FIRST[Math.floor(Math.random() * NAME_FIRST.length)] + " " + NAME_LAST[Math.floor(Math.random() * NAME_LAST.length)]).slice(0, 24);
+/* First word only, letters / hyphen / apostrophe, 12 characters, denylist (moderation.js sanitizeCustomerName). Anything the filter
+   rejects, or that has no letters at all, becomes a beach name. Enforced HERE, not just in the page: this is what reaches the Clover
+   note, the pickup board and the voice. */
+function cleanCustomerName(raw) {
+  const typed = String(raw == null ? "" : raw).trim();
+  if (!typed) return "";                                                             // no name given (register-style order)
+  return sanitizeCustomerName(typed) || beachNameServer();
+}
+
+/* ---- the Clover line: a name that fits the 127-character cap + the FULL add-on list in the line note ----
+   Whole add-ons only in the name (never cut one in half); everything goes in the note as "MODS: a | b | c", which the Make Station
+   reads first. Real Clover modifiers would need modifier ids this kiosk does not have (its menu lives in the page, not in Clover),
+   so the note is the carrier. If Clover ever rejects a note the line is sent again without it (the name still has the first add-ons). */
+function fitLineName(name, mods) {
+  let out = String(name || "Item").slice(0, 127), first = true;
+  for (const m of mods) { const next = out + (first ? " · " : ", ") + m; if (next.length > 127) break; out = next; first = false; }
+  return out;
+}
+function modsNote(mods) {
+  if (!mods.length) return "";
+  let out = "MODS:", first = true;
+  for (const m of mods) { const next = out + (first ? " " : " | ") + m; if (next.length > 480) break; out = next; first = false; }
+  return out;
+}
+function cleanMods(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map(m => String(m == null ? "" : m).replace(/[\u0000-\u001f|]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60)).filter(Boolean).slice(0, 25);
+}
+
+/* ---- daily order numbers (101, 102, ...). Same rules as make-station-server.js and cloud/src/ticket.js; tests/kiosk/seq.js pins all three. ---- */
+const SEQ_START = 100;
+const noteSeq = note => { const m = /Kiosk order #(\d{1,5})\b/.exec(String(note || "")); return m ? +m[1] : null; };
+const dayKey = ms => { const d = new Date(ms); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
+function assignSeq(orders) {
+  const out = new Map(), byDay = new Map();
+  for (const o of orders) { const k = dayKey(o.created); (byDay.get(k) || byDay.set(k, []).get(k)).push(o); }
+  for (const list of byDay.values()) {
+    list.sort((a, b) => a.created - b.created || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const taken = new Set();
+    for (const o of list) if (o.seq && !taken.has(o.seq)) { taken.add(o.seq); out.set(o.id, o.seq); }
+    list.forEach((o, i) => { if (out.has(o.id)) return; let c = SEQ_START + i + 1; while (taken.has(c)) c++; taken.add(c); out.set(o.id, c); });
+  }
+  return out;
+}
+/* The new order's number = its place among today's orders with items (the same count the station does). null if Clover can't list them:
+   the order still goes through, shows its 4-character ticket, and the station numbers it by rank. */
+async function nextOrderSeq(orderId) {
+  try {
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const list = [];
+    for (let page = 0; page < 10; page++) {
+      const r = await cloverGet(`/orders?filter=createdTime>=${startOfDay.getTime()}&expand=lineItems&orderBy=createdTime DESC&limit=100&offset=${page * 100}`);
+      const els = (r && r.elements) || [];
+      list.push(...els);
+      if (els.length < 100) break;
+    }
+    const live = list.filter(o => (((o.lineItems || {}).elements) || []).some(li => !li.exchanged && !li.refunded));
+    const rows = live.map(o => ({ id: o.id, created: o.createdTime, seq: noteSeq(o.note) }));
+    if (!rows.some(r => r.id === orderId)) rows.push({ id: orderId, created: Date.now(), seq: null });
+    return assignSeq(rows).get(orderId) || null;
+  } catch (e) { console.warn("order number: could not list today's orders:", e.message); return null; }
+}
+
 async function createOrder(cart, custName, prizeCode) {
   if (!Array.isArray(cart) || !cart.length) return { status: 400, body: { error: "empty cart" } };
   if (cart.length > 30) return { status: 400, body: { error: "too many lines" } };
@@ -288,9 +361,10 @@ async function createOrder(cart, custName, prizeCode) {
     const qty = Math.min(Math.max(1, parseInt(line.qty) || 1), 20);
     const priceCents = Math.round((Number(line.unit) || 0) * 100);
     if (priceCents <= 0 || priceCents > 10000) return { status: 400, body: { error: "invalid line price" } };
-    const mods = Array.isArray(line.mods) && line.mods.length ? ` · ${line.mods.join(", ")}` : "";
-    lines.push({ name: `${String(line.name || "Item")}${mods}`.slice(0, 127), priceCents, qty });
+    const mods = cleanMods(line.mods);
+    lines.push({ name: fitLineName(String(line.name || "Item").replace(/ · /g, " "), mods), note: modsNote(mods), priceCents, qty });
   }
+  const name = cleanCustomerName(custName);
   // prize code: verify before we build anything, burn it only once the order exists
   let upsize = false;
   if (prizeCode) {
@@ -299,20 +373,25 @@ async function createOrder(cart, custName, prizeCode) {
     upsize = true;
   }
   const order = await cloverPost("/orders", { state: "open" });
+  let seq = null;
   try {
-    for (const l of lines) for (let i = 0; i < l.qty; i++)
-      await cloverPost(`/orders/${order.id}/line_items`, { name: l.name, price: l.priceCents });
+    for (const l of lines) for (let i = 0; i < l.qty; i++) {
+      try { await cloverPost(`/orders/${order.id}/line_items`, l.note ? { name: l.name, price: l.priceCents, note: l.note } : { name: l.name, price: l.priceCents }); }
+      catch (e) { if (!l.note) throw e; await cloverPost(`/orders/${order.id}/line_items`, { name: l.name, price: l.priceCents }); }   // note refused: send the line without it
+    }
     if (upsize) {
       await cloverPost(`/orders/${order.id}/discounts`, { discount: { id: UPSIZE_DISCOUNT_ID }, name: "Thirsty Maze · Free Upsize", amount: -80 });
       await prizeCheck(prizeCode, true);
     }
+    seq = await nextOrderSeq(order.id);
     const tag = upsize ? " · MAZE UPSIZE" : "";
-    await cloverPost(`/orders/${order.id}`, { note: (custName ? `${custName} — Kiosk order` : "Kiosk order — Thirsty Beaches") + tag });
+    const num = seq ? ` #${seq}` : "";
+    await cloverPost(`/orders/${order.id}`, { note: (name ? `${name} — Kiosk order${num}` : `Kiosk order${num} — Thirsty Beaches`) + tag });
   } catch (e) {
     try { await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${order.id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${TOKEN}` } }); } catch {}
     throw e;
   }
-  return { status: 200, body: { ok: true, orderId: order.id, ticket: order.id.slice(-4).toUpperCase(), upsize } };
+  return { status: 200, body: { ok: true, orderId: order.id, ticket: order.id.slice(-4).toUpperCase(), seq, name, upsize } };
 }
 
 /* ---- AI drink-match ("Match My Vibe") ----
@@ -370,7 +449,7 @@ async function vibeMatch(image, candidates) {
 }
 
 /* ---- moderation seam (Lady Jaye's compliance policy) ---- */
-const { sanitizeDrinkText } = require("./moderation");
+const { sanitizeDrinkText, sanitizeCustomerName } = require("./moderation");
 
 /* ---- Palette: built once at startup from the bundled addons.json ----
    addons.json is a copy of control-clone/addons.json (palette changes ride the
@@ -926,8 +1005,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/control") return sendJSON(res, 200, controlCache || { soldOut: [], special: null, updated: "" });
 
   if (req.method === "GET" && pathname.startsWith("/assets/")) {
+    if (pathname.includes("\0") || pathname.includes("\\")) return send(res, 400, "bad request");
     const fp = path.normalize(path.join(__dirname, pathname));
-    if (!fp.startsWith(path.join(__dirname, "assets"))) return send(res, 403, "forbidden");
+    // with the separator: "assets-old" or "assets.bak" next to the folder must not pass the prefix test
+    if (!fp.startsWith(path.join(__dirname, "assets") + path.sep)) return send(res, 403, "forbidden");
     return sendFile(res, fp);
   }
 

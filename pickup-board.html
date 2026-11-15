@@ -99,6 +99,17 @@ h2{white-space:nowrap}
 
 .empty{font-size:1.6rem;color:var(--mute);letter-spacing:.02em}
 @media (max-width:900px){header .t{font-size:1.3rem}header .t small{font-size:.85rem}.clock{font-size:1.4rem}.more{font-size:1rem}.ready .who .aka{font-size:1.2rem}.wait .who .aka{font-size:1.05rem}.empty{font-size:1.1rem}}
+
+/* B: every waiting ticket is a small number-only tile (4 across), names stay off the public screen except
+   first name + last initial on READY, and the code is a plain daily number (101, 102, ...) */
+#wait{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-content:start;overflow:hidden}
+.wait{display:block;text-align:center;padding:10px 6px;border-radius:14px}
+.wait .code{font-size:4rem;letter-spacing:.02em;line-height:1.05}
+#wait.n20 .wait .code{font-size:3rem}
+#wait.n32 .wait .code{font-size:2.2rem}
+#wait.n32 .wait{padding:6px 4px}
+.wait.old{border-color:var(--sun)}
+@media (max-width:900px){#wait{grid-template-columns:repeat(3,minmax(0,1fr))}.wait .code{font-size:2.4rem}}
 </style>
 </head>
 <body>
@@ -106,10 +117,15 @@ h2{white-space:nowrap}
   <header><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches" onerror="this.remove()"><div class="t">Order Up<small>Stay thirsty, beaches</small></div><div class="sp"></div><div class="clock" id="clock"></div></header>
   <main>
     <section><h2 class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>Ready, come grab it</h2><div class="list" id="ready"></div><div class="more up" id="moreReady" hidden></div></section>
-    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works</h2><div class="list" id="wait"></div><div class="more wk" id="moreWait" hidden></div></section>
+    <section><h2 class="wk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6.5V12l3.5 2.5"/></svg>In the works</h2><div class="list" id="wait"></div></section>
   </main>
 </div>
 <div class="bar" id="bar" hidden></div>
+<script>
+/* ---- access key: ?k=... on the address is read once, remembered, and sent as an X-Key header ---- */
+(function(){try{var u=new URL(location.href),k=u.searchParams.get('k');if(k){localStorage.setItem('tb-key',k);u.searchParams.delete('k');history.replaceState(null,'',u.pathname+u.search+u.hash);}
+var K=localStorage.getItem('tb-key')||'';if(!K)return;var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\/(queue|done|undo|pickedup)\b/.test(i)){o=Object.assign({},o);o.headers=Object.assign({},o.headers,{'X-Key':K});}}catch(e){}return of.call(this,i,o);};}catch(e){}})();
+</script>
 <script>
 /* ---- keep the Echo Show from closing the browser: a silent audio loop makes Silk treat the page as active (starts after the first touch) ---- */
 (function(){try{const a=document.createElement('audio');a.setAttribute('aria-hidden','true');a.loop=true;a.volume=0.01;a.src="data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";a.style.display='none';document.body.appendChild(a);
@@ -118,7 +134,11 @@ document.addEventListener('pointerdown',kick,{capture:true});setInterval(()=>{if
 
 const $=s=>document.querySelector(s);const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let seenReady=new Set(),first=true;
-const READY_MAX=5,WAIT_MAX=7;   // what fits on a 1080p TV at the P1 sizes
+const READY_MAX=5;   // what fits on a 1080p TV at the P1 sizes; the waiting tiles are never capped
+/* names on a public screen: first name + last initial, 12 characters at most ("Sam R.") */
+function shortName(n){const p=String(n||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return'';const li=p.length>1?p[p.length-1][0].toUpperCase()+'.':'';return(li?p[0]+' '+li:p[0]).slice(0,12);}
+/* spoken: the number only, unless the owner turns names on for this screen (open the board once with #names) */
+let SAYNAMES=false;try{if(location.hash==='#names')localStorage.setItem('tb-say-names','1');SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
 /* Match My Vibe's funny name rides on a line as an "AKA <name>" mod; show it with the customer's name, never as a raw mod */
 const akaOf=o=>{for(const x of o.items||[]){const m=(x.mods||[]).find(m=>/^AKA /.test(m));if(m)return m.slice(4);}return'';};
@@ -143,14 +163,15 @@ function setVoiceName(n){VOICE_NAME=n;try{localStorage.setItem('tb-voice-name',n
 try{buildVoiceSel();speechSynthesis.onvoiceschanged=buildVoiceSel;}catch(e){}
 function say(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);voiceFor(u);speechSynthesis.speak(u);}catch(e){}}
 async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw 0;const q=await r.json();$('#bar').hidden=true;if(q.pageVer){if(!window.__pv)window.__pv=q.pageVer;else if(window.__pv!==q.pageVer){location.reload();return;}}
-  const ready=q.ready.slice(0,READY_MAX),wait=q.waiting.slice(0,WAIT_MAX);
+  const ready=q.ready.slice(0,READY_MAX),wait=q.waiting;
   $('#ready').style.gridTemplateRows=ready.length?'repeat('+Math.max(ready.length,3)+',minmax(0,1fr))':'';
   const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
   const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
-  more('#moreReady',q.ready.length-ready.length,'ready');more('#moreWait',q.waiting.length-wait.length,'waiting');
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}${akaOf(o)?akaHtml(o):`<small>${esc(summary(o))}</small>`}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
-  $('#wait').innerHTML=wait.length?wait.map(o=>`<div class="wait"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(o.customer||'')}${akaHtml(o)}<small>${esc(summary(o))}</small></div></div>`).join(''):`<div class="empty">All caught up.</div>`;
-  for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+(o.customer?' for '+o.customer:'')+'. Ticket '+o.ticket.split('').join(' ')+'.');seenReady.add(o.id);}
+  more('#moreReady',q.ready.length-ready.length,'ready');
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(shortName(o.customer))}${akaOf(o)?akaHtml(o):''}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  const wl=$('#wait');wl.className='list'+(wait.length>32?' n32':wait.length>20?' n20':'');
+  wl.innerHTML=wait.length?wait.map(o=>`<div class="wait${q.now-o.created>8*60000?' old':''}"><div class="code">${esc(o.ticket)}</div></div>`).join(''):`<div class="empty" style="grid-column:1/-1">All caught up.</div>`;
+  for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+'. Number '+o.ticket+(SAYNAMES&&o.customer?', for '+shortName(o.customer):'')+'.');seenReady.add(o.id);}
   first=false;}
  catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?'Need the access key. Open the board from the link with ?k= on the end.':'Board can’t reach the station. Check the Wi-Fi.';}}
 function tick(){$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}

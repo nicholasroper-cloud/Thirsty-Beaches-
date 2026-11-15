@@ -91,7 +91,20 @@
  * Patterns are tested case-insensitively on the trimmed input.
  * Lady Jaye: extend this list; DO NOT reduce it before review.
  */
-const DENY_PATTERNS = [
+/* Lady Jaye compliance gate 2026-11-15: alcohol, drug and innuendo terms (a kids-friendly kiosk). "beer" skips "root beer". */
+const DENY_SUBSTANCE = [
+  /\bbooz(e|y)\b/i, /\btips(y|ier)\b/i, /\bdrunk(en)?\b/i, /\bwasted\b/i, /\bhammered\b/i, /\bsloshed\b/i, /\bhungover\b/i, /\bhangover/i,
+  /\bshots?\b/i, /\bvodka\b/i, /\brum\b/i, /\btequila\b/i, /\bwhisk(e)?y\b/i, /\bbourbon\b/i, /\bgin\b/i, /\bliquor\b/i,
+  /(?<!root )\bbeers?\b/i, /\bwines?\b/i, /\bcocktails?\b/i, /\bmargarita/i, /\bmimosa/i, /\bsangria\b/i, /\bspiked\b/i, /\bkeg\b/i,
+  /\bhigh\b/i, /\bstoned\b/i, /\bstoner/i, /\bweed\b/i, /\b420\b/i, /\bmarijuana\b/i, /\bcannabis\b/i, /\bcocaine\b/i, /\bheroin\b/i,
+  /\bmeth\b/i, /\bmolly\b/i, /\becstasy\b/i, /\blsd\b/i, /\bdope\b/i, /\bblunt\b/i, /\bjoint\b/i, /\bdank\b/i, /\bvap(e|ing)\b/i, /\bsmok(e|ing)\b/i,
+];
+const DENY_INNUENDO = [
+  /\bhott(ie|y|ies)\b/i, /\bthicc\b/i, /\bbooty\b/i, /\btwerk/i, /\bhorny\b/i, /\bkinky\b/i, /\bsteamy\b/i, /\bnaughty\b/i, /\bhook.?ups?\b/i,
+  /\bdick\b/i, /\bcock\b/i, /\bpuss(y|ies)\b/i, /\bpenis\b/i, /\bvagina\b/i, /\btits?\b/i, /\bboobs?\b/i, /\bnipple/i, /\borgasm/i, /\bcum\b/i,
+  /\bballs\b/i, /\bbutt(s)?\b/i, /\bsugar (daddy|mama)\b/i, /\bdaddy\b/i, /\bmilf\b/i, /\bstrip(per|tease)?\b/i, /\bbang(ing|ed)?\b/i,
+];
+const DENY_CONTENT = [
   // ---- profanity (abbreviated; Lady Jaye to expand) ----
   /\bf+u+c+k/i, /\bs+h+i+t/i, /\bb+i+t+c+h/i, /\ba+s+s+h+o+l+e/i,
   /\bc+u+n+t/i, /\bd+a+m+n/i, /\bh+e+l+l\b/i, /\bcr+a+p\b/i,
@@ -103,6 +116,9 @@ const DENY_PATTERNS = [
   /\bgun(s|shot)?\b/i, /\bweapon\b/i, /\bstab/i, /\bexplosion\b/i,
   // ---- slurs (sample; Lady Jaye to expand to full list) ----
   /\bn[i1]gg/i, /\bfag(got)?\b/i, /\bretard/i, /\bspic\b/i, /\bkike\b/i,
+];
+const DENY_PATTERNS = [
+  ...DENY_CONTENT, ...DENY_SUBSTANCE, ...DENY_INNUENDO,
   // ---- brand / trademark names (in AI-generated copy) ----
   /\bcoca.?cola\b/i, /\bpepsi\b/i, /\bdr\.?\s*pepper\b/i, /\bsprite\b/i,
   /\bmonster\b/i, /\bred\s*bull\b/i, /\balani\b/i, /\bgatorade\b/i,
@@ -188,4 +204,25 @@ function sanitizeDrinkText(text, field) {
  *    copy, or add a palette-ingredient passthrough allowlist.
  * ----------------------------------------------------------------------- */
 
-module.exports = { sanitizeDrinkText };
+/* ---------- customer first names (public pickup screen + read aloud) ----------
+ * A sibling of sanitizeDrinkText, same single chokepoint: returns the name to show, or '' = reject (caller picks a beach name).
+ * Rules (Lady Jaye, 2026-11-15): FIRST WORD ONLY, letters / hyphen / apostrophe, at most 12 characters, content denylist
+ * (profanity, sexual, violence, slurs, alcohol, drugs, innuendo; no brand or health claims: those are about drinks, not people).
+ * Leet speak ("f0ck") and punctuation tricks ("f.u.c.k") are checked too. Never log the rejected text. */
+const NAME_MAX_LEN = 12;
+const LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s", "!": "i" };
+// short forms the word-boundary patterns above miss once vowels are dropped ("fck", "sht", "btch")
+const NAME_SHORT = [/^f+[uv]*c+k/i, /^s+h+[i]*t+$/i, /^b+[i]*t+c+h/i, /^a+s+s+$/i, /^c+n+t$/i, /^d+m+n$/i];
+const NAME_DENY = [...DENY_CONTENT, ...DENY_SUBSTANCE, ...DENY_INNUENDO, ...NAME_SHORT];
+function sanitizeCustomerName(text) {
+  if (typeof text !== "string") return "";
+  const token = text.normalize("NFC").trim().split(/\s+/)[0] || "";
+  const name = token.replace(/[^\p{L}'\u2019-]/gu, "").replace(/^[-'\u2019]+|[-'\u2019]+$/g, "").slice(0, NAME_MAX_LEN);
+  if (!name) return "";
+  const leet = token.toLowerCase().replace(/[0134 57@$!]/g, c => LEET[c] || "").replace(/[^a-z]/g, "");
+  const spaced = token.toLowerCase().replace(/[^a-z]/g, "");
+  for (const pat of NAME_DENY) if (pat.test(name) || pat.test(leet) || pat.test(spaced)) return "";
+  return name;
+}
+
+module.exports = { sanitizeDrinkText, sanitizeCustomerName };

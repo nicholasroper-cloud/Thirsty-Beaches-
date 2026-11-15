@@ -11,6 +11,7 @@
    Salty Dog Tags site's key through its relay, see relay.js); with neither the feature is off.   */
 import { KIOSK_MENU } from "./kiosk-menu.js";
 import { kioskCandidates, cloverCandidates, buildCloverBook, pickPrice } from "./pricebook.js";
+import { seqForOrder, doneAt } from "./ticket.js";
 import { phonePage } from "./phone-page.js";
 import { onlineGate, onlineAfterPricing, trailerStatus } from "./order-ahead.js";
 import { checkoutConfigured, checkoutViaRelay, relayPost, RELAY_LIMITS } from "./relay.js";
@@ -265,7 +266,7 @@ export async function qrStatus(env, ref, opts = {}) {
         checked = true;
         if (hit && (hit.paid || rec.orderId !== hit.orderId)) {     // write KV only when something changed
           rec.orderId = hit.orderId;
-          rec.ticket = hit.orderId.slice(-4).toUpperCase();         // same ticket as the make station / pickup board
+          rec.ticket = await seqForOrder(env, hit.orderId);          // same daily number as the make station / pickup board
           if (hit.paid) { rec.status = "paid"; rec.paidAt = now; }
           await env.STATE.put(key, JSON.stringify(rec), { expirationTtl: 86400 });
         }
@@ -278,8 +279,8 @@ export async function qrStatus(env, ref, opts = {}) {
   }
   let status = rec.status, readyAt = null;
   if (status === "paid" && rec.orderId) {
-    const done = opts.done || (await env.STATE.get("done", "json")) || {};
-    if (done[rec.orderId]) { status = "ready"; readyAt = done[rec.orderId]; }
+    const at = opts.done ? (opts.done[rec.orderId] || 0) : await doneAt(env, rec.orderId);
+    if (at) { status = "ready"; readyAt = at; }
   }
   return { rec, status, readyAt };
 }

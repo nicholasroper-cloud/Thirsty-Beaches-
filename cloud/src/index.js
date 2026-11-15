@@ -3,7 +3,8 @@
    the Worker reads Clover orders on demand, remembers which tickets are done
    in KV, and serves the station + pickup board pages from ./public.
    The Clover token lives only in the Worker's secrets. Every data route needs
-   the STATION_KEY (as ?k=... or X-Key header) so the ticket feed isn't public.
+   the STATION_KEY (X-Key header; ?k=... still works for one more release) so the ticket feed isn't public. With no
+   STATION_KEY set the data routes refuse everyone (503), they never fall open.
    Exception, on purpose: the "Pay on my phone" routes in qr.js (/api/qr, /api/qr/<ref>, /r/<ref>)
    are public; they only ever reveal one order to whoever holds its random 8-character ref.
    Also public: "Order ahead" (/order page, /api/order-ahead, /api/control; see order-ahead.js). */
@@ -13,6 +14,7 @@ import { handleQr } from "./qr.js";
 import { cloverGet, getCatalog } from "./clover.js";
 import { REPORT_CRON, runDailyReport, handleReport } from "./report.js";
 import { MONITOR_CRON, runMonitor, handleMonitor } from "./monitor.js";
+import { splitLine, authFailure, fetchOrders, seqMap, startOfDayMs, loadState, markDone, markPicked, markUndo } from "./ticket.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const text = (s, status = 200) => new Response(s, { status, headers: { "content-type": "text/plain" } });
@@ -20,15 +22,10 @@ const text = (s, status = 200) => new Response(s, { status, headers: { "content-
 let memo = { orders: null, at: 0 };   // per-isolate cache to coalesce polling
 
 function normalizeLine(li, catalog, grabCats) {
-  let name = String(li.name || "Item").trim();
-  let mods = (((li.modifications || {}).elements) || []).map(m => String(m.name || "").trim()).filter(Boolean);
-  const sep = name.indexOf(" · ");
-  if (sep > 0 && !mods.length) { mods = name.slice(sep + 3).split(",").map(s => s.trim()).filter(Boolean); name = name.slice(0, sep).trim(); }
+  const { name, mods, note } = splitLine(li);                 // add-ons come from the "MODS:" line note first (see ticket.js)
   const itemId = li.item && li.item.id;
   const cat = itemId && catalog.byId[itemId] ? catalog.byId[itemId].category : (catalog.byName[name.toLowerCase()] || {}).category || "";
   const grab = cat.split(" / ").some(c => grabCats.has(c.toLowerCase()));
-  let note = String(li.note || "").trim();
-  if (/^KQ-[A-Z0-9]{8}( · .*)?$/.test(note)) note = "";     // "Pay on my phone" reference tag, not a drink note
   return { name, mods, category: cat, kind: grab ? "grab" : "drink", note, price: li.price || 0 };
 }
 function groupLines(lines) {
@@ -54,30 +51,25 @@ function parseCustomer(o) {
   return { name: String(o.title || "").trim(), source: "Register" };
 }
 
-async function getOrders(env, done) {
-  if (memo.orders && Date.now() - memo.orders.at < 4000) return memo.orders.list.map(o => ({ ...o, done: done[o.id] || 0 }));
+async function getOrders(env, st) {
+  const stamp = o => ({ ...o, done: st.done[o.id] || 0, picked: st.picked[o.id] || 0 });
+  if (memo.orders && Date.now() - memo.orders.at < 4000) return memo.orders.list.map(stamp);
   const catalog = await getCatalog(env);
   const grabCats = new Set((env.GRAB_CATEGORIES || "Treats").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
-  const since = Date.now() - Math.max(1, parseFloat(env.MAKE_LOOKBACK_HOURS || "16")) * 3600000;
-  const r = await cloverGet(env, `/orders?filter=createdTime>=${since}&expand=lineItems,lineItems.modifications&orderBy=createdTime ASC&limit=100`);
+  const lookback = Date.now() - Math.max(1, parseFloat(env.MAKE_LOOKBACK_HOURS || "16")) * 3600000;
+  const raw = await fetchOrders(env, Math.min(lookback, startOfDayMs(env)));     // far enough back to rank today's orders too
+  const seqs = seqMap(env, raw);                                                  // daily numbers: 101, 102, ... (the Clover id stays the key)
   const list = [];
-  for (const o of (r.elements || [])) {
+  for (const o of raw) {
     const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
-    if (!lines.length) continue;
+    if (!lines.length || o.createdTime < lookback) continue;
     const who = parseCustomer(o);
-    list.push({ id: o.id, ticket: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
+    list.push({ id: o.id, ticket: String(seqs.get(o.id)), seq: seqs.get(o.id), ref: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
       paid: (o.paymentState || "").toUpperCase() === "PAID", customer: who.name, source: who.source, total: o.total || 0,
       items: groupLines(lines.map(li => normalizeLine(li, catalog, grabCats))) });
   }
   memo.orders = { list, at: Date.now() };
-  return list.map(o => ({ ...o, done: done[o.id] || 0 }));
-}
-
-async function getDone(env) { return (await env.STATE.get("done", "json")) || {}; }
-async function putDone(env, done) {
-  const cutoff = Date.now() - 48 * 3600000;
-  for (const [id, t] of Object.entries(done)) if (t < cutoff) delete done[id];
-  await env.STATE.put("done", JSON.stringify(done));
+  return list.map(stamp);
 }
 
 /* CORS for GET /api/report: only the owner app's origin; the STATION_KEY (X-Key header or ?k=) is still required. */
@@ -88,11 +80,10 @@ function reportCors(req) {
   return { "access-control-allow-origin": o, "access-control-allow-methods": "GET, OPTIONS", "access-control-allow-headers": "X-Key, Content-Type",
     "access-control-max-age": "600", vary: "Origin" };
 }
-function authorized(req, env) {
-  if (!env.STATION_KEY) return true;                        // no key configured = open (not recommended)
-  const url = new URL(req.url);
-  const k = url.searchParams.get("k") || req.headers.get("x-key") || "";
-  return k === env.STATION_KEY;
+/* null = allowed. Fails closed: no STATION_KEY configured means 503 for everyone, a wrong or missing key is 401. */
+async function denied(req, env) {
+  const f = await authFailure(req, env);
+  return f ? json({ error: f.error }, f.status) : null;
 }
 
 export default {
@@ -115,32 +106,38 @@ export default {
       // The owner app (GitHub Pages) reads this from the browser with the key in the X-Key header.
       const ownerCors = OWNER_ORIGINS.has(req.headers.get("origin") || "");
       if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: reportCors(req) });
-      const res = !authorized(req, env) ? json({ error: "key required" }, 401) : await handleReport(req, env, url);
+      const res = (await denied(req, env)) || await handleReport(req, env, url);
       if (!ownerCors) return res;
       const h = new Headers(res.headers); for (const [k, v] of Object.entries(reportCors(req))) h.set(k, v);
       return new Response(res.body, { status: res.status, headers: h });
     }
     if (p === "/api/monitor") {                                 // owner: site monitoring state (monitor.js)
-      if (!authorized(req, env)) return json({ error: "key required" }, 401);
+      const no = await denied(req, env); if (no) return no;
       return handleMonitor(req, env, url);
     }
-    if (p === "/queue" || p === "/done" || p === "/undo") {
-      if (!authorized(req, env)) return json({ error: "key required" }, 401);
-      let done = await getDone(env);
-      if (req.method === "POST" && (p === "/done" || p === "/undo")) {
+    if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup") {
+      const no = await denied(req, env); if (no) return no;
+      if (req.method === "POST" && (p === "/done" || p === "/undo" || p === "/pickedup")) {
+        // JSON only: a form or text/plain cross-site POST would skip the preflight
+        if (!/^application\/json\b/i.test(req.headers.get("content-type") || "")) return json({ error: "json only" }, 415);
         let body = {};
         try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
-        const id = String(body.id || "");
+        const id = String((body && body.id) || "");
         if (!/^[A-Z0-9]{6,20}$/i.test(id)) return json({ error: "bad id" }, 400);
-        if (p === "/done") done[id] = Date.now(); else delete done[id];
-        await putDone(env, done);
-        return json({ ok: true, id, done: !!done[id] });
+        let st = await loadState(env);
+        if (p === "/done") { await markDone(env, id); st = { ...st, done: { ...st.done, [id]: Date.now() } }; }
+        else if (p === "/undo") { await markUndo(env, id); }
+        else { if (!st.done[id]) return json({ error: "not made yet" }, 409); await markPicked(env, id); }
+        st = await loadState(env);
+        return json({ ok: true, id, done: !!st.done[id], picked: !!st.picked[id] });
       }
+      const st = await loadState(env);
+      const done = st.done;
       let orders = [], error = null;
-      try { orders = await getOrders(env, done); } catch (e) { error = e.message; }
+      try { orders = await getOrders(env, st); } catch (e) { error = e.message; }
       const now = Date.now();
       const waiting = orders.filter(o => !o.done);
-      const ready = orders.filter(o => o.done && now - o.done < 30 * 60000).sort((a, b) => b.done - a.done).slice(0, 8);
+      const ready = orders.filter(o => o.done && !o.picked && now - o.done < 30 * 60000).sort((a, b) => b.done - a.done).slice(0, 8);
       const today = new Date(now).toDateString();
       const doneToday = orders.filter(o => o.done && new Date(o.done).toDateString() === today);
       const madeToday = Object.values(done).filter(t => new Date(t).toDateString() === today).length;

@@ -12,17 +12,21 @@ fs.mkdirSync(path.join(pub, "assets"), { recursive: true });
 // "Pay on my phone" price book: read straight from the kiosk page's menu (fails the build if it can't).
 require("./menu-from-kiosk.js").writeMenu(root);
 
-const keyShim = `<script>
+/* The pages now carry their own key shim (reads ?k= once, sends it as an X-Key header, never in a data URL), so the same page
+   works on the local server and here. This only checks it is there; an older page without it still gets the legacy shim. */
+const legacyKeyShim = `<script>
 (function(){try{var u=new URL(location.href);var k=u.searchParams.get('k');if(k){localStorage.setItem('tb-key',k);}
-var K=localStorage.getItem('tb-key')||'';var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\\/(queue|done|undo)\\b/.test(i)){i+=(i.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(K);}}catch(e){}return of.call(this,i,o);};
+var K=localStorage.getItem('tb-key')||'';var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\\/(queue|done|undo|pickedup)\\b/.test(i)){o=Object.assign({},o);o.headers=Object.assign({},o.headers,{'X-Key':K});}}catch(e){}return of.call(this,i,o);};
 if(k){history.replaceState(null,'',u.pathname+u.hash);}}catch(e){}})();
 </script>`;
 
 function page(src, dst) {
   let h = fs.readFileSync(path.join(root, src), "utf8");
-  const i = h.lastIndexOf("<script>");                                              // the page's main script is the last one
-  h = h.slice(0, i) + keyShim + "\n" + h.slice(i);
-  if (!h.includes("tb-key")) throw new Error("key shim not inserted into " + src);
+  if (!h.includes("'X-Key':K")) {
+    const i = h.lastIndexOf("<script>");                                            // the page's main script is the last one
+    h = h.slice(0, i) + legacyKeyShim + "\n" + h.slice(i);
+  }
+  if (!h.includes("tb-key") || !h.includes("'X-Key':K")) throw new Error("key shim not present in " + src);
   // The pages themselves show "Need the access key" only on a 401. A dropped connection keeps its own message;
   // in the cloud there is no kiosk PC, so reword that one for the station.
   h = h.replace("Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?", "Can’t reach the station online. Check the Wi-Fi or mobile data.");

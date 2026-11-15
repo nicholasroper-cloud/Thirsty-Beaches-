@@ -356,6 +356,63 @@ body{font-synthesis:none}
   .top .wordmark{display:none}
 }
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#2c1b52;border-radius:8px}
+/* ===== R: readable from 4 feet, NOW / NEXT, age bands (Snake Eyes findings 9 and 10, 2026-11-15) =====
+   Sizes are for the 21" Show (1920x1080); the stacked phone layout (<=1100px) keeps the small type. */
+.make{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr)}
+.nowpane{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;min-height:0;min-width:0}
+.nowpane>*{position:relative;z-index:1}
+.nowtag,.nxtag{font-family:var(--display);font-size:20px;letter-spacing:.14em;background:var(--accent);color:#08011c;padding:4px 14px;border-radius:8px;line-height:1.1}
+.nxtag{background:#4a3480;color:#fff;align-self:flex-start}
+.nextpane{position:relative;z-index:1;width:360px;display:flex;flex-direction:column;gap:12px;padding:16px;border-left:2px solid var(--line);background:rgba(18,3,46,.85);overflow-y:auto;min-height:0}
+.nxhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nxcode{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;color:#fff}
+.nxhead>span{font-weight:800;font-size:22px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxi{display:flex;gap:12px;align-items:center;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--card)}
+.nxi .sb{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:#2a1658;color:#fff;font-family:var(--display);font-size:28px}
+.nxi b{font-size:24px;line-height:1.15}
+.nxi small{display:block;font-size:18px;color:#d9cff0;line-height:1.25;margin-top:2px}
+.nxnone{color:var(--mute);font-size:20px;margin:0}
+.nxgo{margin-top:auto;min-height:64px;border-radius:14px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--display);font-size:20px}
+@media (max-width:1500px){.nextpane{display:none}.make{grid-template-columns:minmax(0,1fr)}}
+.paybadge{display:inline-flex;align-items:center;font-family:var(--display);font-weight:400;border-radius:10px;padding:2px 12px;letter-spacing:.04em;line-height:1.2;white-space:nowrap;flex:none}
+.paybadge.paid{background:#3be08a;color:#08011c}
+.paybadge.collect{background:#ffd166;color:#08011c}
+.tk .paybadge{font-size:20px;margin-right:8px;vertical-align:middle}
+.mhead .paybadge{font-size:36px;padding:4px 18px}
+/* age bands: thick left border (yellow past 4 min, red past 8) instead of one saturating red */
+.tk{border-left-width:14px;border-left-color:var(--line)}
+.tk.warn{border-left-color:#ffd166}
+.tk.late{border:2px solid var(--line);border-left:14px solid var(--alert);box-shadow:none;background:var(--late)}
+.tk.on,.tk.late.on{box-shadow:0 0 0 3px var(--accent) inset}
+.mhead{border-left:14px solid transparent}
+.mhead.warn{border-left-color:#ffd166}
+.mhead.late{border-left-color:var(--alert)}
+.mhead .code{font-size:2.2rem}
+.rchip{display:flex;gap:8px;align-items:center;font-size:18px}
+.rchip span{flex:1}
+.rchip b{font-family:var(--display);font-weight:400;color:#fff}
+.undo.pick{border-color:var(--accent);color:var(--accent)}
+.hint{font-size:24px}
+.inst{font-size:28px;color:var(--sun);font-weight:700}
+.chip.c-add{background:#3be08a;color:#08011c}
+.chip.c-sub{background:#ffd166;color:#08011c}
+.chip.c-no{background:#ff6b6b;color:#08011c}
+.chip .tag{background:#08011c;color:#fff}
+/* training toggle: the how-to line under each step is off by default on the make screen (Lookup keeps it) */
+body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
+@media (min-width:1101px){
+ .cupb{width:104px;height:104px}.cupb b{font-size:56px}.cupb small{font-size:18px}
+ .chead h2{font-size:40px;line-height:1.05}
+ .chead .cup,.chead .cup .ingl{font-size:20px}
+ #tickets ol li{grid-template-columns:56px minmax(0,1fr) auto;min-height:84px;padding:8px 14px}
+ #tickets ol li::before{width:48px;height:48px;font-size:1.5rem}
+ #tickets ol li .what{font-size:40px;line-height:1.1}
+ #tickets ol li .amt{font-size:40px}
+ .chip{font-size:32px;line-height:1.15;padding:4px 14px;border:0;border-radius:12px;background:#4a3480;color:#fff;font-weight:800}
+ .chip .tag,#tickets ol li .what .tag{font-size:32px;padding:0 10px;border-radius:8px}
+ .items{grid-template-columns:repeat(auto-fill,minmax(600px,1fr))}
+ .aka{font-size:28px}
+}
 </style>
 </head>
 <body>
@@ -369,6 +426,7 @@ body{font-synthesis:none}
     </div>
     <div class="spacer"></div>
     <button class="mode fs" id="fsBtn" title="Fill the whole screen">Full screen</button>
+    <button class="mode voice" id="trainBtn" aria-pressed="false" title="Show the how-to hint under every step (for training)">Training off</button>
     <button class="mode voice" id="voiceBtn" aria-pressed="false" title="Read new tickets out loud">Voice off</button>
     <select class="mode vsel" id="voiceSel" title="Pick the voice"><option value="auto">Seasonal</option></select>
     <div class="stat" id="stOldest"><b>–</b><span>Longest wait</span></div>
@@ -399,6 +457,11 @@ body{font-synthesis:none}
 <div class="ask" id="doneAsk" hidden role="dialog" aria-modal="true" aria-labelledby="doneAskT"><div class="box"><h3 id="doneAskT"></h3><p>Tick each item as you hand it over, or finish anyway.</p><div class="btns"><button class="keep">Keep making</button><button class="anyway">Done anyway</button></div></div></div>
 <div class="saver" id="saver" aria-hidden="true"><div class="grid"></div><div class="sun"></div><img src="/assets/logo.png?v=logo20261018" alt="Thirsty Beaches. Stay thirsty, beaches." onerror="this.remove()"><div class="time" id="saverTime"></div><div class="line">Stay thirsty, beaches</div><div class="made" id="saverMade"></div><div class="tap">Tap anywhere, or a new ticket wakes it</div></div>
 <script>
+/* ---- access key: ?k=... on the address is read once, remembered, and sent as an X-Key header (never in the URL of a data call) ---- */
+(function(){try{var u=new URL(location.href),k=u.searchParams.get('k');if(k){localStorage.setItem('tb-key',k);u.searchParams.delete('k');history.replaceState(null,'',u.pathname+u.search+u.hash);}
+var K=localStorage.getItem('tb-key')||'';if(!K)return;var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\/(queue|done|undo|pickedup)\b/.test(i)){o=Object.assign({},o);o.headers=Object.assign({},o.headers,{'X-Key':K});}}catch(e){}return of.call(this,i,o);};}catch(e){}})();
+</script>
+<script>
 /* ---- keep the Echo Show from closing the browser: a silent audio loop makes Silk treat the page as active (starts after the first touch) ---- */
 (function(){try{const a=document.createElement('audio');a.setAttribute('aria-hidden','true');a.loop=true;a.volume=0.01;a.src="data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";a.style.display='none';document.body.appendChild(a);
 let armed=false;const kick=()=>{try{a.play().then(()=>{armed=true;}).catch(()=>{});}catch(e){}};
@@ -418,7 +481,18 @@ let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,s
 const SET={size:new Set(),base:new Set(),flavor:new Set(),puree:new Set(),cream:new Set(),style:new Set(),extra:new Set(),topper:new Set(),cap:new Set(),boost:new Set(),serve:new Set(),top:new Set(),temp:new Set(),milk:new Set()};
 const EXTRA_BASES=["Coca-Cola","Coke","Diet Coke","Pepsi","Dr Pepper","Diet Dr Pepper","Sprite","Sprite Zero","Mountain Dew","Diet Mtn Dew","Root Beer","Cream Soda","Fanta Orange","Big Red","Squirt","Fresca","Red Bull","Sugar-Free Red Bull","Alani Nu","Monster","Lemonade","Sparkling Water"];
 function loadGroups(a){for(const g of (a.groups||[])){const k=g.key;if(!SET[k])SET[k]=new Set();for(const it of g.items)SET[k].add(norm(it.name));}for(const b of EXTRA_BASES)SET.base.add(norm(b));}
-function classify(m){const n=norm(m);for(const k of ["size","base","flavor","puree","cream","style","extra","topper","cap","boost","serve","top","temp","milk"])if(SET[k]&&SET[k].has(n))return k;
+/* A name alone does not say which group it came from: "Dole Whip" and "Vanilla" are soft-serve CAPS on a float but
+   flavor SYRUPS on a dirty soda. So classify(m,cat) reads the mod WITH its drink category: on Floats and Soft Serve the
+   cap / boost / serve / topping groups are checked before flavor, and the kiosk's "Make it a float" upsell labels its mod
+   "Float: Dole Whip" so the group travels with it (tests/kiosk/station.js pins every cap choice). */
+const FLOAT_CAT=/\b(floats?|soft serve)\b/;
+const CAP_RE=/^(dole whip|vanilla|twist( .*)?)$/;
+const UP_FLOAT=/^float:\s*/i;
+const modText=m=>String(m).replace(UP_FLOAT,'');
+const capLabel=m=>{const n=norm(modText(m));return n==='vanilla'?'Vanilla soft serve':n==='dole whip'?'Dole Whip':/^twist/.test(n)?'Twist (Dole Whip + vanilla)':modText(m);};
+function classify(m,cat){if(UP_FLOAT.test(m))return"cap";const n=norm(m);
+ if(FLOAT_CAT.test(norm(cat||''))){if(CAP_RE.test(n))return"cap";for(const k of ["boost","serve","top","cap"])if(SET[k]&&SET[k].has(n))return k;}
+ for(const k of ["size","base","flavor","puree","cream","style","extra","topper","cap","boost","serve","top","temp","milk"])if(SET[k]&&SET[k].has(n))return k;
  if(/\b(small|medium|large|regular)\b/.test(n)||/\d+ ?oz/.test(n))return"size";return"other";}
 function sizeIdx(m){const n=norm(m);if(/\b(small|regular|12 ?oz)\b/.test(n))return 0;if(/\b(large|32 ?oz|20 ?oz)\b/.test(n))return 2;return 1;}
 function cupBadge(m){if(!m)return{l:"–",s:"one size"};const n=norm(m);const oz=(n.match(/(\d+) ?oz/)||[])[1];const L=/small/.test(n)?"S":/medium/.test(n)?"M":/large/.test(n)?"L":/regular/.test(n)?"R":oz?oz:"–";return{l:L,s:oz?oz+" oz":m};}
@@ -443,15 +517,33 @@ function amt(k,i,nSyr){return{
  garnish:'1',drizzle:'Drizzle',mixer:['2 oz','3 oz','4 oz'][i]}[k]}
 const HOW={syrup:'Pump into the empty cup first',puree:'Pump in before the ice',fresh:'Squeeze over the cup, drop the wedge in',frozen:'Add to the cup',ice:'Pebble ice to just under the rim',mixer:'Pour over the ice',base:'Pour slow down the side to keep the fizz, leave 1 inch',cream:'Pour over the back of a spoon so it floats',pearls:'Spoon onto the top',garnish:'Finish on top',drizzle:'Zigzag over the top',blend:'Ice, base and mix-ins in the blender, 30 seconds until smooth',lid:'Lid on, straw in, name on the lid, call the ticket'};
 function findRecipe(name){return RECIPES[name]||(Object.entries(RECIPES).find(([k])=>norm(k)===norm(name))||[])[1]||null;}
-function plan(name,mods){
+/* Put the customer's cap / base / boosts INTO the recipe's own steps (a float keeps its float steps) instead of a flavor pour */
+function fitHow(steps,caps,bases,boosts){
+ const left={caps:caps.slice(),bases:bases.slice(),boosts:boosts.slice()};
+ const bI=steps.findIndex(s=>/^(soda )?base$|^juice or soda$|^milk or soda base$/i.test(s[0]));
+ if(left.bases.length&&bI>=0){steps[bI][0]=left.bases.shift();}
+ const cI=steps.findIndex(s=>/soft.?serve|dole whip|^twist\b/i.test(s[0]));
+ if(left.caps.length&&cI>=0){const lab=capLabel(left.caps.shift()),s=steps[cI];
+  const generic=/^soft.?serve( cap)?$/i.test(s[0]);const same=norm(s[0])===norm(lab);
+  if(!generic&&!same)s[3]='sub:'+s[0];
+  if(generic||/as on the ticket|they picked|on the ticket/i.test(s[1]))s[1]='Swirl a tall cap on top, over the soda';
+  s[0]=lab;}
+ const lI=steps.findIndex(s=>/^load it up$|^toppings$/i.test(s[0]));
+ if(left.boosts.length&&lI>=0){steps[lI][1]='Add: '+left.boosts.join(', ');steps[lI][2]='As ordered';left.boosts=[];}
+ return left;}
+function plan(name,mods,category){
  const r=findRecipe(name);let ing=r&&r.i.length?r.i.slice():[];const std=ing.slice();
- let i=1,cup="",blended=false,asOrdered=[],unknown=[],CH={},removed=[];
+ const cat=(r&&r.c)||category||'';const howOnly=!!(r&&r.how&&!ing.length);
+ let i=1,cup="",blended=false,asOrdered=[],unknown=[],CH={},removed=[],caps=[],bases=[],boosts=[];
  const tagOf=x=>CH[norm(x)]||"";
  for(const m of mods){
   const noM=m.match(/^(no|without|hold)\s+(.+)$/i);
   if(noM){const t=norm(noM[2]);ing=ing.filter(x=>!(' '+norm(x)+' ').includes(' '+t+' '));removed.push(noM[2]);continue;}   // whole words: "No ice" must not drop "Apple Juice"
-  const k=classify(m);
+  const k=classify(m,cat);
   if(k==="size"){cup=m;i=sizeIdx(m);}
+  else if(k==="cap"){caps.push(m);}
+  else if(k==="boost"&&howOnly){boosts.push(m);}
+  else if(k==="base"&&howOnly){bases.push(m);}
   else if(k==="base"){if(ing.length){if(norm(ing[0])!==norm(m)){CH[norm(m)]="sub:"+ing[0];ing[0]=m;}}else if(!r||!r.how){ing.unshift(m);CH[norm(m)]="add";}else asOrdered.push(m);}
   else if(k==="flavor"){if(!ing.some(x=>norm(x)===norm(m))){ing.push(m);if(std.length)CH[norm(m)]="add";}}
   else if(k==="puree"){const nm=/puree/i.test(m)?m:m+" Puree";if(!ing.some(x=>norm(x)===norm(nm))){ing.push(nm);if(std.length)CH[norm(nm)]="add";}}
@@ -480,6 +572,8 @@ function plan(name,mods){
   of(['cream']).forEach(x=>steps.push([x.a,HOW.cream,amt(x.k,i,nSyr),tagOf(x.a)]));
   of(['pearls']).forEach(x=>steps.push([x.a,HOW.pearls,amt(x.k,i,nSyr),tagOf(x.a)]));
   of(['drizzle']).forEach(x=>steps.push([x.a,HOW.drizzle,amt(x.k,i,nSyr),tagOf(x.a)]));
+  caps.forEach(c=>steps.push([capLabel(c),'Swirl a tall cap on top, over the soda','1 swirl','add']));
+  if(caps.length){const bs=steps.find(s=>s[0]===base&&s[2]==='Fill');if(bs){bs[1]='Pour slow down the side, stop at 2/3 to leave room for the soft serve';bs[2]='2/3';}}
   of(['garnish']).forEach(x=>steps.push([x.a,HOW.garnish,amt(x.k,i,nSyr),tagOf(x.a)]));
   for(const m of asOrdered)steps.push([m,'Customer added this','✓','add']);
   for(const m of unknown)steps.push([m,'Customer asked for this (not a known add-on)','?','add']);
@@ -488,63 +582,82 @@ function plan(name,mods){
  }else if(r&&r.how){
   let iceDone=false;for(const s of r.how){if(noIce&&/^ice$/i.test(s[0])){steps.push(NOICE.slice());iceDone=true;continue;}steps.push(s.slice());}
   if(noIce&&!iceDone)steps.splice(steps.length-1,0,NOICE.slice());
-  const extra=asOrdered.concat(unknown).map(m=>[m,'Customer added this','✓','add']).concat(removed.map(m=>['No '+m,'Leave it out','–','no']));
+  const left=fitHow(steps,caps,bases,boosts);
+  const extra=left.caps.map(c=>[capLabel(c),'Swirl a tall cap on top','1 swirl','add']).concat(left.bases.map(b=>[b,'Customer added this','✓','add']),left.boosts.map(b=>[b,'Customer added this','✓','add']),asOrdered.concat(unknown).map(m=>[m,'Customer added this','✓','add']),removed.map(m=>['No '+m,'Leave it out','–','no']));
   if(extra.length)steps.splice(steps.length-1,0,...extra);
  }else{
   steps.push([r&&r.note?r.note:'House recipe','No build on file yet. Make it the usual way.','','']);
   if(noIce)steps.push(NOICE.slice());
-  for(const m of asOrdered.concat(unknown))steps.push([m,'Customer added this','✓','add']);
+  for(const m of caps.map(capLabel).concat(bases,boosts,asOrdered,unknown))steps.push([m,'Customer added this','✓','add']);
   for(const m of removed)steps.push(['No '+m,'Leave it out','–','no']);
   steps.push(['Lid + straw',HOW.lid,'✓','']);
  }
- const changed=Object.keys(CH).length+removed.length+(noIce?1:0)+asOrdered.length+unknown.length+(blended&&std.length?1:0);
- return{cup,steps,ingredients:ing,recipe:r,CH,removed,changed};}
+ const changed=Object.keys(CH).length+removed.length+(noIce?1:0)+asOrdered.length+unknown.length+caps.length+boosts.length+bases.length+(blended&&std.length?1:0);
+ return{cup,steps,ingredients:ing,recipe:r,CH,removed,changed,caps};}
 /* ---- shared step list behaviour ---- */
 function wireSteps(ol,key,ck,onChange){ol.querySelectorAll('li').forEach((li,j)=>{li.onclick=()=>{ck[key+':'+j]=!ck[key+':'+j];markSteps(ol,key,ck);onChange&&onChange();};});markSteps(ol,key,ck);}
 function markSteps(ol,key,ck){const lis=[...ol.querySelectorAll('li')];let first=null;lis.forEach((li,j)=>{const d=!!ck[key+':'+j];li.classList.toggle('done',d);if(!d&&first===null)first=j;});
  lis.forEach((li,j)=>li.classList.toggle('now',j===first));const card=ol.closest('.card');if(card)card.classList.toggle('ok',first===null);return first===null;}
 const tagHTML=t=>{if(!t)return'';if(t.startsWith('sub:'))return`<b class="tag sub">SUB</b>`;if(t.startsWith('add'))return`<b class="tag add">ADD</b>`;if(t==='no')return`<b class="tag no">NO</b>`;return'';};
-const tagHint=(t,h)=>t&&t.startsWith('sub:')?'Instead of '+t.slice(4)+'. '+h:h;
-const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${/^(lid|pour \+ lid|dome lid|spoon|hand off|blend$)/i.test(w)||t==='no'?'':dot(w)}${esc(w)}<span>${esc(tagHint(t,h))}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
+const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${/^(lid|pour \+ lid|dome lid|spoon|hand off|blend$)/i.test(w)||t==='no'?'':dot(w)}${esc(w)}${t&&t.startsWith('sub:')?`<span class="inst">Instead of ${esc(t.slice(4))}</span>`:''}<span class="hint${a==='?'?' keep':''}">${esc(h)}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
 /* ================= TICKETS ================= */
 const age=t=>{const s=Math.max(0,Math.floor((queue.now-t)/1000));if(s<60)return s+"s";const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h<24?h+"h "+(m%60)+"m":Math.floor(h/24)+"d"};
-const LATE_MS=6*60000;
+const WARN_MS=4*60000,LATE_MS=8*60000;   // age bands: yellow over 4 min, red over 8 (a thick left border on the tile)
+const ageBand=o=>{const a=queue.now-o.created;return a>LATE_MS?'late':a>WARN_MS?'warn':'';};
+const cents=o=>o.total||o.items.reduce((s,it)=>s+(it.price||0)*it.qty,0);
+const money=c=>'$'+(c/100).toFixed(2);
+/* big hand-off badge: PAID, or COLLECT $x (what to charge at the window) */
+const payBadge=o=>o.paid?'<b class="paybadge paid">PAID</b>':'<b class="paybadge collect">COLLECT '+money(cents(o))+'</b>';
+let TRAIN=false,SAYNAMES=false;try{TRAIN=localStorage.getItem('tb-train')==='1';SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
+function setTrain(v){TRAIN=v;document.body.classList.toggle('training',v);$('#trainBtn').setAttribute('aria-pressed',v);$('#trainBtn').textContent=v?'Training on':'Training off';try{localStorage.setItem('tb-train',v?'1':'0');}catch(e){}}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
 function renderQueue(){const w=queue.waiting;
  $('#nWait').textContent=w.length;$('#stMade').textContent=queue.madeToday;
  const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
- $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${queue.now-o.created>LATE_MS?' late':''}" data-id="${esc(o.id)}">
-   ${queue.now-o.created>LATE_MS?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
-   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
+ $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);const band=ageBand(o);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${band?' '+band:''}" data-id="${esc(o.id)}">
+   ${band==='late'?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
+   <span class="sub">${payBadge(o)}${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
  let newlyLate=false;for(const o of w)if(queue.now-o.created>LATE_MS&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
  if(newlyLate)lateDing();
- const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh)mh.classList.toggle('late',!!so2&&queue.now-so2.created>LATE_MS);
+ const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh){mh.classList.toggle('late',!!so2&&queue.now-so2.created>LATE_MS);mh.classList.toggle('warn',!!so2&&ageBand(so2)==='warn');}
+ /* "Just made": up to 4 rows with Undo + Picked up; past 6 tickets waiting it shrinks to ONE chip so it stops eating the queue */
  const r=queue.ready;const rec=$('#recent');rec.hidden=!r.length;
- if(r.length)rec.innerHTML=`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button></div>`).join(''),
-  rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post('/undo',b.dataset.id));}
+ if(r.length){const tight=w.length>6;
+  rec.innerHTML=tight?`<div class="rchip"><span>Just made <b>${esc(r[0].ticket)}</b></span><button class="undo" data-id="${esc(r[0].id)}">Undo</button><button class="undo pick" data-id="${esc(r[0].id)}">Picked up</button></div>`
+   :`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button><button class="undo pick" data-id="${esc(o.id)}">Picked up</button></div>`).join('');
+  rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post(b.classList.contains('pick')?'/pickedup':'/undo',b.dataset.id));}}
+/* NEXT pane: the ticket after this one, compact (cup, name, what goes in it) so batching and prep never need a tap-around */
+function nextPane(nx){
+ if(!nx)return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><p class="nxnone">Nothing after this one</p></aside>`;
+ const items=nx.items.map(it=>{if(it.kind==='grab')return`<div class="nxi"><span class="sb">G</span><div><b>${esc(it.name)}</b>${it.qty>1?` ×${it.qty}`:''}<small>grab</small></div></div>`;
+  const aka=it.mods.find(m=>/^AKA /.test(m));const ms=it.mods.filter(m=>m!==aka);const p=plan(it.name,ms,it.category);const cb=cupBadge(p.cup);
+  const parts=p.ingredients.length?p.ingredients:p.steps.map(s=>s[0]).filter(x=>!/^(lid|ice|pour \+ lid|dome lid|spoon|hand off)/i.test(x)).slice(0,5);
+  return`<div class="nxi"><span class="sb">${esc(cb.l)}</span><div><b>${esc(it.name)}</b>${it.qty>1?` ×${it.qty}`:''}<small>${esc(parts.map(modText).join(' · '))}</small></div></div>`;}).join('');
+ return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><div class="nxhead"><b class="nxcode">${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)}</span>${payBadge(nx)}</div>${items}<button class="nxgo" data-id="${esc(nx.id)}">Start this one now</button></aside>`;}
 function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
  if(!o){const t=queue.today||{};const fmt=s=>s?(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'–';const hr=t.busiestHour==null?'–':((t.busiestHour%12)||12)+(t.busiestHour<12?' am':' pm');
-  m.innerHTML=`<div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="strip"></div><div class="items"><div class="blank">All caught up
+  m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="strip"></div><div class="items"><div class="blank">All caught up
    <div class="stats"><div><b>${t.made||0}</b>made today</div><div><b>${fmt(t.avgSec)}</b>avg ticket time</div><div><b>${hr}</b>busiest hour${t.busiestCount?' ('+t.busiestCount+')':''}</div>
-   ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div>`;return;}
+   ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
- m.innerHTML=`<div class="mhead"><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}${o.paid?' · paid':''}</small></div><b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+ m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${payBadge(o)}<b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
   <div class="strip" id="strip">${o.items.length>1?o.items.map((it,ix)=>stripItem(it,ix)).join(''):''}</div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
-  <div class="upnext"><div class="un">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div><button class="morebelow" id="moreBelow" hidden></button></div>`;
+  <div class="upnext"><div class="un">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div><button class="morebelow" id="moreBelow" hidden></button></div></div>${nextPane(nx)}`;
  const finish=async()=>{if(await post('/done',o.id))delete checks[o.id];};
  $('#doneBtn').onclick=()=>{const left=[...m.querySelectorAll('.items .card')].filter(c=>!c.classList.contains('ok')).length;
   if(!left){finish();return;}
   const a=$('#doneAsk');a.querySelector('h3').textContent=left+(left===1?' item':' items')+' not ticked. Done anyway?';a.hidden=false;
   a.querySelector('.keep').onclick=()=>{a.hidden=true;};a.querySelector('.anyway').onclick=()=>{a.hidden=true;finish();};};
+ const go=m.querySelector('.nxgo');if(go)go.onclick=()=>{sel=go.dataset.id;seen.add(sel);renderQueue();renderTicket();};
  const its=m.querySelector('.items');its.onscroll=moreBelow;
  m.querySelectorAll('.sitem').forEach(b=>b.onclick=()=>{const c=its.querySelector('.card[data-k="'+b.dataset.k+'"]');if(c)its.scrollTo({top:c.offsetTop-its.offsetTop-8,behavior:'smooth'});});$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
- progress(o,ck);renderPrep(o);moreBelow();m.querySelector('.mhead').classList.toggle('late',queue.now-o.created>LATE_MS);}
+ progress(o,ck);renderPrep(o);moreBelow();const mh=m.querySelector('.mhead');mh.classList.toggle('late',queue.now-o.created>LATE_MS);mh.classList.toggle('warn',ageBand(o)==='warn');}
 /* "N more below": counts cards whose top edge is under the visible part of the items list */
 function moreBelow(){const b=$('#moreBelow'),it=$('#make .items');if(!b||!it)return;
  if(it.scrollHeight-it.scrollTop-it.clientHeight<8){b.hidden=true;return;}
@@ -554,7 +667,7 @@ addEventListener('resize',moreBelow);
 function renderPrep(cur){const others=queue.waiting.filter(x=>x.id!==cur.id);const el=$('#prep');if(!el)return;
  if(!others.length){el.innerHTML='';return;}
  const bases={},same={};
- for(const o of others)for(const it of o.items){if(it.kind!=='drink')continue;const p=plan(it.name,it.mods);const b=p.ingredients[0]||it.name;bases[b]=(bases[b]||0)+it.qty;}
+ for(const o of others)for(const it of o.items){if(it.kind!=='drink')continue;const p=plan(it.name,it.mods,it.category);const b=p.ingredients[0]||it.name;bases[b]=(bases[b]||0)+it.qty;}
  for(const it of cur.items)for(const o of others)for(const x of o.items)if(x.name===it.name&&x.mods.join()===it.mods.join())same[it.name]=(same[it.name]||0)+x.qty;
  const top=Object.entries(bases).sort((a,b)=>b[1]-a[1]).slice(0,6);
  el.innerHTML=`<b>Coming up</b>`+top.map(([b,c])=>`<span class="pc"><em>${c}×</em>${dot(b)}${esc(b)}</span>`).join('')+
@@ -566,9 +679,9 @@ function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];co
 function stripItem(it,ix){const k=(it.kind==='grab'?'g':'d')+ix;const akaM=it.mods.find(m=>/^AKA /.test(m));const mods=it.mods.filter(m=>m!==akaM);
  const c=catColor(it.category);const cb=it.kind==='grab'?{l:'G'}:cupBadge(mods.find(m=>classify(m)==='size'));
  return`<button class="sitem" data-k="${k}" style="${c?`--cat:${c}`:''}"><span class="sb">${esc(cb.l)}</span><span class="sn">${esc(it.name)}${akaM?`<small>“${esc(akaM.slice(4))}”</small>`:''}</span>${it.qty>1?`<span class="sq">×${it.qty}</span>`:''}</button>`;}
-function drinkCard(it,ix,ck){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=plan(it.name,it.mods);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
- const chips=it.mods.map(m=>{const k=classify(m);const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
-  return`<span class="chip${t?' hot':''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
+function drinkCard(it,ix,ck){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=plan(it.name,it.mods,it.category);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
+ const chips=it.mods.map(m=>{const k=classify(m,it.category||(p.recipe&&p.recipe.c));const noM=/^(no|without|hold)\s+/i.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||['extra','topper','boost','top','cap','serve','temp','milk'].includes(k)?'add':''));
+  return`<span class="chip${t?' hot c-'+(t==='no'?'no':t.startsWith('sub')?'sub':'add'):''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
  return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?'<span class="ingw"> · '+ingList(p.ingredients)+'</span>':''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
   ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
@@ -607,6 +720,7 @@ let audioCtx=null;document.addEventListener('pointerdown',()=>{try{audioCtx=audi
 let VOICE=false;try{VOICE=localStorage.getItem('tb-voice')==='1';}catch(e){}
 function setVoice(v){VOICE=v;$('#voiceBtn').setAttribute('aria-pressed',v);$('#voiceBtn').textContent=v?'Voice on':'Voice off';try{localStorage.setItem('tb-voice',v?'1':'0');}catch(e){}}
 $('#voiceBtn').onclick=()=>{setVoice(!VOICE);if(VOICE)say(persona().intro);};
+$('#trainBtn').onclick=()=>setTrain(!TRAIN);
 /* Voice personas. "Seasonal" = Pumpkin King in October, Santa in December, Barry the rest of the year.
    Web Speech can't do impressions, so each persona = deepest male voice on the device + its own pitch, pace and lines. Saved in localStorage tb-voice-name. */
 const VOICE_DEEP=['Daniel','Google UK English Male','Microsoft Ryan','Microsoft Guy','Microsoft Davis','Microsoft David','Microsoft Mark','Alex','Fred','Aaron','Arthur','Rishi','Reed'];
@@ -628,7 +742,7 @@ try{buildVoiceSel();speechSynthesis.onvoiceschanged=buildVoiceSel;}catch(e){}
 $('#voiceSel').onchange=e=>{setVoiceName(e.target.value);if(!VOICE)setVoice(true);say(persona().intro);};
 function say(text){try{if(!VOICE||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);voiceFor(u);speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
 function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>classify(m)==='size');const s=sz?(/small/i.test(sz)?'small':/medium/i.test(sz)?'medium':/large/i.test(sz)?'large':sz):'';return (it.qty>1?it.qty+' ':'')+(it.kind==='grab'?'grab ':'')+it.name+(s?', '+s:'');});
- const p=persona();return p.head+(o.customer?' for '+o.customer:'')+'. '+parts.join('. ')+'.'+p.tail;}
+ const p=persona();return p.head+' '+o.ticket+(SAYNAMES&&o.customer?', for '+o.customer:'')+'. '+parts.join('. ')+'.'+p.tail;}
 /* one spoken announcement per poll, each ticket read at most once ever (tracked in `announced`, separate from the NEW badge) */
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
@@ -664,7 +778,7 @@ setInterval(()=>{if(!saverOn&&queue.waiting.length===0&&Date.now()-lastTouch>SAV
 function tick(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});queue.now=Date.now();renderQueue();}
 (async()=>{try{RECIPES=(await (await fetch('/recipes.json')).json()).recipes||{};}catch(e){}
  try{loadGroups(await (await fetch('/addons.json')).json());}catch(e){}
- setVoice(VOICE);tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
+ setVoice(VOICE);setTrain(TRAIN);if(location.hash==='#names'){SAYNAMES=true;try{localStorage.setItem('tb-say-names','1');}catch(e){}}tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
  if(location.hash==='#lookup')setMode('lookup');if(location.hash==='#saver'){saverForced=true;showSaver();}
  try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}})();
 </script>

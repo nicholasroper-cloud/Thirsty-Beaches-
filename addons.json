@@ -129,6 +129,10 @@
     {
      "id": "boost:Toasted coconut",
      "name": "Toasted coconut"
+    },
+    {
+     "id": "boost:Freeze-dried candy",
+     "name": "Freeze-dried candy"
     }
    ]
   },
@@ -151,6 +155,10 @@
     {
      "id": "topper:Salted caramel cold foam",
      "name": "Salted caramel cold foam"
+    },
+    {
+     "id": "topper:Freeze-dried candy",
+     "name": "Freeze-dried candy"
     }
    ]
   },
