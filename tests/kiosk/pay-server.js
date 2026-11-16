@@ -120,7 +120,16 @@ async function routeTests() {
     if (!(await api.handle(rq, res, pathname))) { res.writeHead(404); res.end("nf"); }
   });
   await new Promise(r => server.listen(0, "127.0.0.1", r)); port = server.address().port;
-  const mkOrder = (id, total = 349, extra = {}) => { state.orders.set(id, { id, state: "open", total, payments: { elements: [] }, ...extra }); };
+  const mkOrder = (id, total = 349, extra = {}) => { state.orders.set(id, { id, state: "open", total, title: "TBK:PENDING", payments: { elements: [] }, ...extra }); };
+  // ADR section 7: /pay answers {result:"pending"} at once; the page polls /pay/state. This helper does the same and returns the settled view.
+  const MAPPED = { APPROVED: "approved", DECLINED: "declined", CANCELLED: "cancelled", TIMEOUT_UNKNOWN: "unknown", DISCONNECTED_UNKNOWN: "unknown" };
+  const stateOf = (id, tok) => req(port, "GET", "/pay/state?orderId=" + id, undefined, { "X-Pay-Token": tok }).then(r => r.json);
+  const payWait = async (id, tok, amt = 349) => {
+    const r = await post("/pay", { orderId: id, amountCents: amt, payToken: tok });
+    if (r.json.result !== "pending") return r.json;
+    let s2; await waitFor(async () => { s2 = await stateOf(id, tok); return s2.state !== "IN_FLIGHT"; }, 5000, "the sale to settle");
+    return { ...s2, result: MAPPED[s2.state] || s2.state };
+  };
   const newOrder = (id, total) => { mkOrder(id, total); const tok = api.registerOrder(id); return tok; };
   const post = (p, body, h) => { if (p === "/pay") clock.t += clock.spacing; return req(port, "POST", p, body, h); };
 
@@ -159,11 +168,13 @@ async function routeTests() {
     eq((await post("/pay", { orderId: "ROUTEORDER001", amountCents: 100, payToken: T1 })).json.result, "mismatch", "client amount differs from the Clover total");
     eq(fc.count("sale"), 0);
     fc.script.sale = (id) => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("SUCCESS", mkPayment({ extId: id, amount: 349, id: "PAYIDROUTE001" })));
-    const ap = await post("/pay", { orderId: "ROUTEORDER001", amountCents: 349, payToken: T1 });
-    eq(ap.json.result, "approved"); eq(ap.json.ticket, "R001"); eq(ap.json.paymentId, "PAYIDROUTE001");
+    const first = await post("/pay", { orderId: "ROUTEORDER001", amountCents: 349, payToken: T1 });
+    eq(first.json.result, "pending", "a started Sale answers at once");
+    await waitFor(async () => (await stateOf("ROUTEORDER001", T1)).state === "APPROVED", 5000, "late approval reaches /pay/state");
+    eq((await stateOf("ROUTEORDER001", T1)).paymentId, "PAYIDROUTE001");
     state.orders.get("ROUTEORDER001").state = "locked";                   // the PAID tag locked it in Clover
     const again = await post("/pay", { orderId: "ROUTEORDER001", amountCents: 349, payToken: T1 });
-    eq(again.json.result, "approved", "a retry after a dropped response is answered from the journal even though the order is no longer open");
+    eq(again.json.result, "approved", "a retry after a dropped response is answered from the journal even though the order is no longer open"); eq(again.json.ticket, "R001");
     eq(fc.count("sale"), 1);
     eq((await req(port, "GET", "/pay/state?orderId=ROUTEORDER001", undefined, { "X-Pay-Token": T1 })).json.state, "APPROVED");
     ok(JSON.stringify((await req(port, "GET", "/pay/state?orderId=ROUTEORDER001", undefined, { "X-Pay-Token": T1 })).json).indexOf("411111") < 0);
@@ -186,12 +197,13 @@ async function routeTests() {
     // declined attempt -> abandon allowed
     const D = newOrder("ROUTEDECLN01");
     fc.script.sale = () => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("FAIL", null, "declined"));
-    eq((await post("/pay", { orderId: "ROUTEDECLN01", amountCents: 349, payToken: D })).json.result, "declined");
+    { clock.t = Date.now(); const dr = await payWait("ROUTEDECLN01", D); eq(dr.result, "declined");
+      ok(dr.stillThereInMs > 0 && dr.stillThereInMs <= 30000 && dr.abandonInMs === dr.stillThereInMs + 10000, "declined carries the server-side Still there? countdown (30 s) and the abandon countdown (40 s)"); }
     eq((await post("/pay/abandon", { orderId: "ROUTEDECLN01", payToken: D })).json.result, "abandoned");
     // an UNKNOWN order is never deleted
     fc.deviceState = "BUSY"; fc.script.sale = () => {};
     const U = newOrder("ROUTEUNKNW01");
-    eq((await post("/pay", { orderId: "ROUTEUNKNW01", amountCents: 349, payToken: U })).json.result, "unknown");
+    { clock.t = Date.now(); const ur = await payWait("ROUTEUNKNW01", U); eq(ur.result, "unknown"); ok(ur.resetInMs > 0 && ur.resetInMs <= 20000, "UNKNOWN carries the 20 s hold countdown"); }
     fc.deviceState = "IDLE";
     eq((await post("/pay/abandon", { orderId: "ROUTEUNKNW01", payToken: U })).json.result, "refused");
     eq((await post("/pay", { orderId: "ROUTEUNKNW01", amountCents: 349, payToken: U })).json.result, "blocked-unknown", "answered from the journal; the Clover order is locked");
@@ -244,7 +256,7 @@ const cloverSrv = http.createServer((rq, res) => {
 });
 function stage() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paysrv-"));
-  for (const f of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  for (const f of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "catalog-map.json", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   return dir;
 }
 function spawnKiosk(dir, port, cloverPort, env) {

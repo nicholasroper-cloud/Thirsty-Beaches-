@@ -91,7 +91,7 @@ const fail = (...a) => console.error("[flex-pay]", ...a);
 const sleep = ms => new Promise(r => { const t = setTimeout(r, ms); if (t.unref) t.unref(); });
 
 module.exports = {
-  init, shutdown, status, pay, collect, canAbandon, markAbandoned, orderState, registerOrder, reconcile, buildSaleRequest,
+  init, shutdown, status, hasJournal: () => !!_journal, listOrders, pay, collect, canAbandon, markAbandoned, orderState, registerOrder, reconcile, buildSaleRequest,
   _internals: { loadSdk: () => _requireSdk(), journal: () => _journal, rt: _rt },
 };
 
@@ -260,7 +260,7 @@ function _pay({ orderId, amountCents, taxCents, quoteId }) {
   try { saleReq = buildSaleRequest(sdk, { externalId, amountCents, taxCents: tax }); }
   catch (e) { fail(`pay: ${e.message}`); return done({ result: "error", message: "sale could not be built" }); }
 
-  return new Promise(resolve => {
+  const p = new Promise(resolve => {
     let entry = null, called = false;
     try {
       // journal (fsync) BEFORE the Sale: if this throws, nothing was sent
@@ -283,6 +283,8 @@ function _pay({ orderId, amountCents, taxCents, quoteId }) {
       resolve(entry ? _resultFor(_journal.get(externalId)) : { result: "error", message: "payment could not be started" });
     }
   });
+  p.started = true;                                   // a Sale was sent: the route may answer "pending" and let the page poll /pay/state
+  return p;
 }
 
 function _runtime(externalId) {
@@ -625,8 +627,14 @@ function orderState(orderId) {
   const status = J.orderStatus(order);
   const last = order.attempts.length ? order.attempts[order.attempts.length - 1] : null;
   const paid = order.attempts.find(a => J.isCharged(a.state));
-  return { state: status, attempt: last ? last.attempt : 0, attempts: order.attempts.length,
+  const stateAt = Math.max(order.pendingAt || 0, order.collectAt || 0, order.abandonedAt || 0, ...order.attempts.map(a => a.stateAt || 0));
+  return { state: status, stateAt, attempt: last ? last.attempt : 0, attempts: order.attempts.length,
            paymentId: paid ? paid.paymentId || null : null, last4: paid ? paid.last4 || null : null, cardBrand: paid ? paid.cardBrand || null : null };
+}
+
+/** Orders the sweeper may look at: registered, not abandoned. */
+function listOrders() {
+  return _journal ? _journal.orders().filter(o => o.pendingAt && !o.abandonedAt).map(o => ({ id: o.kioskOrderId, ...orderState(o.kioskOrderId) })) : [];
 }
 
 /** "Pay at window". Refused while a card attempt is unresolved (the card may still be charged). */
