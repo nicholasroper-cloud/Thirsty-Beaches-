@@ -282,7 +282,7 @@ async function routeTests() {
 }
 
 /* ================= 3. the real kiosk-server.js in a child process ================= */
-const fake = { control: {}, controlFail: false, orders: new Map(), seq: 0 };
+const fake = { control: {}, controlFail: false, orders: new Map(), seq: 0, hang: false };
 const cloverSrv = http.createServer((rq, res) => {
   const u = new URL(rq.url, "http://x"); let body = "";
   rq.on("data", c => body += c); rq.on("end", () => {
@@ -295,6 +295,7 @@ const cloverSrv = http.createServer((rq, res) => {
     if (rq.method === "GET" && m === "/items") return j(200, { elements: [ITEM] });
     if (rq.method === "GET" && m === "/modifier_groups") return j(200, { elements: [] });
     if (rq.method === "GET" && m === "/tax_rates") return j(200, { elements: [{ id: "TAXTEST000001", name: "Test tax", rate: 700000, isDefault: true }] });
+    if (rq.method === "POST" && m === "/atomic_order/checkouts" && fake.hang) return;        // never answers (NEW-3)
     if (rq.method === "POST" && m === "/atomic_order/checkouts") { const n = JSON.parse(body).orderCart.lineItems.length; return j(200, { total: n * 373, lineItems: { elements: Array.from({ length: n }, () => ({ taxRates: { elements: [{ taxAmount: 24 }] } })) } }); }
     if (rq.method === "POST" && m === "/atomic_order/orders") { const cart = JSON.parse(body).orderCart; const o = { id: "AORDER" + String(++fake.seq).padStart(6, "0"), state: "open", total: cart.lineItems.length * 373, orderType: cart.orderType, lineItems: { elements: cart.lineItems }, createdTime: Date.now() }; fake.orders.set(o.id, o); return j(200, o); }
     if (rq.method === "POST" && m === "/orders") { const o = { id: "KORDER" + String(++fake.seq).padStart(6, "0"), state: "open", total: 349, lineItems: { elements: [] }, createdTime: Date.now() }; fake.orders.set(o.id, o); return j(200, o); }
@@ -426,6 +427,17 @@ async function serverTests(cloverPort) {
   }
   // pay off: the assertion does not apply
   { const port = await freePort(); const c = spawnKiosk(dir, port, cloverPort, { PAY_ENABLED: "false", PAY_TIMEOUT_MS: "90000", TB_IDLE_MS: "2000" }); ok(await up(port), "pay off is never refused"); await stop(c); }
+
+  // ---- NEW-3: a hung Clover is cut off after the Clover timeout, not left to the runtime's default of minutes ----
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen", TB_CLOVER_TIMEOUT_MS: "800" }, async port => {
+    await waitFor(async () => (await req(port, "GET", "/catalog")).json.payNow === true, 8000, "catalog synced");
+    fake.hang = true;
+    const t0 = Date.now();
+    const q = await req(port, "POST", "/quote", { cart: [{ catKey: "dirtysodas", itemId: "thirst-trap", sel: {}, qty: 1 }] });
+    fake.hang = false;
+    ok(Date.now() - t0 < 4000, "the hung checkout call was cut off (" + (Date.now() - t0) + " ms)");
+    eq([q.json.ok, q.json.payNow], [true, false], "the quote still answers, without payNow: " + q.json.reason); ok(/checkout failed/.test(q.json.reason));
+  });
 
   // ---- rate limit on the real server: /pay 6 per minute, spent only by AUTHORIZED requests (CR-013) ----
   await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {

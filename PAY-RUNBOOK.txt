@@ -10,7 +10,10 @@ Card payment is OFF unless kiosk-config.env says PAY_ENABLED=true. Every step be
    The reader could not say whether the card was charged. The order is locked and no other card can be taken until it is settled.
    a) Wait about a minute with the reader on: it normally answers by itself and the tile turns PAID or COLLECT.
    b) If it stays on CHECK: open Clover Dashboard > Transactions and look for a payment for that amount at that time.
-   c) Stop the kiosk (Stop-Kiosk.bat). In the kiosk folder run:
+      If the kiosk's CRITICAL log line says the reader charged a DIFFERENT amount than the sale: the kiosk keeps that order on CHECK and will not decide
+      for you. Collect the balance or void the payment in the Dashboard, then record the outcome with "charged" (kept as paid) or "not-charged" (voided).
+   c) Stop the kiosk (Stop-Kiosk.bat). The tool refuses to run while the kiosk is running ("stop the kiosk first", exit code 3). If the kiosk was
+      killed and the tool says the lock is stale, run it again with --force. In the kiosk folder run:
         node tools\pay-resolve.js --list
         node tools\pay-resolve.js <externalId> charged         (the customer was charged: the order becomes PAID)
         node tools\pay-resolve.js <externalId> not-charged     (not charged, or you voided it: the order goes to COLLECT)

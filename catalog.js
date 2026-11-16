@@ -146,13 +146,26 @@ function createCatalog(d) {
     return { reject, hold };
   }
 
-  /** The baseline follows a price only when the move is under 10% (or the owner accepted it): slow, deliberate changes pass, big or stepped ones do not. */
+  /**
+   * Two reference prices per mapped id (CR-014, NEW-5). `anchor` is the last ACCEPTED price (first sync, or the owner's accept flag); it never moves by itself.
+   * `baseline` is what a sync is compared with (the 50% hold): it follows the Clover price only while the CUMULATIVE move from the anchor stays under 10%.
+   * So a price walking up 9% per sync stops dragging the baseline along after the first step and is held within a few syncs; and any price more than
+   * 25% from its anchor raises a heartbeat alert even though payment is still allowed.
+   */
   function setBaseline(cand, last, accepted) {
+    const pa = (last && last.anchor) || (last && last.baseline) || { items: {}, modifiers: {} };      // old files have only a baseline
     const pb = (last && last.baseline) || { items: {}, modifiers: {} };
-    const follow = (o, n) => accepted || o === undefined || o === null || n === null || o === 0 || Math.abs(n - o) <= Math.abs(o) * 0.1;
-    cand.baseline = { items: {}, modifiers: {} };
-    for (const id of ids.items) { const n = cand.items[id].price, o = pb.items[id]; cand.baseline.items[id] = follow(o, n) ? n : o; }
-    for (const id of ids.mods) { const n = cand.modifiers[id].price, o = pb.modifiers[id]; cand.baseline.modifiers[id] = follow(o, n) ? n : o; }
+    cand.baseline = { items: {}, modifiers: {} }; cand.anchor = { items: {}, modifiers: {} };
+    const one = (kind, id, n) => {
+      const a0 = pa[kind][id], b0 = pb[kind][id];
+      if (accepted || a0 === undefined || a0 === null) { cand.anchor[kind][id] = n; cand.baseline[kind][id] = n; return; }
+      cand.anchor[kind][id] = a0;
+      const cum = a0 === 0 ? (n === 0 ? 0 : Infinity) : Math.abs(n - a0) / Math.abs(a0);
+      cand.baseline[kind][id] = cum < 0.10 ? n : (b0 === undefined ? a0 : b0);
+      if (cum > 0.25) alert(`${kind === "items" ? "item" : "modifier"} ${id} is ${Math.round(cum * 100)}% away from its last accepted price (${a0} -> ${n}); touch .tb/catalog-accept.flag if that is intended`);
+    };
+    for (const id of ids.items) one("items", id, cand.items[id].price);
+    for (const id of ids.mods) one("modifiers", id, cand.modifiers[id].price);
   }
   function promote(cand, how, accepted) {
     setBaseline(cand, st.table, accepted || !st.table);

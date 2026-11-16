@@ -1137,12 +1137,15 @@
   #payscreen .tap-rings{inset:-34px;}
   #payscreen .tap-rings span{border-color:#163a5f;}
   /* Snake Eyes 5: "Still there?" is a modal with a seconds countdown (WCAG 2.2.1: 20 s to extend) */
-  #payscreen[data-still="1"] .pay-still{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;margin:0;border-radius:0;background:rgba(4,0,14,.88);color:#fff;padding:32px;text-align:center;}
+  #payscreen[data-still="1"] .pay-still{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;margin:0;background:rgba(4,0,14,.92);padding:24px;text-align:center;}
+  #payscreen .pay-still-card{background:#0d0526;border:2px solid var(--cyan);border-radius:28px;padding:36px 32px;max-width:780px;width:100%;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:var(--glow-cool);}
   #payscreen .pay-still h3{font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-size:clamp(34px,5vw,60px);margin:0;color:#ffd166;}
   #payscreen .pay-still p{font-size:clamp(22px,3vw,34px);margin:0;max-width:760px;color:#fff;}
   #payscreen .pay-still button{min-height:96px;padding:0 56px;border-radius:22px;border:none;background:#ffd166;color:#08011c;font:800 clamp(26px,3.4vw,38px) "Archivo",system-ui,sans-serif;cursor:pointer;}
   /* Snake Eyes 10: paid and pay-at-window confirm pills use the station's green and amber */
   #confirm .paywindow.paid{background:#3be08a;color:#08011c;border-color:#3be08a;}
+  /* NEW-6: above the pill the paid and the pay-at-the-window screens must differ too: an amber "$" disc instead of the check */
+  #confirm.window .check{background:#ffd166;color:#08011c;box-shadow:0 0 36px rgba(255,209,102,.45);font-family:"Bungee",system-ui,sans-serif;}
   #confirm .paywindow.collect{background:#ffd166;color:#08011c;border-color:#ffd166;}
   #payscreen[data-state="unknown"] .pay-retry,#payscreen[data-state="unknown"] .pay-window,#payscreen[data-state="unknown"] .pay-point,#payscreen[data-state="unknown"] .pay-where{display:none;}
   #payscreen[data-state="unknown"] .pay-headline{color:#ffd166;}
@@ -1306,9 +1309,11 @@
   <div class="pay-where" id="payWhere" hidden><b>Where is the reader?</b> <span id="payWhereText"></span></div>
   <div class="pay-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="16" rx="2.2"/><path d="M7.5 18.5h3"/><path d="M17.5 8.5q2 2.2 0 4.6M20 6q3.8 4.6 0 9.6"/></svg>Tap your card or phone on the reader</div>
   <div class="pay-still" id="payStill" role="alertdialog" aria-modal="true" aria-labelledby="payStillHd">
-    <h3 id="payStillHd">Still there?</h3>
-    <p>Your order will be cancelled in <b id="payStillSecs">20</b> seconds.</p>
-    <button type="button" onclick="keepPayOrder()">Keep my order</button>
+    <div class="pay-still-card">
+      <h3 id="payStillHd">Still there?</h3>
+      <p>Your order will be cancelled in <b id="payStillSecs">20</b> seconds.</p>
+      <button type="button" onclick="keepPayOrder()">Keep my order</button>
+    </div>
   </div>
   <h2 class="pay-headline" id="payHeadline">Tap to pay</h2>
   <p class="pay-body" id="payBody">Tap, insert, or swipe your card on the reader.</p>
@@ -3533,6 +3538,8 @@ function showConfirm(order, paid){
 
   // Swap the pay-at-window banner copy depending on whether the customer already paid
   const banner = $("#confirm .paywindow");
+  const ck = $("#confirm .check"); if(ck) ck.textContent = paid ? "✓" : "$";
+  $("#confirm").classList.toggle("window", !paid);
   const cs = $("#confirmSub");
   if(cs) cs.textContent = (paid && _qrPaidNow) ? "Your order's on the way — watch your phone, it turns green when it's ready." : "Your order's on the way — listen for your name at the window.";
   if(banner){
@@ -3602,6 +3609,13 @@ function setPayState(state){
    this screen with a retry; the customer is never stranded and is never told to pay again while a charge is unproven.
    Idempotency is server-side (attempt-scoped ExternalId, journal, one reader); doPay() is safe to call again.          */
 const payHdr = () => ({"Content-Type":"application/json"});
+/* The server is deleting this order (abandon), or already did: it answers "order is being closed" / "order was abandoned". That is NOT a window order:
+   say plainly that the order is cancelled and start over, never "pay $X at the window" for a ticket that is about to vanish. */
+const orderGoneAnswer = o => !!o && ((o.result==="unavailable" && /being closed/i.test(o.message||"")) || (o.result==="mismatch" && /abandoned/i.test(o.message||"")));
+function orderGone(){
+  stopPayPoll(); armIdle(); closePayScreen(); resetAll();
+  showToast("That order was cancelled. Please start a new order.");
+}
 async function doPay(){
   if(!_payOrder || !_payAmount || _payInFlight) return;
   setPayState("working");
@@ -3619,6 +3633,7 @@ async function doPay(){
     // The server did not answer at all: do NOT assume the card was not charged. Poll; if the server stays silent the poll falls back to "we're checking".
     out = { result:"pending" };
   }
+  if(orderGoneAnswer(out)){ orderGone(); return; }
   switch(out.result){
     case "reader-busy":                        // another customer's card attempt is unresolved on the one reader: do not wait on a prompt that will never come
       payAtWindow(true); break;
@@ -3735,6 +3750,7 @@ async function payAtWindow(silent){
     const r = await fetch("/pay/window",{method:"POST",headers:payHdr(),body:JSON.stringify({orderId:o.orderId,payToken:o.payToken})});
     out = await r.json();
   }catch(e){ out = null; }
+  if(orderGoneAnswer(out)){ orderGone(); return; }
   if(out && (out.result==="blocked-unknown")){ if(!_payPoll) startPayPoll(); setPayState("unknown"); return; }
   if(out && out.result==="busy"){ if(!_payPoll) startPayPoll(); return; }
   if(out && out.result==="approved"){ payApproved(); return; }

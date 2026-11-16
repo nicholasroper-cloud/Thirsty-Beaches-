@@ -238,12 +238,16 @@ function moderateVibe(out) {                       // /vibe answer (Match My Vib
 // ---- Clover REST helpers ----
 // Clover health for the heartbeat: last success time + last failure (path ids masked, no body).
 const cloverHealth = { lastOk: null, lastError: null };
+/* NEW-3: a hung Clover must not hold anything for the runtime's default (about 5 minutes): every Clover call gives up after 10 s
+   (TB_CLOVER_TIMEOUT_MS is a test knob). The abandon "being closed" mark, the quote and the catalog sync all depend on this. */
+const CLOVER_TIMEOUT_MS = Math.max(300, parseInt(process.env.TB_CLOVER_TIMEOUT_MS || "10000", 10) || 10000);
+const cloverSignal = () => AbortSignal.timeout(CLOVER_TIMEOUT_MS);
 async function cloverCall(method, p, body) {
   let r;
   try {
     r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}${p}`, method === "GET"
-      ? { headers: { Authorization: `Bearer ${TOKEN}` } }
-      : { method, headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      ? { headers: { Authorization: `Bearer ${TOKEN}` }, signal: cloverSignal() }
+      : { method, headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: cloverSignal() });
   } catch (e) {
     cloverHealth.lastError = { at: new Date().toISOString(), msg: `${method} ${lib.maskCloverPath(p)} -> network error` };
     throw e;
@@ -440,7 +444,7 @@ async function createOrder(cart, custName, prizeCode) {
     const num = seq ? ` #${seq}` : "";
     await cloverPost(`/orders/${order.id}`, { note: (name ? `${name} — Kiosk order${num}` : `Kiosk order${num} — Thirsty Beaches`) + tag });
   } catch (e) {
-    try { await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${order.id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${TOKEN}` } }); } catch {}
+    try { await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${order.id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${TOKEN}` }, signal: cloverSignal() }); } catch {}
     throw e;
   }
   return { status: 200, body: { ok: true, orderId: order.id, ticket: order.id.slice(-4).toUpperCase(), seq, name, upsize } };
@@ -1186,7 +1190,7 @@ const payApi = require("./pay-routes").createPayApi({
   flexPay, payEnabled: PAY_ENABLED, payAllowed,
   tokenKey: PAY_ENABLED ? lib.loadOrCreateKey(path.join(TB_DIR, "pay-token.key")) : Buffer.alloc(32),   // no key file is created while pay is off
   cloverGet,
-  cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` } }); if (!r.ok) throw new Error(`delete ${r.status}`); },
+  cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` }, signal: cloverSignal() }); if (!r.ok) throw new Error(`delete ${r.status}`); },
   sendJSON, readBody,
   readerTimeoutMs: PAY_TIMEOUT_MS, recoveryMs: 45000, readerLocationText: READER_LOCATION_TEXT, readerSide: READER_SIDE, timers: PAY_TIMERS, payPerMinute: Math.min(60, Math.max(1, parseInt(process.env.PAY_RATE_PER_MIN || "6", 10) || 6)),
 });
@@ -1196,7 +1200,7 @@ try { catalogMap = JSON.parse(fs.readFileSync(path.join(__dirname, "catalog-map.
 const catalog = require("./catalog").createCatalog({ cloverGet, dir: TB_DIR, map: catalogMap, taxAllow: CATALOG_TAX_RATES, priceFloorCents: CATALOG_PRICE_FLOOR_CENTS });
 const quoteApi = require("./quote").createQuoteApi({
   catalog, map: catalogMap, cloverGet, cloverPost,
-  cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` } }); if (!r.ok) throw new Error(`delete ${r.status}`); },
+  cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` }, signal: cloverSignal() }); if (!r.ok) throw new Error(`delete ${r.status}`); },
   prizeCheck, nextOrderSeq, cleanCustomerName, modsNote, orderTypeId: KIOSK_ORDER_TYPE_ID, orderPath: ORDER_PATH,
   quoteAllowed: () => payApi.quoteAllowed(),
   payRunning: () => PAY_ENABLED && payAllowed() && flexPay.hasJournal(),

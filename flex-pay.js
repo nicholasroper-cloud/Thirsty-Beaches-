@@ -176,13 +176,16 @@ function init(cfg, deps = {}) {
   _state = "connecting"; _backoffIdx = 0; _downSince = now();
   try {
     _journal = deps.journal || J.createJournal({ dir: cfg.JOURNAL_DIR, now: deps.now });
-    if (!deps.journal) { const st = _journal.load(); log(`journal loaded: ${st.attempts} attempts, ${st.orders} orders${st.corrupt ? `, ${st.corrupt} unreadable line(s) skipped` : ""}`); }
+    if (!deps.journal) { J.acquireLock(cfg.JOURNAL_DIR); /* NEW-1: tools/pay-resolve.js refuses to run while this lock is live */ const st = _journal.load(); log(`journal loaded: ${st.attempts} attempts, ${st.orders} orders${st.corrupt ? `, ${st.corrupt} unreadable line(s) skipped` : ""}`); }
   } catch (e) {
     _state = "disabled";
     fail(`CRITICAL: pay journal unavailable (${e.message}). Tap-to-pay is disabled: no sale may be sent without a journal.`);
     throw e;
   }
-  for (const o of _journal.orders()) for (const a of o.attempts) if (J.isCharged(a.state) && a.source === "local") _verified.add(a.externalId);   // the owner attested it with tools/pay-resolve.js
+  for (const o of _journal.orders()) for (const a of o.attempts) {
+    if (J.isCharged(a.state) && a.source === "local") _verified.add(a.externalId);
+    if (Number.isInteger(a.paidCents) && !J.isCharged(a.state)) _amountWarned.add(a.externalId);        // NEW-2: a partial charge seen before a restart stays UNKNOWN
+  }   // the owner attested it with tools/pay-resolve.js
   const purge = () => { try { const r = _journal.purge(); if (r.removed) log(`journal: purged ${r.removed} resolved file(s) older than 30 days`); } catch (e) { warn(`journal purge failed: ${e.message}`); } };
   purge();                                                                       // Q1 retention: once at boot and then daily (CR-012)
   _purgeTimer = setInterval(purge, 24 * 3600 * 1000); if (_purgeTimer.unref) _purgeTimer.unref();
@@ -199,6 +202,7 @@ function shutdown() { _resetRuntime(); _state = "disabled"; }
 function _resetRuntime() {
   clearInterval(_reconcileTimer); _reconcileTimer = null;
   clearInterval(_purgeTimer); _purgeTimer = null; _abandoning.clear(); _amountWarned.clear();
+  if (_journal && _cfg && _cfg.JOURNAL_DIR && !(_deps && _deps.journal)) J.releaseLock(_cfg.JOURNAL_DIR);
   clearTimeout(_reconnectTimer); _reconnectTimer = null;
   for (const rt of _rt.values()) clearTimeout(rt.timer);
   _rt.clear();
@@ -397,6 +401,9 @@ function _approve(entry, payment, responseCode, source) {
 
 /** Proven not charged: DECLINED / CANCELLED. If the order had been UNKNOWN (locked CHECK) it is released to COLLECT so the window can take payment. */
 function _settleNotCharged(entry, state, source, code) {
+  // NEW-2: this process (or an earlier one) saw the device report a SUCCESS payment of a different amount for this attempt. A later NOT_FOUND from a contradictory
+  // device must not discard that: it stays UNKNOWN (CHECK) until the owner decides with tools/pay-resolve.js.
+  if (_amountWarned.has(entry.externalId)) { warn(`${entry.externalId}: not settled as "not charged" because a payment of a different amount was seen: owner decision needed`); return; }
   const wasUnknown = entry.wasUnknown || J.isUnknown(entry.state);
   const rc = typeof code === "string" && /^[A-Z_]{2,16}$/.test(code) ? code : undefined;
   _transition(entry, state, { source, ...(rc ? { responseCode: rc } : {}) });

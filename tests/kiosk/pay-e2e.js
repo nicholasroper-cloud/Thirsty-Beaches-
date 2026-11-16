@@ -260,6 +260,7 @@ async function launchChrome() {
     let sc = await screen();
     ok(/^\d{3}$/.test(sc.num) && /^✓ Paid \$\d+\.\d\d\. Grab your order at the window/.test(sc.banner), "confirm screen: ticket number and the green paid pill (" + sc.banner + ")");
     eq(await E("document.querySelector('#confirm .paywindow').classList.contains('paid')"), true);
+    eq(await E("[document.querySelector('#confirm .check').textContent, document.querySelector('#confirm').classList.contains('window')]"), ["✓", false], "paid hero: the check");
     await chrome.shot("02-confirm-paid.png");
     let ord = lastKioskOrder();
     await waitFor(() => /^TBK:PAID:PAYE2E/.test(lastKioskOrder().title) && lastKioskOrder().state === "locked", 8000, "PAID title and lock in Clover");
@@ -296,6 +297,7 @@ async function launchChrome() {
     await waitFor(async () => (await screen()).confirm, 8000, "window confirm");
     sc = await screen(); ok(/^Pay \$\d+\.\d\d at the window, then grab your order/.test(sc.banner), "window banner");
     eq(await E("document.querySelector('#confirm .paywindow').classList.contains('collect')"), true, "amber pill");
+    eq(await E("[document.querySelector('#confirm .check').textContent, document.querySelector('#confirm').classList.contains('window'), getComputedStyle(document.querySelector('#confirm .check')).backgroundColor]"), ["$", true, "rgb(255, 209, 102)"], "NEW-6: the pay-at-the-window hero is an amber $, not the paid check");
     await chrome.shot("06-confirm-window-collect.png");
     const cOrder = lastKioskOrder();
     await waitFor(() => F.orders.get(cOrder.id).title === "TBK:COLLECT" && F.orders.get(cOrder.id).state === "open", 8000, "COLLECT title, open");
@@ -308,11 +310,33 @@ async function launchChrome() {
     const dOrder = lastKioskOrder();
     await waitFor(async () => (await screen()).still, 8000, "Still there? appears");
     ok(/^\d+$/.test(await E("document.querySelector('#payStillSecs').textContent")) && await E("getComputedStyle(document.querySelector('#payStill')).position") === "fixed", "Still there? is a modal with a seconds countdown");
+    { // NEW-6: a solid card behind the modal text, so nothing underneath shows through the sentence
+      const m = await E(`(function(){ const card = document.querySelector('#payStill .pay-still-card'), c = getComputedStyle(card), p = document.querySelector('#payStill p').getBoundingClientRect(), r = card.getBoundingClientRect();
+        return { bg: c.backgroundColor, inside: p.left >= r.left && p.right <= r.right && p.top >= r.top && p.bottom <= r.bottom }; })()`);
+      ok(/^rgb\(\d+, \d+, \d+\)$/.test(m.bg) && m.inside, "Still there? text sits on an opaque card: " + m.bg);
+    }
     await chrome.shot("04-declined-still-there.png");
     await E("document.dispatchEvent(new Event('pointerdown')); true");
     await waitFor(async () => !(await screen()).still, 3000, "a touch clears Still there? (Snake Eyes 6)");
     await waitFor(() => !F.orders.has(dOrder.id), 10000, "the abandoned order is deleted");
     await waitFor(async () => !(await screen()).shown, 5000, "the page went back to the attract screen");
+
+    /* ===== NEW-4: an order that is being closed or was abandoned is "cancelled, start over", never a window confirm ===== */
+    await ctl({ op: "mode", sale: "decline", retrieve: "NOT_FOUND", device: "IDLE" });
+    await customer("Abe");
+    await waitFor(async () => (await screen()).state === "declined", 15000, "Abe: declined");
+    const abeId = lastKioskOrder().id, abeTok = await E("_payOrder.payToken");
+    ok((await jreq(kioskPort, "POST", "/pay/abandon", { orderId: abeId, payToken: abeTok })).json.result === "abandoned", "the server abandons Abe's order");
+    await E("doPay(); true");                                                           // the customer taps Try again a moment too late
+    await waitFor(async () => !(await screen()).shown, 8000, "Abe: back to the attract screen");
+    sc = await screen();
+    ok(!sc.confirm, "no window confirm for a deleted order");
+    ok(/cancelled/i.test(await E("document.querySelector('#toast').textContent")) && await E("document.querySelector('#toast').classList.contains('show')"), "a plain message says the order was cancelled");
+    await customer("Bea");
+    await waitFor(async () => (await screen()).state === "declined", 15000, "Bea: declined");
+    await E(`(async () => { const of = window.fetch; window.fetch = (u, o) => String(u).includes('/pay/window') ? Promise.resolve({ json: async () => ({ result: 'unavailable', message: 'order is being closed' }) }) : of(u, o); try { await payAtWindow(); } finally { window.fetch = of; } return true; })()`);
+    await waitFor(async () => !(await screen()).shown, 5000, "Bea: back to the attract screen");
+    ok(!(await screen()).confirm && /cancelled/i.test(await E("document.querySelector('#toast').textContent")), "'being closed' also ends in the cancelled message, not a window confirm");
 
     /* ===== every pay-screen state, held still for the screenshots (the poll is paused; the reader's answer to the window tap ends it) ===== */
     await ctl({ op: "mode", sale: "silent", retrieve: "NOT_FOUND", cancel: "respond", device: "IDLE" });

@@ -144,6 +144,39 @@ function desiredTag(order, isVerified) {
 const needsTag = order => !!desiredTag(order) && !(order.taggedAt >= order.changedAt);
 const orderNeedsWork = order => order.attempts.some(a => isActive(a.state) || a.state === "DOUBLE") || needsTag(order);
 
+/* ---- process lock (NEW-1): only one process may hold the journal ----
+   .tb/pay-journal.lock holds the PID of the kiosk server that has the journal open. It is written when the server starts its pay code and removed at
+   shutdown (exit, SIGINT, SIGTERM). A lock whose PID is not running is "stale" (the server was killed). tools/pay-resolve.js refuses to write the
+   journal while a live holder exists, because a running server never re-reads the file and would overwrite the owner's decision. */
+const LOCK_NAME = "pay-journal.lock";
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; }       // EPERM: it exists but is not ours
+}
+/** -> { state: "none" | "live" | "stale", pid } */
+function lockStatus(dir) {
+  let pid = null;
+  try { pid = parseInt(fs.readFileSync(path.join(dir, LOCK_NAME), "utf8").trim(), 10); } catch (e) { if (e.code === "ENOENT") return { state: "none", pid: null }; }
+  if (!Number.isInteger(pid)) return { state: "stale", pid: null };                          // unreadable lock: nobody can be trusted to hold it
+  if (pid === process.pid) return { state: "own", pid };
+  return { state: pidAlive(pid) ? "live" : "stale", pid };
+}
+const _heldLocks = new Set();
+/** Take the lock for this process (overwrites a stale one). Released automatically at exit and on SIGINT/SIGTERM. */
+function acquireLock(dir) {
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const st = lockStatus(dir);
+  if (st.state === "live") throw new Error(`the pay journal is already held by process ${st.pid}`);
+  fs.writeFileSync(path.join(dir, LOCK_NAME), String(process.pid) + "\n", { mode: 0o600 });
+  if (!_heldLocks.size) {
+    const rel = () => { for (const d of _heldLocks) { try { if (lockStatus(d).state === "own") fs.unlinkSync(path.join(d, LOCK_NAME)); } catch {} } _heldLocks.clear(); };
+    process.on("exit", rel);
+    for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => { rel(); process.exit(128); });
+  }
+  _heldLocks.add(dir);
+}
+function releaseLock(dir) { try { if (lockStatus(dir).state === "own") fs.unlinkSync(path.join(dir, LOCK_NAME)); } catch {} _heldLocks.delete(dir); }
+
 /* ---- the journal ---- */
 function createJournal(opts) {
   const dir       = opts.dir;
@@ -331,6 +364,6 @@ function createJournal(opts) {
 }
 
 module.exports = {
-  createJournal, serialize, fromPayment, orderStatus, desiredTag, needsTag, orderNeedsWork,
+  createJournal, acquireLock, releaseLock, lockStatus, LOCK_NAME, serialize, fromPayment, orderStatus, desiredTag, needsTag, orderNeedsWork,
   isUnknown, isCharged, isActive, ALLOWED_KEYS, ATTEMPT_STATES, ORDER_STATES, UNKNOWN_STATES, FILE_NAME, dayKey,
 };

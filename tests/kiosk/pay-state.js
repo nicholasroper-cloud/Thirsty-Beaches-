@@ -724,25 +724,97 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     const lines = []; const out = l => lines.push(l);
     // not-charged -> COLLECT tag, no device needed
     let w = mk();
-    eq(resolve.run(["--dir", w.dir, "--list"], out), 0); ok(lines.some(l => l.includes(w.ext)), "--list names the stuck attempt");
-    eq(resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 0);
+    eq(await resolve.run(["--dir", w.dir, "--list"], out), 0); ok(lines.some(l => l.includes(w.ext)), "--list names the stuck attempt");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 0);
     let r = rig({ dir: w.dir, journal: (() => { const j = J.createJournal({ dir: w.dir }); j.load(); return j; })() });
     eq(r.state(w.ext), "CANCELLED"); eq(r.journal.get(w.ext).source, "local");
     await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:COLLECT", 2000, "COLLECT tag from the owner's decision"); fp.shutdown();
     // charged -> PAID tag WITHOUT asking the reader (the owner vouches); the device is not even connected
     w = mk();
-    eq(resolve.run(["--dir", w.dir, w.ext, "charged", "PAYIDOWNER01"], out), 0);
+    eq(await resolve.run(["--dir", w.dir, w.ext, "charged", "PAYIDOWNER01"], out), 0);
     r = rig({ dir: w.dir, journal: (() => { const j = J.createJournal({ dir: w.dir }); j.load(); return j; })() });
     await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:PAID:PAYIDOWNER01", 2000, "PAID tag from the owner's decision"); fp.shutdown();
     // refuses what is not stuck, a bad verb and a bad payment id; ack-double
-    eq(resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 1, "already resolved: refused");
-    eq(resolve.run(["--dir", w.dir, w.ext, "maybe"], out), 2);
-    w = mk(); eq(resolve.run(["--dir", w.dir, w.ext, "charged", "bad id!"], out), 2);
+    eq(await resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 1, "already resolved: refused");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "maybe"], out), 2);
+    w = mk(); eq(await resolve.run(["--dir", w.dir, w.ext, "charged", "bad id!"], out), 2);
     const dj = J.createJournal({ dir: w.dir }); dj.load();
     dj.append({ externalId: w.ext, kioskOrderId: w.O, state: "DOUBLE", source: "device" });
-    eq(resolve.run(["--dir", w.dir, "--list"], out), 0);
-    eq(resolve.run(["--dir", w.dir, w.ext, "ack-double"], out), 0);
+    eq(await resolve.run(["--dir", w.dir, "--list"], out), 0);
+    eq(await resolve.run(["--dir", w.dir, w.ext, "ack-double"], out), 0);
     const dj2 = J.createJournal({ dir: w.dir }); dj2.load(); eq(dj2.doubles().length, 0, "acknowledged");
+  });
+
+  await scenario("NEW-1 pay-resolve refuses while the kiosk server holds the journal (lock and port probe), --force only for a stale lock", async () => {
+    const resolve = require("../../tools/pay-resolve"); const cp = require("child_process"); const http = require("http");
+    const mk = () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paystate-")); const j = J.createJournal({ dir }); j.load(); const O = "LOCKORDER" + String(Math.floor(Math.random() * 1e5)).padStart(5, "0"); j.registerOrder(O);
+      j.append({ externalId: `TBK${O}-1`, kioskOrderId: O, attempt: 1, state: "IN_FLIGHT", amountCents: 349, source: "local" }, { newAttempt: true });
+      j.append({ externalId: `TBK${O}-1`, kioskOrderId: O, state: "DISCONNECTED_UNKNOWN", source: "local" }); return { dir, O, ext: `TBK${O}-1` }; };
+    const stateOf = w => { const j = J.createJournal({ dir: w.dir }); j.load(); return j.get(w.ext).state; };
+    const holder = dir => new Promise((res, rej) => { const c = cp.spawn(process.execPath, ["-e", `const J=require(${JSON.stringify(path.resolve(__dirname, "../../pay-journal.js"))});J.acquireLock(${JSON.stringify(dir)});console.log("held");setInterval(()=>{},1000)`], { stdio: ["ignore", "pipe", "inherit"] });
+      c.stdout.on("data", d => { if (/held/.test(String(d))) res(c); }); c.on("error", rej); });
+    const exited = c => new Promise(r => { if (c.exitCode !== null || c.signalCode) return r(); c.on("exit", () => r()); });
+    const w = mk(); const lines = []; const out = l => lines.push(l);
+    // a live holder (a process that took the lock the way the kiosk server does)
+    let c = await holder(w.dir);
+    eq(J.lockStatus(w.dir).state, "live");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "charged"], out), 3, "refused while the server holds the journal");
+    ok(lines.some(l => /stop the kiosk first/.test(l) && l.includes(String(c.pid))), "says: stop the kiosk first, and names the process");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "charged", "--force"], out), 3, "--force never overrides a LIVE lock");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "ack-double"], out), 3);
+    eq(stateOf(w), "DISCONNECTED_UNKNOWN", "nothing was written");
+    eq(await resolve.run(["--dir", w.dir, "--list"], out), 0, "--list only reads, so it may run beside the kiosk");
+    // a clean SIGTERM releases the lock (what Stop-Kiosk does)
+    c.kill("SIGTERM"); await exited(c);
+    eq(J.lockStatus(w.dir).state, "none", "the lock is removed at shutdown");
+    // a killed server leaves a STALE lock: refused without --force, allowed with it
+    c = await holder(w.dir); c.kill("SIGKILL"); await exited(c);
+    eq(J.lockStatus(w.dir).state, "stale", "a SIGKILLed holder leaves a stale lock (its PID is gone)");
+    lines.length = 0;
+    eq(await resolve.run(["--dir", w.dir, w.ext, "charged", "PAYIDLOCK001"], out), 3, "stale lock without --force: refused"); ok(lines.some(l => /stale/.test(l) && /--force/.test(l)));
+    eq(stateOf(w), "DISCONNECTED_UNKNOWN");
+    eq(await resolve.run(["--dir", w.dir, w.ext, "charged", "PAYIDLOCK001", "--force"], out), 0, "stale lock with --force proceeds");
+    eq(stateOf(w), "APPROVED", "the decision was written"); eq(J.lockStatus(w.dir).state, "none", "and the stale lock was removed");
+    // a second check: the kiosk answering on its port refuses even when there is no lock file
+    const w2 = mk();
+    const srv = http.createServer((q, r) => { r.writeHead(200, { "X-TB-Pid": "4242" }); r.end("ok"); });
+    await new Promise(r => srv.listen(0, "127.0.0.1", r)); const port = srv.address().port;
+    eq(await resolve.run(["--dir", w2.dir, w2.ext, "not-charged", "--port", String(port)], out), 3, "a kiosk answering on its port refuses");
+    ok(lines.some(l => /answers on port/.test(l)));
+    eq(stateOf(w2), "DISCONNECTED_UNKNOWN");
+    srv.close();
+    const other = http.createServer((q, r) => { r.writeHead(200); r.end("not the kiosk"); }); await new Promise(r => other.listen(0, "127.0.0.1", r));
+    eq(await resolve.run(["--dir", w2.dir, w2.ext, "not-charged", "--port", String(other.address().port)], out), 0, "an unrelated service on the port does not block");
+    other.close();
+    // the kiosk's own flex-pay init takes the lock and shutdown releases it
+    const d3 = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paystate-"));
+    fp.init({ FLEX_IP: "x", FLEX_PORT: 1, FLEX_SCHEME: "wss", POS_NAME: "t", PAIRING_FILE: "x", JOURNAL_DIR: d3, PAY_TIMEOUT_MS: 150, timing: TIMING, payAllowed: () => true }, { sdk, connectorFactory: () => new FakeConnector() });
+    eq(J.lockStatus(d3).state, "own", "init takes the journal lock"); eq(await resolve.run(["--dir", d3, "--list"], out), 0);
+    fp.shutdown(); eq(J.lockStatus(d3).state, "none", "shutdown releases it");
+  });
+
+  await scenario("NEW-2 a partial charge the process saw is never settled as not charged by a later NOT_FOUND", async () => {
+    const r = rig(); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    const oe = console.error; console.error = () => {};
+    r.fc.script.sale = (id) => r.respond("SUCCESS", mkPayment({ extId: id, amount: 1, id: "PAYIDPART002" }));
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "unknown");
+    r.fc.script.retrievePayment = () => ({ status: "NOT_FOUND" });                      // a contradictory device now says it never saw it, and is IDLE
+    await sleep(1200);
+    console.error = oe;
+    eq(r.state(ext), "TIMEOUT_UNKNOWN", "still UNKNOWN: the owner decides");
+    ok(!r.tags.some(t => t.title === "TBK:COLLECT"), "and the order was not released to COLLECT");
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "blocked-unknown");
+    // a restart remembers it (paidCents is in the journal)
+    fp.shutdown();
+    const j2 = J.createJournal({ dir: r.dir }); j2.load();
+    const r2 = rig({ dir: r.dir, journal: j2 }); r2.fc.script.retrievePayment = () => ({ status: "NOT_FOUND" }); r2.ready();
+    await sleep(1200);
+    eq(r2.state(ext), "TIMEOUT_UNKNOWN", "also after a restart");
+    // the owner's decision still works
+    const resolve = require("../../tools/pay-resolve"); fp.shutdown();
+    eq(await resolve.run(["--dir", r.dir, ext, "not-charged"], () => {}), 0);
+    const j3 = J.createJournal({ dir: r.dir }); j3.load(); eq(j3.get(ext).state, "CANCELLED");
   });
 
   await scenario("Snake Eyes 4: Pay at the window while the reader is waiting cancels the prompt and resolves COLLECT", async () => {

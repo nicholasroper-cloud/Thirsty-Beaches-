@@ -187,6 +187,22 @@ function mkFake() {
     trap.price = 366; await cat.sync(); eq(cat.payBlock(), null, "back near the baseline: released");   // 366 is +5% of 349
     // slow creep of under 10% moves the baseline along
     trap.price = 396; await cat.sync(); trap.price = 430; await cat.sync(); eq(cat.payBlock(), null, "small steps are fine");
+    { // NEW-5: +9% per sync, repeatedly: each step is under 10%, but the cumulative move from the accepted price is what counts
+      const g = mkFake(), d2 = tmp(); const t2 = g.items[0]; let n = 349;
+      const c2 = createCatalog({ cloverGet: g.get, dir: d2, map: MAP, taxAllow: [7], log: quiet }); await c2.sync();
+      let heldAt = null, alertAt = null;
+      for (let i = 1; i <= 10 && heldAt === null; i++) {
+        n = Math.round(n * 1.09); t2.price = n; await c2.sync();
+        if (c2.payBlock() && /held/.test(c2.payBlock())) heldAt = [i, n];
+        if (alertAt === null && c2.heartbeat().alerts.some(a => /% away from its last accepted price/.test(a))) alertAt = [i, n];
+      }
+      ok(heldAt && heldAt[0] <= 7, "the 9% creep is held within 7 syncs (held at " + JSON.stringify(heldAt) + ", price " + (heldAt && heldAt[1]) + "), not walked up to 824");
+      ok(alertAt && alertAt[0] <= heldAt[0] && alertAt[1] / 349 > 1.25, "a heartbeat alert fires once the cumulative move passes 25% (" + JSON.stringify(alertAt) + ")");
+      ok(c2.table().items.ITEMTRAP00001.price < 349 * 1.6 && c2.table().items.ITEMTRAP00001.price < heldAt[1], "the held price is not served, and what is served stays under +60%: " + c2.table().items.ITEMTRAP00001.price);
+      fs.writeFileSync(path.join(d2, "catalog-accept.flag"), ""); await c2.sync();
+      eq([c2.payBlock(), c2.table().anchor.items.ITEMTRAP00001], [null, n], "the owner's accept re-anchors the price");
+      n = Math.round(n * 1.05); t2.price = n; await c2.sync(); eq(c2.payBlock(), null, "and a small change after that passes");
+    }
     const none = createCatalog({ cloverGet: f.get, dir: tmp(), map: { version: 1, categories: {}, floats: [] }, taxAllow: [7], log: quiet }); await none.sync();
     eq([none.display().ok, none.display().payNow], [true, false], "nothing mapped: /catalog is not payNow"); ok(/no catalog item is mapped/.test(none.display().reason));
   }
