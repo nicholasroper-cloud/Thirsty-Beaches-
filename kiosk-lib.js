@@ -31,13 +31,14 @@ function checkRelPath(rel) {
 
 /* Never written by an update, whatever the manifest says: secrets, local state, the
    Node runtime and native binaries. */
-const NEVER_BASENAMES = new Set(["update-state.json", "flex-pairing.json"]);
+const NEVER_BASENAMES = new Set(["update-state.json", "flex-pairing.json", "pay-journal.jsonl", "pay-token.key"]);
+const PAY_JOURNAL_RE = /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/;   // today's file and the daily-rotated ones (pay-journal.js)
 const NEVER_EXT = new Set([".env", ".exe", ".dll", ".node", ".sys", ".msi", ".scr", ".com"]);
 function blockedReason(rel) {
   const lower = rel.toLowerCase();
   const base = path.posix.basename(lower);
   if (base.endsWith(".env") || base.includes(".env.")) return "secrets file";
-  if (NEVER_BASENAMES.has(base)) return "local state file";
+  if (NEVER_BASENAMES.has(base) || PAY_JOURNAL_RE.test(base)) return "local state file";
   if (NEVER_EXT.has(path.posix.extname(base))) return "binary";
   if (lower.split("/")[0] === "node_modules") return "node_modules";
   return null;
@@ -102,6 +103,57 @@ const SETTINGS_SPEC = {
 function payKillFrom(control) {
   if (!control || typeof control !== "object" || Array.isArray(control)) return null;
   return control.payEnabled === false;
+}
+/* Is a NEW card Sale allowed right now? All three must hold (security review S1, ADR section 9):
+     - env PAY_ENABLED is true (kiosk-config.env: the only thing that can ever turn pay ON)
+     - .tb/pay-off.flag is absent (the local kill: touch the file, honored on the next call)
+     - the last remote payEnabled was not the literal boolean false (persisted; kept when a fetch fails)
+   The answer is strictly boolean: anything that is not a clean "true" is "no". Kill stops NEW Sales only. */
+function payGate({ envEnabled, flagPresent, remoteKill }) {
+  return envEnabled === true && flagPresent === false && remoteKill === false;
+}
+/* The last remote kill, persisted under .tb/ so a restart while GitHub is unreachable keeps it. Unreadable or odd = not killed
+   by the remote (the env flag and pay-off.flag still apply); only a literal `kill: true` counts. */
+function readRemoteKill(fp) {
+  const j = readJson(fp, null);
+  return !!(j && typeof j === "object" && j.kill === true);
+}
+function writeRemoteKill(fp, kill) { writeJsonAtomic(fp, { kill: kill === true, at: new Date().toISOString() }); }
+/* Boot assertion (ADR section 7): with pay on, the page idle timer must outlast the reader timeout plus recovery (30 s extension + 10 s
+   answer + margin), or the screen would reset on a customer who is still paying. Returns a problem string, or null when fine. */
+function payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS }) {
+  if (PAY_ENABLED !== true) return null;
+  if (!(IDLE_MS > PAY_TIMEOUT_MS + 45000))
+    return `PAY_ENABLED=true needs TB_IDLE_MS > PAY_TIMEOUT_MS + 45000 (have TB_IDLE_MS=${IDLE_MS}, PAY_TIMEOUT_MS=${PAY_TIMEOUT_MS}): raise TB_IDLE_MS or lower PAY_TIMEOUT_MS`;
+  return null;
+}
+/* Sliding-window limiter (security review Q5.5): /quote 30 per minute, /pay 6 per minute. One kiosk, so one bucket per route. */
+function makeRateLimiter(max, windowMs, nowFn) {
+  const hits = [], now = nowFn || Date.now;
+  return { take() {
+    const t = now();
+    while (hits.length && t - hits[0] >= windowMs) hits.shift();
+    if (hits.length >= max) return false;
+    hits.push(t); return true;
+  } };
+}
+/* payToken (security review Q5.3): 128 bits, HMAC(server key, orderId), so it survives a restart without being stored beside the order.
+   /order hands it to the page; /pay, /pay/state, /pay/window and /pay/abandon refuse any request without the right one. */
+function payTokenFor(key, orderId) {
+  return crypto.createHmac("sha256", key).update("tb-pay-token\0" + String(orderId)).digest().subarray(0, 16).toString("hex");
+}
+function payTokenOk(key, orderId, token) {
+  if (typeof token !== "string" || !/^[0-9a-f]{32}$/.test(token)) return false;
+  const want = Buffer.from(payTokenFor(key, orderId), "hex"), got = Buffer.from(token, "hex");
+  return want.length === got.length && crypto.timingSafeEqual(want, got);
+}
+/* The HMAC key: 32 random bytes in .tb/pay-token.key (mode 0600, never published: blocked by the update paths). Created on first use. */
+function loadOrCreateKey(fp) {
+  try { const b = Buffer.from(fs.readFileSync(fp, "utf8").trim(), "hex"); if (b.length === 32) return b; } catch {}
+  const key = crypto.randomBytes(32);
+  fs.mkdirSync(path.dirname(fp), { recursive: true });
+  fs.writeFileSync(fp, key.toString("hex") + "\n", { encoding: "utf8", mode: 0o600 });
+  return key;
 }
 /* ---------------- what the PAGE may see of the Control file ----------------
    The Control file lives in a public repo. The page used to get it raw (healthcheck URL, settings, commands included) and
@@ -294,6 +346,6 @@ function readJson(fp, fallback) {
 
 module.exports = {
   sha256, sha256File, checkRelPath, blockedReason, safeUpdatePath, isRestartFile,
-  SETTINGS_SPEC, payKillFrom, controlPublic, CONTROL_STALE_MS, cleanSpecial, safeHealthUrl, requestProblem, CSP, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
+  SETTINGS_SPEC, payKillFrom, payGate, readRemoteKill, writeRemoteKill, payBootProblem, makeRateLimiter, payTokenFor, payTokenOk, loadOrCreateKey, controlPublic, CONTROL_STALE_MS, cleanSpecial, safeHealthUrl, requestProblem, CSP, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
   scrub, maskCloverPath, ErrorRing, renameRetry, writeJsonAtomic, readJson, sleepSync,
 };
