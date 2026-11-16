@@ -80,7 +80,8 @@
     lastSpoke: 0, lastFaceSeen: 0, lastMotion: Date.now(), pausedUntil: 0,
     muted: false, armed: false, recent: [], motion: 0, faceSize: 0, faces: 0,
     hadFace: false, detector: null, debug: false, voice: null,
-    enabled: false, stream: null, camStarting: false,   // FAILS CLOSED: off until /control says greeter.enabled === true (compliance gate 2026-11-15) speech: "not tried yet", lastLine: "", camError: "",
+    // FAILS CLOSED: enabled starts false and turns true only when /control says greeter.enabled === true (compliance gate 2026-11-15)
+    enabled: false, stream: null, camStarting: false, speech: "not tried yet", lastLine: "", camError: "",
   };
 
   // ───────── UI ─────────
@@ -359,7 +360,7 @@
   window.TBGreeter = {
     say, speak, CFG, SHARED, PERSONAS,
     _state: S,   // for testing
-    _enabledFrom: enabledFrom, _pollControl: pollControl,
+    _enabledFrom: enabledFrom, _pollControl: pollControl, _loop: () => loop(),
     pause: ms => (S.pausedUntil = Date.now() + (ms ?? CFG.pauseAfterTouchMs)),
     mute: (m = true) => { S.muted = m; if (m) stopAll(); },
   };

@@ -129,14 +129,17 @@ function cleanSpecial(s) {
 }
 const strList = (a, n) => Array.isArray(a) ? a.filter(x => typeof x === "string" && x.length <= 120 && !/[\u0000-\u001f]/.test(x)).slice(0, n) : [];
 const num = (v, lo, hi) => (typeof v === "number" && isFinite(v) && v >= lo && v <= hi) ? v : undefined;
-function controlPublic(c) {
+const CONTROL_STALE_MS = 15 * 60000;
+function controlPublic(c, ageMs) {
   const src = (c && typeof c === "object" && !Array.isArray(c)) ? c : {};
   const out = { soldOut: strList(src.soldOut, 500), soldOutOptions: strList(src.soldOutOptions, 500),
     specials: (Array.isArray(src.specials) ? src.specials.slice(0, 20) : []).map(cleanSpecial).filter(Boolean),
     updated: typeof src.updated === "string" ? src.updated.slice(0, 40) : "" };
   // greeter: the camera is ON only for the literal boolean true (compliance gate 2026-11-15); the rest are tuning numbers
   const g = src.greeter && typeof src.greeter === "object" && !Array.isArray(src.greeter) ? src.greeter : null;
-  out.greeter = { enabled: !!(g && g.enabled === true) };
+  // a Control copy older than 15 minutes (GitHub unreachable) switches the camera OFF: "cannot read Control" never means "keep going"
+  const stale = typeof ageMs === "number" && ageMs > CONTROL_STALE_MS;
+  out.greeter = { enabled: !stale && !!(g && g.enabled === true) };
   if (g) {
     for (const [k, lo, hi] of [["volume", 0, 1], ["motionThreshold", 0, 1], ["approachFaceSize", 0, 1], ["closeSize", 0, 1]]) { const v = num(g[k], lo, hi); if (v !== undefined) out.greeter[k] = v; }
     if (typeof g.debug === "boolean") out.greeter.debug = g.debug;
@@ -291,6 +294,6 @@ function readJson(fp, fallback) {
 
 module.exports = {
   sha256, sha256File, checkRelPath, blockedReason, safeUpdatePath, isRestartFile,
-  SETTINGS_SPEC, payKillFrom, controlPublic, cleanSpecial, safeHealthUrl, requestProblem, CSP, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
+  SETTINGS_SPEC, payKillFrom, controlPublic, CONTROL_STALE_MS, cleanSpecial, safeHealthUrl, requestProblem, CSP, validateSettings, settingsHash, COMMANDS, parseCommandTime, dueCommands,
   scrub, maskCloverPath, ErrorRing, renameRetry, writeJsonAtomic, readJson, sleepSync,
 };

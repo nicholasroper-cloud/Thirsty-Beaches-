@@ -3,7 +3,7 @@
 // the "MODS:" line note, daily order numbers. Fake KV and a fake Clover, no network.
 import assert from "node:assert/strict";
 import worker from "../../cloud/src/index.js";
-import { _resetStateMemo, splitLine, authFailure } from "../../cloud/src/ticket.js";
+import { _resetStateMemo, splitLine, authFailure, loadState, markDone, markPicked } from "../../cloud/src/ticket.js";
 
 function makeKV(init = {}) {
   const m = new Map(Object.entries(init).map(([k, v]) => [k, { v: typeof v === "string" ? v : JSON.stringify(v) }]));
@@ -102,6 +102,35 @@ orders[148].note = "Sam — Kiosk order #777";
   const bad = { ...e, STATE: { ...e.STATE, list: async () => { throw new Error("KV list() limit exceeded"); }, get: e.STATE.get, put: e.STATE.put, delete: e.STATE.delete } };
   const q2 = await call(bad, "/queue", { headers: KEY });
   assert.equal(q2.status, 200, "list failure does not take the station down");
+}
+
+// ---- CR-002: one list call per load, picked rides in the dn key, a cold isolate never falls back to {} ----
+{
+  _resetStateMemo();
+  let lists = 0;
+  const kv = makeKV({ done: { LEGACY0001: 111 } });
+  const counting = { ...kv, list: async o => { lists++; return kv.list(o); } };
+  const e = { STATE: counting, STATION_DONE_MEMO_MS: "0" };
+  await markDone(e, "AAAAAA01"); await markPicked(e, "AAAAAA01");
+  assert.ok(!kv._m.has("pk:AAAAAA01"), "no separate pk key any more");
+  assert.deepEqual(kv._m.get("dn:AAAAAA01").meta.p > 0, true, "picked time is in the dn key's metadata");
+  lists = 0; _resetStateMemo();
+  const st1 = await loadState(e);
+  assert.equal(lists, 1, "ONE list call per state load (it was two)");
+  assert.ok(st1.done.AAAAAA01 && st1.picked.AAAAAA01 && st1.done.LEGACY0001 === 111, "done, picked and the legacy blob all read");
+  // memo: a 120 s window means the second poll costs no list call
+  _resetStateMemo(); lists = 0;
+  const e2 = { STATE: counting, STATION_DONE_MEMO_MS: "120000" };
+  await loadState(e2); await loadState(e2); await loadState(e2);
+  assert.equal(lists, 1, "polls inside the memo window do not list");
+  // a COLD isolate whose list is over quota: legacy blob + own writes, NOT {}
+  _resetStateMemo();
+  const down = { STATE: { get: kv.get, put: kv.put, delete: kv.delete, list: async () => { throw new Error("KV list() limit exceeded"); } }, STATION_DONE_MEMO_MS: "0" };
+  await markDone(down, "OWNTAP01");
+  const cold = await loadState(down);
+  assert.ok(cold.done.LEGACY0001 === 111, "cold isolate + failed list still knows the legacy done tickets");
+  assert.ok(cold.done.OWNTAP01, "and this isolate's own tap");
+  assert.ok(Object.keys(cold.done).length >= 2, "never {}");
 }
 
 // ---- splitLine ----

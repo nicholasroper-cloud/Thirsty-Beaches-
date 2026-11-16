@@ -5,7 +5,7 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const jobs = [
   ["node", ["tests/kiosk/unit.js"]], ["node", ["tests/kiosk/html-syntax.js"]], ["node", ["tests/kiosk/station.js"]], ["node", ["tests/kiosk/page.js"]],
-  ["node", ["tests/kiosk/seq.js"]], ["node", ["tests/kiosk/greeter.js"]], ["node", ["tests/kiosk/contrast.js"]], ["node", ["tests/kiosk/servers.js"]],
+  ["node", ["tests/kiosk/seq.js"]], ["node", ["tests/kiosk/greeter.js"]], ["node", ["tests/kiosk/asis.js"]], ["node", ["tests/kiosk/consent.js"]], ["node", ["tests/kiosk/contrast.js"]], ["node", ["tests/kiosk/servers.js"]],
   ["node", ["tools/sync-recipe-defaults.js", "--check"]], ["node", ["tools/publish-manifest.js", "--check"]],
   ...["aka", "punch", "relay", "report-cors", "station"].map(n => ["node", ["tests/cloud/" + n + ".test.mjs"]]),
 ];

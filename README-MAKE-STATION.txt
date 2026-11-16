@@ -57,7 +57,7 @@ SETUP (one time)
 ----------------
   1. Run  Allow-MakeStation-Firewall.bat  as administrator.
   2. Double-click  Run-MakeStation.bat . It prints the address, e.g.
-        http://192.168.1.50:8140/
+        http://192.168.1.50:8140/?k=<your STATION_KEY>   (the ?k=... part is needed once; the page remembers it)
   3. On the Echo Show 21: say "Alexa, open Silk" (or Settings > Apps > Silk),
      type that address, then in Silk's menu set the inactivity timeout to 0.
      Bookmark it. Silk may still return to the Alexa home screen after idle;
@@ -101,7 +101,7 @@ COMING UP + STATS
 PICKUP BOARD (customer-facing)
 ------------------------------
   Any TV, tablet or phone on the trailer Wi-Fi can open
-        http://<pc-address>:8140/board
+        http://<pc-address>:8140/board?k=<your STATION_KEY>   (once; it remembers the key)
   It shows "Ready, come grab it" (tickets marked Done in the last 30 min,
   with a first name) and "In the works" (every waiting ticket, as a small
   number tile). Tickets have a daily number (101, 102, ...). It calls out

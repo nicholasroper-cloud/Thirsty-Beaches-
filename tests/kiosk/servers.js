@@ -19,7 +19,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const freePort = () => new Promise(r => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); });
 
 /* ---------------- fake Clover ---------------- */
-const fake = { orders: [], posts: [], pageSizes: [], control: {}, mixBodies: [], vibeCalls: 0 };
+const fake = { orders: [], posts: [], pageSizes: [], control: {}, mixBodies: [], vibeCalls: 0, hdrs: [], prize: { check: { ok: true }, burn: { ok: true } }, prizeCalls: [] };
 let seqId = 0;
 const mkOrder = (o = {}) => ({ id: "ORD" + String(++seqId).padStart(6, "0"), createdTime: Date.now() - 1000, state: "open", paymentState: "OPEN", total: 0, note: "", lineItems: { elements: [{ name: "Thirst Trap", price: 349 }] }, ...o });
 const clover = http.createServer((req, res) => {
@@ -28,8 +28,9 @@ const clover = http.createServer((req, res) => {
     const j = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
     const m = u.pathname.replace(/^\/v3\/merchants\/[^/]+/, "");
     if (req.method === "GET" && u.pathname === "/control.json") return j(200, fake.control);
-    if (req.method === "POST" && u.pathname === "/api/mix") { const b = JSON.parse(body || "{}"); fake.mixBodies.push(b); return j(200, { name: "Boozy Bikini", why: "Pure vodka vibes", base: "Sprite", size: "16oz" }); }
-    if (req.method === "POST" && u.pathname === "/api/vibe") { fake.vibeCalls++; return j(200, { ai: true, id: "thirst-trap", nickname: "Drunk Pirate", reading: "Smells like weed", why: "A shot of rum" }); }
+    if (req.method === "POST" && u.pathname === "/redeem") { const b = JSON.parse(body || "{}"); fake.prizeCalls.push({ redeem: !!b.redeem, key: req.headers["x-kiosk-key"] || null }); return j(200, b.redeem ? fake.prize.burn : fake.prize.check); }
+    if (req.method === "POST" && u.pathname === "/api/mix") { fake.hdrs.push({ route: "mix", key: req.headers["x-kiosk-key"] || null }); const b = JSON.parse(body || "{}"); fake.mixBodies.push(b); return j(200, { name: "Boozy Bikini", why: "Pure vodka vibes", base: "Sprite", size: "16oz" }); }
+    if (req.method === "POST" && u.pathname === "/api/vibe") { fake.hdrs.push({ route: "vibe", key: req.headers["x-kiosk-key"] || null }); fake.vibeCalls++; return j(200, { ai: true, id: "thirst-trap", nickname: "Drunk Pirate", reading: "Smells like weed", why: "A shot of rum" }); }
     if (req.method === "GET" && m === "/items") return j(200, { elements: [] });
     if (req.method === "GET" && m === "/orders") {
       const lim = +u.searchParams.get("limit") || 100, off = +u.searchParams.get("offset") || 0;
@@ -40,6 +41,7 @@ const clover = http.createServer((req, res) => {
     }
     if (req.method === "POST" && m === "/orders") { const o = mkOrder({ lineItems: { elements: [] } }); fake.orders.push(o); fake.posts.push({ m, body: JSON.parse(body) }); return j(200, o); }
     let mm;
+    if (req.method === "POST" && /^\/orders\/[^/]+\/discounts$/.test(m)) { fake.posts.push({ m, body: JSON.parse(body) }); return j(200, {}); }
     if (req.method === "POST" && (mm = /^\/orders\/([^/]+)\/line_items$/.exec(m))) {
       const b = JSON.parse(body); fake.posts.push({ m, body: b });
       const o = fake.orders.find(x => x.id === mm[1]); o.lineItems.elements.push(b); return j(200, { id: "LI" + (++seqId), ...b });
@@ -111,6 +113,7 @@ async function stationTests(cloverPort) {
   try {
     let r = await get(port, "/queue");
     eq(r.status, 401, "no key -> 401");
+    { const h = JSON.parse((await get(port, "/health")).body); eq([h.keyRequired, h.bind], [true, "0.0.0.0"], "/health reports keyRequired and the bind address (the launcher warns on 127.0.0.1)"); }
     r = await get(port, "/queue", { "X-Key": "wrong-key" });
     eq(r.status, 401, "wrong key -> 401");
     r = await get(port, "/queue", { "X-Key": "s3cret-key" });
@@ -164,6 +167,7 @@ async function stationTests(cloverPort) {
   c = spawnNode(dir, "make-station-server.js", { ...base, MAKE_PORT: String(p2) });
   ok(await waitUp(p2), "default start (loopback only)");
   ok(/LAN access is OFF/.test(c.out), "says why the Show cannot reach it");
+  eq(JSON.parse((await get(p2, "/health")).body).bind, "127.0.0.1", "/health says it is loopback-only");
   await stop(c);
   fs.rmSync(dir, { recursive: true, force: true });
 }
@@ -182,7 +186,7 @@ async function kioskTests(cloverPort) {
       { id: "ok-four", name: "Fine", blurb: "", label: "", catKey: "dirtysodas", mods: ["flavor:<script>"] },
     ] };
   const port = await freePort();
-  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off", MIX_URL: "http://127.0.0.1:" + cloverPort + "/api/mix", VIBE_URL: "http://127.0.0.1:" + cloverPort + "/api/vibe", CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json" });
+  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off", MIX_URL: "http://127.0.0.1:" + cloverPort + "/api/mix", VIBE_URL: "http://127.0.0.1:" + cloverPort + "/api/vibe", PRIZE_API: "http://127.0.0.1:" + cloverPort, KIOSK_KEY: "kiosk-secret-xyz", CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json" });
   ok(await waitUp(port), "kiosk server starts: " + c.out);
   try {
     eq((await get(port, "/assets/%00")).status, 400, "NUL byte in an asset path");
@@ -250,6 +254,31 @@ async function kioskTests(cloverPort) {
     ok(!fake.orders.some(o => /Roper/.test(o.note)), "the second word never reaches Clover");
     eq(JSON.parse((await post(port, "/order", { cart: [{ name: "Thirst Trap", mods: [], unit: 3.49, qty: 1 }], name: "Captain Riptide" })).body).name, "Captain Riptide", "the kiosk's own two-word beach name is kept");
     eq(JSON.parse((await post(port, "/order", { cart: [{ name: "Thirst Trap", mods: [], unit: 3.49, qty: 1 }], name: "Captain Hottie" })).body).name, "Captain", "a made-up two-word name is cut to its first word");
+
+    // ---- Worker handshake: X-Kiosk-Key on the Maze burn and the AI forwards; a failed burn is a failed order ----
+    const cart1 = { cart: [{ name: "Thirst Trap", mods: ["Small 16oz"], unit: 3.49, qty: 1 }], name: "Sam", code: "MAZE123456" };
+    const ordersBefore = fake.orders.length, postsBefore = fake.posts.length;
+    fake.prizeCalls = []; fake.prize = { check: { ok: true }, burn: { ok: false, status: "offline" } };
+    let pr = await post(port, "/order", cart1);
+    eq(pr.status, 400, "burn failed -> the order fails");
+    eq(JSON.parse(pr.body).error, "bad-code", "the page is told the code did not work");
+    eq(fake.orders.length, ordersBefore, "NO Clover order was created"); eq(fake.posts.length, postsBefore, "and no discount or line was posted");
+    ok(fake.prizeCalls.length === 2 && fake.prizeCalls[1].redeem === true, "check, then burn");
+    ok(fake.prizeCalls.every(c => c.key === "kiosk-secret-xyz"), "every prize call carries X-Kiosk-Key");
+    fake.prize = { check: { ok: true }, burn: { ok: true } }; fake.prizeCalls = [];
+    pr = await post(port, "/order", cart1);
+    eq(pr.status, 200, "burn ok -> order goes through: " + pr.body);
+    ok(fake.posts.some(p => /discounts$/.test(p.m) && p.body.amount === -80), "discount applied");
+    ok(fake.prizeCalls.filter(c => c.redeem).length === 1, "burned exactly once");
+    fake.prize = { check: { ok: false, status: "used" }, burn: { ok: true } }; fake.prizeCalls = [];
+    pr = await post(port, "/order", cart1);
+    eq(pr.status, 400, "an already-used code is refused at the check"); ok(fake.prizeCalls.every(c => !c.redeem), "and never burned");
+    fake.prize = { check: { ok: true }, burn: { ok: true } };
+    fake.hdrs = [];
+    await post(port, "/mix", { image: "data:image/jpeg;base64," + Buffer.from("x").toString("base64"), age13: true });
+    await post(port, "/vibe", { image: "AAAA", age13: true, candidates: [{ id: "thirst-trap", name: "T", desc: "x" }] });
+    ok(fake.hdrs.length === 2 && fake.hdrs.every(h => h.key === "kiosk-secret-xyz"), "/mix and /vibe forwards carry X-Kiosk-Key: " + JSON.stringify(fake.hdrs));
+    
   } finally { await stop(c); }
   fs.rmSync(dir, { recursive: true, force: true });
 }

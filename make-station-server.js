@@ -236,7 +236,7 @@ async function handle(req, res) {
     if (!fp.startsWith(assetsDir + path.sep)) return send(res, 403, "Forbidden");   // the separator keeps a sibling like "assets-old" out
     return sendFile(res, fp);
   }
-  if (req.method === "GET" && p === "/health") return sendJSON(res, 200, { ok: true, orders: queue.orders.length, catalogItems: Object.keys(catalog.byId).length, lastPoll: queue.at, error: queue.error, keyRequired: !!STATION_KEY });
+  if (req.method === "GET" && p === "/health") return sendJSON(res, 200, { ok: true, orders: queue.orders.length, catalogItems: Object.keys(catalog.byId).length, lastPoll: queue.at, error: queue.error, keyRequired: !!STATION_KEY, bind: BIND });
   if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup") {
     if (!keyOk(req, url)) return sendJSON(res, 401, { error: "key required" });
   }

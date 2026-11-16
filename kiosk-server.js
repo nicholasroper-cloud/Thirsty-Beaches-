@@ -49,6 +49,9 @@ const TOKEN       = process.env.CLOVER_API_TOKEN;
 const MERCHANT_ID = process.env.CLOVER_MERCHANT_ID;
 const BASE        = process.env.CLOVER_BASE_URL || "https://api.clover.com";
 const PORT        = process.env.PORT || 8080;
+/* Shared secret for the Workers the kiosk talks to (tb-where prize burn, website /api/mix and /api/vibe): sent as X-Kiosk-Key. From kiosk-config.env only. */
+const KIOSK_KEY   = (process.env.KIOSK_KEY || "").trim();
+const kioskAuth   = () => (KIOSK_KEY ? { "X-Kiosk-Key": KIOSK_KEY } : {});
 const UPDATE_URL  = (process.env.UPDATE_MANIFEST_URL || "").trim();   // blank = auto-update OFF
 const CONTROL_URL = (process.env.CONTROL_URL || "").trim();           // blank = remote sold-out OFF
 const HEALTHCHECK_URL = (process.env.HEALTHCHECK_URL || "").trim();   // blank = uptime pings OFF
@@ -167,7 +170,7 @@ async function mixForward(payload) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), MIX_TIMEOUT_MS);
   try {
-    const r = await fetch(MIX_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+    const r = await fetch(MIX_URL, { method: "POST", headers: { "Content-Type": "application/json", ...kioskAuth() },
       body: JSON.stringify(payload), signal: ctl.signal });
     const text = await r.text();
     let data; try { data = JSON.parse(text); } catch { data = null; }
@@ -305,7 +308,7 @@ async function prizeCheck(code, redeem) {
   const c = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!/^MAZE\d{6}$/.test(c)) return { ok: false, status: "unknown" };
   try {
-    const r = await fetch(`${PRIZE_API}/redeem`, { method: "POST", headers: { "Content-Type": "application/json" },
+    const r = await fetch(`${PRIZE_API}/redeem`, { method: "POST", headers: { "Content-Type": "application/json", ...kioskAuth() },
       body: JSON.stringify({ code: c, redeem: !!redeem, by: "kiosk" }) });
     return await r.json();
   } catch (e) { return { ok: false, status: "offline" }; }
@@ -397,6 +400,10 @@ async function createOrder(cart, custName, prizeCode) {
   if (prizeCode) {
     const chk = await prizeCheck(prizeCode, false);
     if (!chk.ok) return { status: 400, body: { error: "bad-code", status: chk.status } };
+    // Burn it NOW, before anything exists in Clover (Flint finding 9): a failed burn (offline, already used, wrong key) is a failed order,
+    // never a discount on a code that stays reusable. The page asks "order without it?".
+    const burn = await prizeCheck(prizeCode, true);
+    if (!burn.ok) return { status: 400, body: { error: "bad-code", status: burn.status || "burn-failed" } };
     upsize = true;
   }
   const order = await cloverPost("/orders", { state: "open" });
@@ -408,7 +415,6 @@ async function createOrder(cart, custName, prizeCode) {
     }
     if (upsize) {
       await cloverPost(`/orders/${order.id}/discounts`, { discount: { id: UPSIZE_DISCOUNT_ID }, name: "Thirsty Maze · Free Upsize", amount: -80 });
-      await prizeCheck(prizeCode, true);
     }
     seq = await nextOrderSeq(order.id);
     const tag = upsize ? " · MAZE UPSIZE" : "";
@@ -434,7 +440,7 @@ async function vibeForward(image, candidates) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), 15000);
   try {
-    const r = await fetch(VIBE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+    const r = await fetch(VIBE_URL, { method: "POST", headers: { "Content-Type": "application/json", ...kioskAuth() },
       body: JSON.stringify({ image, candidates: cands }), signal: ctl.signal });
     const d = await r.json().catch(() => null);
     if (!r.ok || !d || d.ai !== true || typeof d.id !== "string") return { ai: false };
@@ -761,13 +767,14 @@ setInterval(() => { if (restartWanted && !shuttingDown && isIdle()) gracefulExit
    soldOut / special / specials: served to the page at GET /control (unchanged).
    settings: allow-listed, validated overrides of kiosk-config.env (see kiosk-lib.js).
    commands: { restartAt, reloadScreenAt, checkUpdateAt } — each runs once. */
-let controlCache = null;
+let controlCache = null, controlFetchedAt = 0;      // controlFetchedAt: when controlCache was last read OK (a stale copy turns the greeter off)
 async function checkControl() {
   if (!CONTROL_URL) return;
   try {
     const r = await fetch(bust(CONTROL_URL), { redirect: "follow" });
     if (!r.ok) throw new Error(`${r.status} for ${CONTROL_URL}`);
     controlCache = JSON.parse((Buffer.from(await r.arrayBuffer())).toString("utf8"));
+    controlFetchedAt = Date.now();
   } catch (e) { console.warn("control check failed:", e.message); return; }
   const c = (controlCache && typeof controlCache === "object") ? controlCache : {};
   try { applyRemoteSettings(c.settings); } catch (e) { console.warn("remote settings failed:", e.message); }
@@ -1034,7 +1041,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/version") return sendJSON(res, 200, { v: versionTag() });
   // local diagnostics (the server only listens on 127.0.0.1): the same report the heartbeat sends
   if (req.method === "GET" && pathname === "/kiosk-status") return sendJSON(res, 200, heartbeatPayload());
-  if (req.method === "GET" && pathname === "/control") return sendJSON(res, 200, lib.controlPublic(controlCache));
+  if (req.method === "GET" && pathname === "/control") return sendJSON(res, 200, lib.controlPublic(controlCache, controlCache ? Date.now() - controlFetchedAt : null));
 
   if (req.method === "GET" && pathname.startsWith("/assets/")) {
     if (pathname.includes("\0") || pathname.includes("\\")) return send(res, 400, "bad request");

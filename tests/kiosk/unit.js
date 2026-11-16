@@ -138,4 +138,14 @@ t("S7: request guard", () => {
   assert.ok(lib.requestProblem(req("DELETE", { ...ok, "content-type": undefined }), P));
 });
 
+t("CR-006: a stale Control copy switches the greeter off", () => {
+  const c = { greeter: { enabled: true, volume: 0.5 }, soldOut: ["x"] };
+  assert.strictEqual(lib.controlPublic(c, 0).greeter.enabled, true);
+  assert.strictEqual(lib.controlPublic(c, lib.CONTROL_STALE_MS).greeter.enabled, true, "exactly 15 minutes is still fresh");
+  assert.strictEqual(lib.controlPublic(c, lib.CONTROL_STALE_MS + 1).greeter.enabled, false, "older than 15 minutes = off");
+  assert.strictEqual(lib.controlPublic(c, null).greeter.enabled, true, "no age given (first fetch) keeps the fetched value");
+  assert.deepStrictEqual(lib.controlPublic(null, null).greeter, { enabled: false }, "no Control data at all = off");
+  assert.deepStrictEqual(lib.controlPublic(c, 20 * 60000).soldOut, ["x"], "sold-out lists still served from the last copy");
+});
+
 console.log(`unit: ${n} groups passed`);

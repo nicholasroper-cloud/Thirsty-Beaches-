@@ -389,6 +389,7 @@ body{font-synthesis:none}
 .mhead.late{border-left-color:var(--alert)}
 .mhead .code{font-size:2.2rem}
 .mhead .who{flex:none;white-space:nowrap}
+.tk .code,.mhead .code,.nxcode{white-space:nowrap}   /* a 4-character code from an old server must not wrap */
 .rchip{display:flex;gap:8px;align-items:center;font-size:18px}
 .rchip span{flex:1}
 .rchip b{font-family:var(--display);font-weight:400;color:#fff}
@@ -518,11 +519,17 @@ function amt(k,i,nSyr){return{
  garnish:'1',drizzle:'Drizzle',mixer:['2 oz','3 oz','4 oz'][i]}[k]}
 const HOW={syrup:'Pump into the empty cup first',puree:'Pump in before the ice',fresh:'Squeeze over the cup, drop the wedge in',frozen:'Add to the cup',ice:'Pebble ice to just under the rim',mixer:'Pour over the ice',base:'Pour slow down the side to keep the fizz, leave 1 inch',cream:'Pour over the back of a spoon so it floats',pearls:'Spoon onto the top',garnish:'Finish on top',drizzle:'Zigzag over the top',blend:'Ice, base and mix-ins in the blender, 30 seconds until smooth',lid:'Lid on, straw in, name on the lid, call the ticket'};
 function findRecipe(name){return RECIPES[name]||(Object.entries(RECIPES).find(([k])=>norm(k)===norm(name))||[])[1]||null;}
+/* The kiosk menu and recipes.json spell some bases differently (Coca-Cola / Coke, Classic Lemonade / Lemonade, Diet Mtn Dew ...). They are the
+   SAME base: never show a SUB for it. Every pair here appears in the kiosk's RECIPE_DEFAULTS / SNAP_MAP (tests/kiosk/asis.js runs them all). */
+const BASE_ALIAS={"coca cola":"coke","classic lemonade":"lemonade","diet mtn dew":"diet mountain dew","fanta orange":"orange soda","sprite zero":"sprite zero"};
+const baseKey=x=>{const n=norm(x).replace(/^(blended|sugar free) /,'');return BASE_ALIAS[n]||n;};
+const sameBase=(a,b)=>baseKey(a)===baseKey(b);
 /* Put the customer's cap / base / boosts INTO the recipe's own steps (a float keeps its float steps) instead of a flavor pour */
 function fitHow(steps,caps,bases,boosts){
  const left={caps:caps.slice(),bases:bases.slice(),boosts:boosts.slice()};
  const bI=steps.findIndex(s=>/^(soda )?base$|^juice or soda$|^milk or soda base$/i.test(s[0]));
  if(left.bases.length&&bI>=0){steps[bI][0]=left.bases.shift();}
+ else if(left.bases.length&&steps.some(s=>sameBase(s[0],left.bases[0]))){left.bases.shift();}   // the recipe already has this base as its own step (Cold Shoulder: "Dr Pepper")
  const cI=steps.findIndex(s=>/soft.?serve|dole whip|^twist\b/i.test(s[0]));
  if(left.caps.length&&cI>=0){const lab=capLabel(left.caps.shift()),s=steps[cI];
   const generic=/^soft.?serve( cap)?$/i.test(s[0]);const same=norm(s[0])===norm(lab);
@@ -545,7 +552,7 @@ function plan(name,mods,category){
   else if(k==="cap"){caps.push(m);}
   else if(k==="boost"&&howOnly){boosts.push(m);}
   else if(k==="base"&&howOnly){bases.push(m);}
-  else if(k==="base"){if(ing.length){if(norm(ing[0])!==norm(m)){CH[norm(m)]="sub:"+ing[0];ing[0]=m;}}else if(!r||!r.how){ing.unshift(m);CH[norm(m)]="add";}else asOrdered.push(m);}
+  else if(k==="base"){if(ing.length){if(!sameBase(ing[0],m)){CH[norm(m)]="sub:"+ing[0];ing[0]=m;}}else if(!r||!r.how){ing.unshift(m);CH[norm(m)]="add";}else asOrdered.push(m);}
   else if(k==="flavor"){if(!ing.some(x=>norm(x)===norm(m))){ing.push(m);if(std.length)CH[norm(m)]="add";}}
   else if(k==="puree"){const nm=/puree/i.test(m)?m:m+" Puree";if(!ing.some(x=>norm(x)===norm(nm))){ing.push(nm);if(std.length)CH[norm(nm)]="add";}}
   else if(k==="cream"){const had=ing.filter(x=>kind(x)==="cream");ing=ing.filter(x=>kind(x)!=="cream");
@@ -599,6 +606,7 @@ function plan(name,mods,category){
 function wireSteps(ol,key,ck,onChange){ol.querySelectorAll('li').forEach((li,j)=>{li.onclick=()=>{ck[key+':'+j]=!ck[key+':'+j];markSteps(ol,key,ck);onChange&&onChange();};});markSteps(ol,key,ck);}
 function markSteps(ol,key,ck){const lis=[...ol.querySelectorAll('li')];let first=null;lis.forEach((li,j)=>{const d=!!ck[key+':'+j];li.classList.toggle('done',d);if(!d&&first===null)first=j;});
  lis.forEach((li,j)=>li.classList.toggle('now',j===first));const card=ol.closest('.card');if(card)card.classList.toggle('ok',first===null);return first===null;}
+let PICKED_OK=true;   // false once the server says it has no /pickedup (an old make-station-server.js): hide the button instead of showing an error
 const tagHTML=t=>{if(!t)return'';if(t.startsWith('sub:'))return`<b class="tag sub">SUB</b>`;if(t.startsWith('add'))return`<b class="tag add">ADD</b>`;if(t==='no')return`<b class="tag no">NO</b>`;return'';};
 const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${/^(lid|pour \+ lid|dome lid|spoon|hand off|blend$)/i.test(w)||t==='no'?'':dot(w)}${esc(w)}${t&&t.startsWith('sub:')?`<span class="inst">Instead of ${esc(t.slice(4))}</span>`:''}<span class="hint${a==='?'?' keep':''}">${esc(h)}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
 /* ================= TICKETS ================= */
@@ -623,10 +631,11 @@ function renderQueue(){const w=queue.waiting;
  if(newlyLate)lateDing();
  const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh){mh.classList.toggle('late',!!so2&&queue.now-so2.created>LATE_MS);mh.classList.toggle('warn',!!so2&&ageBand(so2)==='warn');}
  /* "Just made": up to 4 rows with Undo + Picked up; past 6 tickets waiting it shrinks to ONE chip so it stops eating the queue */
+ if(queue.waiting.concat(queue.ready).some(o=>o.ref===undefined))PICKED_OK=false;   // an old server sends no daily number or ref: it cannot do Picked up either
  const r=queue.ready;const rec=$('#recent');rec.hidden=!r.length;
  if(r.length){const tight=w.length>6;
-  rec.innerHTML=tight?`<div class="rchip"><span>Just made <b>${esc(r[0].ticket)}</b></span><button class="undo" data-id="${esc(r[0].id)}">Undo</button><button class="undo pick" data-id="${esc(r[0].id)}">Picked up</button></div>`
-   :`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button><button class="undo pick" data-id="${esc(o.id)}">Picked up</button></div>`).join('');
+  rec.innerHTML=tight?`<div class="rchip"><span>Just made <b>${esc(r[0].ticket)}</b></span><button class="undo" data-id="${esc(r[0].id)}">Undo</button>${PICKED_OK?`<button class="undo pick" data-id="${esc(r[0].id)}">Picked up</button>`:''}</div>`
+   :`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button>${PICKED_OK?`<button class="undo pick" data-id="${esc(o.id)}">Picked up</button>`:''}</div>`).join('');
   rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post(b.classList.contains('pick')?'/pickedup':'/undo',b.dataset.id));}}
 /* NEXT pane: the ticket after this one, compact (cup, name, what goes in it) so batching and prep never need a tap-around */
 function nextPane(nx){
@@ -749,7 +758,8 @@ function announce(list){if(!list.length)return;const head=list.length>1?list.len
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 function lateDing(){try{if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=523;g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.7);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.7);}catch(e){}}
 async function post(p,id){let st=0;try{const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});st=r.status;if(!r.ok)throw 0;}
- catch(e){const what=p==='/undo'?'Undo':'Done';const el=$('#saveMsg');
+ catch(e){if(p==='/pickedup'&&st===404){PICKED_OK=false;renderQueue();await poll();return false;}
+  const what=p==='/undo'?'Undo':'Done';const el=$('#saveMsg');
   el.textContent=st===401?'Not saved: the access key is missing. Open the station from the ?k= link.':st?'Not saved (station error '+st+'). Tap '+what+' again.':'Not saved, offline. Tap '+what+' again when the Wi-Fi is back.';
   el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>{el.hidden=true;},9000);await poll();return false;}
  $('#saveMsg').hidden=true;await poll();return true;}

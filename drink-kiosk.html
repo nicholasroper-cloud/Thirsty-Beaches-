@@ -1230,7 +1230,7 @@
       <h3>What's your number?</h3>
       <div class="tl-num" id="tlNum">(•••) •••-••••</div>
       <div class="keypad" id="keypad"></div>
-      <label class="tl-consent"><input type="checkbox" id="tlConsent" onchange="tideRecalc()"> Text me the day's spot &amp; deals. Msg &amp; data rates may apply.</label>
+      <label class="tl-consent"><input type="checkbox" id="tlConsent" onchange="tideRecalc()"> <span id="tlConsentText"></span></label>
       <p class="tl-msg" id="tlMsg" role="alert"></p>
       <button class="btn-primary disabled" id="tlSubmit" onclick="tideJoin()">Join</button>
       <button class="ghostbtn" onclick="resetAll()">Skip</button>
@@ -1596,7 +1596,7 @@ const THIRSTY_MENU = {
     items:[
       {id:"beached-whale", name:"Sandy Bottom", desc:"Dole Whip over your soda of choice", price:6.50},
       {id:"swole-patrol", name:"Thicc & Thirsty", desc:"Protein float", price:7.50},
-      {id:"cold-front", name:"Cold Shoulder", desc:"Dirty Dr Pepper under salted cold foam", price:6.50},
+      {id:"cold-front", name:"Cold Shoulder", desc:"Dirty Dr Pepper under salted cold foam", price:6.50, optional:["cap"]},   // foam, not soft serve: the cap is not required
       {id:"riptide-float", name:"Riptide", desc:"Red, white and blue layered float", price:6.50},
       {id:"byo-float", name:"Build Your Own Float", desc:"Pick a base, pick a soft-serve cap, load it up", price:5.95},
     ]},
@@ -2004,6 +2004,11 @@ function renderLeaderboard(){
        POST tb-where /subscribe {contact, consent:true, smsConsent:true} (the text-me box must be ticked).
        Only a real {ok:true} answer shows "You're on The Tide List!"; anything else says what went wrong. ---- */
 const TIDE_API = "https://tb-where.nicholasroper.workers.dev/subscribe";
+/* The exact consent line (Lady Jaye compliance gate, section 3). It is stored in consent/sms-consent-kiosk-v1.txt; TL_CONSENT_VERSION is the
+   sha256 of that exact text and goes with every sign-up (tests/kiosk/consent.js pins both). Change the text = a new file and a new version. */
+const TL_CONSENT_TEXT = "Yes, Thirsty Beaches may send automated marketing texts to this number about stops and specials. Not required to buy anything. A few msgs/month; msg & data rates may apply. Reply STOP to cancel, HELP for help. I'm 13+ and this is my number. Terms: thirstybeaches.com/sms-terms";
+const TL_CONSENT_VERSION = "d9b90e126c66e0ec5ced45c01f86cb0a91fc018b735af78df03116b146e99c8c";
+{ const el=document.getElementById("tlConsentText"); if(el) el.textContent = TL_CONSENT_TEXT; }
 let _phone="", _tideReq=0;
 function fmtPhone(p){ const a=p.padEnd(10,"•"); return `(${a.slice(0,3)}) ${a.slice(3,6)}-${a.slice(6,10)}`; }
 function buildKeypad(){
@@ -2035,7 +2040,7 @@ async function tideJoin(){
   let ok=false, err="";
   try{
     const r = await qrFetch(TIDE_API, { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ contact:_phone, consent:true, smsConsent:true }) }, 10000);
+      body: JSON.stringify({ contact:_phone, consent:true, smsConsent:true, source:"kiosk", consentVersion:TL_CONSENT_VERSION }) }, 10000);
     let d=null; try{ d = await r.json(); }catch(e){}
     if(r.ok && d && d.ok) ok = true;
     else err = (d && d.error==="bad-contact") ? "That doesn't look like a US mobile number. Check it and tap Join again."
@@ -2873,6 +2878,7 @@ function tapCard(el,catKey,itemId){
 }
 /* Named drinks arrive filled in (size, the recipe's own base, the signature cap); only these two stay blank and Required. */
 const BYO_IDS = new Set(["pour-decisions","byo-float"]);
+const isReq = (item,o) => !!o.required && !o.multi && !((item && item.optional) || []).includes(o.key);
 function defaultSel(catKey,item){
   const cat = MENU[catKey], sel = {};
   cat.options.forEach(o=>{ sel[o.key] = o.multi ? [] : null; });
@@ -2917,10 +2923,10 @@ function renderSheet(){
   const {catKey,item,sel,qty} = editing;
   const cat = MENU[catKey];
   const groups = cat.options.map(o=>{
-    const unset = o.required && !o.multi && !sel[o.key];
+    const unset = isReq(item,o) && !sel[o.key];
     return `
     <div class="opt-group${unset ? ' need' : ''}">
-      <h4>${o.label} ${unset ? '<em class="req">Required</em>' : (o.required && !o.multi ? '' : '<em>optional</em>')}${o.multi?'<em>pick any</em>':''}</h4>
+      <h4>${o.label} ${unset ? '<em class="req">Required</em>' : (isReq(item,o) ? '' : '<em>optional</em>')}${o.multi?'<em>pick any</em>':''}</h4>
       <div class="opt-row">
         ${o.choices.map(ch=>{
           const on = o.multi ? sel[o.key].includes(ch.name) : sel[o.key]===ch.name;
@@ -2940,7 +2946,7 @@ function renderSheet(){
         <button class="opt" aria-pressed="false" onclick="pickFloat('')">No soft serve</button>
       </div>
     </div>` : "";
-  const missing = cat.options.filter(o=>o.required && !o.multi && !sel[o.key]);
+  const missing = cat.options.filter(o=>isReq(item,o) && !sel[o.key]);
   const addBtn = missing.length
     ? `<button class="btn-primary disabled" disabled aria-disabled="true">Choose ${missing[0].label.replace(/<[^>]*>/g,'')}</button>`
     : `<button class="btn-primary" onclick="addToCart()">Add to order &middot; $${(linePrice()*qty).toFixed(2)}</button>`;
@@ -2978,7 +2984,7 @@ function addToCart(){
   // ensure required selections
   const {catKey,item,sel,qty}=editing;
   for(const o of MENU[catKey].options){
-    if(o.required && !o.multi && !sel[o.key]) return; // safety — the Add button is already disabled until required choices are made
+    if(isReq(item,o) && !sel[o.key]) return; // safety — the Add button is already disabled until required choices are made
   }
   const nick = vibeCleanNick(editing.nick);
   const r = calcSel(catKey,item.price,sel,nick);
@@ -3313,6 +3319,16 @@ function clearCart(){
    When PAY_ENABLED=false (the default) this function behaves exactly as before.
    The pay-at-window path is always available and is never an error state.       */
 let _sendFails = 0, _wfTimer = null;
+function codeFailed(){
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd"><div><h3>That code didn't work</h3><p>Order without it?</p></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button></div>
+    <div class="sheet-ft">
+      <button class="linkbtn" onclick="openCart()">Back</button>
+      <button class="btn-primary" onclick="_prizeCode='';placeOrder()">Order without it</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+}
 function windowFallback(){
   cart = []; updateCartBtn(); closeSheet(); _orderName = ""; _prizeCode = "";
   const w = $("#windowFallback"); if(w) w.hidden = false;
@@ -3329,6 +3345,10 @@ async function placeOrder(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({cart, name:_orderName.trim(), code:_prizeCode||undefined})
     });
+    if(res.status===400 && _prizeCode){                      // the Maze code could not be used: do NOT retry or count a send failure, ask
+      let bd=null; try{ bd = await res.clone().json(); }catch(e){}
+      if(bd && bd.error==="bad-code"){ codeFailed(); return; }
+    }
     if(!res.ok) throw new Error("HTTP "+res.status);
     const d = await res.json();
     if(!d || !d.ticket || !d.orderId) throw new Error("no ticket returned");

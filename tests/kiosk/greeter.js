@@ -20,6 +20,7 @@ function stub() {
 }
 function load(controlAnswer) {
   const media = { calls: [] };
+  const timers = [];
   const g = {
     console: { log() {}, info() {}, warn() {}, error() {} },
     document: { createElement: () => stub(), head: stub(), body: stub(), currentScript: { src: "http://localhost/assets/greeter/greeter.js" }, getElementById: () => null, addEventListener() {} },
@@ -27,7 +28,7 @@ function load(controlAnswer) {
     navigator: { mediaDevices: { getUserMedia: async opts => { media.calls.push(opts); return { getTracks: () => [] }; } } },
     speechSynthesis: { cancel() {}, speak() {}, speaking: false, getVoices: () => [], onvoiceschanged: null },
     SpeechSynthesisUtterance: class {},
-    addEventListener() {}, setInterval: () => 0, setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0,
+    addEventListener() {}, setInterval: () => 0, setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout() {}, requestAnimationFrame: () => 0,
     Date, Math, JSON, Promise, Object, Array, String, Number, Boolean, RegExp, Error, Map, Set,
     fetch: async () => { if (controlAnswer === "unreachable") throw new Error("offline"); return { json: async () => controlAnswer }; },
     TB_GREETER: { tapToStart: false, controlUrl: "/control", activeWhen: () => true },
@@ -36,6 +37,7 @@ function load(controlAnswer) {
   const ctx = vm.createContext(g);
   vm.runInContext(lines, ctx);
   vm.runInContext(src, ctx);
+  g.__timers = timers;
   return { g, media };
 }
 (async () => {
@@ -75,6 +77,19 @@ function load(controlAnswer) {
   g.fetch = async () => { throw new Error("github is down"); };
   await g.TBGreeter._pollControl();
   assert.strictEqual(g.TBGreeter._state.enabled, false, "enabled, then Control goes away -> OFF"); n++;
+
+  // CR-003: the debug panel needs S.lastLine / S.speech / S.camError; a comment once swallowed them and killed the loop on its first tick
+  ({ g } = load({ greeter: { enabled: true, debug: true } }));
+  const S = g.TBGreeter._state;
+  assert.strictEqual(S.lastLine, "", "S.lastLine exists after init"); n++;
+  assert.strictEqual(S.camError, ""); assert.strictEqual(S.speech, "not tried yet"); n += 2;
+  await g.TBGreeter._pollControl();
+  assert.strictEqual(S.debug, true, "debug:true was applied"); n++;
+  g.__timers.length = 0;
+  const loopFn = (g.TBGreeter._loop);
+  ok(typeof loopFn === "function", "loop exposed for the test");
+  loopFn();                                      // a debug tick must not throw
+  ok(g.__timers.length >= 1, "and it reschedules itself (the loop is alive)");
 
   // audio is never captured: every getUserMedia in the file says audio:false
   const calls = src.match(/getUserMedia\(\{[^)]*\)/g) || [];
