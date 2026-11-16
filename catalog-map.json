@@ -1,0 +1,2615 @@
+{
+ "version": 1,
+ "note": "Fill in 'clover' with the Clover item / modifier id. null = unmapped: /quote refuses carts that use it. Run: node tools/catalog-map.js",
+ "categories": {
+  "floats": {
+   "items": {
+    "beached-whale": {
+     "name": "Sandy Bottom",
+     "kioskCents": 650,
+     "clover": null
+    },
+    "swole-patrol": {
+     "name": "Thicc & Thirsty",
+     "kioskCents": 750,
+     "clover": null
+    },
+    "cold-front": {
+     "name": "Cold Shoulder",
+     "kioskCents": 650,
+     "clover": null
+    },
+    "riptide-float": {
+     "name": "Riptide",
+     "kioskCents": 650,
+     "clover": null
+    },
+    "byo-float": {
+     "name": "Build Your Own Float",
+     "kioskCents": 595,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Regular",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Large",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Pineapple soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Orange soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Root beer",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cream soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Coconut-lime soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blue raspberry lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Strawberry lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cherry limeade",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cap",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Dole Whip",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Twist (both)",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "boost",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Protein scoop",
+       "kioskCents": 150,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Chamoy drizzle",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Tajín rim",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Fresh fruit",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Toasted coconut",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "dirtysodas": {
+   "items": {
+    "thirst-trap": {
+     "name": "Thirst Trap",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "dirty-secret": {
+     "name": "Dirty Little Secret",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "nice-coconuts": {
+     "name": "Nice Coconuts",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "razzle": {
+     "name": "Razzle My Berries",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "sweet-cheeks": {
+     "name": "Sweet Cheeks",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "upside-down": {
+     "name": "Upside-Down & Dirty",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "tropic-hot": {
+     "name": "Tropic Like It's Hot",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "sunset-rocks": {
+     "name": "Sunset on the Rocks",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "pour-decisions": {
+     "name": "Pour Decisions",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "butter-me-up": {
+     "name": "Butter Me Up",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "cake-walk": {
+     "name": "Cake Walk",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "cherry-on-top": {
+     "name": "Cherry on Top",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "cran-do-attitude": {
+     "name": "Cran-Do Attitude",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "dew-or-die": {
+     "name": "Dew or Die",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "fling-on-the-beach": {
+     "name": "Fling on the Beach",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "fruit-loop-lagoon": {
+     "name": "Fruit Loop Lagoon",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "guava-lava": {
+     "name": "Guava Lava",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "hula-hottie": {
+     "name": "Hula Hottie",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "just-beachy": {
+     "name": "Just Beachy",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "no-regrets": {
+     "name": "No Regrets",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "one-in-a-melon": {
+     "name": "One in a Melon",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "peach-please": {
+     "name": "Peach Please",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "pink-bikini": {
+     "name": "Pink Bikini",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "salt-life": {
+     "name": "Salt Life",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "shark-bait": {
+     "name": "Shark Bait",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "tan-lines": {
+     "name": "Tan Lines",
+     "kioskCents": 349,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Coca-Cola",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Coke",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Pepsi",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Sprite",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Sprite Zero",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Mountain Dew",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Mtn Dew",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Root Beer",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cream Soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Fanta Orange",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Big Red",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Squirt",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Cherry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Lime",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Blue Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cream",
+     "multi": false,
+     "choices": [
+      {
+       "name": "None",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla Sweet Cream",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "Coconut Cream",
+       "kioskCents": 60,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "seasonal": {
+   "items": {
+    "apple-of-my-thighs": {
+     "name": "Apple of My Thighs",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "boo-tea-call": {
+     "name": "Boo-tea Call",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "cider-beaches": {
+     "name": "Cider Beaches",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "crush-on-you": {
+     "name": "Crush On You",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "fall-back-relax": {
+     "name": "Fall Back & Relax",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "frosty-the-snowcone": {
+     "name": "Frosty the Snowcone",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "ghosted": {
+     "name": "Ghosted",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "gourd-vibes-only": {
+     "name": "Gourd Vibes Only",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "harvest-moon": {
+     "name": "Harvest Moon",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "hayride-hottie": {
+     "name": "Hayride Hottie",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "jingle-juice": {
+     "name": "Jingle Juice",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "love-potion-no-9": {
+     "name": "Love Potion No. 9",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "naughty-nice": {
+     "name": "Naughty & Nice",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "pumpkin-spice-everything-dirty": {
+     "name": "Pumpkin Spice & Everything Dirty",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "sleigh-all-day": {
+     "name": "Sleigh All Day",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "spice-spice-beachy": {
+     "name": "Spice Spice Beachy",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "sweater-weather": {
+     "name": "Sweater Weather",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "the-graveyard-shift": {
+     "name": "The Graveyard Shift",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "witch-better-have-my-candy": {
+     "name": "Witch Better Have My Candy",
+     "kioskCents": 399,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Coca-Cola",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Coke",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Pepsi",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Sprite",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Sprite Zero",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Mountain Dew",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Diet Mtn Dew",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Root Beer",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cream Soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Fanta Orange",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Big Red",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Squirt",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Cherry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Lime",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Blue Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cream",
+     "multi": false,
+     "choices": [
+      {
+       "name": "None",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla Sweet Cream",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "Coconut Cream",
+       "kioskCents": 60,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "refreshers": {
+   "items": {
+    "berry-breezy": {
+     "name": "Berry Breezy",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "cannonball": {
+     "name": "Cannonball",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "flamingle": {
+     "name": "Flamingle",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "mango-tango": {
+     "name": "Mango Tango",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "rash-guard": {
+     "name": "Rash Guard",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "spa-day": {
+     "name": "Spa Day",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "unsinkable": {
+     "name": "Unsinkable",
+     "kioskCents": 349,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Cherry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Lime",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Blue Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cream",
+     "multi": false,
+     "choices": [
+      {
+       "name": "None",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla Sweet Cream",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "Coconut Cream",
+       "kioskCents": 60,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "newwaves": {
+   "items": {
+    "golden-hour": {
+     "name": "Golden Hour",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "lazy-river": {
+     "name": "Lazy River",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "castaway": {
+     "name": "Castaway",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "beach-sting": {
+     "name": "Beach Sting",
+     "kioskCents": 449,
+     "clover": null
+    },
+    "riptide": {
+     "name": "Wipeout",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "sunburn": {
+     "name": "Sunburn",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "pearl-diver": {
+     "name": "Pearl Diver",
+     "kioskCents": 449,
+     "clover": null
+    },
+    "beach-buzz": {
+     "name": "Beach Buzz",
+     "kioskCents": 495,
+     "clover": null
+    },
+    "spicy-senorita": {
+     "name": "Spicy Señorita",
+     "kioskCents": 695,
+     "clover": null
+    },
+    "the-blue-one": {
+     "name": "Feelin' Frisky",
+     "kioskCents": 449,
+     "clover": null
+    },
+    "low-tide": {
+     "name": "Low Tide",
+     "kioskCents": 495,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cream",
+     "multi": false,
+     "choices": [
+      {
+       "name": "None",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla Sweet Cream",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "Coconut Cream",
+       "kioskCents": 60,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "energy": {
+   "items": {
+    "adios": {
+     "name": "Adios, Beaches",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "wired": {
+     "name": "Wired & Tired",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "wet-wild": {
+     "name": "Wet & Wild",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "rise-grind": {
+     "name": "Rise & Grind",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "skinny": {
+     "name": "Skinny Dippin'",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "cloud-surfer": {
+     "name": "Cloud Surfer",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "lemon-drop-kick": {
+     "name": "Lemon Drop Kick",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "passion-pit": {
+     "name": "Passion Pit",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "peach-out": {
+     "name": "Peach Out",
+     "kioskCents": 499,
+     "clover": null
+    },
+    "pina-collider": {
+     "name": "Piña Collider",
+     "kioskCents": 499,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Red Bull",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Sugar-Free Red Bull",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Alani Nu",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Monster",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Cherry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Lime",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Blue Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "lemonades": {
+   "items": {
+    "main-squeeze": {
+     "name": "Main Squeeze",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "pucker": {
+     "name": "Kiss & Tell",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "life-beaches": {
+     "name": "When Life Gives You Beaches",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "easy-squeezy": {
+     "name": "Easy, Tiger",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "pink-flamingo": {
+     "name": "Pink Flamingo",
+     "kioskCents": 349,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Classic Lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Pink Lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Strawberry Lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Limeade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cherry Limeade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Arnold Palmer (½ tea)",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "italian": {
+   "items": {
+    "dolce": {
+     "name": "La Dolce Beach",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "fizzy": {
+     "name": "Fizzy Business",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "feelin-blue": {
+     "name": "Feelin' Blue",
+     "kioskCents": 349,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small 16oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Medium 24oz",
+       "kioskCents": 80,
+       "clover": null
+      },
+      {
+       "name": "Large 32oz",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Cherry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Lime",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Blue Raspberry",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cream",
+     "multi": false,
+     "choices": [
+      {
+       "name": "None",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla Sweet Cream",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "Coconut Cream",
+       "kioskCents": 60,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Fresh lime",
+       "kioskCents": 25,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Extra pump",
+       "kioskCents": 40,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "dolewhip": {
+   "items": {
+    "pineapple-express": {
+     "name": "Pineapple Express",
+     "kioskCents": 550,
+     "clover": null
+    },
+    "vanilla-vibes": {
+     "name": "Vanilla Vibes",
+     "kioskCents": 500,
+     "clover": null
+    },
+    "swirl-power": {
+     "name": "Swirl Power",
+     "kioskCents": 550,
+     "clover": null
+    },
+    "float-on": {
+     "name": "Float On",
+     "kioskCents": 600,
+     "clover": null
+    },
+    "whip-it": {
+     "name": "Whip It Good",
+     "kioskCents": 650,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "flavor",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Dole Whip",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Twist (Dole Whip + Vanilla)",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "serve",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Cup",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Waffle cone",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Float (in juice/soda)",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Regular",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Large",
+       "kioskCents": 125,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "top",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Toasted coconut",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Pineapple chunks",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Rainbow sprinkles",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Tajín",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "coffee": {
+   "items": {
+    "cloud-nine": {
+     "name": "Cloud Nine",
+     "kioskCents": 525,
+     "clover": null
+    },
+    "salted-caramel-cloud": {
+     "name": "Salted Caramel Cloud",
+     "kioskCents": 550,
+     "clover": null
+    },
+    "beach-smores": {
+     "name": "Beach S'mores",
+     "kioskCents": 450,
+     "clover": null
+    },
+    "espresso-yourself": {
+     "name": "Espresso Yourself",
+     "kioskCents": 325,
+     "clover": null
+    },
+    "basic-beach": {
+     "name": "Basic Beach",
+     "kioskCents": 425,
+     "clover": null
+    },
+    "cappa": {
+     "name": "Cappa-Cabana",
+     "kioskCents": 475,
+     "clover": null
+    },
+    "but-first": {
+     "name": "But First, Caffeine",
+     "kioskCents": 525,
+     "clover": null
+    },
+    "beach-bothered": {
+     "name": "Beach & Bothered",
+     "kioskCents": 550,
+     "clover": null
+    },
+    "coco-mocha": {
+     "name": "Coco Loco Mocha",
+     "kioskCents": 550,
+     "clover": null
+    },
+    "wake-shake": {
+     "name": "Wake & Shake",
+     "kioskCents": 525,
+     "clover": null
+    },
+    "hot-mess": {
+     "name": "Hot Mess",
+     "kioskCents": 395,
+     "clover": null
+    },
+    "beach-drip": {
+     "name": "Beach Drip",
+     "kioskCents": 295,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "12oz",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "16oz",
+       "kioskCents": 60,
+       "clover": null
+      },
+      {
+       "name": "20oz",
+       "kioskCents": 110,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "temp",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Hot",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Iced",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "milk",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Whole",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "2%",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Oat",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Almond",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "flavor",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Vanilla",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Coconut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Caramel",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Hazelnut",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 50,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "extra",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Extra shot",
+       "kioskCents": 100,
+       "clover": null
+      },
+      {
+       "name": "Decaf",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "beachbabies": {
+   "items": {
+    "lil-squirt": {
+     "name": "Lil' Squirt",
+     "kioskCents": 299,
+     "clover": null
+    },
+    "shore-temple": {
+     "name": "Shore Temple",
+     "kioskCents": 299,
+     "clover": null
+    },
+    "sandcastle-shake": {
+     "name": "Sandcastle Shake",
+     "kioskCents": 450,
+     "clover": null
+    },
+    "beach-ball": {
+     "name": "Beach Ball",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "mermaid-splash": {
+     "name": "Mermaid Splash",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "cotton-candy-cloud": {
+     "name": "Cotton Candy Cloud",
+     "kioskCents": 349,
+     "clover": null
+    },
+    "lil-root-beer-float": {
+     "name": "Lil' Root Beer Float",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "sharky": {
+     "name": "Sharky",
+     "kioskCents": 299,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Small",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Large",
+       "kioskCents": 80,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "puree",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Strawberry",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Mango",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Pineapple",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Peach",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Raspberry",
+       "kioskCents": 99,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "style",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Over ice",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blended / frozen",
+       "kioskCents": 100,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  },
+  "treats": {
+   "items": {
+    "fd-candy-sm": {
+     "name": "Small Bag",
+     "kioskCents": 399,
+     "clover": null
+    },
+    "fd-candy-md": {
+     "name": "Medium Bag",
+     "kioskCents": 599,
+     "clover": null
+    },
+    "fd-candy-lg": {
+     "name": "Large Bag",
+     "kioskCents": 999,
+     "clover": null
+    }
+   },
+   "options": []
+  },
+  "secret": {
+   "items": {
+    "the-spaceman": {
+     "name": "The Spaceman",
+     "kioskCents": 750,
+     "clover": null
+    },
+    "midnight-tide": {
+     "name": "Midnight Tide",
+     "kioskCents": 695,
+     "clover": null
+    },
+    "the-undertow": {
+     "name": "The Undertow",
+     "kioskCents": 850,
+     "clover": null
+    },
+    "loose-lips": {
+     "name": "Loose Lips",
+     "kioskCents": 650,
+     "clover": null
+    }
+   },
+   "options": [
+    {
+     "key": "size",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Regular",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Large",
+       "kioskCents": 150,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "base",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Pineapple soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Orange soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Root beer",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cream soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Dr Pepper",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Coconut-lime soda",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Blue raspberry lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Strawberry lemonade",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Cherry limeade",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "cap",
+     "multi": false,
+     "choices": [
+      {
+       "name": "Dole Whip",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Vanilla",
+       "kioskCents": 0,
+       "clover": null
+      },
+      {
+       "name": "Twist (both)",
+       "kioskCents": 0,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "boost",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Protein scoop",
+       "kioskCents": 150,
+       "clover": null
+      },
+      {
+       "name": "Popping boba",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Chamoy drizzle",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Tajín rim",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Fresh fruit",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Toasted coconut",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    },
+    {
+     "key": "topper",
+     "multi": true,
+     "choices": [
+      {
+       "name": "Whipped cream",
+       "kioskCents": 50,
+       "clover": null
+      },
+      {
+       "name": "Sweet cream cold foam",
+       "kioskCents": 75,
+       "clover": null
+      },
+      {
+       "name": "Vanilla cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Salted caramel cold foam",
+       "kioskCents": 99,
+       "clover": null
+      },
+      {
+       "name": "Freeze-dried candy",
+       "kioskCents": 75,
+       "clover": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "floats": [
+  {
+   "mod": "Float: Dole Whip",
+   "kioskCents": 150,
+   "clover": null
+  },
+  {
+   "mod": "Float: Vanilla",
+   "kioskCents": 150,
+   "clover": null
+  }
+ ]
+}
