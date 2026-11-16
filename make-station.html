@@ -228,6 +228,7 @@ input[type=search]::placeholder{color:var(--mute)}
  -webkit-mask-image:linear-gradient(to top,#000 20%,transparent);mask-image:linear-gradient(to top,#000 20%,transparent)}
 .make>*{position:relative;z-index:1}
 .mhead .code{animation:neon .8s steps(1,end) 1}
+@media (prefers-reduced-motion:reduce){.mhead .code{animation:none}}
 @keyframes neon{0%{opacity:.2}8%{opacity:1}14%{opacity:.3}22%{opacity:1}30%{opacity:.5}36%{opacity:1}100%{opacity:1}}
 .card{position:relative}
 .card.ok{opacity:.72}
@@ -375,13 +376,19 @@ body{font-synthesis:none}
 .nxgo{margin-top:auto;min-height:64px;border-radius:14px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--display);font-size:20px}
 @media (max-width:1500px){.nextpane{display:none}.make{grid-template-columns:minmax(0,1fr)}}
 .paybadge{display:inline-flex;align-items:center;font-family:var(--display);font-weight:400;border-radius:10px;padding:2px 12px;letter-spacing:.04em;line-height:1.2;white-space:nowrap;flex:none;font-size:32px}
-.paybadge.paid{background:#3be08a;color:#08011c}
-.paybadge.collect{background:#ffd166;color:#08011c}
+.paybadge.paid{background:#3be08a;color:#08011c;border-radius:999px}
+.paybadge.collect{background:#ffd166;color:#08011c;border-radius:4px;box-shadow:inset 0 0 0 4px #08011c}
 /* ADR section 5: solid fills, 32 px or more, on the tile AND the ticket header. CHECK = a card payment that could not be proven: never charge. */
-.paybadge.check{background:#d7263d;color:#fff}
+/* four different SHAPES as well as colors (colorblind and glare): pill = paid, square with an inner ring = collect, hazard stripes = check, white ring = double */
+.paybadge.check{background:repeating-linear-gradient(135deg,#d7263d 0 16px,#a8182c 16px 32px);color:#fff;text-shadow:0 0 3px #000}
 .paybadge.double{background:#7a0019;color:#fff;box-shadow:0 0 0 3px #fff}
+.tk .pb{grid-column:1/-1;justify-self:start;max-width:100%;margin-top:4px}   /* the whole tile width: "COLLECT $5.35" at 32 px is about 310 px */
+.tk .paybadge{max-width:100%}
+.nxhead .paybadge{max-width:100%;white-space:normal}
 .tk .paybadge{font-size:32px;margin-right:8px;vertical-align:middle;padding:2px 14px}
-.mhead .paybadge{font-size:36px;padding:4px 18px}
+/* the ticket header: the badge gets its own full-width row, so a long instruction never pushes "Done, next ticket" under the NEXT pane */
+.mhead{flex-wrap:wrap}
+.mhead .paybadge{order:20;flex:1 0 100%;justify-content:center;white-space:normal;font-size:40px;padding:6px 18px;text-align:center}
 .nxhead .paybadge{font-size:32px}
 /* age bands: thick left border (yellow past 4 min, red past 8) instead of one saturating red */
 .tk{border-left-width:14px;border-left-color:var(--line)}
@@ -620,7 +627,7 @@ const ageBand=o=>{const a=queue.now-o.created;return a>LATE_MS?'late':a>WARN_MS?
 const cents=o=>o.total||o.items.reduce((s,it)=>s+(it.price||0)*it.qty,0);
 const money=c=>'$'+(c/100).toFixed(2);
 /* big hand-off badge: PAID, or COLLECT $x (what to charge at the window) */
-const payBadge=o=>o.badge&&o.badge.kind?'<b class="paybadge '+String(o.badge.kind).toLowerCase().replace(/[^a-z]/g,'')+'">'+esc(o.badge.text)+'</b>'
+const payBadge=(o,long)=>o.badge&&o.badge.kind?'<b class="paybadge '+String(o.badge.kind).toLowerCase().replace(/[^a-z]/g,'')+'">'+esc(long&&o.badge.long?o.badge.long:o.badge.text)+'</b>'
   :(o.paid?'<b class="paybadge paid">PAID</b>':'<b class="paybadge collect">COLLECT '+money(cents(o))+'</b>');   // badge comes from the server's ticket gate (TBK: titles); legacy orders keep paid/collect
 let TRAIN=false,SAYNAMES=false;try{TRAIN=localStorage.getItem('tb-train')==='1';SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 function setTrain(v){TRAIN=v;document.body.classList.toggle('training',v);$('#trainBtn').setAttribute('aria-pressed',v);$('#trainBtn').textContent=v?'Training on':'Training off';try{localStorage.setItem('tb-train',v?'1':'0');}catch(e){}}
@@ -630,7 +637,7 @@ function renderQueue(){const w=queue.waiting;
  const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
  $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);const band=ageBand(o);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${band?' '+band:''}" data-id="${esc(o.id)}">
    ${band==='late'?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
-   <span class="sub">${payBadge(o)}${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
+   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span><span class="pb">${payBadge(o)}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
  let newlyLate=false;for(const o of w)if(queue.now-o.created>LATE_MS&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
  if(newlyLate)lateDing();
@@ -657,7 +664,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
    ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
- m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${payBadge(o)}<b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+ m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${payBadge(o,true)}<b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
   <div class="prep" id="prep"></div>
   <div class="strip" id="strip">${o.items.length>1?o.items.map((it,ix)=>stripItem(it,ix)).join(''):''}</div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>

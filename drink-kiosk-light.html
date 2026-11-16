@@ -774,13 +774,14 @@
   /* state-specific visibility */
   #payscreen .ps-prompt .tap-rings{display:flex;}
   #payscreen .ps-working .tap-rings{display:flex;}
+  #payscreen[data-state="recovering"] .tap-rings span{animation-duration:1.2s;}
   #payscreen[data-state="prompt"] .pay-retry{display:none;}
-  #payscreen[data-state="working"] .pay-retry{display:none;}
+  #payscreen[data-state="working"] .pay-retry,#payscreen[data-state="recovering"] .pay-retry{display:none;}
   #payscreen[data-state="working"] .tap-rings span{animation-duration:1.2s;}
   #payscreen[data-state="approved"] .pay-retry{display:none;}
   #payscreen[data-state="approved"] .pay-window{display:none;}
   /* suppress rings when not waiting */
-  #payscreen:not([data-state="prompt"]):not([data-state="working"]) .tap-rings span{animation:none;opacity:0;}
+  #payscreen:not([data-state="prompt"]):not([data-state="working"]):not([data-state="recovering"]) .tap-rings span{animation:none;opacity:0;}
   @media (orientation:portrait){
     #payscreen .reader-icon{width:190px;height:190px;margin-bottom:40px;}
     #payscreen .tap-rings span:nth-child(1){width:110px;height:110px;}
@@ -798,7 +799,7 @@
     background:#fff;border:2px solid #163a5f;color:#163a5f;font-family:"Archivo",system-ui,sans-serif;font-weight:800;
     font-size:clamp(18px,2.4vw,24px);box-shadow:0 12px 30px -14px rgba(22,58,95,.45);}
   #payscreen .pay-point svg{width:1.6em;height:1.6em;flex:none;}
-  #payscreen[data-state="prompt"] .pay-point,#payscreen[data-state="working"] .pay-point{display:inline-flex;}
+  #payscreen[data-state="prompt"] .pay-point,#payscreen[data-state="working"] .pay-point,#payscreen[data-state="recovering"] .pay-point{display:inline-flex;}
   @media (orientation:portrait){ #payscreen .pay-point{font-size:clamp(26px,3.4vw,34px);padding:20px 38px;} }
   /* ===== PAY ON MY PHONE (QR) — choice on the name screen + the QR screen ===== */
   .sheet-ft.payfork{align-items:stretch;}
@@ -1114,10 +1115,38 @@
   /* "We're checking your payment": the customer may already have been charged, so no retry and no "pay at the window" here, and the ticket number is huge */
   #payscreen .pay-ticket{display:none;margin:0 auto 22px;padding:10px 40px;border-radius:22px;background:#fff;color:#163a5f;font-family:"Bungee",system-ui,sans-serif;font-size:clamp(48px,9vw,96px);line-height:1.1;}
   #payscreen[data-state="unknown"] .pay-ticket{display:inline-block;}
+  /* Snake Eyes 3: the "checking" screen must not look like a pay prompt: no amount, no label, no reader, no card graphic; a huge DON'T PAY AGAIN pill first */
+  #payscreen .pay-dont{display:none;margin:0 auto 18px;padding:10px 40px;border-radius:999px;background:#fff;color:#163a5f;border:8px solid #ffd166;font-family:"Bungee",system-ui,sans-serif;font-size:clamp(48px,7vw,80px);line-height:1.1;}
+  #payscreen[data-state="unknown"] .pay-dont{display:inline-block;}
+  #payscreen[data-state="unknown"] .pay-amount,#payscreen[data-state="unknown"] .pay-label,#payscreen[data-state="unknown"] .reader-icon,#payscreen[data-state="unknown"] .pay-arrow{display:none;}
+  #payscreen[data-state="unknown"] .pay-body{color:var(--ink);font-size:clamp(24px,3.4vw,38px);font-weight:700;}
+  #payscreen .pay-got{display:none;border:none;cursor:pointer;font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:clamp(24px,3vw,32px);min-height:84px;border-radius:18px;padding:0 48px;background:#fff;color:#163a5f;}
+  #payscreen[data-state="unknown"] .pay-got{display:block;}
+  /* Snake Eyes 5: the window button must read as a button (it is also the right answer for a declined card) */
+  #payscreen .pay-window{border:3px solid var(--cyan);}
+  /* Snake Eyes 8: where the reader is, as an arrow disc at that edge of the screen (static under reduced motion) */
+  #payscreen .pay-arrow{display:none;position:fixed;width:120px;height:120px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px var(--cyan);align-items:center;justify-content:center;z-index:2;animation:arrowbob 1.4s ease-in-out infinite;}
+  #payscreen .pay-arrow svg{width:70px;height:70px;}
+  #payscreen .pay-arrow[data-side="left"]{display:flex;left:18px;top:50%;margin-top:-60px;}
+  #payscreen .pay-arrow[data-side="right"]{display:flex;right:18px;top:50%;margin-top:-60px;transform:scaleX(-1);}
+  #payscreen .pay-arrow[data-side="below"]{display:flex;bottom:18px;left:50%;margin-left:-60px;}
+  #payscreen .pay-arrow[data-side="below"] svg{transform:rotate(-90deg);}
+  #payscreen:not([data-state="prompt"]):not([data-state="working"]):not([data-state="recovering"]) .pay-arrow{display:none !important;}
+  @keyframes arrowbob{0%,100%{translate:0 0}50%{translate:0 8px}}
+  /* Snake Eyes 12: tap rings are navy and sit OUTSIDE the white reader disc, where they can be seen */
+  #payscreen .tap-rings{inset:-34px;}
+  #payscreen .tap-rings span{border-color:#163a5f;}
+  /* Snake Eyes 5: "Still there?" is a modal with a seconds countdown (WCAG 2.2.1: 20 s to extend) */
+  #payscreen[data-still="1"] .pay-still{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;margin:0;border-radius:0;background:rgba(4,0,14,.88);color:#fff;padding:32px;text-align:center;}
+  #payscreen .pay-still h3{font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-size:clamp(34px,5vw,60px);margin:0;color:#ffd166;}
+  #payscreen .pay-still p{font-size:clamp(22px,3vw,34px);margin:0;max-width:760px;color:#fff;}
+  #payscreen .pay-still button{min-height:96px;padding:0 56px;border-radius:22px;border:none;background:#ffd166;color:#08011c;font:800 clamp(26px,3.4vw,38px) "Archivo",system-ui,sans-serif;cursor:pointer;}
+  /* Snake Eyes 10: paid and pay-at-window confirm pills use the station's green and amber */
+  #confirm .paywindow.paid{background:#3be08a;color:#08011c;border-color:#3be08a;}
+  #confirm .paywindow.collect{background:#ffd166;color:#08011c;border-color:#ffd166;}
   #payscreen[data-state="unknown"] .pay-retry,#payscreen[data-state="unknown"] .pay-window,#payscreen[data-state="unknown"] .pay-point,#payscreen[data-state="unknown"] .pay-where{display:none;}
   #payscreen[data-state="unknown"] .pay-headline{color:#ffd166;}
-  #payscreen .pay-still{display:none;margin:0 auto 20px;padding:14px 28px;border-radius:16px;background:#ffd166;color:#08011c;font-weight:800;font-size:clamp(20px,2.8vw,30px);}
-  #payscreen[data-still="1"] .pay-still{display:block;}
+  #payscreen .pay-still{display:none;}
   /* age screen, idle warning, "order at the window" */
   #ageGate,#idleWarn,#windowFallback{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;background:rgba(4,0,14,.84);padding:24px;}
   #ageGate[hidden],#idleWarn[hidden],#windowFallback[hidden]{display:none;}
@@ -1136,6 +1165,7 @@
   button:focus-visible,[role="button"]:focus-visible{outline:4px solid var(--gold);outline-offset:3px;}
   /* reduced motion: no pulsing banner, chevrons, tap rings, falling confetti, floating logo or card entrance */
   @media (prefers-reduced-motion: reduce){
+  #payscreen .pay-arrow{animation:none !important;}
     #confirm .paywindow,#confirm .paychevrons i,#payscreen .tap-rings span,#confirm .confetti span,#attract .attract-logo,.card,.special-card,.orderbar{animation:none !important;}
     #payscreen .tap-rings span{opacity:.35;}
     #confirm.show .check{animation:none !important;}
@@ -1255,6 +1285,8 @@
 <!-- State is driven by data-state attribute on #payscreen: prompt | working | declined | cancelled | error | timeout -->
 <!-- Falls back silently to pay-at-window on any non-approved outcome or if PAY_ENABLED is off -->
 <div id="payscreen" data-state="prompt">
+  <div class="pay-arrow" id="payArrow" data-side="" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="#163a5f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M40 24H10M22 10L8 24l14 14"/></svg></div>
+  <div class="pay-dont" id="payDont" role="alert">DON'T PAY AGAIN</div>
   <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="pay-amount" id="payAmount">$0.00</div>
   <div class="pay-label" id="payLabel">Total with tax</div>
@@ -1273,12 +1305,17 @@
   </div>
   <div class="pay-where" id="payWhere" hidden><b>Where is the reader?</b> <span id="payWhereText"></span></div>
   <div class="pay-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="16" rx="2.2"/><path d="M7.5 18.5h3"/><path d="M17.5 8.5q2 2.2 0 4.6M20 6q3.8 4.6 0 9.6"/></svg>Tap your card or phone on the reader</div>
-  <div class="pay-still" id="payStill" role="status">Still there? Touch the screen to keep your order.</div>
+  <div class="pay-still" id="payStill" role="alertdialog" aria-modal="true" aria-labelledby="payStillHd">
+    <h3 id="payStillHd">Still there?</h3>
+    <p>Your order will be cancelled in <b id="payStillSecs">20</b> seconds.</p>
+    <button type="button" onclick="keepPayOrder()">Keep my order</button>
+  </div>
   <h2 class="pay-headline" id="payHeadline">Tap to pay</h2>
   <p class="pay-body" id="payBody">Tap, insert, or swipe your card on the reader.</p>
   <div class="pay-actions">
     <button class="pay-retry" id="payRetryBtn" onclick="doPay()">Try again</button>
-    <button class="pay-window" onclick="payAtWindow()">Pay at the window instead</button>
+    <button class="pay-window" id="payWindowBtn" onclick="payAtWindow()">Pay at the window instead</button>
+    <button class="pay-got" id="payGotBtn" onclick="payGotIt()">Got it</button>
   </div>
 </div>
 
@@ -1499,7 +1536,8 @@ let _payEnabled = false;   // true only if server says PAY_ENABLED=true
 let _payOrder   = null;    // { orderId, ticket } from the last /order response
 let _payAmount  = 0;       // cents — matches the order total on the Flex
 let _payInFlight = false;  // a card attempt is in flight on the reader (from POST /pay until /pay/state settles): the idle reset must not fire
-let _payCfg = { readerTimeoutMs:60000, recoveryMs:45000, unknownHoldMs:20000, declinedWaitMs:30000, stillThereMs:10000, readerLocationText:"" };
+let _payCfg = { readerTimeoutMs:60000, recoveryMs:45000, unknownHoldMs:30000, declinedWaitMs:30000, stillThereMs:20000, readerLocationText:"", readerSide:"" };
+let _payStartedAt = 0;
 let _quote = null, _quoteSig = "", _quoteBusy = null;   // the server-priced quote for the cart on screen (ADR section 4): totals, tax and the order all come from it
 let _payPoll = null;       // { timer, fails, order } while the pay screen is polling GET /pay/state
 
@@ -1912,11 +1950,11 @@ const $ = s => document.querySelector(s);
 /* Idle reset: after inactivity past the attract screen, wipe the order and return to attract so an abandoned cart
    never carries over to the next customer. At 60 s a "Still there?" box appears for 15 s (WCAG 2.2.1: a slow reader or a
    parent juggling kids must get a warning before the cart disappears); any touch keeps the order. */
-const IDLE_MS = 75000, IDLE_WARN_MS = 60000;
+const IDLE_MS = 75000, IDLE_WARN_MS = IDLE_MS - 20000;       // the warning always leaves 20 s to act (WCAG 2.2.1)
 let idleTimer = null, idleWarnTimer = null;
 function payScreenWaiting(){          // the customer is tapping a card on the reader, not touching this screen: do not time them out
   const ps = $("#payscreen");
-  return !!ps && ps.classList.contains("show") && /^(prompt|working|unknown)$/.test(ps.getAttribute("data-state") || "");
+  return !!ps && ps.classList.contains("show") && /^(prompt|working|recovering|unknown)$/.test(ps.getAttribute("data-state") || "");
 }
 function armIdle(){
   clearTimeout(idleTimer); clearTimeout(idleWarnTimer);
@@ -3186,8 +3224,11 @@ function cartTotals(){
 function quoteUsable(){ return !!(_quote && _quote.ok && _quote.payNow && _quoteSig === cartSig() && !_quote.stale); }
 function cartSig(){ return JSON.stringify([cart.map(l=>[l.catKey,l.itemId,l.sel,l.qty,l.nick||""]), _prizeCode||""]); }
 function money(c){ return "$" + (c/100).toFixed(2); }
+let _quotePending = false;
 function totalsHTML(){
   const sub = cartTotals().sub;
+  // a card kiosk never flashes the pre-tax subtotal as "the total": until the server answers the line says so
+  if(!quoteUsable() && _payEnabled && !window.TB_PHONE && _quotePending) return `<div class="row grand"><span>Total with tax</span><span>calculating…</span></div>`;
   if(!quoteUsable()) return `<div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>`;
   const q = _quote;
   return `<div class="row"><span>Subtotal</span><span>${money(q.subtotal)}</span></div>`
@@ -3196,6 +3237,7 @@ function totalsHTML(){
     + `<div class="row grand"><span>Total with tax</span><span>${money(q.total)}</span></div>`;
 }
 function displayTotal(){ return quoteUsable() ? _quote.total/100 : cartTotals().sub; }
+function totalLabel(){ return quoteUsable() ? "$"+displayTotal().toFixed(2) : (_payEnabled && !window.TB_PHONE && _quotePending ? "…" : "$"+cartTotals().sub.toFixed(2)); }
 function quoteCart(){
   return cart.map(l=>{ const sel={}; for(const k of Object.keys(l.sel||{})) if(k[0]!=="_") sel[k]=l.sel[k];
     return {catKey:l.catKey, itemId:l.itemId, sel, float:(l.sel&&l.sel._float)||undefined, notes:(l.sel&&l.sel._notes)||undefined, nick:l.nick||undefined, qty:l.qty}; });
@@ -3221,11 +3263,15 @@ async function ensureQuote(){
   try{ return await p; } finally { if(_quoteBusy && _quoteBusy.p===p) _quoteBusy = null; }
 }
 async function refreshQuoteView(){
+  if(_payEnabled && !window.TB_PHONE && !quoteUsable()) _quotePending = true;
   const q = await ensureQuote();
+  _quotePending = false;
   const box = $("#cartTotals"); if(box) box.innerHTML = totalsHTML();
-  const pb = $("#placeBtn"); if(pb) pb.innerHTML = "Place order &middot; $" + displayTotal().toFixed(2);
+  const pb = $("#placeBtn");
+  if(pb){ const pfs = pb.querySelector(".pf-s"); if(pfs) pfs.innerHTML = payForkSub(); else pb.innerHTML = "Place order &middot; " + totalLabel(); }   // the pay-fork footer only changes its sub line
   return q;
 }
+function payForkSub(){ return (_payEnabled ? totalLabel() + " with tax" : "$"+cartTotals().sub.toFixed(2)) + " &middot; " + (_payEnabled ? "tap your card next" : "pay when you pick up"); }
 /* Display prices from the server's Clover table (GET /catalog): only keys the owner has mapped are touched; everything else keeps the menu price. */
 async function applyCatalog(){
   if(window.TB_PHONE) return;
@@ -3241,6 +3287,7 @@ async function applyCatalog(){
 }
 function openCart(){
   if(!cart.length) return;
+  if(_payEnabled && !window.TB_PHONE && !quoteUsable()) _quotePending = true;
   const {sub,tax,total}=cartTotals();
   const lines = cart.map((c,i)=>`
     <div class="cart-line">
@@ -3284,7 +3331,7 @@ let _orderName = "";
 function askName(){ renderNamePad(); $("#overlay").classList.add("show"); }
 const NAME_MAX = 12;
 function renderNamePad(){
-  const sub = cartTotals().sub, shown = displayTotal();
+  const sub = cartTotals().sub, shown = totalLabel();
   const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
   const kb = rows.map(r => `<div class="krow">`+[...r].map(c=>`<button class="kkey" onclick="nameKey('${c}')">${c}</button>`).join("")+`</div>`).join("")
     + `<div class="krow"><button class="kkey" aria-label="hyphen" onclick="nameKey('-')">-</button><button class="kkey" aria-label="apostrophe" onclick="nameKey('\\'')">'</button><button class="kkey kwide" onclick="nameBack()">&larr; delete</button></div>`;
@@ -3298,7 +3345,7 @@ function renderNamePad(){
     <div class="keyboard">${kb}</div>
     ${qrShown() ? qrFooter(sub) : `<div class="sheet-ft">
       <button class="linkbtn" onclick="openCart()">Back</button>
-      <button class="btn-primary" id="placeBtn" onclick="placeOrder()">Place order &middot; $${shown.toFixed(2)}</button>
+      <button class="btn-primary" id="placeBtn" onclick="placeOrder()">Place order &middot; ${shown}</button>
     </div>`}`;
   refreshName();
   if(!window.TB_PHONE) refreshQuoteView();
@@ -3315,7 +3362,7 @@ function refreshName(){
 /* ---- Thirsty Maze prize code (from the website arcade) ----
    Six digits after MAZE-. Checked live against the prize server; the kiosk
    server re-checks and burns it when the order is created. ---- */
-let _prizeCode = "", _prizeDigits = "", _lastUpsize = false;
+let _prizeCode = "", _prizeDigits = "", _lastUpsize = false, _lastDiscount = 0;
 const PRIZE_ENDPOINT = "/prize";
 function askPrize(){ _prizeDigits = ""; renderPrizePad(); $("#overlay").classList.add("show"); }
 function clearPrize(){ _prizeCode = ""; _quote = null; openCart(); }
@@ -3431,6 +3478,7 @@ async function placeOrder(){
     // Order created — record sales for leaderboard, then decide payment path
     recordSales(cart);
     const amountCents = q ? d.total : Math.round(cartTotals().sub * 100);   // quote path: the server's total WITH tax; legacy: the menu subtotal
+    d.totalCents = amountCents; _lastDiscount = (q && q.discount) || 0;
     d.name = d.name || _orderName.trim();                     // the name the SERVER cleaned (first word, filtered): that is what the board shows and says
     _sendFails = 0;
     cart = []; updateCartBtn(); closeSheet();
@@ -3488,15 +3536,17 @@ function showConfirm(order, paid){
   const cs = $("#confirmSub");
   if(cs) cs.textContent = (paid && _qrPaidNow) ? "Your order's on the way — watch your phone, it turns green when it's ready." : "Your order's on the way — listen for your name at the window.";
   if(banner){
+    const amt = Number.isInteger(o.totalCents) ? " " + money(o.totalCents) : "";
+    banner.classList.toggle("paid", !!paid); banner.classList.toggle("collect", !paid);
     if(paid){
-      banner.innerHTML = 'Grab your order at the window <span class="paychevrons"><i></i><i></i><i></i></span>';
+      banner.innerHTML = '✓ Paid' + amt + '. Grab your order at the window <span class="paychevrons"><i></i><i></i><i></i></span>';
     } else {
-      banner.innerHTML = 'Head to the window to pay &amp; grab your order <span class="paychevrons"><i></i><i></i><i></i></span>';
+      banner.innerHTML = (amt ? 'Pay' + amt + ' at the window, then grab your order' : 'Head to the window to pay &amp; grab your order') + ' <span class="paychevrons"><i></i><i></i><i></i></span>';
     }
   }
 
   const up = $("#confirm .upsizenote");
-  if(up) up.style.display = _lastUpsize ? "block" : "none";
+  if(up){ up.style.display = _lastUpsize ? "block" : "none"; if(_lastUpsize) up.textContent = _lastDiscount ? "🎮 Thirsty Maze free upsize applied: -" + money(_lastDiscount) : "🎮 Thirsty Maze free upsize applied. Tell the window which drink to size up."; }
   $("#confirm").classList.add("show");
   fireConfetti();
   armConfirmReset(CONFIRM_MS);
@@ -3513,8 +3563,10 @@ function openPayScreen(){
   const pl = $("#payLabel"); if(pl) pl.textContent = _payTaxLabel ? "Total with tax" : "Total";      // "with tax" only when the server really added it
   const pw = $("#payWhere"), pwt = $("#payWhereText");                                                // the reader-location line is the owner's own sentence (READER_LOCATION_TEXT), never a guess
   if(pw && pwt){ pwt.textContent = _payCfg.readerLocationText || ""; pw.hidden = !_payCfg.readerLocationText; }
+  const pa = $("#payArrow"); if(pa) pa.setAttribute("data-side", /^(left|right|below)$/.test(_payCfg.readerSide) ? _payCfg.readerSide : "");
   setPayState("prompt");
   ps.classList.add("show");
+  _payStartedAt = Date.now();
   doPay();
 }
 
@@ -3522,22 +3574,24 @@ function openPayScreen(){
    Drives the pay screen UX by setting data-state and updating headline/body copy. */
 const PAY_COPY = {
   prompt:    { hl:"Tap to pay",               body:"Tap, insert, or swipe your card on the reader." },
-  working:   { hl:"Talking to the reader…",   body:"Follow the prompts on the card reader." },
-  declined:  { hl:"That card didn't go through", body:"No worries — give it another tap, or pay at the window." },
-  cancelled: { hl:"Payment cancelled",        body:"Want to try again, or pay at the window?" },
+  working:   { hl:"Tap your card on the reader", body:"Or insert or swipe it. The reader shows the next step." },
+  recovering:{ hl:"Talking to the reader…",   body:"One moment. If nothing happens, ask at the window." },
+  declined:  { hl:"That card didn't go through", body:"Tap Try again to use another card, or tap Pay at the window so we start your drink." },
+  cancelled: { hl:"Payment cancelled",        body:"Tap Try again, or tap Pay at the window so we start your drink." },
   error:     { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
   timeout:   { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
-  unknown:   { hl:"We're checking your payment", body:"Don't pay again. Show ticket # at the window." },
+  unknown:   { hl:"We're checking your payment", body:"You may already be paid. Show #N at the window and we'll sort it out." },
 };
 function setPayState(state){
   const ps = $("#payscreen");
   if(!ps) return;
   ps.setAttribute("data-state", state);
-  if(state!=="declined" && state!=="cancelled" && state!=="error" && state!=="timeout") ps.removeAttribute("data-still");
+  if(state!=="declined" && state!=="cancelled" && state!=="error" && state!=="timeout"){ ps.removeAttribute("data-still"); clearInterval(_payCountT); }
   const copy = PAY_COPY[state] || PAY_COPY.prompt;
   const hl = $("#payHeadline"); if(hl) hl.textContent = copy.hl;
   const tk = (_payOrder && _payOrder.ticket) ? String(_payOrder.ticket) : "";
-  const bd = $("#payBody");    if(bd) bd.textContent  = state==="unknown" ? "Don't pay again. Show ticket #" + tk + " at the window." : copy.body;
+  const bd = $("#payBody");    if(bd) bd.textContent  = state==="unknown" ? "You may already be paid. Show #" + tk + " at the window and we'll sort it out." : copy.body;
+  const wb = $("#payWindowBtn"); if(wb) wb.textContent = (state==="working" || state==="recovering") ? "Cancel card and pay at the window" : "Pay at the window instead";   // the button cancels the reader prompt first (server side)
   const pt = $("#payTicket");  if(pt) pt.textContent  = state==="unknown" ? "#" + tk : "";
 }
 
@@ -3551,6 +3605,7 @@ const payHdr = () => ({"Content-Type":"application/json"});
 async function doPay(){
   if(!_payOrder || !_payAmount || _payInFlight) return;
   setPayState("working");
+  _payStartedAt = Date.now();
   _payInFlight = true;
   clearPayTimers();
   let out;
@@ -3565,6 +3620,8 @@ async function doPay(){
     out = { result:"pending" };
   }
   switch(out.result){
+    case "reader-busy":                        // another customer's card attempt is unresolved on the one reader: do not wait on a prompt that will never come
+      payAtWindow(true); break;
     case "pending":
     case "busy":
       startPayPoll(); break;
@@ -3586,8 +3643,8 @@ async function doPay(){
       payAtWindow(true); break;
   }
 }
-function clearPayTimers(){ if(_payPoll){ clearTimeout(_payPoll.timer); } clearTimeout(_payStillT); clearTimeout(_payAbandonT); clearTimeout(_payHoldT); _payStillT=_payAbandonT=_payHoldT=null; }
-let _payStillT=null, _payAbandonT=null, _payHoldT=null;
+function clearPayTimers(){ if(_payPoll){ clearTimeout(_payPoll.timer); } clearTimeout(_payStillT); clearTimeout(_payAbandonT); clearTimeout(_payHoldT); clearInterval(_payCountT); _payStillT=_payAbandonT=_payHoldT=_payCountT=null; }
+let _payStillT=null, _payAbandonT=null, _payHoldT=null, _payCountT=null;
 function stopPayPoll(){ clearPayTimers(); _payPoll = null; _payInFlight = false; }
 function payApproved(){
   const o = _payOrder; stopPayPoll(); armIdle();
@@ -3619,7 +3676,14 @@ function armHold(ms){
 function armDeclinedTimers(msIn){
   clearTimeout(_payStillT); clearTimeout(_payAbandonT);
   const wait = _payCfg.declinedWaitMs, still = _payCfg.stillThereMs;
-  _payStillT = setTimeout(()=>{ const ps=$("#payscreen"); if(ps) ps.setAttribute("data-still","1"); }, msIn||wait);
+  clearInterval(_payCountT);
+  _payStillT = setTimeout(()=>{
+    const ps=$("#payscreen"); if(!ps) return;
+    ps.setAttribute("data-still","1");
+    const end = Date.now() + still, secs = $("#payStillSecs");
+    const tick = ()=>{ if(secs) secs.textContent = Math.max(0, Math.ceil((end-Date.now())/1000)); };
+    tick(); clearInterval(_payCountT); _payCountT = setInterval(tick, 250);
+  }, msIn||wait);
   _payAbandonT = setTimeout(payAbandon, (msIn||wait) + still);
 }
 async function payAbandon(){
@@ -3631,7 +3695,12 @@ function onPayState(s){
   const ps = $("#payscreen"); if(!ps || !ps.classList.contains("show")) return;
   switch(s.state){
     case "APPROVED": payApproved(); break;
-    case "IN_FLIGHT": _payInFlight = true; if(ps.getAttribute("data-state")!=="working") setPayState("working"); break;
+    case "IN_FLIGHT": {
+      _payInFlight = true;
+      const late = Date.now() - _payStartedAt > _payCfg.readerTimeoutMs;       // past the reader's own timeout the server is asking the reader what happened
+      const want = late ? "recovering" : "working";
+      if(ps.getAttribute("data-state")!==want) setPayState(want);
+      break; }
     case "TIMEOUT_UNKNOWN": case "DISCONNECTED_UNKNOWN":
       if(ps.getAttribute("data-state")!=="unknown") setPayState("unknown");
       armHold(Number.isFinite(s.resetInMs) ? s.resetInMs : _payCfg.unknownHoldMs); break;
@@ -3647,8 +3716,13 @@ function onPayState(s){
 // a touch on a declined / cancelled screen means the customer is still there: start the 30 s again
 ["pointerdown","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{
   const ps=$("#payscreen");
-  if(ps && ps.classList.contains("show") && /^(declined|cancelled|error|timeout)$/.test(ps.getAttribute("data-state")||"")) armDeclinedTimers(0);
+  if(ps && ps.classList.contains("show") && /^(declined|cancelled|error|timeout)$/.test(ps.getAttribute("data-state")||"")){
+    ps.removeAttribute("data-still"); clearInterval(_payCountT);          // the "Still there?" box goes away at the first touch
+    armDeclinedTimers(0);
+  }
 },{passive:true,capture:true}));
+function keepPayOrder(){ const ps=$("#payscreen"); if(ps) ps.removeAttribute("data-still"); clearInterval(_payCountT); armDeclinedTimers(0); }
+function payGotIt(){ stopPayPoll(); closePayScreen(); resetAll(); }          // the order is kept (locked) on the server; the customer has the ticket number
 
 /* ---- payAtWindow() — the persistent ghost button on the pay screen ----
    Tells the server (POST /pay/window): the order becomes COLLECT. The server refuses while a card attempt is unproven
@@ -3706,7 +3780,7 @@ function qrFooter(sub){
       <button class="linkbtn" onclick="openCart()">Back</button>
       <div class="payfork-btns">
         <button class="btn-qr${prize?' disabled':''}" id="qrBtn" onclick="startQr()"><span class="pf-t">Pay on my phone</span><span class="pf-s">${prize ? 'Use your prize code at the window' : 'Apple Pay &middot; Google Pay &middot; card'}</span></button>
-        <button class="btn-primary" id="placeBtn" onclick="placeOrder()"><span class="pf-t">Pay at the window</span><span class="pf-s">$${sub.toFixed(2)} &middot; pay when you pick up</span></button>
+        <button class="btn-primary" id="placeBtn" onclick="placeOrder()"><span class="pf-t">${_payEnabled ? "Pay here by card" : "Pay at the window"}</span><span class="pf-s">${payForkSub()}</span></button>
       </div>
     </div>`;
 }
@@ -3818,6 +3892,7 @@ function qrPaid(ticket){
   showConfirm({ ticket: String(ticket), orderId: String(ticket), name: who }, true);
   _qrPaidNow = false;
   const banner = $("#confirm .paywindow");
+  if(banner){ banner.classList.add("paid"); banner.classList.remove("collect"); }
   if(banner) banner.innerHTML = 'Paid! Order #' + escK(ticket) + ' &middot; watch your phone, it turns green when it\'s ready <span class="paychevrons"><i></i><i></i><i></i></span>';
   armIdle();
   if(ref) punchQr(ref);

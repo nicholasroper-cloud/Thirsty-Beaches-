@@ -144,9 +144,9 @@ function ticketGate(o, kioskTypeId) {
   if (!isKiosk) return { show: true, badge: null };
   const native = String(o.paymentState || "").toUpperCase() === "PAID";
   const money = "$" + ((o.total || 0) / 100).toFixed(2);
-  if (/^TBK:PAID\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "DOUBLE", text: "DOUBLE PAID: void one" } } : { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } };
-  if (/^TBK:COLLECT\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } } : { show: true, paid: false, badge: { kind: "COLLECT", text: "COLLECT " + money } };
-  if (/^TBK:CHECK\b/.test(title)) return { show: true, paid: false, badge: { kind: "CHECK", text: "CHECK READER, do not charge" } };
+  if (/^TBK:PAID\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "DOUBLE", text: "2× DOUBLE", long: "DOUBLE PAID: void one" } } : { show: true, paid: true, badge: { kind: "PAID", text: "✓ PAID", long: "✓ PAID" } };
+  if (/^TBK:COLLECT\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "PAID", text: "✓ PAID", long: "✓ PAID" } } : { show: true, paid: false, badge: { kind: "COLLECT", text: "COLLECT " + money, long: "COLLECT " + money } };
+  if (/^TBK:CHECK\b/.test(title)) return { show: true, paid: false, badge: { kind: "CHECK", text: "⚠ CHECK", long: "CHECK READER, do not charge" } };
   return { show: false };
 }
 

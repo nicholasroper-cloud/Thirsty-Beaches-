@@ -96,14 +96,15 @@ const http = require("http");
 const { FakeConnector, mkPayment, mkSale, sdk } = require("./pay-fakes");
 const fp = require("./flex-pay");
 const fc = new FakeConnector();
-const S = { sale: "silent", retrieve: "NOT_FOUND", shell: 0, pay: 0 };
+const S = { sale: "silent", retrieve: "NOT_FOUND", shell: 0, pay: 0, cancel: "ignore" };
 const payment = (extId, amount) => mkPayment({ extId, amount, id: "PAYE2E" + String(++S.pay).padStart(6, "0"), shell: "SHELLE2E" + String(++S.shell).padStart(5, "0") });
-const amountOf = extId => { const c = fc.calls.filter(x => x.m === "sale" && x.extId === extId).pop(); return c ? c.amount : 100; };
+const amountOf = extId => { if (S.amount) return S.amount; const c = fc.calls.filter(x => x.m === "sale" && x.extId === extId).pop(); return c ? c.amount : 100; };
 fc.script.sale = (extId, req) => {
   if (S.sale === "approve") fc.listener.onSaleResponse(mkSale("SUCCESS", payment(extId, req.getAmount())));
   else if (S.sale === "decline") fc.listener.onSaleResponse(mkSale("FAIL", null, "declined"));
   else if (S.sale === "cancel") fc.listener.onSaleResponse(mkSale("CANCEL", null, "cancelled"));
 };
+fc.script.cancel = () => { if (S.cancel === "respond") fc.listener.onSaleResponse(mkSale("CANCEL", null, "Request Canceled")); };   // the reader answers our ESC with a CANCEL
 fc.script.retrievePayment = extId => S.retrieve === "FOUND" ? { status: "FOUND", payment: payment(extId, amountOf(extId)) } : { status: S.retrieve };
 // flex-pay reconnects by building a new connector 2 s after a disconnect; the real SDK then reports connected + ready again. Do the same while the "reader" is up.
 const up = { on: false };
@@ -115,7 +116,7 @@ http.createServer((rq, rs) => {
     const o = b ? JSON.parse(b) : {}; const out = {};
     if (o.op === "ready") { up.on = true; fc.listener.onDeviceConnected(); fc.listener.onDeviceReady({ deviceSerial: "C0E2E", merchantName: "E2E" }); }
     if (o.op === "disconnect") { up.on = false; fc.listener.onDeviceDisconnected(); }
-    if (o.op === "mode") { for (const k of ["sale", "retrieve"]) if (o[k]) S[k] = o[k]; if (o.device) fc.deviceState = o.device; }
+    if (o.op === "mode") { for (const k of ["sale", "retrieve", "cancel", "amount"]) if (o[k] !== undefined) S[k] = o[k]; if (o.device) fc.deviceState = o.device; }
     if (o.op === "respond") fc.listener.onSaleResponse(mkSale(o.rc || "SUCCESS", payment(o.extId, amountOf(o.extId))));
     if (o.op === "calls") out.calls = fc.calls.map(c => ({ m: c.m, extId: c.extId, key: c.key }));
     rs.writeHead(200, { "Content-Type": "application/json" }); rs.end(JSON.stringify(out));
@@ -165,6 +166,7 @@ async function launchChrome() {
   const { targetId } = await send("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
   await send("Page.enable", {}, sessionId); await send("Runtime.enable", {}, sessionId);
+  await send("Emulation.setDeviceMetricsOverride", { width: 1080, height: 1920, deviceScaleFactor: 1, mobile: false }, sessionId);   // the kiosk is a portrait 1080x1920 screen
   const page = {
     errors: [], events,
     async goto(url) { await send("Page.navigate", { url }, sessionId); await waitFor(async () => (await page.eval("document.readyState")) === "complete", 20000, "page load"); },
@@ -172,6 +174,17 @@ async function launchChrome() {
       const r = await send("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true }, sessionId);
       if (r.exceptionDetails) throw new Error("page error: " + ((r.exceptionDetails.exception && r.exceptionDetails.exception.description) || r.exceptionDetails.text));
       return r.result.value;
+    },
+    async viewport(w, h, reduce = false) {
+      await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false }, sessionId);
+      await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: reduce ? "reduce" : "no-preference" }] }, sessionId);
+    },
+    async shot(file, w = 1080, h = 1920, reduce = false) {              // only when TB_SHOTS=<dir> is set (screens for the UX review); never in a normal run
+      if (!process.env.TB_SHOTS) return;
+      await page.viewport(w, h, reduce); await sleep(500);
+      const { data } = await send("Page.captureScreenshot", { format: "png" }, sessionId);
+      fs.mkdirSync(process.env.TB_SHOTS, { recursive: true });
+      fs.writeFileSync(path.join(process.env.TB_SHOTS, file), Buffer.from(data, "base64"));
     },
     close() { try { ws.close(); } catch {} proc.kill("SIGKILL"); },
   };
@@ -186,7 +199,7 @@ async function launchChrome() {
   const baseEnv = { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort };
   const kioskEnv = { ...baseEnv, PORT: String(kioskPort), E2E_CTL: String(ctlPort), PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", KIOSK_HEARTBEAT_URL: "off", PRIZE_API: "http://127.0.0.1:" + cloverPort,
     KIOSK_ORDER_TYPE_ID: TYPE, CATALOG_TAX_RATES: "7", TB_CATALOG_MS: "600", READER_LOCATION_TEXT: "The reader is on the right of this screen",
-    PAY_UNKNOWN_HOLD_MS: "6000", PAY_DECLINED_WAIT_MS: "2500", PAY_STILL_THERE_MS: "1500", TB_IDLE_MS: "120000", PAY_RATE_PER_MIN: "60" };
+    PAY_UNKNOWN_HOLD_MS: "6000", PAY_DECLINED_WAIT_MS: "2500", PAY_STILL_THERE_MS: "2000", READER_SIDE: "right", TB_IDLE_MS: "120000", PAY_RATE_PER_MIN: "60" };
   let kiosk = null, station = null, chrome = null;
   const ctl = o => jreq(ctlPort, "POST", "/", o, { Origin: "http://x" }).then(r => r.json);
   const startKiosk = async () => {
@@ -229,6 +242,11 @@ async function launchChrome() {
     /* ===== catalog-driven prices and "Total with tax" that is now true ===== */
     await E(`resetAll(); (function(){ const catKey="dirtysodas"; const item=MENU[catKey].items[0]; const sel=defaultSel(catKey,item); const r=calcSel(catKey,item.price,sel); cart.push({name:item.name,mods:r.mods,unit:r.unit,qty:1,catKey,itemId:item.id,basePrice:item.price,desc:item.desc,sel}); updateCartBtn(); openCart(); })()`);
     await waitFor(() => E("quoteUsable()"), 8000, "a usable quote");
+    await chrome.shot("01-cart-with-tax.png");
+    await E("_quote=null; _quoteSig=''; _quotePending=true; document.querySelector('#cartTotals').innerHTML=totalsHTML(); true");
+    ok(/calculating/.test(await E("document.querySelector('#cartTotals').textContent")) && !/\$\d/.test(await E("document.querySelector('#cartTotals').textContent")), "Snake Eyes 9: while the quote is pending the cart never shows a bare subtotal");
+    await chrome.shot("01b-cart-calculating.png");
+    await E("refreshQuoteView(); true"); await waitFor(() => E("quoteUsable()"), 8000, "the quote again");
     const totals = await E("document.querySelector('#cartTotals').textContent");
     ok(/Subtotal/.test(totals) && /FL sales tax 7%/.test(totals) && /Total with tax/.test(totals), "the cart shows subtotal, tax and Total with tax: " + totals);
     const q = await E("_quote");
@@ -240,7 +258,9 @@ async function launchChrome() {
     await customer("Sam");
     await waitFor(async () => (await screen()).confirm, 15000, "confirm screen after approval");
     let sc = await screen();
-    ok(/^\d{3}$/.test(sc.num) && /Grab your order/.test(sc.banner), "confirm screen: ticket number and the paid banner (" + sc.num + ")");
+    ok(/^\d{3}$/.test(sc.num) && /^✓ Paid \$\d+\.\d\d\. Grab your order at the window/.test(sc.banner), "confirm screen: ticket number and the green paid pill (" + sc.banner + ")");
+    eq(await E("document.querySelector('#confirm .paywindow').classList.contains('paid')"), true);
+    await chrome.shot("02-confirm-paid.png");
     let ord = lastKioskOrder();
     await waitFor(() => /^TBK:PAID:PAYE2E/.test(lastKioskOrder().title) && lastKioskOrder().state === "locked", 8000, "PAID title and lock in Clover");
     ord = lastKioskOrder(); eq(ord.total, q.total, "charged total = checkout total");
@@ -255,6 +275,8 @@ async function launchChrome() {
     await waitFor(async () => (await screen()).state === "declined", 15000, "declined screen");
     sc = await screen();
     ok(/didn't go through/.test(sc.hl) && /Total with tax/.test(sc.label) && sc.where === "The reader is on the right of this screen", "decline copy, 'Total with tax', and the owner's reader-location line");
+    eq(sc.body, "Tap Try again to use another card, or tap Pay at the window so we start your drink.", "Snake Eyes 5: declined copy");
+    await chrome.shot("03-declined.png");
     let bOrder = lastKioskOrder(); eq(bOrder.title, "TBK:PENDING", "a declined order stays hidden (TBK:PENDING)");
     ok(!(await qs()).orders.some(o => o.id === bOrder.id), "and never reaches the station");
     await ctl({ op: "mode", sale: "approve" });
@@ -268,9 +290,13 @@ async function launchChrome() {
     await ctl({ op: "mode", sale: "cancel" });
     await customer("Cy");
     await waitFor(async () => (await screen()).state === "cancelled", 15000, "cancelled screen");
+    eq((await screen()).body, "Tap Try again, or tap Pay at the window so we start your drink.", "Snake Eyes 5: cancelled copy");
+    await chrome.shot("05-cancelled.png");
     await E("payAtWindow(); true");
     await waitFor(async () => (await screen()).confirm, 8000, "window confirm");
-    sc = await screen(); ok(/Head to the window to pay/.test(sc.banner), "window banner");
+    sc = await screen(); ok(/^Pay \$\d+\.\d\d at the window, then grab your order/.test(sc.banner), "window banner");
+    eq(await E("document.querySelector('#confirm .paywindow').classList.contains('collect')"), true, "amber pill");
+    await chrome.shot("06-confirm-window-collect.png");
     const cOrder = lastKioskOrder();
     await waitFor(() => F.orders.get(cOrder.id).title === "TBK:COLLECT" && F.orders.get(cOrder.id).state === "open", 8000, "COLLECT title, open");
     { const t = await waitFor(async () => byTicket(cOrder.id)); eq(t.badge.kind, "COLLECT"); ok(/^COLLECT \$\d+\.\d\d$/.test(t.badge.text), t.badge.text); eq(t.paid, false); }
@@ -281,8 +307,25 @@ async function launchChrome() {
     await waitFor(async () => (await screen()).state === "declined", 15000, "declined (idle case)");
     const dOrder = lastKioskOrder();
     await waitFor(async () => (await screen()).still, 8000, "Still there? appears");
+    ok(/^\d+$/.test(await E("document.querySelector('#payStillSecs').textContent")) && await E("getComputedStyle(document.querySelector('#payStill')).position") === "fixed", "Still there? is a modal with a seconds countdown");
+    await chrome.shot("04-declined-still-there.png");
+    await E("document.dispatchEvent(new Event('pointerdown')); true");
+    await waitFor(async () => !(await screen()).still, 3000, "a touch clears Still there? (Snake Eyes 6)");
     await waitFor(() => !F.orders.has(dOrder.id), 10000, "the abandoned order is deleted");
-    eq((await screen()).shown, false, "the page went back to the attract screen");
+    await waitFor(async () => !(await screen()).shown, 5000, "the page went back to the attract screen");
+
+    /* ===== every pay-screen state, held still for the screenshots (the poll is paused; the reader's answer to the window tap ends it) ===== */
+    await ctl({ op: "mode", sale: "silent", retrieve: "NOT_FOUND", cancel: "respond", device: "IDLE" });
+    await customer("Pia");
+    await waitFor(async () => (await screen()).state === "working", 10000, "Pia: working");
+    await E("clearTimeout(_payPoll.timer); true");
+    await chrome.shot("07-working-arrow-right.png");
+    await E("setPayState('prompt'); true"); await chrome.shot("08-prompt.png");
+    for (const side of ["left", "below"]) { await E(`document.querySelector('#payArrow').setAttribute('data-side','${side}'); true`); await chrome.shot(`08-prompt-arrow-${side}.png`); }
+    await E("document.querySelector('#payArrow').setAttribute('data-side','right'); setPayState('recovering'); true"); await chrome.shot("09-recovering.png");
+    await E("payAtWindow(); true");
+    await waitFor(async () => (await screen()).confirm, 10000, "Pia: window confirm");
+    await ctl({ op: "mode", cancel: "ignore" });
 
     /* ===== D + H: disconnect after the prompt, "Don't pay again", repeat /pay blocked, reconnect proves ONE payment ===== */
     await ctl({ op: "mode", sale: "silent", retrieve: "FOUND" });
@@ -292,9 +335,14 @@ async function launchChrome() {
     await ctl({ op: "disconnect" });
     await waitFor(async () => (await screen()).state === "unknown", 10000, "the 'we're checking' screen");
     sc = await screen();
-    ok(/checking your payment/i.test(sc.hl) && /Don't pay again/.test(sc.body) && /Show ticket #\d+ at the window/.test(sc.body) && /^#\d+$/.test(sc.ticket), "UNKNOWN copy: " + sc.hl + " / " + sc.body);
+    ok(/checking your payment/i.test(sc.hl) && /You may already be paid\. Show #\d+ at the window and we'll sort it out\./.test(sc.body) && /^#\d+$/.test(sc.ticket), "UNKNOWN copy: " + sc.hl + " / " + sc.body);
+    await chrome.shot("10-unknown-dont-pay-again.png");
+    { // Snake Eyes 3: it must not look like a pay prompt
+      const v = await E(`(function(){ const q = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none'; }; return { dont: q('#payDont'), dontText: document.querySelector('#payDont').textContent, amount: q('#payAmount'), label: q('#payLabel'), reader: q('.reader-icon'), arrow: q('#payArrow'), where: q('#payWhere'), retry: q('#payRetryBtn'), window: q('#payWindowBtn'), got: q('#payGotBtn') }; })()`);
+      eq([v.dont, v.dontText, v.amount, v.label, v.reader, v.arrow, v.where, v.retry, v.window, v.got], [true, "DON'T PAY AGAIN", false, false, false, false, false, false, false, true], "UNKNOWN screen: DON'T PAY AGAIN pill and Got it, no amount, no reader, no retry, no window button");
+    }
     await waitFor(() => F.orders.get(dId).title === "TBK:CHECK" && F.orders.get(dId).state === "locked", 8000, "CHECK title and lock");
-    { const t = await waitFor(async () => byTicket(dId)); eq(t.badge.kind, "CHECK"); eq(t.badge.text, "CHECK READER, do not charge"); }
+    { const t = await waitFor(async () => byTicket(dId)); eq(t.badge.kind, "CHECK"); eq(t.badge.long, "CHECK READER, do not charge"); eq(t.badge.text, "⚠ CHECK"); }
     // H: a second /pay for the same order is refused by the server and sends no second Sale
     const tok = await E("_payOrder.payToken");
     const h = await jreq(kioskPort, "POST", "/pay", { orderId: dId, amountCents: F.orders.get(dId).total, payToken: tok });
@@ -324,13 +372,14 @@ async function launchChrome() {
     const gId = lastKioskOrder().id;
     await stop(kiosk);                                                                  // taskkill node
     await startKiosk();                                                                 // the supervisor would do this
-    await ctl({ op: "mode", sale: "silent", retrieve: "FOUND" });
+    await ctl({ op: "mode", sale: "silent", retrieve: "FOUND", amount: F.orders.get(gId).total });   // the restarted reader process has no memory of the sale amount: tell it
     await ready();
     await waitFor(async () => (await screen()).confirm || (await screen()).state === "unknown", 25000, "the page recovers after the restart");
     await waitFor(() => /^TBK:PAID:/.test(F.orders.get(gId).title), 15000, "replay resolved the order to PAID");
     eq((await sales()).filter(x => x.startsWith("TBK" + gId)).length, 0, "the restarted server sent no new Sale (the first process sent it)");
     ok(/boot replay/.test(kiosk.out), "the boot log shows the journal replay");
 
+    await ctl({ op: "mode", amount: 0 });
     /* ===== DOUBLE: a late card approval on an order that already went to the window ===== */
     await ctl({ op: "mode", sale: "cancel", retrieve: "NOT_FOUND" });
     await customer("Dot");
@@ -342,7 +391,8 @@ async function launchChrome() {
     await waitFor(() => /^TBK:PAID:/.test(F.orders.get(xId).title), 8000, "PAID written");
     F.orders.get(xId).paymentState = "PAID";                                            // and the cashier also tendered it on the Duo
     await waitFor(async () => { const t = await byTicket(xId); return t && t.badge.kind === "DOUBLE"; }, 10000, "the DOUBLE badge");
-    eq((await byTicket(xId)).badge.text, "DOUBLE PAID: void one");
+    eq((await byTicket(xId)).badge.long, "DOUBLE PAID: void one"); eq((await byTicket(xId)).badge.text, "2× DOUBLE");
+    { const hb = (await jreq(kioskPort, "GET", "/kiosk-status")).json.pay; ok(hb.doubles >= 1 && /DOUBLE CHARGE/.test(hb.alert), "CR-010: the heartbeat reports the double and says what to do: " + hb.alert); }
 
     /* ===== ticket release: PENDING is hidden, a Duo order is not ===== */
     F.orders.set("DUOORDER00001", { id: "DUOORDER00001", state: "open", createdTime: Date.now(), paymentState: "OPEN", total: 500, title: "", note: "", orderType: { id: "DUOTYPE00001" }, lineItems: { elements: [{ name: "Thirst Trap", price: 500 }] }, payments: { elements: [] } });
@@ -353,19 +403,62 @@ async function launchChrome() {
     await ctl({ op: "mode", sale: "approve" });
     await customer("Max", { code: "MAZE-123456", size: "Medium 24oz" });
     await waitFor(async () => (await screen()).confirm, 15000, "Maze order paid");
+    await chrome.shot("11-confirm-paid-maze.png");
+    ok(/Thirsty Maze free upsize applied: -\$0\.80/.test(await E("document.querySelector('#confirm .upsizenote').textContent")), "Snake Eyes 10: the Maze note shows the discount");
     const mOrder = lastKioskOrder(); eq(mOrder.lineItems.elements[0].discounts[0].amount, -80, "line-level 80 cent discount"); ok(/MAZE UPSIZE/.test(mOrder.note));
     ok(F.log.indexOf("POST /redeem") < F.log.lastIndexOf("POST /atomic_order/orders"), "the code was redeemed before the order was created");
+
+    /* ===== Snake Eyes 4: "Pay at the window" while the reader is waiting cancels the prompt (server side) and goes to COLLECT ===== */
+    await ctl({ op: "mode", sale: "silent", retrieve: "NOT_FOUND", cancel: "respond", device: "IDLE" });
+    await customer("Wes");
+    await waitFor(async () => (await screen()).state === "working", 10000, "working before the window tap");
+    sc = await screen();
+    ok(sc.hl === "Tap your card on the reader" && /Or insert or swipe it/.test(sc.body), "working copy tells the customer to tap (Snake Eyes 7): " + sc.hl);
+    eq(await E("document.querySelector('#payWindowBtn').textContent"), "Cancel card and pay at the window", "the button says what it does while the prompt is live");
+    eq(await E("document.querySelector('#payArrow').getAttribute('data-side')"), "right", "READER_SIDE puts an arrow disc at that edge");
+    const wId = lastKioskOrder().id;
+    await E("payAtWindow(); true");
+    await waitFor(async () => (await screen()).confirm, 10000, "window confirm after cancelling the prompt");
+    sc = await screen(); ok(/^Pay \$\d+\.\d\d at the window, then grab your order/.test(sc.banner), "amber window pill with the amount: " + sc.banner);
+    await waitFor(() => F.orders.get(wId).title === "TBK:COLLECT", 8000, "COLLECT after the cancel");
+    ok((await ctl({ op: "calls" })).calls.some(c => c.m === "cancel" && c.key === "ESC"), "the server sent CANCEL_INPUT_OPTION (ESC) to the reader");
+    eq((await sales()).filter(x => x.startsWith("TBK" + wId)).length, 1, "one Sale, cancelled, no second attempt");
+    await ctl({ op: "mode", cancel: "ignore" });
+
+    /* ===== "Got it" on the checking screen, then CR-005: a second customer while the reader holds an unresolved attempt goes straight to the window ===== */
+    await ctl({ op: "mode", sale: "silent", retrieve: "NOT_FOUND", device: "BUSY" });
+    await customer("Xan");
+    await waitFor(async () => (await screen()).state === "unknown", 15000, "Xan: checking screen");
+    const xanId = lastKioskOrder().id;
+    await E("document.querySelector('#payGotBtn').click(); true");
+    await waitFor(async () => !(await screen()).shown && !(await screen()).confirm, 8000, "Got it returns to the attract screen");
+    eq(F.orders.get(xanId).title, "TBK:CHECK", "the order is kept, locked, for the window");
+    const salesNow = (await sales()).length;
+    await ctl({ op: "mode", sale: "approve" });                                          // the reader stays BUSY: Xan is genuinely unresolved
+    await customer("Yul");
+    await waitFor(async () => (await screen()).confirm, 10000, "Yul is sent to the window, not left on a dead prompt");
+    sc = await screen(); ok(/^Pay \$\d+\.\d\d at the window/.test(sc.banner), "CR-005: " + sc.banner);
+    eq((await sales()).length, salesNow, "no Sale for Yul while Xan is unresolved");
+    ok((await E("_payPoll")) === null, "and the page is not polling a prompt that will never come");
+    await ctl({ op: "respond", extId: `TBK${xanId}-1`, rc: "SUCCESS" });                // Xan's card was charged after all
+    await waitFor(() => /^TBK:PAID:/.test(F.orders.get(xanId).title), 8000, "Xan's late approval tags PAID");
+    await ctl({ op: "mode", device: "IDLE" });
 
     /* ===== quote mismatch: Clover disagrees by a cent -> no card, the order is the legacy window order ===== */
     F.skew = 1;
     const nKiosk = kioskOrders().length, nAll = F.orders.size;
     await customer("Moe", { noQuoteWait: true });
     await waitFor(async () => (await screen()).confirm, 15000, "window confirm on mismatch");
-    sc = await screen(); ok(/Head to the window to pay/.test(sc.banner), "no card path when the totals disagree");
+    sc = await screen(); ok(/^Pay \$\d+\.\d\d at the window, then grab your order/.test(sc.banner), "no card path when the totals disagree");
     eq(kioskOrders().length, nKiosk, "no atomic (Kiosk-typed) order was created");
     eq(F.orders.size, nAll + 1, "one order: the legacy line-by-line order");
     const legacyOrder = [...F.orders.values()].sort((a, b) => b.createdTime - a.createdTime)[0];
     ok(!legacyOrder.orderType && !legacyOrder.title && legacyOrder.lineItems.elements.length >= 1, "legacy shape: no orderType, no TBK title");
+    { // CR-001: a legacy order is not in the journal, so even a correctly computed token buys nothing
+      const lib = require("../../kiosk-lib"); const key = lib.loadOrCreateKey(path.join(dir, ".tb", "pay-token.key"));
+      const r = await jreq(kioskPort, "POST", "/pay", { orderId: legacyOrder.id, amountCents: legacyOrder.total, payToken: lib.payTokenFor(key, legacyOrder.id) });
+      eq(r.status, 403, "CR-001: /pay refuses a legacy order"); eq((await sales()).filter(x => x.includes(legacyOrder.id)).length, 0);
+    }
     eq((await sales()).filter(x => x.includes(legacyOrder.id)).length, 0, "and no card Sale was sent for it");
     F.skew = 0;
 
@@ -376,9 +469,44 @@ async function launchChrome() {
     eq((await jreq(kioskPort, "GET", "/catalog")).json.items["dirtysodas/" + Object.keys(MAP.categories.dirtysodas.items)[0]], MAP.categories.dirtysodas.items[Object.keys(MAP.categories.dirtysodas.items)[0]].kioskCents, "last good price still served");
     await customer("Hal", { noQuoteWait: true });
     await waitFor(async () => (await screen()).confirm, 15000, "window confirm while held");
-    ok(/Head to the window to pay/.test((await screen()).banner), "held catalog: window only");
+    ok(/^Pay \$\d+\.\d\d at the window, then grab your order/.test((await screen()).banner), "held catalog: window only");
     F.drift = 0;
     await waitFor(async () => (await jreq(kioskPort, "GET", "/catalog")).json.payNow === true, 10000, "the hold clears when prices come back");
+
+    /* ===== the station at 1920x1080 with PAID, COLLECT, CHECK and DOUBLE tickets together (Snake Eyes 1, 2): no overflow, no clipped amount ===== */
+    await ctl({ op: "mode", sale: "silent", retrieve: "NOT_FOUND", device: "BUSY" });
+    await customer("Zed");
+    await waitFor(async () => (await screen()).state === "unknown", 15000, "Zed: a CHECK ticket for the station");
+    const zId = lastKioskOrder().id;
+    const keep = new Set([ord.id, cOrder.id, zId, xId]);
+    for (const id of [...F.orders.keys()]) if (!keep.has(id)) F.orders.delete(id);
+    F.orders.get(cOrder.id).total = 535;                                              // the amount that clipped in the review ("COLLECT $5.35")
+    await chrome.goto(`http://127.0.0.1:${stationPort}/`);
+    await chrome.viewport(1920, 1080);
+    await waitFor(() => chrome.eval("document.querySelectorAll('#qlist .tk').length === 4"), 15000, "four tickets on the station");
+    const kinds = await chrome.eval("[...document.querySelectorAll('#qlist .tk')].map(t => t.querySelector('.paybadge') && t.querySelector('.paybadge').className.replace('paybadge ','') + '|' + t.querySelector('.paybadge').textContent)");
+    ok(["paid|✓ PAID", "collect|COLLECT $5.35", "check|⚠ CHECK", "double|2× DOUBLE"].every(k => kinds.includes(k)), "tile labels are short: " + kinds.join(", "));
+    const geometry = () => chrome.eval(`(function(){ const r = e => e && e.getBoundingClientRect(); const out = {}; const sel = document.querySelector('#qlist .tk.on');
+      const tiles = [...document.querySelectorAll('#qlist .tk')]; out.tileClip = tiles.map(t => { const pb = t.querySelector('.pb'), b = t.querySelector('.paybadge'), sub = t.querySelector('.sub'); const rg = document.createRange(); if (b) rg.selectNodeContents(b); const tr = b ? rg.getBoundingClientRect() : null; return { badgeFits: !!b && b.scrollWidth <= b.clientWidth + 1 && r(b).right <= r(t).right - 8 && tr.right <= r(b).right - 6 && tr.left >= r(b).left + 6, subVisible: !!sub && r(sub).width > 40 && sub.textContent.trim().length > 0 }; });
+      const done = document.querySelector('#doneBtn'), next = document.querySelector('.nextpane'), head = document.querySelector('#make .mhead'), hb = head && head.querySelector('.paybadge');
+      out.done = done ? { right: r(done).right, bottom: r(done).bottom, vis: r(done).width > 0 } : null; out.next = next ? { left: r(next).left, display: getComputedStyle(next).display } : null;
+      out.headBadge = hb ? { text: hb.textContent, h: r(hb).height, fs: parseFloat(getComputedStyle(hb).fontSize), fits: r(hb).right <= r(head).right + 1 && r(hb).left >= r(head).left - 1 } : null;
+      out.headFits = head ? head.scrollWidth <= head.clientWidth + 1 : null; return out; })()`);
+    const pick = async id => { await chrome.eval(`document.querySelector('#qlist .tk[data-id="${id}"]').click(); true`); await sleep(400); return geometry(); };
+    await chrome.shot("20-station-default.png", 1920, 1080);
+    for (const [name, id, kind, longText] of [["check", zId, "check", "CHECK READER, do not charge"], ["double", xId, "double", "DOUBLE PAID: void one"], ["collect", cOrder.id, "collect", "COLLECT $5.35"], ["paid", ord.id, "paid", "✓ PAID"]]) {
+      const g = await pick(id);
+      ok(g.headBadge && g.headBadge.text === longText && g.headBadge.fs >= 40 && g.headBadge.fits && g.headFits, `${name}: the header badge is 40 px, full text "${g.headBadge && g.headBadge.text}" and fits in the header`);
+      ok(g.done && g.done.vis && (!g.next || g.next.display === "none" || g.done.right <= g.next.left + 1), `${name}: "Done, next ticket" is not under the NEXT pane (done right ${g.done && g.done.right}, next left ${g.next && g.next.left})`);
+      ok(g.tileClip.every(t => t.badgeFits && t.subVisible), `${name}: no tile clips its badge, and every tile still shows its drink summary`);
+      await chrome.shot(`21-station-${name}-selected.png`, 1920, 1080);
+    }
+    await chrome.shot("22-station-reduced-motion.png", 1920, 1080, true);
+    await jreq(stationPort, "POST", "/done", { id: ord.id });
+    await chrome.goto(`http://127.0.0.1:${stationPort}/board`);
+    await sleep(3500);
+    await chrome.shot("23-board.png", 1920, 1080);
+    await chrome.shot("24-board-reduced-motion.png", 1920, 1080, true);
 
     // nothing sensitive in the browser console or the server logs
     ok(!/PAYE2E[0-9]+.*(first6|cardholder|411111)/.test(kiosk.out), "no card data in the server log");
