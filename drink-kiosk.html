@@ -580,30 +580,6 @@
   .beachname:active{transform:scale(.97);}
   .beachname svg{width:20px;height:20px;flex:none;}
 
-  /* ===== FUN: Spin the Tide wheel (confirm) ===== */
-  .spintide{margin:6px auto 18px;max-width:430px;text-align:center;}
-  .spintide h3{font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:24px;margin:0 0 2px;color:var(--ink);}
-  .spintide p{margin:0 0 12px;color:#7a5a3a;font-size:14px;}
-  .wheelwrap{position:relative;width:230px;height:230px;margin:0 auto 14px;}
-  .wheelwrap .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:4;
-    width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
-    border-top:22px solid #163a5f;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));}
-  .wheelwrap .hub{position:absolute;top:50%;left:50%;width:46px;height:46px;transform:translate(-50%,-50%);
-    z-index:3;border-radius:50%;background:#fff;border:4px solid #163a5f;
-    box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
-    font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:13px;color:#163a5f;}
-  .wheelsvg{width:100%;height:100%;display:block;border-radius:50%;
-    box-shadow:0 14px 36px -10px rgba(0,0,0,.4),0 0 0 6px rgba(255,255,255,.7);
-    transition:transform 4.4s cubic-bezier(.12,.62,.16,1);transform:rotate(0deg);}
-  .wheelsvg text{font-family:"Archivo",system-ui,sans-serif;font-weight:800;fill:#fff;}
-  .spintide .spinbtn{width:auto;padding:15px 44px;}
-  .spintide .prize{display:none;margin:4px auto 0;padding:14px 18px;max-width:380px;border-radius:16px;
-    background:rgba(255,255,255,.78);border:1.5px solid var(--border-2);animation:pop .4s ease both;}
-  .spintide .prize b{display:block;font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:22px;color:#ff177e;margin-bottom:2px;}
-  .spintide .prize span{font-size:14px;color:#7a5a3a;}
-  .spintide.spun .spinbtn{display:none;}
-  .spintide.spun .prize{display:block;}
-
   /* ===== FUN: Drink of the Day leaderboard (attract) ===== */
   .dotd{margin:26px auto 0;max-width:360px;background:rgba(255,255,255,.55);
     border:1.5px solid rgba(255,255,255,.7);border-radius:20px;padding:16px 20px 18px;
@@ -952,9 +928,9 @@
   #attract .wordmark,.brand #brandFallback,.specials-head h3,.special-card-name,.cat-head h2,.sheet-hd h3,
   .totals .row.grand,#confirm h2,#confirm .ordernum b,#confirm .orderfor,#confirm .tidelist h3,#confirm .tl-num,
   #vibe h2,#vibe .reading,#vibe .matchname,.upsell-hd h3,#designDrink .dd-hd h2,#snap h2,#snap .drinkname,
-  .spintide h3,.spintide .prize b,.dotd h4,#payscreen .pay-amount,#payscreen .pay-headline,
+  .dotd h4,#payscreen .pay-amount,#payscreen .pay-headline,
   #qrpay .qr-hl,#qrpay .qr-total b{font-weight:400;letter-spacing:.01em;line-height:1.08;}
-  .card .art .mono,.sheet-hd .art span,.cart-line .art span,.wheelwrap .hub,.dotd .rk,.snap-count{font-weight:400;}
+  .card .art .mono,.sheet-hd .art span,.cart-line .art span,.dotd .rk,.snap-count{font-weight:400;}
   #attract .tagline,.opt-group h4 em,.totals .row:not(.grand),#confirm .ordernum span,#payscreen .pay-label,
   #qrpay .qr-total,#qrpay .qr-timer,.orderbar .ob-count,.dd-section h3,.payfork .pf-s,.specials-badge{
     font-family:"DM Mono",ui-monospace,monospace;letter-spacing:.06em;}
@@ -971,8 +947,7 @@
     #confirm .ordernum b{font-size:110px;}
     #qrpay .qr-hl{font-size:clamp(40px,5.6vw,60px);}
     #payscreen .pay-headline{font-size:clamp(40px,5.6vw,60px);}
-    .spintide h3,#confirm .tidelist h3{font-size:40px;}
-    .spintide p{font-size:22px;}
+    #confirm .tidelist h3{font-size:40px;}
     .btn-primary,.btn-qr{font-size:28px;}
     .orderbar .ob-cta{font-size:28px;}
     .tap-cta{font-size:clamp(28px,3.2vw,38px);}
@@ -1009,7 +984,7 @@
   .cat-head span{color:var(--ink-soft);}
   .card{background:var(--panel);border-color:var(--border);box-shadow:0 18px 40px -22px rgba(0,0,0,.9);}
   .card h3{color:var(--ink);} .card .desc{color:var(--ink-soft);}
-  .card .price,.cart-line .info .price,#confirm .ordernum b,.special-card-price,.upsell-card .uc-price,.spintide .prize b,
+  .card .price,.cart-line .info .price,#confirm .ordernum b,.special-card-price,.upsell-card .uc-price,
   #payscreen .pay-amount,#qrpay .qr-total b{color:var(--gold);}
   .overlay,#upsellOverlay{background:rgba(4,0,14,.72);}
   .sheet,.upsell-sheet{background:#0d0526;border-color:var(--border);}
@@ -1032,7 +1007,7 @@
   .linkbtn{color:#FF7CC4;background:rgba(255,60,172,.10);border:2px solid rgba(255,124,196,.5);}
   .prizerow{border-color:var(--border-2);}
   #confirm{background:radial-gradient(900px 620px at 50% 0%,#3a1261 0%,#1a0838 48%,var(--bg) 82%),var(--bg);}
-  #confirm p,#confirm .ordernum span,.spintide p,.spintide .prize span,.tl-consent,#vibe p,#snap p,#vibe .vibe-priv,#snap .snap-priv{color:var(--ink-soft);}
+  #confirm p,#confirm .ordernum span,.tl-consent,#vibe p,#snap p,#vibe .vibe-priv,#snap .snap-priv{color:var(--ink-soft);}
   #confirm .ordernum{background:#150b31;border:2px solid var(--gold);box-shadow:0 0 26px rgba(255,209,102,.35);}
   #confirm .ordernum b{text-shadow:0 0 18px rgba(255,209,102,.6);}
   #confirm .check{background:var(--grad-cool);color:#08011c;box-shadow:var(--glow-cool);}
@@ -1045,9 +1020,8 @@
   #confirm .punchqr .pq-code svg{display:block;width:100%;height:100%;}
   #confirm .punchqr b{display:block;font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-synthesis:none;font-size:28px;line-height:1.1;color:var(--cyan);}
   #confirm .punchqr span{display:block;font-size:22px;line-height:1.35;color:var(--ink-soft);margin-top:6px;}
-  .spintide h3,.dotd h4,.dotd .nm,#confirm .tidelist h3,#confirm .tl-num,.upsell-hd h3,.upsell-card .uc-name{color:var(--ink);}
+  .dotd h4,.dotd .nm,#confirm .tidelist h3,#confirm .tl-num,.upsell-hd h3,.upsell-card .uc-name{color:var(--ink);}
   .dotd{background:rgba(21,11,49,.8);border-color:var(--border);} .dotd .ct{color:var(--ink-soft);} .dotd .row:nth-child(2) .nm{color:var(--gold);}
-  .wheelwrap .pointer{border-top-color:var(--cyan);} .wheelwrap .hub{background:#150b31;border-color:var(--cyan);color:var(--cyan);}
   #qrpay,#payscreen{background:radial-gradient(900px 600px at 50% 0%,#3a1261 0%,#1a0838 45%,var(--bg) 80%),var(--bg);}
   #qrpay .qr-sub,#payscreen .pay-body,#payscreen .pay-label,#qrpay .qr-total{color:var(--ink-soft);}
   #qrpay .qr-timer{color:var(--cyan);}
@@ -1085,6 +1059,79 @@
   #snap .snapprice{background:rgba(255,209,102,.12);border:2px solid rgba(255,209,102,.6);color:#FFD166;}
   #snapLoadMsg,#vibeResult.loading #vibeReading{font-size:24px;min-height:2.6em;}
   @media (orientation:portrait){ #snapLoadMsg,#vibeResult.loading #vibeReading{font-size:30px;} }
+
+  /* ===== 2026-11-15 kiosk UX pass (Snake Eyes review + compliance gate) ===== */
+  /* categories: a 2-row, 6-across grid in the lower half of the screen (reachable, nothing hidden off-screen); phone mode keeps its own strip */
+  html:not(.phone) .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:12px 18px 14px;overflow:visible;
+    background:rgba(8,1,28,.94);border-top:1px solid var(--border);}
+  html:not(.phone) .tab{flex-direction:column;justify-content:center;gap:6px;min-height:76px;padding:10px 6px;font-size:19px;line-height:1.1;
+    text-align:center;white-space:normal;border-radius:16px;}
+  html:not(.phone) .tab .catdot{margin:0;}
+  html:not(.phone) main{padding-bottom:24px;}
+  html:not(.phone) .orderbar{position:static;box-shadow:0 -10px 30px -10px rgba(0,0,0,.6);}
+  html.phone .app > header{order:-3;}
+  html.phone .tabs{order:-2;}
+  @media (orientation:portrait){
+    html:not(.phone) .tabs{gap:12px;padding:16px 24px 20px;}
+    html:not(.phone) .tab{font-size:25px;min-height:112px;padding:12px 8px;border-radius:22px;}
+    html:not(.phone) .tab .catdot{width:18px;height:18px;}
+  }
+  button.orderbar{border:0;width:100%;text-align:left;font-family:inherit;}
+  .cfbadge{position:absolute;left:10px;bottom:10px;z-index:5;background:#0a5c3a;color:#fff;font:800 14px/1 "Archivo",system-ui,sans-serif;
+    letter-spacing:.02em;border-radius:999px;padding:7px 12px;}
+  @media (orientation:portrait){ .cfbadge{font-size:19px;padding:9px 16px;} }
+  .card .art .pricechip{background:rgba(8,1,28,.84);}                      /* white on a bright card was about 4:1 */
+  /* contrast: Required is a solid pill with white text (7:1 is not needed here, 5.6:1 passes), a disabled Add button is a full-strength
+     neutral button with dark text that says what to pick, and the "out" tag is no longer 10px */
+  .opt-group h4 em.req{background:#C2185B;color:#fff;border-color:#C2185B;font-weight:800;}
+  .btn-primary.disabled,.btn-primary:disabled,.btn-primary[aria-disabled="true"]{opacity:1;filter:none;background:#CBBEE6;color:#08011c;box-shadow:none;
+    border:2px solid #7d6aa8;pointer-events:none;}
+  .opt.soldopt::after{font-size:14px;padding:3px 8px;}
+  .closebtn{margin-right:auto;}
+  /* attach prompt: each offer is one tap */
+  button.upsell-card{font:inherit;color:inherit;width:100%;text-align:left;}
+  .upsell-card.picked{background:#1d1042;border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan);}
+  .upsell-card .uc-name{font-size:19px;}
+  .up-chips{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .up-chip{min-height:56px;padding:0 24px;border-radius:999px;border:2px solid var(--border-2);background:#150b31;color:var(--ink);font:700 20px "Archivo",system-ui,sans-serif;cursor:pointer;}
+  .up-chip.picked{background:var(--cyan);border-color:var(--cyan);color:#08011c;}
+  @media (orientation:portrait){ .up-chip{min-height:76px;font-size:28px;padding:0 34px;} .upsell-card .uc-name{font-size:28px;} }
+  /* confirm: big "Start a new order", the screen resets itself, the Tide List stays hidden */
+  #confirm .tidelist[hidden]{display:none !important;}
+  #confirm .startnew{flex:none;width:auto;min-width:min(520px,86vw);min-height:96px;margin-top:22px;font-size:clamp(28px,3.6vw,40px);padding:0 56px;}
+  #confirm .confirm-auto{font-size:18px;margin-top:14px;}
+  @media (orientation:portrait){ #confirm .startnew{min-height:140px;font-size:44px;} #confirm .confirm-auto{font-size:26px;} }
+  /* pay screen (visual only): the amount and the reader drawn in #163a5f on white so they read in sun, and where the reader is */
+  #payscreen .pay-amount{display:inline-block;background:#fff;color:#163a5f;text-shadow:none;border-radius:22px;padding:6px 40px;margin:4px 0 6px;}
+  #payscreen .pay-label{color:var(--ink);font-size:clamp(20px,2.6vw,30px);font-weight:700;letter-spacing:.04em;margin-bottom:10px;}
+  #payscreen .reader-icon{background:#fff;border-radius:50%;box-shadow:0 0 0 6px var(--cyan);}
+  #payscreen .reader-icon svg path{stroke:#163a5f;}
+  #payscreen .reader-icon svg rect:first-child{stroke:#163a5f;}
+  #payscreen .pay-where{max-width:640px;margin:0 auto 18px;padding:12px 24px;border-radius:16px;border:2px solid var(--cyan);background:rgba(42,245,228,.1);
+    color:var(--ink);font-size:clamp(20px,2.6vw,30px);line-height:1.25;}
+  #payscreen .pay-where b{color:var(--cyan);}
+  /* age screen, idle warning, "order at the window" */
+  #ageGate,#idleWarn,#windowFallback{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;background:rgba(4,0,14,.84);padding:24px;}
+  #ageGate[hidden],#idleWarn[hidden],#windowFallback[hidden]{display:none;}
+  .age-sheet,.idle-box{background:#0d0526;border:2px solid var(--cyan);border-radius:28px;padding:32px 28px;max-width:780px;width:100%;text-align:center;box-shadow:var(--glow-cool);color:var(--ink);}
+  .age-sheet h2,.idle-box h2{font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-size:clamp(30px,4vw,50px);margin:0 0 10px;color:#FFF4FA;}
+  .age-sheet p,.idle-box p{font-size:clamp(18px,2.2vw,26px);margin:0 0 18px;color:var(--ink-soft);}
+  .age-decades,.age-years{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:10px;}
+  .age-btn{min-height:68px;min-width:104px;padding:0 20px;border-radius:14px;border:2px solid var(--border-2);background:#150b31;color:var(--ink);font:700 28px "Archivo",system-ui,sans-serif;cursor:pointer;}
+  .age-btn.on{border-color:var(--magenta);box-shadow:0 0 0 1px var(--magenta);}
+  .age-foot{display:flex;gap:12px;justify-content:center;margin-top:12px;}
+  .idle-box .btn-primary{width:100%;min-height:96px;font-size:30px;}
+  .ai-notice,.cam-adults{font-size:clamp(15px,1.8vw,19px);color:var(--ink);background:rgba(42,245,228,.08);border:1px solid var(--border-2);border-radius:12px;
+    padding:10px 14px;margin:12px auto 0;max-width:620px;line-height:1.4;}
+  .toast.hasundo{pointer-events:auto;}
+  .toast-undo{margin-left:18px;min-height:48px;padding:0 24px;border-radius:999px;border:2px solid var(--cyan);background:transparent;color:var(--cyan);font:800 18px "Archivo",system-ui,sans-serif;cursor:pointer;}
+  button:focus-visible,[role="button"]:focus-visible{outline:4px solid var(--gold);outline-offset:3px;}
+  /* reduced motion: no pulsing banner, chevrons, tap rings, falling confetti, floating logo or card entrance */
+  @media (prefers-reduced-motion: reduce){
+    #confirm .paywindow,#confirm .paychevrons i,#payscreen .tap-rings span,#confirm .confetti span,#attract .attract-logo,.card,.special-card,.orderbar{animation:none !important;}
+    #payscreen .tap-rings span{opacity:.35;}
+    #confirm.show .check{animation:none !important;}
+  }
 </style>
 </head>
 <body>
@@ -1093,7 +1140,7 @@
 <div class="grain" aria-hidden="true"></div>
 
 <!-- ATTRACT -->
-<div id="attract" onclick="start()">
+<div id="attract" role="button" tabindex="0" aria-label="Tap to begin your order" onclick="start()">
   <div class="beach-scene" aria-hidden="true">
     <div class="sun"></div>
     <div class="bubbles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -1118,7 +1165,7 @@
 <!-- APP -->
 <div class="app">
   <header>
-    <div class="brand" onclick="brandTap()">
+    <div class="brand" role="button" tabindex="0" aria-label="Thirsty Beaches home" onclick="brandTap()">
       <img src="assets/logo.png?v=logo20261018" alt="Thirsty Beaches" class="logo-img"
            onerror="this.remove();document.getElementById('brandFallback').style.display='block';">
       <span id="brandFallback" style="display:none;">Thirsty Beaches</span>
@@ -1127,8 +1174,6 @@
       View Order <span class="count" id="cartCount">0</span>
     </button>
   </header>
-
-  <div class="tabs" id="tabs"></div>
 
   <!-- "Help me choose": the AI / camera helpers, moved out of the header so it never overflows -->
   <div class="helprow" id="helpRow">
@@ -1142,11 +1187,13 @@
   <div id="specials-section" style="display:none;"></div>
 
   <main id="menu"></main>
-  <div class="orderbar" id="orderBar" onclick="openCart()">
+  <button type="button" class="orderbar" id="orderBar" onclick="openCart()" aria-label="View your order and check out">
     <span class="ob-count" id="obCount">0 items</span>
     <span class="ob-cta">View Order &middot; Checkout →</span>
     <span class="ob-total" id="obTotal">$0.00</span>
-  </div>
+  </button>
+  <!-- categories: a 2-row, 6-across grid in the lower half of the screen (easy reach), not a hidden side-scroller -->
+  <nav class="tabs" id="tabs" aria-label="Menu categories"></nav>
 </div>
 
 <!-- ITEM / CART MODAL -->
@@ -1167,24 +1214,15 @@
   <div class="punchqr" id="punchQr" hidden></div>
   <div class="upsizenote" style="display:none">🎮 Thirsty Maze free upsize applied — tell the window which drink to size up.</div>
 
-  <!-- Spin the Tide — one free spin per order -->
-  <div class="spintide" id="spinTide">
-    <h3>Spin the Tide</h3>
-    <p>One free spin — win a little something for your visit.</p>
-    <div class="wheelwrap">
-      <div class="pointer"></div>
-      <svg class="wheelsvg" id="wheelSvg" viewBox="0 0 200 200"></svg>
-      <div class="hub">SPIN</div>
-    </div>
-    <button class="btn-primary spinbtn" id="spinBtn" onclick="spinTide()">Spin the wheel</button>
-    <div class="prize" id="spinPrize"><b id="prizeTitle"></b><span id="prizeNote"></span></div>
-  </div>
+  <button type="button" class="btn-primary startnew" id="startNewBtn" onclick="resetAll()">Start a new order</button>
+  <p class="confirm-auto" id="confirmAuto">This screen starts over by itself in a few seconds.</p>
 
   <!-- Beach Club / The Tide List -->
-  <div class="tidelist" id="tidelist">
+  <!-- The Tide List is hidden for now (compliance gate 2026-11-15): the code stays, the screen does not show it. -->
+  <div class="tidelist" id="tidelist" hidden>
     <div class="tl-pitch" id="tlPitch">
       <h3>Join The Tide List</h3>
-      <p>Every 5th float on us — plus we'll text you where the trailer washes up each day.</p>
+      <p>Get a text about where the trailer parks and what is on special.</p>
       <button class="btn-primary" onclick="tideOpen()">Join the club</button>
       <button class="ghostbtn" onclick="resetAll()">No thanks — start a new order</button>
     </div>
@@ -1211,7 +1249,7 @@
 <div id="payscreen" data-state="prompt">
   <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="pay-amount" id="payAmount">$0.00</div>
-  <div class="pay-label">Total</div>
+  <div class="pay-label">Total with tax</div>
   <div class="reader-icon">
     <!-- Card + NFC wave icon -->
     <svg viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1224,6 +1262,7 @@
     </svg>
     <div class="tap-rings"><span></span><span></span><span></span></div>
   </div>
+  <div class="pay-where" id="payWhere"><b>Where is the reader?</b> The card reader is right below this screen.</div>
   <div class="pay-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="16" rx="2.2"/><path d="M7.5 18.5h3"/><path d="M17.5 8.5q2 2.2 0 4.6M20 6q3.8 4.6 0 9.6"/></svg>Tap your card or phone on the reader</div>
   <h2 class="pay-headline" id="payHeadline">Tap to pay</h2>
   <p class="pay-body" id="payBody">Tap, insert, or swipe your card on the reader.</p>
@@ -1252,6 +1291,7 @@
     <div class="dd-hd">
       <h2>Design Your Own</h2>
       <p>Pick your mood and flavors — we'll invent your perfect beach drink.</p>
+      <p class="ai-notice" id="ddNotice">Our AI invents this drink from the chips you tap. No names or photos, and nothing is saved.</p>
     </div>
 
     <!-- CHIP PICKER (shown during selection) -->
@@ -1285,12 +1325,13 @@
   </div>
 </div>
 
-<!-- VIBE READER — camera drink match (privacy-first: photo never saved or sent) -->
+<!-- VIBE READER — camera drink match (age screen first; the photo goes to the AI provider, see the retention notice) -->
 <div id="vibe">
   <img src="assets/logo.png?v=logo20261018" class="vibe-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="stage on" id="vibeIntro">
     <h2>What's your vibe?</h2>
-    <p>Let the beach read your energy and match you a drink. We take <b>one quick photo</b> to read your vibe — it's used only to pick your drink and <b>isn't saved.</b></p>
+    <p>Let the beach read your energy and match you a drink. We take <b>one quick photo</b> to read your vibe.</p>
+    <p class="vibe-priv" id="vibeNotice">Your photo goes to our AI provider to pick your drink. We don't keep it; the provider may hold it for up to 30 days for safety checks, then deletes it. Ages 13+ only.</p>
     <div class="vibe-actions">
       <button class="btn-primary" onclick="vibeAllow()">Read my vibe</button>
       <button class="btn-primary" onclick="vibeSurprise()" style="opacity:.9">Skip the camera — surprise me</button>
@@ -1302,7 +1343,8 @@
     <div class="cam-on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><rect x="2.5" y="7" width="14" height="11" rx="2.5"/><path d="M16.5 10.5l5-2.5v8l-5-2.5z"/></svg><span class="cam-dot"></span>Camera on — used only to match your drink</div>
     <div class="vibe-scan"><video id="vibeVideo" class="vibe-cam" autoplay playsinline muted></video></div>
     <div class="vibe-actions"><button class="btn-primary" onclick="vibeSnap()">Read it</button><button class="ghostbtn" onclick="vibeClose()">Cancel</button></div>
-    <p class="vibe-priv">Your photo is used once to match a drink and isn't stored. The camera turns off the moment you leave this screen.</p>
+    <p class="cam-adults">Grown-ups only in the photo. Snapping the view or your drink works too.</p>
+    <p class="vibe-priv">Your photo goes to our AI provider to pick your drink. We don't keep it; the provider may hold it for up to 30 days for safety checks, then deletes it. Ages 13+ only. The camera turns off the moment you leave this screen.</p>
   </div>
   <div class="stage" id="vibeResult">
     <div class="funcupbox" id="vibeCup"></div>
@@ -1319,7 +1361,7 @@
   </div>
 </div>
 
-<!-- SNAP A PIC — AI invents a drink from one photo (privacy: used once, never saved) -->
+<!-- SNAP A PIC — AI invents a drink from one photo (age screen first; the photo goes to the AI provider, see the retention notice) -->
 <div id="snap">
   <img src="assets/logo.png?v=logo20261018" class="snap-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="stage on" id="snapIntro">
@@ -1331,7 +1373,7 @@
       <button class="btn-primary" onclick="snapMoodStage()" style="opacity:.9">Skip the photo, just ask me</button>
       <button class="ghostbtn" onclick="snapClose()">No thanks</button>
     </div>
-    <p class="snap-priv">Your photo is used once to pick a drink and never saved.</p>
+    <p class="snap-priv">Your photo goes to our AI provider to pick your drink. We don't keep it; the provider may hold it for up to 30 days for safety checks, then deletes it. Ages 13+ only.</p>
   </div>
   <div class="stage" id="snapCam">
     <h2>Say "Thirsty!"</h2>
@@ -1342,7 +1384,8 @@
     </div>
     <button class="shutter" id="snapShutter" onclick="snapCountdown()" aria-label="Take the photo"></button>
     <div class="snap-actions"><button class="ghostbtn" onclick="snapClose()">Cancel</button></div>
-    <p class="snap-priv">Your photo is used once to pick a drink and never saved. The camera turns off the moment you leave this screen.</p>
+    <p class="cam-adults">Grown-ups only in the photo. Snapping the view or your drink works too.</p>
+    <p class="snap-priv">Your photo goes to our AI provider to pick your drink. We don't keep it; the provider may hold it for up to 30 days for safety checks, then deletes it. Ages 13+ only. The camera turns off the moment you leave this screen.</p>
   </div>
   <div class="stage" id="snapMood">
     <h2>What's the mood?</h2>
@@ -1381,13 +1424,44 @@
   </div>
 </div>
 
-<!-- UPSELL / ATTACH PROMPT (shown after non-float drink added to cart) -->
-<div id="upsellOverlay">
+<!-- AGE SCREEN: shown before ANY camera opens (Snap a pic, Match My Vibe). A neutral year-of-birth picker: no default, no hint of a cutoff.
+     The answer is kept in memory for this customer only and dropped at reset. Under 13, skipped or unknown = the no-photo path. -->
+<div id="ageGate" role="dialog" aria-modal="true" aria-labelledby="ageHd" hidden>
+  <div class="age-sheet">
+    <h2 id="ageHd">What year were you born?</h2>
+    <p>Tap a decade, then your year. We use it once to set up the next screen.</p>
+    <div class="age-decades" id="ageDecades" role="group" aria-label="Decade"></div>
+    <div class="age-years" id="ageYears" role="group" aria-label="Year"></div>
+    <div class="age-foot">
+      <button type="button" class="ghostbtn" onclick="ageAnswer(null)">Skip this</button>
+      <button type="button" class="ghostbtn" onclick="ageAnswer(false)">Never mind</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPSELL / ATTACH PROMPT (shown after a drink is added to the cart) -->
+<div id="upsellOverlay" role="dialog" aria-modal="true" aria-label="Add something to your drink">
   <div class="upsell-sheet" id="upsellSheet"></div>
 </div>
 
 <!-- toast (secret menu unlock, etc.) -->
 <div id="toast" class="toast" aria-live="polite"></div>
+<!-- IDLE WARNING (60 s of nothing): tap anywhere to keep the order -->
+<div id="idleWarn" role="alertdialog" aria-modal="true" aria-labelledby="idleHd" hidden>
+  <div class="idle-box">
+    <h2 id="idleHd">Still there?</h2>
+    <p>Tap to keep your order.</p>
+    <button type="button" class="btn-primary" onclick="armIdle()">Keep my order</button>
+  </div>
+</div>
+<!-- ORDER DID NOT SEND TWICE: send them to the window, clear the screen -->
+<div id="windowFallback" role="alertdialog" aria-modal="true" aria-labelledby="wfHd" hidden>
+  <div class="idle-box">
+    <h2 id="wfHd">Order at the window</h2>
+    <p>We've got you. Our screen is having a moment, so tell the window what you'd like.</p>
+    <button type="button" class="btn-primary" onclick="resetAll()">OK</button>
+  </div>
+</div>
 
 <script>
 /* QR Code Generator for JavaScript, Copyright (c) 2009 Kazuhiko Arase, http://www.d-project.com/
@@ -1754,6 +1828,58 @@ const SECRET_MENU = { label:"Secret", icon:"🤫", title:"The Secret Menu", blur
   ]};
 
 /* Live menu — uses the Thirsty Beaches menu above. (FALLBACK_MENU above is an unused demo.) */
+/* Make it a float (the attach prompt): the two caps, the price, and how the mod is named. The Make Station reads "Float: Dole Whip" as a
+   soft-serve cap (the group travels with the name); cloud/menu-from-kiosk.js builds the phone-pay price book from this constant. */
+const FLOAT_UPSELL = {price:1.50, prefix:"Float: ", caps:["Dole Whip","Vanilla"]};
+/* RECIPE_DEFAULTS:BEGIN (generated by tools/sync-recipe-defaults.js; do not edit by hand) */
+const RECIPE_DEFAULTS = {
+ "beached-whale":{"cap":"Dole Whip"},
+ "butter-me-up":{"base":"Root Beer"},
+ "cake-walk":{"base":"Dr Pepper"},
+ "cherry-on-top":{"base":"Pepsi"},
+ "cider-beaches":{"base":"Sprite"},
+ "cold-front":{"base":"Dr Pepper"},
+ "cran-do-attitude":{"base":"Diet Coke"},
+ "crush-on-you":{"base":"Sprite"},
+ "dew-or-die":{"base":"Mountain Dew"},
+ "dirty-secret":{"base":"Dr Pepper"},
+ "easy-squeezy":{"base":"Classic Lemonade"},
+ "fall-back-relax":{"base":"Root Beer"},
+ "fling-on-the-beach":{"base":"Dr Pepper"},
+ "fruit-loop-lagoon":{"base":"Sprite"},
+ "ghosted":{"base":"Cream Soda"},
+ "gourd-vibes-only":{"base":"Dr Pepper"},
+ "guava-lava":{"base":"Mountain Dew"},
+ "hayride-hottie":{"base":"Coca-Cola"},
+ "hula-hottie":{"base":"Sprite"},
+ "jingle-juice":{"base":"Sprite"},
+ "just-beachy":{"base":"Dr Pepper"},
+ "life-beaches":{"base":"Classic Lemonade"},
+ "love-potion-no-9":{"base":"Dr Pepper"},
+ "main-squeeze":{"base":"Classic Lemonade"},
+ "naughty-nice":{"base":"Coca-Cola"},
+ "nice-coconuts":{"base":"Coca-Cola"},
+ "no-regrets":{"base":"Diet Dr Pepper"},
+ "one-in-a-melon":{"base":"Mountain Dew"},
+ "peach-please":{"base":"Sprite"},
+ "pink-flamingo":{"base":"Classic Lemonade"},
+ "pucker":{"base":"Classic Lemonade"},
+ "pumpkin-spice-everything-dirty":{"base":"Dr Pepper"},
+ "razzle":{"base":"Sprite"},
+ "riptide-float":{"cap":"Vanilla"},
+ "salt-life":{"base":"Mountain Dew"},
+ "shark-bait":{"base":"Mountain Dew"},
+ "sleigh-all-day":{"base":"Dr Pepper"},
+ "sunset-rocks":{"base":"Dr Pepper"},
+ "sweater-weather":{"base":"Root Beer"},
+ "sweet-cheeks":{"base":"Coca-Cola"},
+ "swole-patrol":{"cap":"Vanilla"},
+ "thirst-trap":{"base":"Dr Pepper"},
+ "tropic-hot":{"base":"Sprite"},
+ "upside-down":{"base":"Dr Pepper"},
+ "witch-better-have-my-candy":{"base":"Sprite"}
+};
+/* RECIPE_DEFAULTS:END */
 let MENU = THIRSTY_MENU;
 
 /* ============ STATE ============ */
@@ -1770,28 +1896,45 @@ let SPECIALS_SIG = '';
 /* ============ RENDER ============ */
 const $ = s => document.querySelector(s);
 
-/* Idle reset: after inactivity past the attract screen, wipe the order and return to attract
-   so an abandoned cart never carries over to the next customer. */
-const IDLE_MS = 75000;
-let idleTimer = null;
+/* Idle reset: after inactivity past the attract screen, wipe the order and return to attract so an abandoned cart
+   never carries over to the next customer. At 60 s a "Still there?" box appears for 15 s (WCAG 2.2.1: a slow reader or a
+   parent juggling kids must get a warning before the cart disappears); any touch keeps the order. */
+const IDLE_MS = 75000, IDLE_WARN_MS = 60000;
+let idleTimer = null, idleWarnTimer = null;
+function payScreenWaiting(){          // the customer is tapping a card on the reader, not touching this screen: do not time them out
+  const ps = $("#payscreen");
+  return !!ps && ps.classList.contains("show") && /^(prompt|working)$/.test(ps.getAttribute("data-state") || "");
+}
 function armIdle(){
-  clearTimeout(idleTimer);
-  if($("#attract").style.display === "none"){   // only while a session is active
+  clearTimeout(idleTimer); clearTimeout(idleWarnTimer);
+  const w = $("#idleWarn"); if(w) w.hidden = true;
+  if(window.TB_PHONE) return;                       // "Order ahead" on a customer's own phone: no shared-screen idle reset or warning
+  if($("#attract").style.display === "none" && !payScreenWaiting()){   // only while a session is active
+    idleWarnTimer = setTimeout(idleWarn, IDLE_WARN_MS);
     idleTimer = setTimeout(idleReset, IDLE_MS);
   }
+}
+function idleWarn(){
+  if(qrBusy() || orderInFlight || _payInFlight || payScreenWaiting()) return;
+  if(!cart.length && !$("#overlay").classList.contains("show")) return;       // nothing to lose: just reset quietly at 75 s
+  const w = $("#idleWarn"); if(w) w.hidden = false;
 }
 ["pointerdown","touchstart","keydown"].forEach(ev =>
   document.addEventListener(ev, armIdle, {passive:true, capture:true}));
 
 function idleReset(){
-  if(qrBusy() || orderInFlight || _payInFlight){ armIdle(); return; }   // never wipe a pending phone/card payment or an order being sent
-  // A customer paying on the card reader never touches the screen, so the pay screen keeps the session alive.
-  // If it then sits on a retry prompt (declined / cancelled / hiccup) with nobody touching it, their order already
+  if(qrBusy() || orderInFlight || _payInFlight || payScreenWaiting()){ armIdle(); return; }   // never wipe a pending phone/card payment or an order being sent
+  // If the pay screen sits on a retry prompt (declined / cancelled / hiccup) with nobody touching it, their order already
   // exists: send them to the pay-at-window confirm (which times out normally) instead of wiping it.
   if($("#payscreen").classList.contains("show")){ payAtWindow(); armIdle(); return; }
   resetAll();
 }
-function start(){ $("#attract").style.display="none"; armIdle(); }
+function start(){ ageReset(); $("#attract").style.display="none"; armIdle(); }
+/* divs that act as buttons (the attract screen, the logo) answer Enter and Space too */
+document.addEventListener("keydown", e => {
+  const t = e.target;
+  if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.tagName==="DIV"){ e.preventDefault(); t.click(); }
+});
 function goHome(){ closeSheet(); renderTabs(); renderMenu(); }
 
 /* ---- Secret menu: triple-tap the logo to unlock ---- */
@@ -1810,16 +1953,22 @@ function unlockSecret(){
 }
 
 /* ---- Toast ---- */
-function showToast(msg){
+function showToast(msg, undo){
   const t=$("#toast"); if(!t) return;
-  t.textContent=msg; t.classList.add("show");
-  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"), 2600);
+  t.textContent=msg; t.classList.add("show"); t.classList.toggle("hasundo", !!undo);
+  if(undo){
+    const b=document.createElement("button"); b.type="button"; b.className="toast-undo"; b.textContent="Undo";
+    b.onclick=()=>{ t.classList.remove("show","hasundo"); undo(); };
+    t.appendChild(b);
+  }
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show","hasundo"), undo ? 8000 : 2600);
 }
 
 /* ---- Order-complete confetti ---- */
 function fireConfetti(){
   const box=$("#confetti"); if(!box) return;
   box.innerHTML="";
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;      // no falling confetti for people who asked for less motion
   const colors=["#ff3d8b","#34d7ff","#ffc21e","#20e6c2","#7a5cff","#ff8a2b"];
   for(let i=0;i<40;i++){
     const s=document.createElement("span");
@@ -1832,50 +1981,6 @@ function fireConfetti(){
   }
 }
 
-/* ---- Spin the Tide: one free prize wheel per order (front-end perk; staff honors at window) ---- */
-const PRIZES=[
-  {k:"TOPPER",   title:"Free Topper!",          note:"Show this at the window for a free topper on this order.", color:"#FF3D97"},
-  {k:"SIZE UP",  title:"Free Size-Up!",         note:"Show this at the window to size up your drink, on us.",     color:"#34D7FF"},
-  {k:"SECRET",   title:"Secret Menu Unlocked!", note:"Ask the window to let you in on today's secret drink.",     color:"#FFC95C"},
-  {k:"10% OFF",  title:"10% Off Next Visit!",   note:"Show this on your next visit for 10% off.",                 color:"#20E6C2"},
-  {k:"MINI WHIP",title:"Free Mini Dole Whip!",  note:"Show this at the window for a mini Dole Whip.",             color:"#7A5CFF"},
-  {k:"STAY SALTY",title:"Stay Salty!",          note:"No prize this wave — but you're still a beach legend.",     color:"#FF8A2B"},
-];
-function buildWheel(){
-  const svg=$("#wheelSvg"); if(!svg) return;
-  const n=PRIZES.length, step=360/n, R=100, lr=62, rad=d=>(d-90)*Math.PI/180;
-  let out="";
-  for(let i=0;i<n;i++){
-    const a0=i*step, a1=(i+1)*step;
-    const x0=100+R*Math.cos(rad(a0)), y0=100+R*Math.sin(rad(a0));
-    const x1=100+R*Math.cos(rad(a1)), y1=100+R*Math.sin(rad(a1));
-    out+=`<path d="M100,100 L${x0.toFixed(2)},${y0.toFixed(2)} A100,100 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${PRIZES[i].color}" stroke="#fff" stroke-width="1.5"/>`;
-    const ca=a0+step/2;
-    const tx=100+lr*Math.cos(rad(ca)), ty=100+lr*Math.sin(rad(ca));
-    out+=`<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" font-size="9.5" text-anchor="middle" dominant-baseline="middle" transform="rotate(${(ca).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)})">${PRIZES[i].k}</text>`;
-  }
-  svg.innerHTML=out;
-}
-let _spun=false;
-function resetSpin(){
-  _spun=false;
-  const st=$("#spinTide"); if(st) st.classList.remove("spun");
-  const svg=$("#wheelSvg"); if(svg){ svg.style.transition="none"; svg.style.transform="rotate(0deg)"; void svg.offsetWidth; svg.style.transition=""; }
-}
-function spinTide(){
-  if(_spun) return; _spun=true;
-  const i=Math.floor(Math.random()*PRIZES.length), step=360/PRIZES.length;
-  const dest=360*5 - (i*step + step/2);   // land prize i's center under the top pointer
-  const svg=$("#wheelSvg"); if(svg) svg.style.transform="rotate("+dest+"deg)";
-  setTimeout(()=>{
-    $("#prizeTitle").textContent=PRIZES[i].title;
-    $("#prizeNote").textContent=PRIZES[i].note;
-    $("#spinTide").classList.add("spun");
-    if(PRIZES[i].k!=="STAY SALTY") fireConfetti();
-  }, 4500);
-}
-
-/* ---- Drink of the Day: tallies today's orders in localStorage, shows top sips on attract ---- */
 function dotdKey(){ try{ return "tb_dotd_"+new Date().toISOString().slice(0,10); }catch(e){ return "tb_dotd"; } }
 function recordSales(lines){
   try{
@@ -1949,6 +2054,39 @@ async function tideJoin(){
    stored or sent anywhere. The camera stream is stopped on every exit/reset.
    A real-AI-vision version would need on-screen consent + a server proxy + cost
    + a COPPA review (kids use this) — that's a deliberate phase 2, not this code. */
+/* ---- Age screen: before ANY camera opens (Snap a pic, Match My Vibe) ----
+   A neutral year-of-birth picker: no default, nothing highlighted, no word about a cutoff. Under 13, "Skip" and "Never mind" all lead
+   to the no-photo path (mood chips / surprise me). It is a year only, so a person born 13 years ago may still be 12: the camera opens
+   only when the year says 14 or more (fail closed). The answer lives in this variable for this customer and is dropped at reset. */
+let _ageOk = null, _ageCb = null;                 // null = not asked, true = camera allowed, false = no-photo path
+const AGE_MIN_YEARS = 14;
+function ageYearOk(year, nowYear){
+  const y = Number(year), n = nowYear || new Date().getFullYear();
+  return Number.isInteger(y) && y >= n - 110 && y <= n && (n - y) >= AGE_MIN_YEARS;
+}
+function ageReset(){ _ageOk = null; _ageCb = null; const g = $("#ageGate"); if(g) g.hidden = true; }
+function askAge(onOk, onNo){
+  _ageCb = {ok:onOk, no:onNo};
+  renderAgeDecades(null);
+  $("#ageGate").hidden = false;
+}
+function renderAgeDecades(decade){
+  const now = new Date().getFullYear();
+  const first = Math.floor(now/10)*10, last = Math.floor((now-100)/10)*10;
+  let h = "";
+  for(let d=first; d>=last; d-=10) h += `<button type="button" class="age-btn${decade===d?' on':''}" aria-pressed="${decade===d}" onclick="renderAgeDecades(${d})">${d}s</button>`;
+  $("#ageDecades").innerHTML = h;
+  let y = "";
+  if(decade!==null) for(let i=Math.min(decade+9,now); i>=decade; i--) y += `<button type="button" class="age-btn" onclick="ageAnswer(${i})">${i}</button>`;
+  $("#ageYears").innerHTML = y;
+}
+function ageAnswer(v){                            // v: a year, false ("never mind") or null ("skip")
+  $("#ageGate").hidden = true;
+  const ok = typeof v === "number" && ageYearOk(v);
+  _ageOk = ok;
+  const cb = _ageCb; _ageCb = null;
+  if(cb) (ok ? cb.ok : cb.no)();
+}
 let _vibeStream=null, _vibeMatch=null;
 /* A wide pool so each scan feels different. Mostly varied with a light colour "nudge". */
 const VIBE_POOL=[
@@ -1989,6 +2127,8 @@ function vibePick(v){
 
 function vibeStart(){ showStage('vibeIntro'); $("#vibe").classList.add('show'); armIdle(); }
 async function vibeAllow(){
+  if(_ageOk === null){ askAge(vibeAllow, vibeSurprise); return; }     // age screen before the camera, every customer
+  if(!_ageOk){ vibeSurprise(); return; }                              // under 13 / skipped / unknown: no photo
   showStage('vibeCam');
   try{
     _vibeStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}, audio:false});
@@ -2191,7 +2331,7 @@ async function vibeSnap(){
     try{
       const cands=vibeCandidates();
       const res=await fetch('/vibe',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({image:img,candidates:cands})});
+        body:JSON.stringify({image:img,candidates:cands,age13:_ageOk===true})});
       if(res.ok){
         const d=await res.json();
         if(d&&d.ai&&d.id){
@@ -2235,6 +2375,8 @@ function snapRenderKid(){
 }
 async function snapAllow(){
   if(_snapKid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ snapMoodStage(); return; }
+  if(_ageOk === null){ askAge(snapAllow, snapMoodStage); return; }    // age screen before the camera, every customer
+  if(!_ageOk){ snapMoodStage(); return; }                             // under 13 / skipped / unknown: mood chips, no photo
   snapStage('snapCam'); $("#snapCount").classList.remove('on'); $("#snapShutter").classList.remove('disabled');
   try{
     _snapStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:{ideal:1024}, height:{ideal:1024}}, audio:false});
@@ -2278,7 +2420,7 @@ async function snapSend(img){
   fcMount($("#snapThinkCup"), {think:true});
   fcThink($("#snapLoadMsg"));
   const body={};
-  if(img && !_snapKid) body.image=img;
+  if(img && !_snapKid && _ageOk===true){ body.image=img; body.age13=true; }
   if(_snapMood.size) body.mood=[..._snapMood].join(", ");
   if(_snapKid) body.kid=true;
   let d=null, status=0;
@@ -2589,10 +2731,15 @@ const AI_CONFIG_ENDPOINT = "/aiconfig";
 })();
 
 const CAT_ACCENT={floats:"#a07bff",dirtysodas:"#ff6f9c",newwaves:"#28cdff",energy:"#ffb300",seasonal:"#ff9a4d",refreshers:"#5ee3b0",lemonades:"#ffcf33",italian:"#ff86d6",dolewhip:"#46e9c4",coffee:"#dcab73",beachbabies:"#8fe0ff",treats:"#ff5ec7",secret:"#cda44e"};
+/* the grid reads left to right, top row first: the first six are what most people want, and Beach Babies (the kids menu) is in the top row */
+const TAB_ORDER = ["floats","dirtysodas","beachbabies","refreshers","newwaves","seasonal","lemonades","energy","italian","dolewhip","coffee","treats","secret"];
+function tabKeys(){
+  const have = Object.keys(MENU);
+  return TAB_ORDER.filter(k=>have.includes(k)).concat(have.filter(k=>!TAB_ORDER.includes(k)));
+}
 function renderTabs(){
-  $("#tabs").innerHTML = Object.entries(MENU).map(([k,c])=>
-    `<button class="tab ${k===activeCat?'active':''}" data-cat="${k}" onclick="selectCat('${k}')">
-      <span class="catdot" style="background:${CAT_ACCENT[k]||'#ff6f9c'}"></span>${c.label}</button>`).join("");
+  $("#tabs").innerHTML = tabKeys().map(k=>{ const c=MENU[k]; const on=k===activeCat; return `<button type="button" class="tab ${on?'active':''}" data-cat="${k}" aria-pressed="${on}" onclick="selectCat('${k}')">
+      <span class="catdot" style="background:${CAT_ACCENT[k]||'#ff6f9c'}"></span>${c.label}</button>`; }).join("");
 }
 function selectCat(k){ activeCat=k; renderTabs(); renderMenu(); $("#menu").scrollTop=0; }
 
@@ -2697,6 +2844,12 @@ function drinkIcon(it,cat){
     +`<path d="${cup}" fill="none" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`
     +face+top+`</svg>`;
 }
+/* "Caffeine-free": the kids menu, Refreshers (no soda, no tea) and Sprite-based drinks. Never on a drink that names a caffeinated base. */
+function caffeineFree(catKey,it){
+  if(catKey==="beachbabies" || catKey==="refreshers") return true;
+  const d = String(it.desc||"");
+  return /sprite/i.test(d) && !/energy|espresso|coffee|coke|pepsi|dr pepper|dew|root beer|cola|tea/i.test(d);
+}
 function renderMenu(){
   const c = MENU[activeCat];
   $("#menu").innerHTML = `
@@ -2705,7 +2858,7 @@ function renderMenu(){
       ${c.items.map((it,i)=>{
         const sold = SOLD_OUT.has(it.id);
         return `<button class="card${sold?' sold':''}" data-cat="${activeCat}" style="animation-delay:${i*45}ms" ${sold?'aria-disabled="true"':`onclick="tapCard(this,'${activeCat}','${it.id}')"`}>
-          <div class="art"><span class="cicon">${drinkIcon(it,activeCat)}</span><img class="dimg" src="assets/drinks/${it.id}.png" alt="" onerror="this.remove()"><span class="pricechip">$${it.price.toFixed(2)}</span></div>
+          <div class="art"><span class="cicon">${drinkIcon(it,activeCat)}</span><img class="dimg" src="assets/drinks/${it.id}.png" alt="" onerror="this.remove()"><span class="pricechip">$${it.price.toFixed(2)}</span>${caffeineFree(activeCat,it)?'<span class="cfbadge">Caffeine-free</span>':''}</div>
           <h3>${it.name}</h3>
           <p class="desc">${it.desc}</p>
         </button>`; }).join("")}
@@ -2713,54 +2866,95 @@ function renderMenu(){
 }
 
 /* ---- item customizer ---- */
-/* Tapped a card: float it away, then open the customizer. */
+/* Tapped a card: the sheet opens right away (the old 300 ms fly-away made every order feel slow). */
 function tapCard(el,catKey,itemId){
-  if(SOLD_OUT.has(itemId)) return;                 // sold out — ignore taps
-  if(el && el.classList){
-    el.classList.add('flyaway');
-    setTimeout(()=>{ openItem(catKey,itemId); el.classList.remove('flyaway'); }, 300);
-  } else { openItem(catKey,itemId); }
+  if(SOLD_OUT.has(itemId)) return;                 // sold out: ignore taps
+  openItem(catKey,itemId);
+}
+/* Named drinks arrive filled in (size, the recipe's own base, the signature cap); only these two stay blank and Required. */
+const BYO_IDS = new Set(["pour-decisions","byo-float"]);
+function defaultSel(catKey,item){
+  const cat = MENU[catKey], sel = {};
+  cat.options.forEach(o=>{ sel[o.key] = o.multi ? [] : null; });
+  const sizeOpt = cat.options.find(o=>o.key==="size");
+  if(sizeOpt && sizeOpt.choices.length){
+    const pick = sizeOpt.choices.find(c=>c.name==="Medium 24oz") || sizeOpt.choices[0];     // Medium also anchors the higher price; they can still step down
+    if(!SOLD_OPTS.has("size:"+pick.name)) sel.size = pick.name;
+  }
+  const d = RECIPE_DEFAULTS[item.id];
+  if(d && !BYO_IDS.has(item.id)){
+    for(const k of ["base","cap"]){
+      const o = cat.options.find(x=>x.key===k);
+      if(o && d[k] && o.choices.some(c=>c.name===d[k]) && !SOLD_OPTS.has(k+":"+d[k])) sel[k] = d[k];
+    }
+  }
+  return sel;
 }
 function openItem(catKey,itemId){
   const cat = MENU[catKey];
   const item = cat.items.find(i=>i.id===itemId);
-  const sel = {};
-  cat.options.forEach(o=>{ sel[o.key] = o.multi ? [] : null; }); // nothing pre-selected — required must be chosen
-  editing = {catKey,item,sel,qty:1};
+  editing = {catKey,item,sel:defaultSel(catKey,item),qty:1};
   renderSheet();
   $("#overlay").classList.add("show");
+}
+
+/* The one place a line's price and add-on list come from its selections. Upsells write into `sel` too, so Edit keeps them. */
+function calcSel(catKey,basePrice,sel,nick){
+  let unit = basePrice; const mods = [];
+  MENU[catKey].options.forEach(o=>{
+    const v = sel[o.key];
+    if(o.multi){ (v||[]).forEach(name=>{ const ch=o.choices.find(c=>c.name===name); if(ch) unit+=ch.d; mods.push(name); }); }
+    else if(v){ const ch=o.choices.find(c=>c.name===v); if(ch) unit+=ch.d; mods.push(v); }
+  });
+  if(Array.isArray(sel._notes)) mods.push(...sel._notes);                       // $0 note mods from a Snap-a-pic line survive an edit
+  if(sel._float){ unit += FLOAT_UPSELL.price; mods.push(FLOAT_UPSELL.prefix + sel._float); }   // "Float: Dole Whip": the group travels with the name
+  const n = vibeCleanNick(nick);
+  if(n) mods.push("AKA " + n);                                                   // Match My Vibe: the AI's funny name for this cup ($0)
+  return {unit:+unit.toFixed(2), mods};
 }
 
 function renderSheet(){
   const {catKey,item,sel,qty} = editing;
   const cat = MENU[catKey];
-  const groups = cat.options.map(o=>`
-    <div class="opt-group${o.required && !o.multi && !sel[o.key] ? ' need' : ''}">
-      <h4>${o.label} ${o.required && !o.multi ? '<em class="req">Required</em>' : '<em>optional</em>'}${o.multi?'<em>pick any</em>':''}</h4>
+  const groups = cat.options.map(o=>{
+    const unset = o.required && !o.multi && !sel[o.key];
+    return `
+    <div class="opt-group${unset ? ' need' : ''}">
+      <h4>${o.label} ${unset ? '<em class="req">Required</em>' : (o.required && !o.multi ? '' : '<em>optional</em>')}${o.multi?'<em>pick any</em>':''}</h4>
       <div class="opt-row">
         ${o.choices.map(ch=>{
           const on = o.multi ? sel[o.key].includes(ch.name) : sel[o.key]===ch.name;
           const add = ch.d>0?`<span class="add">+$${ch.d.toFixed(2)}</span>`:(ch.d<0?`<span class="add">-$${Math.abs(ch.d).toFixed(2)}</span>`:'');
           const soldOpt = SOLD_OPTS.has(o.key+":"+ch.name);
           if(soldOpt) return `<button class="opt soldopt" disabled aria-disabled="true" tabindex="-1">${ch.name} ${add}</button>`;
-          return `<button class="opt ${on?'sel':''}" onclick="pick('${o.key}','${ch.name.replace(/'/g,"\\'")}',${o.multi})">${ch.name} ${add}</button>`;
+          return `<button class="opt ${on?'sel':''}" aria-pressed="${on}" onclick="pick('${o.key}','${ch.name.replace(/'/g,"\\'")}',${o.multi})">${ch.name} ${add}</button>`;
         }).join("")}
       </div>
-    </div>`).join("");
+    </div>`;}).join("");
+  /* a float added from the attach prompt is shown (and removable) here so Edit never silently drops it */
+  const floatGrp = sel._float ? `
+    <div class="opt-group">
+      <h4>Soft serve on top <em>added</em></h4>
+      <div class="opt-row">
+        ${FLOAT_UPSELL.caps.map(c=>`<button class="opt ${sel._float===c?'sel':''}" aria-pressed="${sel._float===c}" onclick="pickFloat('${c}')">${c} <span class="add">+$${FLOAT_UPSELL.price.toFixed(2)}</span></button>`).join("")}
+        <button class="opt" aria-pressed="false" onclick="pickFloat('')">No soft serve</button>
+      </div>
+    </div>` : "";
   const missing = cat.options.filter(o=>o.required && !o.multi && !sel[o.key]);
   const addBtn = missing.length
-    ? `<button class="btn-primary disabled">Choose ${missing[0].label.replace(/<[^>]*>/g,'')}</button>`
+    ? `<button class="btn-primary disabled" disabled aria-disabled="true">Choose ${missing[0].label.replace(/<[^>]*>/g,'')}</button>`
     : `<button class="btn-primary" onclick="addToCart()">Add to order &middot; $${(linePrice()*qty).toFixed(2)}</button>`;
   $("#sheet").innerHTML = `
     <div class="sheet-hd">
       <div class="art"${item.img?` style="background-image:url('${item.img}')"`:''}>${item.img?'':`<span class="cicon shdicon">${drinkIcon(item,catKey)}</span>`}</div>
-      <div><h3>${item.name}</h3><p>${item.desc}</p></div>
-      <button class="close" onclick="closeSheet()">✕</button>
+      <div><h3>${escK(item.name)}</h3><p>${escK(item.desc)}</p></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
     </div>
-    ${groups}
+    ${groups}${floatGrp}
     <div class="sheet-ft">
+      <button class="linkbtn closebtn" onclick="closeSheet()">Close</button>
       <div class="qty">
-        <button onclick="bumpQty(-1)">–</button><span id="qv">${qty}</span><button onclick="bumpQty(1)">+</button>
+        <button aria-label="One less" onclick="bumpQty(-1)">–</button><span id="qv" aria-live="polite">${qty}</span><button aria-label="One more" onclick="bumpQty(1)">+</button>
       </div>
       ${addBtn}
     </div>`;
@@ -2772,21 +2966,13 @@ function pick(key,name,multi){
     const arr = editing.sel[key];
     const i = arr.indexOf(name);
     if(i>=0) arr.splice(i,1); else arr.push(name);
-  } else { editing.sel[key]=name; }
+  } else { editing.sel[key]=name; if(key==="size") delete editing.sel._sizeFrom; }   // a hand-picked size replaces a size-up
   renderSheet();
 }
+function pickFloat(name){ if(name) editing.sel._float=name; else delete editing.sel._float; renderSheet(); }
 function bumpQty(n){ editing.qty=Math.max(1,editing.qty+n); renderSheet(); }
 
-function linePrice(){
-  const {catKey,item,sel}=editing;
-  let p = item.price;
-  MENU[catKey].options.forEach(o=>{
-    const v = sel[o.key];
-    if(o.multi){ (v||[]).forEach(name=>{ const ch=o.choices.find(c=>c.name===name); if(ch)p+=ch.d; }); }
-    else if(v){ const ch=o.choices.find(c=>c.name===v); if(ch)p+=ch.d; }
-  });
-  return p;
-}
+function linePrice(){ return calcSel(editing.catKey, editing.item.price, editing.sel).unit; }
 
 function addToCart(){
   // ensure required selections
@@ -2794,16 +2980,9 @@ function addToCart(){
   for(const o of MENU[catKey].options){
     if(o.required && !o.multi && !sel[o.key]) return; // safety — the Add button is already disabled until required choices are made
   }
-  const mods = [];
-  MENU[catKey].options.forEach(o=>{
-    const v=sel[o.key];
-    if(o.multi && v.length) mods.push(...v);
-    else if(!o.multi && v) mods.push(v);
-  });
-  if(Array.isArray(sel._notes)) mods.push(...sel._notes);        // $0 note mods from a Snap-a-pic line survive an edit
   const nick = vibeCleanNick(editing.nick);
-  if(nick) mods.push("AKA " + nick);                               // Match My Vibe: the AI's funny name for this cup ($0)
-  const line = {icon:iconFor(item), img:item.img, name:item.name, mods, unit:linePrice(), qty,
+  const r = calcSel(catKey,item.price,sel,nick);
+  const line = {icon:iconFor(item), img:item.img, name:item.name, mods:r.mods, unit:r.unit, qty,
                 catKey, itemId:item.id, basePrice:item.price, desc:item.desc, sel:JSON.parse(JSON.stringify(sel)), nick:nick||undefined};
   const wasEdit = editing.idx!=null && cart[editing.idx];
   if(wasEdit) cart[editing.idx] = line; else cart.push(line);
@@ -2812,20 +2991,23 @@ function addToCart(){
   if(wasEdit){
     openCart();   // return to the cart after editing a line
   } else {
-    // new item — check whether to show an upsell prompt
+    // new item — check whether to show the attach prompt
     const offers = buildUpsellOffers(line);
     if(offers.length) showUpsell(offers);
     else openCart();
   }
 }
 /* ============ UPSELL / ATTACH (Feature 2) ============
-   After adding a non-float, non-soft-serve drink, offer 1-3 one-tap add-ons.
-   Chosen add-on is merged into the last cart line (price + mods). Never blocks
-   checkout — "Skip" goes straight to the cart. */
-
-// Categories and item patterns that are floats / soft-serve — skip upsell for these
+   After a drink is added: up to three offers, each ONE tap that applies right away (tap again to take it back), any
+   number can be picked, and the footer button is "Done" with the running total. Every offer writes into the line's
+   `sel` and the line is re-priced through calcSel(), so Edit keeps it, the price is the menu price, and the station
+   reads a real size / topper / float cap instead of a "?" step. Never blocks checkout. */
 const FLOAT_CATS = new Set(["floats","dolewhip"]);
-const FLOAT_PAT = /float|dole whip|soft.?serv|swirl power|vanilla vibes|pineapple express|whip it good|float on/i;
+/* already a float? by category (Floats, Soft Serve) or by what was picked (a soft-serve cap, "Float" serve, an upsell cap) — never by display text */
+function isFloatLine(line){
+  const sel = (line && line.sel) || {};
+  return FLOAT_CATS.has(line.catKey) || !!sel.cap || !!sel._float || /^float/i.test(String(sel.serve||""));
+}
 
 // SVG icons for each upsell offer type
 const UPSELL_ICONS = {
@@ -2850,132 +3032,105 @@ const UPSELL_ICONS = {
   </svg>`,
 };
 
-let _upsellPicked = null;   // index into _upsellOffers, or null
+let _upsellIdx = -1;     // index of the cart line the prompt is about
 
-/* Build the offer list for a just-added cart line. Returns [] if upsell shouldn't show. */
+/* Build the offer list for a cart line. Pure: reads the line and MENU only. */
 function buildUpsellOffers(line) {
   if (!line) return [];
-  // Skip for floats, soft serve, and anything that already has a float cap chosen
-  if (FLOAT_CATS.has(line.catKey)) return [];
-  if (FLOAT_PAT.test(line.name + " " + (line.mods||[]).join(" "))) return [];
-  if ((line.mods||[]).some(m => /dole whip|vanilla|twist|swirl/i.test(m))) return [];
-  // Only offer what the item can actually take: nothing for candy bags (Treats) or option-less items,
-  // a topper only where the menu has "Top It Off", a size-up / float only for drinks that come in sizes.
+  // Only offer what the item can actually take: nothing for candy bags (Treats) or option-less items.
   const catOpts = (MENU[line.catKey] && MENU[line.catKey].options) || [];
   if (line.catKey === "treats" || !catOpts.length) return [];
-  const hasOpt = k => catOpts.some(o => o.key === k);
-
+  const sel = line.sel || {};
+  const opt = k => catOpts.find(o => o.key === k);
   const offers = [];
 
-  // Offer 1: make it a float — only if they don't already have a "Float" or "cap" mod
-  const alreadyFloat = (line.mods||[]).some(m => /float/i.test(m));
-  const hot = (line.mods||[]).includes("Hot");
-  if (!alreadyFloat && hasOpt("size") && !hot) {
+  // Offer 1: make it a float. Hidden only when it already IS one.
+  if (!isFloatLine(line) && opt("size") && sel.temp !== "Hot") {
     offers.push({
-      id: "float",
-      name: "Make it a Float",
-      desc: "Soft serve on top — Dole Whip or Vanilla",
-      price: 1.50,
-      mod: "Float cap",
-      icon: "float",
+      id: "float", name: "Make it a Float", desc: "Soft serve on top",
+      price: FLOAT_UPSELL.price, icon: "float",
+      chips: FLOAT_UPSELL.caps.map(c => ({ arg: c, label: c, on: sel._float === c })),
     });
   }
-
-  // Offer 2: topper — only if no topper already on this line
-  const topperChoices = ["Whipped cream","Sweet cream cold foam","Vanilla cold foam","Salted caramel cold foam"];
-  const alreadyTopper = (line.mods||[]).some(m => topperChoices.some(t => m.includes(t.split(" ")[0])));
-  if (!alreadyTopper && hasOpt("topper")) {
-    offers.push({
-      id: "topper",
-      name: "Add a Topper",
-      desc: "Whipped cream or cold foam",
-      // same as "Whipped cream" in TOPPER (menu / Clover); keep "price: <number>, mod:" for cloud/menu-from-kiosk.js
-      price: 0.50,
-      mod: "Whipped cream",
-      icon: "topper",
-    });
+  // Offer 2: whipped cream, at its menu price. Always offered where the menu has "Top It Off".
+  const topper = opt("topper"), wc = topper && topper.choices.find(c => c.name === "Whipped cream");
+  if (wc && !SOLD_OPTS.has("topper:" + wc.name)) {
+    offers.push({ id: "topper", name: "Add whipped cream", desc: "On top, made fresh", price: wc.d, icon: "topper", on: (sel.topper || []).includes("Whipped cream") });
   }
-
-  // Offer 3: size up — only if current item has a size option and they didn't already pick Large/32oz
-  const bigSizes = /large|32oz|24oz|medium/i;
-  const alreadyBig = (line.mods||[]).some(m => bigSizes.test(m));
-  if (!alreadyBig && hasOpt("size")) {
-    offers.push({
-      id: "size",
-      name: "Size Up",
-      desc: "Go up one size",
-      price: 0.80,
-      mod: "Size up",
-      icon: "size",
-    });
+  // Offer 3: size up = the NEXT real size of this drink, priced as the difference. Taking it back restores the old size.
+  const sz = opt("size");
+  if (sz && sel.size) {
+    const i = sz.choices.findIndex(c => c.name === sel.size), cur = sz.choices[i], next = sz.choices[i + 1];
+    if (sel._sizeFrom) {
+      const from = sz.choices.find(c => c.name === sel._sizeFrom);
+      if (from && cur) offers.push({ id: "size", name: "Size up to " + cur.name, desc: "Tap to go back to " + from.name, price: +(cur.d - from.d).toFixed(2), icon: "size", on: true });
+    } else if (cur && next && !SOLD_OPTS.has("size:" + next.name)) {
+      offers.push({ id: "size", name: "Size up to " + next.name, desc: cur.name + " to " + next.name, price: +(next.d - cur.d).toFixed(2), icon: "size", on: false });
+    }
   }
-
   return offers.slice(0, 3);
+}
+/* Toggle one offer on a cart line (the new price and add-on list come back through calcSel). */
+function applyUpsell(line, id, arg) {
+  const sel = line.sel || (line.sel = {});
+  if (id === "float") { if (sel._float === arg) delete sel._float; else sel._float = arg; }
+  else if (id === "topper") {
+    const arr = sel.topper = sel.topper || [], i = arr.indexOf("Whipped cream");
+    if (i >= 0) arr.splice(i, 1); else arr.push("Whipped cream");
+  } else if (id === "size") {
+    const sz = MENU[line.catKey].options.find(o => o.key === "size");
+    if (sel._sizeFrom) { sel.size = sel._sizeFrom; delete sel._sizeFrom; }
+    else { const i = sz.choices.findIndex(c => c.name === sel.size); if (sz.choices[i + 1]) { sel._sizeFrom = sel.size; sel.size = sz.choices[i + 1].name; } }
+  }
+  const r = calcSel(line.catKey, line.basePrice, sel, line.nick);
+  line.unit = r.unit; line.mods = r.mods;
+  return line;
 }
 
 function showUpsell(offers) {
-  _upsellPicked = null;
-  const lastLine = cart[cart.length - 1];
-  const itemName = lastLine ? lastLine.name : "your drink";
-
-  const cards = offers.map((o, i) => `
-    <div class="upsell-card" id="uc${i}" onclick="pickUpsell(${i})">
+  _upsellIdx = cart.length - 1;
+  renderUpsell();
+  $("#upsellOverlay").classList.add("show");
+}
+function renderUpsell() {
+  const line = cart[_upsellIdx];
+  if (!line) { closeUpsell(); return; }
+  const offers = buildUpsellOffers(line);
+  const cards = offers.map(o => {
+    const price = `<div class="uc-price">+$${o.price.toFixed(2)}</div>`;
+    if (o.id === "float") return `
+    <div class="upsell-card upsell-float">
+      <div class="uc-icon">${UPSELL_ICONS.float}</div>
+      <div class="uc-body"><div class="uc-name">${o.name}</div><div class="uc-desc">${o.desc}: pick one, one tap</div>
+        <div class="up-chips">${o.chips.map(c => `<button class="up-chip${c.on ? ' picked' : ''}" aria-pressed="${c.on}" data-up="float" data-arg="${c.arg}">${c.label}</button>`).join("")}</div></div>
+      ${price}
+    </div>`;
+    return `
+    <button class="upsell-card${o.on ? ' picked' : ''}" aria-pressed="${o.on}" data-up="${o.id}">
       <div class="uc-icon">${UPSELL_ICONS[o.icon] || UPSELL_ICONS.topper}</div>
-      <div class="uc-body">
-        <div class="uc-name">${o.name}</div>
-        <div class="uc-desc">${o.desc}</div>
-      </div>
-      <div class="uc-price">+$${o.price.toFixed(2)}</div>
-    </div>`).join("");
-
+      <div class="uc-body"><div class="uc-name">${o.on ? "✓ " : ""}${o.name}</div><div class="uc-desc">${o.desc}</div></div>
+      ${price}
+    </button>`;
+  }).join("");
   $("#upsellSheet").innerHTML = `
     <div class="upsell-hd">
-      <h3>Level up your ${itemName.split(" ").slice(0,3).join(" ")}?</h3>
-      <p>One tap — we'll add it right to your order.</p>
+      <h3>Level up your ${escK(line.name.split(" ").slice(0,3).join(" "))}?</h3>
+      <p>One tap adds it. Tap again to take it back.</p>
     </div>
     <div class="upsell-offers">${cards}</div>
     <div class="upsell-ft">
-      <button class="upsell-add disabled" id="upsellAddBtn" onclick="commitUpsell()">Add &amp; continue</button>
-      <button class="upsell-skip" onclick="skipUpsell()">Skip</button>
+      <button class="upsell-add" id="upsellDone" onclick="closeUpsell();openCart()">Done &middot; $${cartTotals().sub.toFixed(2)}</button>
     </div>`;
-
-  // store offers on window for commit step
-  window._upsellOffers = offers;
-  $("#upsellOverlay").classList.add("show");
 }
-
-function pickUpsell(i) {
-  _upsellPicked = (_upsellPicked === i) ? null : i;   // toggle
-  document.querySelectorAll(".upsell-card").forEach((el, idx) =>
-    el.classList.toggle("picked", idx === _upsellPicked));
-  const btn = $("#upsellAddBtn");
-  if (btn) btn.classList.toggle("disabled", _upsellPicked === null);
-}
-
-function commitUpsell() {
-  if (_upsellPicked === null) return;
-  const offer = (window._upsellOffers || [])[_upsellPicked];
-  if (!offer) { skipUpsell(); return; }
-
-  // Merge the add-on into the last cart line
-  const line = cart[cart.length - 1];
-  if (line) {
-    line.unit = +(line.unit + offer.price).toFixed(2);
-    line.mods = [...(line.mods || []), offer.mod];
-  }
-  updateCartBtn();
-  closeUpsell();
-  openCart();
-}
-
-function skipUpsell() {
-  closeUpsell();
-  openCart();
-}
-
+$("#upsellSheet").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-up]"); if (!b) return;
+  const line = cart[_upsellIdx]; if (!line) return;
+  applyUpsell(line, b.dataset.up, b.dataset.arg);
+  updateCartBtn(); renderUpsell();
+});
+function skipUpsell() { closeUpsell(); openCart(); }
 function closeUpsell() {
-  _upsellPicked = null;
-  window._upsellOffers = [];
+  _upsellIdx = -1;
   $("#upsellOverlay").classList.remove("show");
 }
 
@@ -2985,7 +3140,7 @@ function editCartLine(i){
   const item = cat.items.find(it=>it.id===c.itemId)
     || (c.basePrice!=null ? {id:c.itemId, name:c.name, desc:c.desc||"", price:c.basePrice, _ai:true} : null);   // Snap-a-pic / AI lines
   if(!item) return;
-  editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i, nick:c.nick};
+  editing = {catKey:c.catKey, item, sel:JSON.parse(JSON.stringify(c.sel||{})), qty:c.qty, idx:i, nick:c.nick};   // sel carries the upsells (_float, _sizeFrom, topper)
   renderSheet();
   $("#overlay").classList.add("show");
 }
@@ -3015,9 +3170,9 @@ function openCart(){
     <div class="cart-line">
       <div class="art"${c.img?` style="background-image:url('${c.img}')"`:''}>${c.img?'':`<span class="cicon shdicon">${drinkIcon((MENU[c.catKey]&&MENU[c.catKey].items.find(x=>x.id===c.itemId))||{id:c.itemId||'x',name:c.name,desc:''}, c.catKey)}</span>`}</div>
       <div class="info">
-        <b>${c.name}</b>
+        <b>${escK(c.name)}</b>
         ${c.nick?`<div class="nick">a.k.a. ${escK(c.nick)}</div>`:''}
-        ${c.mods.filter(m=>!/^AKA /.test(m)).length?`<div class="mods">${c.mods.filter(m=>!/^AKA /.test(m)).join(" &middot; ")}</div>`:''}
+        ${c.mods.filter(m=>!/^AKA /.test(m)).length?`<div class="mods">${c.mods.filter(m=>!/^AKA /.test(m)).map(escK).join(" &middot; ")}</div>`:''}
         <div class="price">$${(c.unit*c.qty).toFixed(2)}</div>
         <button class="linkbtn editbtn" onclick="editCartLine(${i})">Edit</button>
       </div>
@@ -3028,7 +3183,7 @@ function openCart(){
   $("#sheet").innerHTML = `
     <div class="sheet-hd">
       <div><h3>Your order</h3><p>${cart.reduce((a,c)=>a+c.qty,0)} item(s)</p></div>
-      <button class="close" onclick="closeSheet()">✕</button>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
     </div>
     <div style="padding:6px 28px 0">
       ${lines}
@@ -3044,7 +3199,8 @@ function openCart(){
       <button class="linkbtn" onclick="clearCart()">Clear order</button>
     </div>
     <div class="sheet-ft">
-      <button class="btn-primary" onclick="askName()">Next: add your name &rarr;</button>
+      <button class="linkbtn closebtn" onclick="closeSheet()">Keep ordering</button>
+      <button class="btn-primary" onclick="askName()">Next: your name &rarr;</button>
     </div>`;
   $("#overlay").classList.add("show");
 }
@@ -3052,17 +3208,18 @@ function openCart(){
 /* ---- name entry (on-screen keyboard — no physical keyboard needed) ---- */
 let _orderName = "";
 function askName(){ renderNamePad(); $("#overlay").classList.add("show"); }
+const NAME_MAX = 12;
 function renderNamePad(){
   const sub = cartTotals().sub;
   const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
   const kb = rows.map(r => `<div class="krow">`+[...r].map(c=>`<button class="kkey" onclick="nameKey('${c}')">${c}</button>`).join("")+`</div>`).join("")
-    + `<div class="krow"><button class="kkey kwide" onclick="nameSpace()">space</button><button class="kkey kwide" onclick="nameBack()">&larr; delete</button></div>`;
+    + `<div class="krow"><button class="kkey" aria-label="hyphen" onclick="nameKey('-')">-</button><button class="kkey" aria-label="apostrophe" onclick="nameKey('\\'')">'</button><button class="kkey kwide" onclick="nameBack()">&larr; delete</button></div>`;
   $("#sheet").innerHTML = `
     <div class="sheet-hd">
-      <div><h3>Whose order is this?</h3><p>We'll call your name when it's ready.</p></div>
-      <button class="close" onclick="closeSheet()">✕</button>
+      <div><h3>First name only</h3><p>First name only. It shows on the pickup screen and we'll call it out.</p></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
     </div>
-    <div class="namebox" id="nameBox"></div>
+    <div class="namebox" id="nameBox" aria-live="polite"></div>
     <button class="beachname" onclick="beachName()"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1.6"/><circle cx="8" cy="8" r="1.6" fill="#fff"/><circle cx="16" cy="8" r="1.6" fill="#fff"/><circle cx="12" cy="12" r="1.6" fill="#fff"/><circle cx="8" cy="16" r="1.6" fill="#fff"/><circle cx="16" cy="16" r="1.6" fill="#fff"/></svg>Surprise me — give me a beach name</button>
     <div class="keyboard">${kb}</div>
     ${qrShown() ? qrFooter(sub) : `<div class="sheet-ft">
@@ -3071,12 +3228,12 @@ function renderNamePad(){
     </div>`}`;
   refreshName();
 }
-function nameKey(c){ if(_orderName.length<22) _orderName += c; refreshName(); }
-function nameSpace(){ if(_orderName.trim() && _orderName.length<22) _orderName += " "; refreshName(); }
+function nameKey(c){ if(/^[A-Za-z'-]$/.test(c) && _orderName.length<NAME_MAX && !/ /.test(_orderName)) _orderName += c; refreshName(); }
+function nameSpace(){ /* first name only: there is no space key any more */ }
 function nameBack(){ _orderName = _orderName.slice(0,-1); refreshName(); }
 function refreshName(){
   const box=$("#nameBox");
-  if(box) box.innerHTML = _orderName ? _orderName : `<span class="ph">Tap your name…</span>`;
+  if(box) box.innerHTML = _orderName ? escK(_orderName) : `<span class="ph">Tap your first name…</span>`;
   const pb=$("#placeBtn"); if(pb) pb.classList.toggle("disabled", !_orderName.trim());
   const qb=$("#qrBtn"); if(qb && !_prizeCode) qb.classList.toggle("disabled", !_orderName.trim());
 }
@@ -3094,7 +3251,7 @@ function renderPrizePad(msg){
   $("#sheet").innerHTML = `
     <div class="sheet-hd">
       <div><h3>Thirsty Maze code</h3><p>Won a free upsize on thirstybeaches.com? Type the code from your screen.</p></div>
-      <button class="close" onclick="closeSheet()">✕</button>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
     </div>
     <div class="namebox prizebox" id="prizeBox">${shown}</div>
     <div class="prizemsg" id="prizeMsg">${msg||""}</div>
@@ -3122,7 +3279,7 @@ async function checkPrize(){
 }
 /* ---- Beach-name generator: a random, kid-clean beach alter-ego ---- */
 const BEACH_FIRST=["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral",
-  "Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Sir Splash","Lady"];
+  "Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Lady"];
 const BEACH_LAST=["Riptide","Sandcastle","Seabreeze","Sunchaser","Wavemaker","Beachcomber","Driftwood",
   "Pufferfish","Starfish","Sandbar","Shoreline","Coconut","Seahorse","Castaway","Sailor","Dune","Marlin","Barnacle"];
 function beachName(){
@@ -3137,7 +3294,14 @@ function cartQty(i,n){
   updateCartBtn();
   if(cart.length) openCart(); else closeSheet();
 }
-function clearCart(){ cart=[]; updateCartBtn(); closeSheet(); }
+let _undoCart = null;
+function clearCart(){
+  const saved = cart; cart = []; updateCartBtn(); closeSheet();
+  if(saved.length){                                  // a wet thumb on "Clear order" must not cost a whole order
+    _undoCart = saved;
+    showToast("Order cleared", ()=>{ if(_undoCart){ cart = _undoCart; _undoCart = null; updateCartBtn(); openCart(); } });
+  }
+}
 
 /* ---- place order ----
    Two-step flow when tap-to-pay is live:
@@ -3148,6 +3312,12 @@ function clearCart(){ cart=[]; updateCartBtn(); closeSheet(); }
 
    When PAY_ENABLED=false (the default) this function behaves exactly as before.
    The pay-at-window path is always available and is never an error state.       */
+let _sendFails = 0, _wfTimer = null;
+function windowFallback(){
+  cart = []; updateCartBtn(); closeSheet(); _orderName = ""; _prizeCode = "";
+  const w = $("#windowFallback"); if(w) w.hidden = false;
+  clearTimeout(_wfTimer); _wfTimer = setTimeout(resetAll, 20000);
+}
 async function placeOrder(){
   if(orderInFlight) return;
   if(!cart.length) return;
@@ -3162,11 +3332,13 @@ async function placeOrder(){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const d = await res.json();
     if(!d || !d.ticket || !d.orderId) throw new Error("no ticket returned");
+    if(d.seq) d.ticket = String(d.seq);                       // the daily order number (101, 102, ...); the Clover id stays internal
 
     // Order created — record sales for leaderboard, then decide payment path
     recordSales(cart);
     const amountCents = Math.round(cartTotals().sub * 100);  // subtotal (before tax) in cents
-    d.name = _orderName.trim();                               // keep the name for the confirm screen ("listen for your name")
+    d.name = d.name || _orderName.trim();                     // the name the SERVER cleaned (first word, filtered): that is what the board shows and says
+    _sendFails = 0;
     cart = []; updateCartBtn(); closeSheet();
     _orderName = ""; _lastUpsize = !!d.upsize; _prizeCode = "";
 
@@ -3190,7 +3362,9 @@ async function placeOrder(){
     }
   }catch(err){
     console.warn("Order failed:", err.message);
-    if(btn){ btn.textContent = "Couldn't send — tap to retry"; btn.classList.remove('disabled'); }
+    _sendFails++;
+    if(_sendFails >= 2){ windowFallback(); }                  // twice is enough: stop the retry loop, send them to the window
+    else if(btn){ btn.textContent = "Couldn't send — tap to retry"; btn.classList.remove('disabled'); }
   }finally{
     orderInFlight = false;
   }
@@ -3200,13 +3374,18 @@ async function placeOrder(){
    Shared confirm screen used by both the tap-to-pay approved path and the
    pay-at-window path. When paid=true the banner says "Grab your order";
    when paid=false (or omitted) it says "Head to the window to pay".          */
+const CONFIRM_MS = 10000, CONFIRM_PUNCH_MS = 25000;   // back to the attract screen after 10 s (25 s while a punch-card QR is on screen)
+let _confirmTimer = null;
+function armConfirmReset(ms){
+  clearTimeout(_confirmTimer);
+  _confirmTimer = setTimeout(()=>{ if($("#confirm").classList.contains("show")) resetAll(); }, ms);
+}
 function showConfirm(order, paid){
   const o = order || _payOrder;
   if(!o) return;
   punchQrClear();
   $("#orderNum").textContent    = o.ticket || o.orderId.slice(-4).toUpperCase();
   $("#orderForName").textContent = o.name ? "Order for " + o.name : "";
-  resetSpin();
 
   // Swap the pay-at-window banner copy depending on whether the customer already paid
   const banner = $("#confirm .paywindow");
@@ -3224,6 +3403,7 @@ function showConfirm(order, paid){
   if(up) up.style.display = _lastUpsize ? "block" : "none";
   $("#confirm").classList.add("show");
   fireConfetti();
+  armConfirmReset(CONFIRM_MS);
 }
 
 /* ---- openPayScreen() ----
@@ -3486,10 +3666,13 @@ async function punchQr(ref){
     el.innerHTML = '<div class="pq-code">' + qrSvg(d.url, "QR code to add your punch card punches") + '</div>' +
       '<div><b>Scan for your punch</b><span>+' + n + (n === 1 ? ' punch' : ' punches') + ' on your Thirsty Beaches card. 10 punches = a free drink.</span></div>';
     el.hidden = false;
+    armConfirmReset(CONFIRM_PUNCH_MS);                   // they need a moment to scan it
   }catch(e){ el.hidden = true; el.innerHTML = ""; }
 }
 function resetAll(){
-  clearTimeout(idleTimer);
+  clearTimeout(idleTimer); clearTimeout(idleWarnTimer); clearTimeout(_confirmTimer); clearTimeout(_wfTimer);
+  _undoCart = null; _sendFails = 0; ageReset();
+  { const iw=$("#idleWarn"); if(iw) iw.hidden=true; const wf=$("#windowFallback"); if(wf) wf.hidden=true; }
   cart=[]; updateCartBtn();
   closeUpsell();                                          // clear any dangling upsell prompt
   delete MENU.secret; _tap=0; _phone=""; _tideReq=0; _orderName="";  // hide secret menu again for the next customer
@@ -3530,7 +3713,7 @@ async function loadMenu(){
 
 /* init */
 renderTabs(); renderMenu(); updateCartBtn();
-buildWheel(); renderLeaderboard();          // Spin the Tide wheel + Today's Top Sips
+renderLeaderboard();                         // Today's Top Sips
 
 /* ---- Tap-to-pay: load PAY_ENABLED flag from the server at page load.
         This is a one-time read; the per-order Flex status check (GET /pay/status)
@@ -3644,8 +3827,8 @@ function renderSpecials(){
     const isSold = soldBase || soldMod || soldDrink;
 
     // the section is already headed "Today's Specials": only show a tag when the owner set a custom label
-    return `<button class="special-card${isSold?' sold':''}"
-                    onclick="tapSpecial('${escK(sp.id)}')"
+    return `<button type="button" class="special-card${isSold?' sold':''}"
+                    data-id="${escK(sp.id)}"
                     ${isSold ? 'aria-disabled="true"' : ''}
                     aria-label="${escK(sp.name)} — tap to customise">
       ${sp.label ? `<div class="special-card-tag">${escK(sp.label)}</div>` : ''}
@@ -3661,6 +3844,7 @@ function renderSpecials(){
       <span class="specials-badge">Featured</span>
     </div>
     <div class="specials-grid">${cards}</div>`;
+  sec.querySelectorAll('.special-card').forEach(b => b.addEventListener('click', () => tapSpecial(b.dataset.id)));   // data-id + listener: the id is never code
 }
 
 /* Minimal HTML-escape for kiosk (no innerHTML injection risk from specials data). */
@@ -3672,7 +3856,7 @@ function escK(s){
 /* Tap a special card — maps into openAIDrink() exactly like a /designdrink result. */
 function tapSpecial(id){
   const sp = SPECIALS.find(s => s.id === id);
-  if(!sp) return;
+  if(!sp || !/^[a-z0-9-]{1,32}$/.test(String(sp.id))) return;
   openAIDrink({ catKey: sp.catKey, base: sp.base, mods: sp.mods,
                 name: sp.name, blurb: sp.blurb });
 }

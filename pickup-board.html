@@ -140,9 +140,7 @@ function shortName(n){const p=String(n||'').trim().split(/\s+/).filter(Boolean);
 /* spoken: the number only, unless the owner turns names on for this screen (open the board once with #names) */
 let SAYNAMES=false;try{if(location.hash==='#names')localStorage.setItem('tb-say-names','1');SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
-/* Match My Vibe's funny name rides on a line as an "AKA <name>" mod; show it with the customer's name, never as a raw mod */
-const akaOf=o=>{for(const x of o.items||[]){const m=(x.mods||[]).find(m=>/^AKA /.test(m));if(m)return m.slice(4);}return'';};
-const akaHtml=o=>{const a=akaOf(o);return a?`<span class="aka">“${esc(a)}”</span>`:'';};
+/* Match My Vibe's funny name (an "AKA" mod on the line) is NOT shown on this public screen: it is AI text, and the board only carries the number and a cleaned first name. */
 /* Voice personas. "Seasonal" = Pumpkin King in October, Santa in December, Barry the rest of the year.
    Web Speech can't do impressions, so each persona = deepest male voice on the device + its own pitch, pace and lines. Saved in localStorage tb-voice-name. */
 const VOICE_DEEP=['Daniel','Google UK English Male','Microsoft Ryan','Microsoft Guy','Microsoft Davis','Microsoft David','Microsoft Mark','Alex','Fred','Aaron','Arthur','Rishi','Reed'];
@@ -168,7 +166,7 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
   const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
   more('#moreReady',q.ready.length-ready.length,'ready');
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(shortName(o.customer))}${akaOf(o)?akaHtml(o):''}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(shortName(o.customer))}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   const wl=$('#wait');wl.className='list'+(wait.length>32?' n32':wait.length>20?' n20':'');
   wl.innerHTML=wait.length?wait.map(o=>`<div class="wait${q.now-o.created>8*60000?' old':''}"><div class="code">${esc(o.ticket)}</div></div>`).join(''):`<div class="empty" style="grid-column:1/-1">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+'. Number '+o.ticket+(SAYNAMES&&o.customer?', for '+shortName(o.customer):'')+'.');seenReady.add(o.id);}

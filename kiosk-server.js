@@ -153,7 +153,7 @@ function mixPayload(body) {
   const b = body && typeof body === "object" ? body : {};
   const out = {};
   const kid = b.kid === true;
-  if (!kid && typeof b.image === "string" && b.image) {
+  if (!kid && b.age13 === true && typeof b.image === "string" && b.image) {         // no age-screen yes = no image is ever forwarded
     if (!MIX_DATA_URL.test(b.image)) return { error: "bad image" };
     const b64 = b.image.slice(b.image.indexOf(",") + 1);
     if (Math.floor(b64.length * 3 / 4) > MIX_IMAGE_MAX) return { error: "image too large" };
@@ -176,6 +176,29 @@ async function mixForward(payload) {
   } finally { clearTimeout(t); }
 }
 const cents = c => (typeof c === "number" ? c / 100 : 0);
+
+/* AI text on a public screen goes through the one moderation chokepoint (moderation.js), with a curated fallback when it is rejected.
+   Compliance gate 2026-11-15: Snap name/why and Vibe nickname/reading/why were not moderated before. */
+const SAFE_WHY = "A one-of-a-kind beach creation, made just for you.";
+const SAFE_READING = "The beach has read you.";
+function curatedBeachDrinkName() {
+  const f = ["Captain","Sandy","Sunny","Tidal","Coral","Breezy","Reef","Wavy","Stormy","Golden","Tropic"], l = ["Riptide","Sandcastle","Seabreeze","Sunchaser","Wavemaker","Beachcomber","Coconut","Seahorse"];
+  return (f[Math.floor(Math.random() * f.length)] + " " + l[Math.floor(Math.random() * l.length)]).slice(0, 28);
+}
+function moderateMix(data) {                       // /mix answer (Snap a pic): name + why
+  if (!data || typeof data !== "object" || data.error) return data;
+  const out = { ...data };
+  if ("name" in out) out.name = sanitizeDrinkText(String(out.name || "").trim().slice(0, 28), "name") || curatedBeachDrinkName();
+  if ("why" in out) out.why = sanitizeDrinkText(String(out.why || "").trim().slice(0, 120), "blurb") || SAFE_WHY;
+  return out;
+}
+function moderateVibe(out) {                       // /vibe answer (Match My Vibe): nickname + reading + why. An empty nickname = the page's own local one.
+  if (!out || out.ai !== true) return out;
+  return { ...out,
+    nickname: sanitizeDrinkText(String(out.nickname || "").trim().slice(0, 28), "name"),
+    reading: sanitizeDrinkText(String(out.reading || "").trim().slice(0, 60), "blurb") || SAFE_READING,
+    why: sanitizeDrinkText(String(out.why || "").trim().slice(0, 140), "blurb") || SAFE_WHY };
+}
 
 // ---- Clover REST helpers ----
 // Clover health for the heartbeat: last success time + last failure (path ids masked, no body).
@@ -298,6 +321,8 @@ const beachNameServer = () => (NAME_FIRST[Math.floor(Math.random() * NAME_FIRST.
 function cleanCustomerName(raw) {
   const typed = String(raw == null ? "" : raw).trim();
   if (!typed) return "";                                                             // no name given (register-style order)
+  const two = typed.split(/\s+/);
+  if (two.length === 2 && NAME_FIRST.includes(two[0]) && NAME_LAST.includes(two[1])) return typed;   // the kiosk's own "give me a beach name" pick
   return sanitizeCustomerName(typed) || beachNameServer();
 }
 
@@ -1148,7 +1173,7 @@ const server = http.createServer(async (req, res) => {
     if (error) return sendJSON(res, 400, { error });
     try {
       const out = await mixForward(payload);
-      return sendJSON(res, out.status, out.data);
+      return sendJSON(res, out.status, moderateMix(out.data));
     } catch (e) {
       const timedOut = e && e.name === "AbortError";
       console.error("mix error:", timedOut ? "upstream timeout" : e.message);   // message only — never the body
@@ -1159,7 +1184,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && pathname === "/vibe") {
     try {
       const body = JSON.parse((await readBody(req)) || "{}");
-      const out = await vibeMatch(body.image, body.candidates);
+      const out = body && body.age13 === true ? moderateVibe(await vibeMatch(body.image, body.candidates)) : { ai: false };   // no age-screen yes = no photo analysis
       return sendJSON(res, 200, out);
     } catch (e) { console.error("vibe error:", e.message); return sendJSON(res, 200, { ai: false }); }
   }

@@ -132,6 +132,21 @@ Options (Text variables, all optional):
 See what the monitor currently thinks: `https://station.thirstybeaches.com/api/monitor?k=YOUR_STATION_KEY`
 (add `&run=1` to check right now).
 
+## Done tickets in KV (one key per ticket)
+
+Since 2026-11-15 a ticket marked Done is its own KV key (`dn:<orderId>`, "Picked up" is `pk:<orderId>`, both expire after 48 h) instead of one
+shared `done` blob that every tap rewrote (two screens tapping at once lost updates). The old `done` blob is still read for one more
+release and cleaned up on Undo. Reading lists the `dn:` and `pk:` prefixes and keeps the answer in memory for `STATION_DONE_MEMO_MS`
+(default 10000); this isolate's own taps show at once.
+
+- **KV list operations are limited on the free plan (1,000 a day).** At 4-5 second polling with the memo at 10 s a screen can use several
+  thousand a day, so on the free plan set `STATION_DONE_MEMO_MS=60000` (about 600 a day per open screen and Worker isolate) or move the
+  Worker to the Workers Paid plan. If the list call fails, the station keeps the last answer (a done ticket may reappear for a minute)
+  instead of going blank.
+- The station needs the `STATION_KEY` secret: with none set every data route answers 503 (it used to answer everyone). Send the key as an
+  `X-Key` header; `?k=` still works for one more release. The station and board pages do this on their own once opened with `?k=<key>`.
+- Daily order numbers (101, 102, ...) restart at midnight in `OWNER_TZ` (default America/Denver). Set `OWNER_TZ` to the trailer's time zone.
+
 ## Cost and limits
 
 All of this fits the free Workers plan: 2 cron triggers (Cloudflare allows 5 per account on the

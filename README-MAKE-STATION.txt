@@ -103,13 +103,20 @@ PICKUP BOARD (customer-facing)
   Any TV, tablet or phone on the trailer Wi-Fi can open
         http://<pc-address>:8140/board
   It shows "Ready, come grab it" (tickets marked Done in the last 30 min,
-  with the customer's name) and "In the works". It calls out "Order up for
-  Nick, ticket V J 9 R" when a ticket flips to ready. Same server, no setup.
+  with a first name) and "In the works" (every waiting ticket, as a small
+  number tile). Tickets have a daily number (101, 102, ...). It calls out
+  "Order up. Number 104." when a ticket flips to ready; names are only spoken
+  if you open the board once with  #names  on the end. Tap "Picked up" on the
+  station when the customer takes the drink: it leaves "Ready".
 
 CONFIG (kiosk-config.env, all optional)
 ---------------------------------------
   MAKE_PORT=8140              port the Show connects to
-  MAKE_BIND=0.0.0.0           reachable on the Wi-Fi (default); 127.0.0.1 = this PC only
+  STATION_KEY=<long random>   REQUIRED for Wi-Fi access (since 2026-11-15). The tickets, Done, Undo and Picked up need it.
+                              Open the Show once with  http://<pc-address>:8140/?k=<key>  (and /board?k=<key>); the page
+                              remembers it and sends it as an X-Key header. Make one: 32+ random letters and digits.
+  MAKE_BIND=<this PC's LAN IP> which address to listen on. Default is 127.0.0.1 (this PC only), or 0.0.0.0 when STATION_KEY is
+                              set. 0.0.0.0 WITHOUT a STATION_KEY is refused (the server exits and says why).
   MAKE_LOOKBACK_HOURS=16      how far back to show tickets not yet marked done (and count today's stats)
   MAKE_POLL_SEC=6             how often to ask Clover for new orders
   GRAB_CATEGORIES=Treats      Clover categories shown as GRAB cards instead of drinks
@@ -136,6 +143,9 @@ RECIPES
 SECURITY NOTES
 --------------
   - The Clover token stays inside the server process on the kiosk PC.
+  - Cloud edition: with no STATION_KEY secret the Worker refuses every data
+    request (503). Done tickets are one KV key each (dn:<id>, pk:<id>); see
+    cloud/OPS.md "Done tickets in KV" for the KV list-operation limits.
   - The server only READS Clover. It exposes ticket names/modifiers, not
     card or payment details, to devices on the same private Wi-Fi.
   - The kiosk server (clover-menu-server.js) is unchanged and still

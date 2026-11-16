@@ -25,6 +25,16 @@ timeout /t 1 /nobreak >nul
 goto waitloop
 
 :ready
+powershell -NoProfile -Command "try{ Invoke-WebRequest -UseBasicParsing http://localhost:8140/health -TimeoutSec 2 > $null; exit 0 }catch{ exit 1 }"
+if not %errorlevel%==0 (
+  echo.
+  echo   The Make Station did NOT start.
+  echo   Most likely it needs a key to share the tickets on the Wi-Fi: add a line  STATION_KEY=some-long-random-secret
+  echo   to kiosk-config.env, run this again, then open the Show once with  http://ADDRESS:8140/?k=some-long-random-secret
+  echo   Or set MAKE_BIND to this PC's own Wi-Fi address. See README-MAKE-STATION.txt.
+  pause
+  exit
+)
 echo.
 echo   Make Station is running.
 echo.

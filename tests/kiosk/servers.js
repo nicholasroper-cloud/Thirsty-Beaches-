@@ -19,7 +19,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const freePort = () => new Promise(r => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); });
 
 /* ---------------- fake Clover ---------------- */
-const fake = { orders: [], posts: [], pageSizes: [], control: {} };
+const fake = { orders: [], posts: [], pageSizes: [], control: {}, mixBodies: [], vibeCalls: 0 };
 let seqId = 0;
 const mkOrder = (o = {}) => ({ id: "ORD" + String(++seqId).padStart(6, "0"), createdTime: Date.now() - 1000, state: "open", paymentState: "OPEN", total: 0, note: "", lineItems: { elements: [{ name: "Thirst Trap", price: 349 }] }, ...o });
 const clover = http.createServer((req, res) => {
@@ -28,6 +28,8 @@ const clover = http.createServer((req, res) => {
     const j = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
     const m = u.pathname.replace(/^\/v3\/merchants\/[^/]+/, "");
     if (req.method === "GET" && u.pathname === "/control.json") return j(200, fake.control);
+    if (req.method === "POST" && u.pathname === "/api/mix") { const b = JSON.parse(body || "{}"); fake.mixBodies.push(b); return j(200, { name: "Boozy Bikini", why: "Pure vodka vibes", base: "Sprite", size: "16oz" }); }
+    if (req.method === "POST" && u.pathname === "/api/vibe") { fake.vibeCalls++; return j(200, { ai: true, id: "thirst-trap", nickname: "Drunk Pirate", reading: "Smells like weed", why: "A shot of rum" }); }
     if (req.method === "GET" && m === "/items") return j(200, { elements: [] });
     if (req.method === "GET" && m === "/orders") {
       const lim = +u.searchParams.get("limit") || 100, off = +u.searchParams.get("offset") || 0;
@@ -180,7 +182,7 @@ async function kioskTests(cloverPort) {
       { id: "ok-four", name: "Fine", blurb: "", label: "", catKey: "dirtysodas", mods: ["flavor:<script>"] },
     ] };
   const port = await freePort();
-  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off", CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json" });
+  const c = spawnNode(dir, "kiosk-server.js", { CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off", MIX_URL: "http://127.0.0.1:" + cloverPort + "/api/mix", VIBE_URL: "http://127.0.0.1:" + cloverPort + "/api/vibe", CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json" });
   ok(await waitUp(port), "kiosk server starts: " + c.out);
   try {
     eq((await get(port, "/assets/%00")).status, 400, "NUL byte in an asset path");
@@ -211,6 +213,19 @@ async function kioskTests(cloverPort) {
     eq(ctl.soldOut, ["thirst-trap"]);
     ok(!("healthcheckUrl" in ctl) && !("settings" in ctl) && !("commands" in ctl), "the page never sees the health URL, settings or commands");
     eq(ctl.greeter.enabled, false, 'greeter.enabled is true only for the literal boolean true ("true" is not)');
+    // ---- compliance: AI text is moderated, and no photo goes anywhere without the age screen's yes ----
+    const img = "data:image/jpeg;base64," + Buffer.from("fakejpeg").toString("base64");
+    let m = JSON.parse((await post(port, "/mix", { image: img, mood: "Sunny" })).body);
+    ok(!/boozy|vodka/i.test(m.name + m.why), "Snap name/why pass the denylist: " + m.name + " / " + m.why); ok(m.name.length > 0 && m.why.length > 0, "with a curated fallback");
+    eq(fake.mixBodies.length, 1); ok(!("image" in fake.mixBodies[0]), "no age13 = the photo is NOT forwarded (mood only)");
+    await post(port, "/mix", { image: img, mood: "Sunny", age13: true });
+    ok("image" in fake.mixBodies[1], "age screen yes = photo forwarded");
+    await post(port, "/mix", { image: img, kid: true, age13: true });
+    ok(!("image" in fake.mixBodies[2]), "kid mode never forwards a photo");
+    eq(JSON.parse((await post(port, "/vibe", { image: "AAAA", candidates: [{ id: "thirst-trap", name: "Thirst Trap", desc: "x" }] })).body), { ai: false }, "Vibe without the age yes = no analysis");
+    eq(fake.vibeCalls, 0, "and nothing was sent upstream");
+    const vb = JSON.parse((await post(port, "/vibe", { image: "AAAA", age13: true, candidates: [{ id: "thirst-trap", name: "Thirst Trap", desc: "x" }] })).body);
+    ok(vb.ai === true && vb.nickname === "" && !/weed|rum|shot/i.test(vb.reading + vb.why), "Vibe nickname/reading/why are moderated (nickname empty -> the page makes its own)");
     ok(/process\.on\("unhandledRejection"/.test(fs.readFileSync(path.join(ROOT, "kiosk-server.js"), "utf8")), "unhandledRejection handler present");
 
     const mods = ["Medium 24oz", "Dr Pepper", "Coconut", "Vanilla", "Cherry", "Peach", "Raspberry", "Caramel", "Lime", "Blue Raspberry", "Strawberry", "Mango", "Pineapple", "Vanilla Sweet Cream", "Blended / frozen", "Fresh lime", "Popping boba", "Extra pump", "Whipped cream", "Sweet cream cold foam", "Freeze-dried candy", "Float: Dole Whip"];
@@ -233,6 +248,8 @@ async function kioskTests(cloverPort) {
     eq(JSON.parse(r.body).name, "Maximilianoo", "capped at 12 characters");
     eq(JSON.parse((await post(port, "/order", { cart: [{ name: "Thirst Trap", mods: [], unit: 3.49, qty: 1 }], name: "" })).body).name, "", "no name stays no name");
     ok(!fake.orders.some(o => /Roper/.test(o.note)), "the second word never reaches Clover");
+    eq(JSON.parse((await post(port, "/order", { cart: [{ name: "Thirst Trap", mods: [], unit: 3.49, qty: 1 }], name: "Captain Riptide" })).body).name, "Captain Riptide", "the kiosk's own two-word beach name is kept");
+    eq(JSON.parse((await post(port, "/order", { cart: [{ name: "Thirst Trap", mods: [], unit: 3.49, qty: 1 }], name: "Captain Hottie" })).body).name, "Captain", "a made-up two-word name is cut to its first word");
   } finally { await stop(c); }
   fs.rmSync(dir, { recursive: true, force: true });
 }

@@ -80,7 +80,7 @@
     lastSpoke: 0, lastFaceSeen: 0, lastMotion: Date.now(), pausedUntil: 0,
     muted: false, armed: false, recent: [], motion: 0, faceSize: 0, faces: 0,
     hadFace: false, detector: null, debug: false, voice: null,
-    enabled: true, stream: null, camStarting: false, speech: "not tried yet", lastLine: "", camError: "",
+    enabled: false, stream: null, camStarting: false,   // FAILS CLOSED: off until /control says greeter.enabled === true (compliance gate 2026-11-15) speech: "not tried yet", lastLine: "", camError: "",
   };
 
   // ───────── UI ─────────
@@ -298,12 +298,16 @@
   const _loadFaces = loadFaces;
   loadFaces = () => { if (facesLoading) return; facesLoading = true; _loadFaces(); };
 
+  /* The camera is on ONLY when the control data says greeter.enabled === true. No control file, no greeter key, a failed fetch,
+     "true", 1 or anything else = off. (It used to start ON and stay on whenever GitHub was unreachable.) */
+  const enabledFrom = c => !!(c && typeof c === "object" && c.greeter && c.greeter.enabled === true);
   async function pollControl() {
     if (!OPT.controlUrl) return;
     try {
       const c = await (await fetch(OPT.controlUrl, { cache: "no-store" })).json();
       const gr = c && c.greeter;
-      S.enabled = !(gr && gr.enabled === false);
+      S.enabled = enabledFrom(c);                    // the literal boolean true, nothing else
+      if (!S.enabled) { stopCam(); }
       if (gr && typeof gr.volume === "number") CFG.volume = Math.max(0, Math.min(1, gr.volume));
       if (gr && "quietHours" in gr) CFG.quietHours = Array.isArray(gr.quietHours) ? gr.quietHours : null;
       if (gr && typeof gr.motionThreshold === "number") CFG.motionThreshold = gr.motionThreshold;
@@ -311,7 +315,7 @@
       if (gr && typeof gr.closeSize === "number") CFG.closeSize = gr.closeSize;
       if (gr && typeof gr.debug === "boolean" && gr.debug !== S.debug) { S.debug = gr.debug; dbg.style.display = S.debug ? "block" : "none"; }
       if (!S.enabled) stopAll();
-    } catch {}
+    } catch { S.enabled = false; stopCam(); stopAll(); }   // Control unreachable or unreadable = camera OFF, never "keep going"
   }
 
   function start() {
@@ -355,6 +359,7 @@
   window.TBGreeter = {
     say, speak, CFG, SHARED, PERSONAS,
     _state: S,   // for testing
+    _enabledFrom: enabledFrom, _pollControl: pollControl,
     pause: ms => (S.pausedUntil = Date.now() + (ms ?? CFG.pauseAfterTouchMs)),
     mute: (m = true) => { S.muted = m; if (m) stopAll(); },
   };

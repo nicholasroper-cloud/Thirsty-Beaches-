@@ -12,8 +12,8 @@ function extract(html) {
   const a = html.indexOf("/* ============ MENU DATA ============ */");
   const b = html.indexOf("let MENU = THIRSTY_MENU;");
   if (a < 0 || b < 0 || b < a) throw new Error("menu-from-kiosk: menu markers not found in drink-kiosk.html");
-  const code = html.slice(a, b) + "\n;({THIRSTY_MENU, SECRET_MENU});";
-  const { THIRSTY_MENU, SECRET_MENU } = vm.runInNewContext(code, {}, { timeout: 2000 });
+  const code = html.slice(a, b) + "\n;({THIRSTY_MENU, SECRET_MENU, FLOAT_UPSELL});";
+  const { THIRSTY_MENU, SECRET_MENU, FLOAT_UPSELL } = vm.runInNewContext(code, {}, { timeout: 2000 });
   const all = { ...THIRSTY_MENU, secret: SECRET_MENU };
   const cents = (n, where) => {
     if (typeof n !== "number" || !isFinite(n)) throw new Error("menu-from-kiosk: bad price at " + where);
@@ -30,15 +30,19 @@ function extract(html) {
       })),
     };
   }
-  // Upsell add-ons ("Make it a Float" etc.) are written inline in buildUpsellOffers().
-  const fnAt = html.indexOf("function buildUpsellOffers(");
-  const fnEnd = html.indexOf("function showUpsell(", fnAt);
-  if (fnAt < 0 || fnEnd < 0) throw new Error("menu-from-kiosk: buildUpsellOffers() not found");
+  // Attach prompt: size up and whipped cream are ordinary menu choices now (they land in the line's selections and are priced by the
+  // option tables above). The only add-on that is not a menu choice is "Make it a float": one mod per cap, "Float: <cap>", always the LAST
+  // priced mod of a line (calcSel() appends it after the options and the Snap notes; the AKA mod is stripped before pricing).
+  if (!FLOAT_UPSELL || typeof FLOAT_UPSELL.price !== "number" || !Array.isArray(FLOAT_UPSELL.caps) || !FLOAT_UPSELL.caps.length || typeof FLOAT_UPSELL.prefix !== "string")
+    throw new Error("menu-from-kiosk: FLOAT_UPSELL not found in the menu data");
+  const upsells = FLOAT_UPSELL.caps.map(c => ({ mod: FLOAT_UPSELL.prefix + c, price: cents(FLOAT_UPSELL.price, "FLOAT_UPSELL") }));
+  const fnAt = html.indexOf("function calcSel(");
+  const fnEnd = html.indexOf("function renderSheet(", fnAt);
+  if (fnAt < 0 || fnEnd < 0) throw new Error("menu-from-kiosk: calcSel() not found");
   const body = html.slice(fnAt, fnEnd);
-  const upsells = [...body.matchAll(/price:\s*([\d.]+),\s*mod:\s*"([^"]+)"/g)].map(m => ({ mod: m[2], price: Math.round(parseFloat(m[1]) * 100) }));
-  if (upsells.length !== 3) throw new Error("menu-from-kiosk: expected 3 upsell offers, found " + upsells.length);
-  if (!/line\.unit = \+\(line\.unit \+ offer\.price\)\.toFixed\(2\)/.test(html) || !/line\.mods = \[\.\.\.\(line\.mods \|\| \[\]\), offer\.mod\]/.test(html))
-    throw new Error("menu-from-kiosk: commitUpsell() no longer appends the add-on as expected");
+  const iNotes = body.indexOf("mods.push(...sel._notes)"), iFloat = body.indexOf("mods.push(FLOAT_UPSELL.prefix + sel._float)"), iAka = body.indexOf('mods.push("AKA " + n)');
+  if (iNotes < 0 || iFloat < iNotes || iAka < iFloat || !/unit \+= FLOAT_UPSELL\.price/.test(body))
+    throw new Error("menu-from-kiosk: calcSel() no longer appends the float add-on last (options, notes, float, AKA); update cloud/src/pricebook.js");
   // Snap-a-pic lines are priced from Pour Decisions in dirtysodas/lemonades (snapToLine()).
   if (!html.includes('i.id==="pour-decisions"') || !html.includes('const catKey = lemon ? "lemonades" : "dirtysodas";'))
     throw new Error("menu-from-kiosk: snapToLine() pricing changed; update cloud/src/pricebook.js");

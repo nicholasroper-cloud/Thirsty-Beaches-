@@ -29,7 +29,7 @@ CLOVER_MERCHANT_ID = "MQKMTFBRXFP21"
 CLOVER_BASE_URL = "https://api.clover.com"
 MAKE_LOOKBACK_HOURS = "16"
 GRAB_CATEGORIES = "Treats"
-PAGE_VERSION = "13"
+PAGE_VERSION = "14"
 # "Pay on my phone": TIPS = "1" turns on Clover's tip screen; QR_ENABLED = "0" switches phone pay off.
 TIPS = "0"
 QR_RATE_PER_HOUR = "60"

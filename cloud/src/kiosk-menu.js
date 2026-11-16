@@ -2300,16 +2300,12 @@ export const KIOSK_MENU = {
  },
  "upsells": [
   {
-   "mod": "Float cap",
+   "mod": "Float: Dole Whip",
    "price": 150
   },
   {
-   "mod": "Whipped cream",
-   "price": 50
-  },
-  {
-   "mod": "Size up",
-   "price": 80
+   "mod": "Float: Vanilla",
+   "price": 150
   }
  ],
  "snap": {
