@@ -29,6 +29,8 @@ CLOVER_MERCHANT_ID = "MQKMTFBRXFP21"
 CLOVER_BASE_URL = "https://api.clover.com"
 MAKE_LOOKBACK_HOURS = "16"
 GRAB_CATEGORIES = "Treats"
+# Clover orderType id of the kiosk (Settings > Order types). Set it so the ticket release gate (TBK: titles, ADR section 5) applies to kiosk orders.
+KIOSK_ORDER_TYPE_ID = ""
 PAGE_VERSION = "14"
 # Done / picked-up tickets are read with ONE KV list call every this many ms (the free plan allows 1,000 list calls a day: 120 s is about 240 on an
 # 8 h day per open screen). This isolate's own taps show at once. See OPS.md "Done tickets in KV".

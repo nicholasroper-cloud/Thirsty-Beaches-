@@ -374,11 +374,15 @@ body{font-synthesis:none}
 .nxnone{color:var(--mute);font-size:20px;margin:0}
 .nxgo{margin-top:auto;min-height:64px;border-radius:14px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--display);font-size:20px}
 @media (max-width:1500px){.nextpane{display:none}.make{grid-template-columns:minmax(0,1fr)}}
-.paybadge{display:inline-flex;align-items:center;font-family:var(--display);font-weight:400;border-radius:10px;padding:2px 12px;letter-spacing:.04em;line-height:1.2;white-space:nowrap;flex:none}
+.paybadge{display:inline-flex;align-items:center;font-family:var(--display);font-weight:400;border-radius:10px;padding:2px 12px;letter-spacing:.04em;line-height:1.2;white-space:nowrap;flex:none;font-size:32px}
 .paybadge.paid{background:#3be08a;color:#08011c}
 .paybadge.collect{background:#ffd166;color:#08011c}
-.tk .paybadge{font-size:20px;margin-right:8px;vertical-align:middle}
+/* ADR section 5: solid fills, 32 px or more, on the tile AND the ticket header. CHECK = a card payment that could not be proven: never charge. */
+.paybadge.check{background:#d7263d;color:#fff}
+.paybadge.double{background:#7a0019;color:#fff;box-shadow:0 0 0 3px #fff}
+.tk .paybadge{font-size:32px;margin-right:8px;vertical-align:middle;padding:2px 14px}
 .mhead .paybadge{font-size:36px;padding:4px 18px}
+.nxhead .paybadge{font-size:32px}
 /* age bands: thick left border (yellow past 4 min, red past 8) instead of one saturating red */
 .tk{border-left-width:14px;border-left-color:var(--line)}
 .tk.warn{border-left-color:#ffd166}
@@ -616,7 +620,8 @@ const ageBand=o=>{const a=queue.now-o.created;return a>LATE_MS?'late':a>WARN_MS?
 const cents=o=>o.total||o.items.reduce((s,it)=>s+(it.price||0)*it.qty,0);
 const money=c=>'$'+(c/100).toFixed(2);
 /* big hand-off badge: PAID, or COLLECT $x (what to charge at the window) */
-const payBadge=o=>o.paid?'<b class="paybadge paid">PAID</b>':'<b class="paybadge collect">COLLECT '+money(cents(o))+'</b>';
+const payBadge=o=>o.badge&&o.badge.kind?'<b class="paybadge '+String(o.badge.kind).toLowerCase().replace(/[^a-z]/g,'')+'">'+esc(o.badge.text)+'</b>'
+  :(o.paid?'<b class="paybadge paid">PAID</b>':'<b class="paybadge collect">COLLECT '+money(cents(o))+'</b>');   // badge comes from the server's ticket gate (TBK: titles); legacy orders keep paid/collect
 let TRAIN=false,SAYNAMES=false;try{TRAIN=localStorage.getItem('tb-train')==='1';SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 function setTrain(v){TRAIN=v;document.body.classList.toggle('training',v);$('#trainBtn').setAttribute('aria-pressed',v);$('#trainBtn').textContent=v?'Training on':'Training off';try{localStorage.setItem('tb-train',v?'1':'0');}catch(e){}}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');

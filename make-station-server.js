@@ -42,6 +42,7 @@ const BIND        = BIND_ENV || (STATION_KEY ? "0.0.0.0" : "127.0.0.1");
 const WILDCARD    = BIND === "0.0.0.0" || BIND === "::" || BIND === "";
 const LOOKBACK_MS = Math.max(1, parseFloat(process.env.MAKE_LOOKBACK_HOURS || "16")) * 3600000;
 const POLL_MS     = Math.max(3, parseInt(process.env.MAKE_POLL_SEC || "6", 10)) * 1000;
+const KIOSK_TYPE  = (process.env.KIOSK_ORDER_TYPE_ID || "").trim();   // Clover orderType id of the kiosk's orders (ticket release gate, ADR section 5)
 const GRAB_CATS   = new Set((process.env.GRAB_CATEGORIES || "Treats").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
 const STATE_FILE  = path.join(__dirname, "make-state.json");
 
@@ -122,6 +123,33 @@ async function refreshCatalog() {
   } catch (e) { console.error("catalog refresh failed:", e.message); }
 }
 
+/* ---- ticket release gate (ADR 2026-11-15 section 5) ----
+   The kiosk writes the order's state into its Clover title: TBK:PENDING (hidden), TBK:PAID:<id> (PAID), TBK:COLLECT (collect at the
+   window), TBK:CHECK (a card payment that could not be proven: do NOT charge), and TBK:SHELL:<id> on the shell order the Flex makes for
+   each card Sale. Rules, in order:
+     - TBK:SHELL, or an order whose only line is "Manual transaction"      -> hidden everywhere
+     - not a Kiosk order (orderType is not KIOSK_ORDER_TYPE_ID and no TBK: title) -> unchanged legacy behavior (badge null)
+     - TBK:PAID and Clover also says paymentState PAID                     -> DOUBLE PAID: void one (paid twice)
+     - TBK:PAID                                                            -> PAID
+     - TBK:COLLECT and paymentState PAID (paid at the window)              -> PAID, else COLLECT $total
+     - TBK:CHECK                                                           -> CHECK READER, do not charge
+     - TBK:PENDING, a Kiosk-typed order with no title yet, anything else   -> hidden
+   Same rules live in cloud/src/ticket.js; tests/kiosk/gate.js pins both to one table. */
+function ticketGate(o, kioskTypeId) {
+  const title = String(o.title || "");
+  const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
+  if (/^TBK:SHELL\b/.test(title)) return { show: false };
+  if (lines.length && lines.every(li => String(li.name || "").trim().toLowerCase() === "manual transaction")) return { show: false };
+  const isKiosk = title.startsWith("TBK:") || (!!kioskTypeId && !!o.orderType && o.orderType.id === kioskTypeId);
+  if (!isKiosk) return { show: true, badge: null };
+  const native = String(o.paymentState || "").toUpperCase() === "PAID";
+  const money = "$" + ((o.total || 0) / 100).toFixed(2);
+  if (/^TBK:PAID\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "DOUBLE", text: "DOUBLE PAID: void one" } } : { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } };
+  if (/^TBK:COLLECT\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } } : { show: true, paid: false, badge: { kind: "COLLECT", text: "COLLECT " + money } };
+  if (/^TBK:CHECK\b/.test(title)) return { show: true, paid: false, badge: { kind: "CHECK", text: "CHECK READER, do not charge" } };
+  return { show: false };
+}
+
 // ---- orders cache ----
 let queue = { orders: [], at: 0, error: null };
 /* The kiosk puts the drink's FULL add-on list in the line note as "MODS: a | b | c" (the Clover line name is capped at 127
@@ -187,7 +215,7 @@ const PAGE = 100, MAX_PAGES = 10;
 async function fetchOrders(since) {
   const all = [];
   for (let page = 0; page < MAX_PAGES; page++) {
-    const r = await cloverGet(`/orders?filter=createdTime>=${since}&expand=lineItems,lineItems.modifications&orderBy=createdTime DESC&limit=${PAGE}&offset=${page * PAGE}`);
+    const r = await cloverGet(`/orders?filter=createdTime>=${since}&expand=lineItems,lineItems.modifications,orderType&orderBy=createdTime DESC&limit=${PAGE}&offset=${page * PAGE}`);
     const els = (r && r.elements) || [];
     all.push(...els);
     if (els.length < PAGE) break;
@@ -205,12 +233,14 @@ async function refreshQueue() {
     const orders = [];
     for (const o of live) {
       if (o.createdTime < cutoff) continue;
+      const gate = ticketGate(o, KIOSK_TYPE);
+      if (!gate.show) continue;                                       // TBK:PENDING, shell orders: never reach the make screen or the board
       const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
       const items = groupLines(lines.map(normalizeLine));
       const who = parseCustomer(o);
       orders.push({
         id: o.id, ticket: String(seqs.get(o.id)), seq: seqs.get(o.id), ref: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
-        paid: (o.paymentState || "").toUpperCase() === "PAID", customer: who.name, source: who.source,
+        paid: gate.paid !== undefined ? gate.paid : (o.paymentState || "").toUpperCase() === "PAID", badge: gate.badge || null, customer: who.name, source: who.source,
         total: o.total || 0, items, done: state.done[o.id] || 0, picked: state.picked[o.id] || 0
       });
     }

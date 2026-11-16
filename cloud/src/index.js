@@ -14,7 +14,7 @@ import { handleQr } from "./qr.js";
 import { cloverGet, getCatalog } from "./clover.js";
 import { REPORT_CRON, runDailyReport, handleReport } from "./report.js";
 import { MONITOR_CRON, runMonitor, handleMonitor } from "./monitor.js";
-import { splitLine, authFailure, fetchOrders, seqMap, startOfDayMs, loadState, markDone, markPicked, markUndo } from "./ticket.js";
+import { splitLine, authFailure, fetchOrders, seqMap, startOfDayMs, loadState, markDone, markPicked, markUndo, ticketGate } from "./ticket.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const text = (s, status = 200) => new Response(s, { status, headers: { "content-type": "text/plain" } });
@@ -63,9 +63,11 @@ async function getOrders(env, st) {
   for (const o of raw) {
     const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
     if (!lines.length || o.createdTime < lookback) continue;
+    const gate = ticketGate(o, (env.KIOSK_ORDER_TYPE_ID || "").trim());
+    if (!gate.show) continue;                                                      // TBK:PENDING and shell orders never reach the make screen or the board
     const who = parseCustomer(o);
     list.push({ id: o.id, ticket: String(seqs.get(o.id)), seq: seqs.get(o.id), ref: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
-      paid: (o.paymentState || "").toUpperCase() === "PAID", customer: who.name, source: who.source, total: o.total || 0,
+      paid: gate.paid !== undefined ? gate.paid : (o.paymentState || "").toUpperCase() === "PAID", badge: gate.badge || null, customer: who.name, source: who.source, total: o.total || 0,
       items: groupLines(lines.map(li => normalizeLine(li, catalog, grabCats))) });
   }
   memo.orders = { list, at: Date.now() };

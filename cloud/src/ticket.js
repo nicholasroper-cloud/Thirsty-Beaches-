@@ -48,6 +48,22 @@ export function splitLine(li) {
   return { name, mods, note };
 }
 
+/* ---- ticket release gate (ADR 2026-11-15 section 5): the same rules as make-station-server.js ticketGate(); tests/kiosk/gate.js pins both ---- */
+export function ticketGate(o, kioskTypeId) {
+  const title = String(o.title || "");
+  const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
+  if (/^TBK:SHELL\b/.test(title)) return { show: false };
+  if (lines.length && lines.every(li => String(li.name || "").trim().toLowerCase() === "manual transaction")) return { show: false };
+  const isKiosk = title.startsWith("TBK:") || (!!kioskTypeId && !!o.orderType && o.orderType.id === kioskTypeId);
+  if (!isKiosk) return { show: true, badge: null };
+  const native = String(o.paymentState || "").toUpperCase() === "PAID";
+  const money = "$" + ((o.total || 0) / 100).toFixed(2);
+  if (/^TBK:PAID\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "DOUBLE", text: "DOUBLE PAID: void one" } } : { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } };
+  if (/^TBK:COLLECT\b/.test(title)) return native ? { show: true, paid: true, badge: { kind: "PAID", text: "PAID" } } : { show: true, paid: false, badge: { kind: "COLLECT", text: "COLLECT " + money } };
+  if (/^TBK:CHECK\b/.test(title)) return { show: true, paid: false, badge: { kind: "CHECK", text: "CHECK READER, do not charge" } };
+  return { show: false };
+}
+
 /* ---- access key ---- */
 async function sha(v) { return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(v)))); }
 /* constant-time compare: hash both sides so lengths match, then OR the byte differences */
@@ -131,7 +147,7 @@ export async function doneAt(env, id) {
 
 /* ---- Clover order feed: newest first, paged (the old single "ASC limit 100" query dropped every ticket past the 100th) ---- */
 export const PAGE = 100, MAX_PAGES = 10;
-export async function fetchOrders(env, since, expand = "lineItems,lineItems.modifications") {
+export async function fetchOrders(env, since, expand = "lineItems,lineItems.modifications,orderType") {
   const all = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const r = await cloverGet(env, `/orders?filter=createdTime>=${since}&expand=${expand}&orderBy=createdTime DESC&limit=${PAGE}&offset=${page * PAGE}`);
