@@ -79,6 +79,10 @@ let _reconnectTimer = null;
 /** runtime per externalId: { waiters, timer, recovering, extended, cancelAck, connSeq } (journal holds the durable part) */
 const _rt = new Map();
 const _waiters = { payment: [], status: [], reset: [] };
+const _abandoning = new Set();    // orders being deleted right now: no new attempt and no window release may start on them (CR-002)
+const _amountWarned = new Set();  // externalIds whose device amount mismatch was already logged (CR-003)
+let _connGen = 0;                 // connector generation: callbacks from a replaced connector are ignored (CR-007)
+let _purgeTimer = null;
 const _verified = new Set();      // externalIds proven in THIS process by device or REST evidence. The journal alone is never evidence (Q1).
 const _tagState = new Map();      // kioskOrderId -> { running, again }
 const _tagWarned = new Map();     // kioskOrderId -> last warn time (throttle)
@@ -91,8 +95,8 @@ const fail = (...a) => console.error("[flex-pay]", ...a);
 const sleep = ms => new Promise(r => { const t = setTimeout(r, ms); if (t.unref) t.unref(); });
 
 module.exports = {
-  init, shutdown, status, hasJournal: () => !!_journal, listOrders, pay, collect, canAbandon, markAbandoned, orderState, registerOrder, reconcile, buildSaleRequest,
-  _internals: { loadSdk: () => _requireSdk(), journal: () => _journal, rt: _rt },
+  init, shutdown, status, hasJournal: () => !!_journal, listOrders, pay, collect, canAbandon, releaseAbandon, markAbandoned, orderState, registerOrder, reconcile, buildSaleRequest,
+  _internals: { loadSdk: () => _requireSdk(), journal: () => _journal, rt: _rt, reconnectNow: () => _connectNow() },
 };
 
 // =============================================================================
@@ -178,6 +182,10 @@ function init(cfg, deps = {}) {
     fail(`CRITICAL: pay journal unavailable (${e.message}). Tap-to-pay is disabled: no sale may be sent without a journal.`);
     throw e;
   }
+  for (const o of _journal.orders()) for (const a of o.attempts) if (J.isCharged(a.state) && a.source === "local") _verified.add(a.externalId);   // the owner attested it with tools/pay-resolve.js
+  const purge = () => { try { const r = _journal.purge(); if (r.removed) log(`journal: purged ${r.removed} resolved file(s) older than 30 days`); } catch (e) { warn(`journal purge failed: ${e.message}`); } };
+  purge();                                                                       // Q1 retention: once at boot and then daily (CR-012)
+  _purgeTimer = setInterval(purge, 24 * 3600 * 1000); if (_purgeTimer.unref) _purgeTimer.unref();
   _replayAtBoot();
   _reconcileTimer = setInterval(() => { reconcile("timer").catch(e => fail("reconcile error:", e.message)); }, _t.RECONCILE_MS);
   if (_reconcileTimer.unref) _reconcileTimer.unref();
@@ -190,6 +198,7 @@ function shutdown() { _resetRuntime(); _state = "disabled"; }
 
 function _resetRuntime() {
   clearInterval(_reconcileTimer); _reconcileTimer = null;
+  clearInterval(_purgeTimer); _purgeTimer = null; _abandoning.clear(); _amountWarned.clear();
   clearTimeout(_reconnectTimer); _reconnectTimer = null;
   for (const rt of _rt.values()) clearTimeout(rt.timer);
   _rt.clear();
@@ -199,7 +208,7 @@ function _resetRuntime() {
 }
 
 function status() {
-  return { state: _state, flexSerial: _flexSerial, unresolved: _journal ? _journal.active().length : 0 };
+  return { state: _state, flexSerial: _flexSerial, unresolved: _journal ? _journal.active().length : 0, doubles: _journal ? _journal.doubles().length : 0 };
 }
 
 /** A process that died with a sale in flight cannot know the outcome: every IN_FLIGHT entry becomes UNKNOWN (and its order is locked) until the device answers. */
@@ -238,6 +247,7 @@ function _pay({ orderId, amountCents, taxCents, quoteId }) {
   // Idempotent answers first: they need no device and never start a Sale
   const charged = order.attempts.find(a => J.isCharged(a.state));
   if (charged) return done({ ..._resultFor(charged), cached: true });            // only APPROVED is cached
+  if (_abandoning.has(orderId)) return done({ result: "unavailable", message: "order is being closed" });
   if (order.abandonedAt) return done({ result: "mismatch", message: "order was abandoned" });
   if (order.collectAt) return done({ result: "unavailable", message: "order is pay-at-window" });
   if (order.attempts.some(a => a.state === "IN_FLIGHT")) return done({ result: "busy", message: "payment already in progress for this order" });
@@ -246,7 +256,7 @@ function _pay({ orderId, amountCents, taxCents, quoteId }) {
   if (typeof _cfg.payAllowed !== "function" || !_cfg.payAllowed()) return done({ result: "unavailable", message: "card payments are off" });
   if (_state !== "ready") { log(`sale rejected: device ${_state} (orderId=${orderId})`); return done({ result: "unavailable", message: `device ${_state}` }); }
   // One reader: any other order still IN_FLIGHT or UNKNOWN keeps the reader (an unresolved prompt may still be live on it)
-  for (const a of _journal.active()) if (a.kioskOrderId !== orderId) { log(`sale rejected: reader busy with ${a.externalId}`); return done({ result: "busy", message: "reader busy with another order" }); }
+  for (const a of _journal.active()) if (a.kioskOrderId !== orderId) { log(`sale rejected: reader busy with ${a.externalId}`); return done({ result: "reader-busy", message: "reader busy with another order; pay at the window" }); }
   if (order.attempts.length >= MAX_ATTEMPTS) return done({ result: "unavailable", message: "attempt limit reached; pay at the window" });
 
   const attempt = order.attempts.reduce((m, a) => Math.max(m, a.attempt || 0), 0) + 1;
@@ -363,10 +373,22 @@ function _afterChange(e) {
 function _approve(entry, payment, responseCode, source) {
   const f = J.fromPayment(payment);
   let pext; try { pext = payment && payment.getExternalPaymentId && payment.getExternalPaymentId(); } catch {}
-  if (pext && pext !== entry.externalId) { warn(`approval ignored: payment externalPaymentId does not match ${entry.externalId}`); return false; }
+  if (pext !== entry.externalId) { warn(`approval ignored: the payment's externalPaymentId is missing or does not match ${entry.externalId}`); return false; }   // CR-008
   if (f.paymentResult !== "SUCCESS") return false;
   let amt; try { amt = payment.getAmount && payment.getAmount(); } catch {}
-  if (Number.isInteger(amt) && amt !== entry.amountCents) warn(`approved amount ${amt} differs from the sale amount ${entry.amountCents} for ${entry.externalId}`);
+  if (!Number.isInteger(amt) || amt !== entry.amountCents) {
+    // CR-003: a payment for less (or an unreadable amount) is NOT an approval. Lock the order (CHECK tile) so staff collect the balance or void.
+    if (!_amountWarned.has(entry.externalId)) {
+      _amountWarned.add(entry.externalId);
+      fail(`CRITICAL: ${entry.externalId} device SUCCESS payment is for ${amt} but the sale was ${entry.amountCents}: NOT approved, order held as CHECK. Collect the balance or void it in the Clover Dashboard, then run tools/pay-resolve.js`);
+      const cur = _journal.get(entry.externalId) || entry;
+      if (!J.isCharged(cur.state)) {
+        if (cur.state === "IN_FLIGHT") _transition(cur, "TIMEOUT_UNKNOWN", { source: "device", ...(Number.isInteger(amt) ? { paidCents: amt } : {}) });
+        else if (Number.isInteger(amt)) { try { _journal.append({ externalId: cur.externalId, kioskOrderId: cur.kioskOrderId, paidCents: amt }); } catch {} }
+      }
+    }
+    return false;
+  }
   _verified.add(entry.externalId);                         // device evidence seen in this process
   if (J.isCharged(entry.state)) { _kickTag(entry.kioskOrderId); return true; }   // already approved (e.g. loaded from disk): this is the verification
   _transition(entry, "APPROVED", { ...f, ...(responseCode ? { responseCode } : {}), source });
@@ -464,7 +486,7 @@ async function _recover(entry, { reason, hint }) {
     if (_state !== "ready") return;
     let q = await _query(entry);
     if (!alive()) return;
-    if (q.status === "FOUND") return;                                           // _applyFound already moved the state
+    if (q.status === "FOUND") return _afterFound(entry);                        // _applyFound already moved the state (or refused the payment)
     if (q.status === "NO_ANSWER") return _unknown(entry, reason === "reconcile" ? null : "TIMEOUT_UNKNOWN");
     if (q.status === "IN_PROGRESS") {
       if (reason !== "timeout") return;                                         // the reader is still working: leave it, look again next tick
@@ -474,7 +496,7 @@ async function _recover(entry, { reason, hint }) {
       if (!alive()) return;
       q = await _query(entry);
       if (!alive()) return;
-      if (q.status === "FOUND") return;
+      if (q.status === "FOUND") return _afterFound(entry);
       if (q.status !== "NOT_FOUND") return _unknown(entry, "TIMEOUT_UNKNOWN");
     }
     // ---- NOT_FOUND ----
@@ -492,13 +514,19 @@ async function _recover(entry, { reason, hint }) {
     if (!gotCancel) { await _resetDevice(); if (!alive()) return; }
     const q2 = await _query(entry);
     if (!alive()) return;
-    if (q2.status === "FOUND") return;
+    if (q2.status === "FOUND") return _afterFound(entry);
     if (q2.status !== "NOT_FOUND") return _unknown(entry, "TIMEOUT_UNKNOWN");   // IN_PROGRESS or silence: not proven
     if (!(await _deviceIdle()) || !alive()) return _unknown(entry, "TIMEOUT_UNKNOWN");   // NOT_FOUND counts only when the reader is IDLE
     return _settleNotCharged(entry, "CANCELLED", "device", "CANCEL");
   } catch (e) {
     fail(`recovery of ${entry.externalId} failed: ${e.message}`);
   } finally { rt.recovering = false; rt.cancelAck = null; }
+}
+
+/** The device said FOUND but the payment was unusable (no matching id, wrong amount, no payment object): the attempt must not sit IN_FLIGHT forever, so it becomes UNKNOWN (CHECK). */
+function _afterFound(entry) {
+  const c = _journal.get(entry.externalId);
+  if (c && c.state === "IN_FLIGHT") _unknown(c, "TIMEOUT_UNKNOWN");
 }
 
 /** FOUND from the device: SUCCESS approves (matched by externalPaymentId); a non-success payment settles the attempt as not charged. */
@@ -637,18 +665,46 @@ function listOrders() {
   return _journal ? _journal.orders().filter(o => o.pendingAt && !o.abandonedAt).map(o => ({ id: o.kioskOrderId, ...orderState(o.kioskOrderId) })) : [];
 }
 
-/** "Pay at window". Refused while a card attempt is unresolved (the card may still be charged). */
-function collect(orderId) {
+/**
+ * "Pay at window". Refused while a card attempt is unproven (the card may still be charged). While a prompt is live on the reader
+ * (IN_FLIGHT) it cancels the prompt (ESC) and answers when the attempt settles: COLLECT after the CANCEL, or "approved" if the
+ * customer's tap got there first (Snake Eyes 4: the button must do what it says, not wait for the 60 s timeout).
+ */
+async function collect(orderId) {
   const order = _journal && _journal.order(orderId);
   if (!order || !order.pendingAt) return { result: "mismatch", message: "unknown order" };
   const charged = order.attempts.find(a => J.isCharged(a.state));
   if (charged) return { ..._resultFor(charged), cached: true };
-  if (order.attempts.some(a => a.state === "IN_FLIGHT")) return { result: "busy", message: "payment in progress" };
+  if (_abandoning.has(orderId)) return { result: "unavailable", message: "order is being closed" };
+  const live = order.attempts.find(a => a.state === "IN_FLIGHT");
+  if (live) return _collectInFlight(orderId, live);
   if (order.attempts.some(a => J.isUnknown(a.state))) return { result: "blocked-unknown", message: "checking your payment; do not pay again" };
   if (order.abandonedAt) return { result: "mismatch", message: "order was abandoned" };
+  return _markCollect(orderId);
+}
+function _markCollect(orderId) {
+  const order = _journal.order(orderId);
   try { if (!order.collectAt) _journal.markCollect(orderId, "local"); } catch (e) { fail(`could not journal COLLECT: ${e.message}`); return { result: "error", message: "could not record pay-at-window" }; }
   _kickTag(orderId);
   return { result: "collect" };
+}
+function _collectInFlight(orderId, entry) {
+  return new Promise(resolve => {
+    const rt = _rt.get(entry.externalId);
+    if (!rt) return resolve({ result: "busy", message: "payment in progress" });
+    let fin = false;
+    const finish = r => { if (fin) return; fin = true; clearTimeout(t); resolve(r); };
+    const t = setTimeout(() => finish({ result: "busy", message: "the reader has not cancelled yet" }), _t.COLLECT_WAIT_MS || 8000);
+    if (t.unref) t.unref();
+    rt.waiters.push(() => {                                                    // called by _afterChange when the attempt leaves IN_FLIGHT
+      const cur = _journal.get(entry.externalId);
+      if (cur && J.isCharged(cur.state)) finish({ ..._resultFor(cur), cached: true });
+      else if (cur && (cur.state === "DECLINED" || cur.state === "CANCELLED")) finish(_markCollect(orderId));
+      else finish({ result: "blocked-unknown", message: "checking your payment; do not pay again" });
+    });
+    log(`pay at window while ${entry.externalId} is on the reader: sending cancel (ESC)`);
+    try { _connector.invokeInputOption(_cancelOption(_requireSdk())); } catch (e) { warn(`cancel input failed: ${e.message}`); }
+  });
 }
 
 /** May this order be deleted? PENDING, DECLINED or CANCELLED only, no charge in the journal, and the reader confirmed idle right now. */
@@ -662,9 +718,14 @@ async function canAbandon(orderId) {
   if (!(await _deviceIdle())) return { ok: false, reason: "reader not idle" };
   const again = _journal.order(orderId);                                          // nothing may have started while we asked the reader
   if (!again || again.attempts.length !== order.attempts.length || again.attempts.some(a => J.isActive(a.state) || J.isCharged(a.state))) return { ok: false, reason: "order changed" };
-  return { ok: true };
+  if (_abandoning.has(orderId)) return { ok: false, reason: "already being closed" };
+  _abandoning.add(orderId);                      // CR-002: set in the same tick as the last check, before the caller awaits anything. pay() and collect() refuse until releaseAbandon() or markAbandoned().
+  return { ok: true, attempts: again.attempts.length };
 }
+/** The caller could not (or did not) delete the order: let the customer pay again. */
+function releaseAbandon(orderId) { _abandoning.delete(orderId); }
 function markAbandoned(orderId) {
+  _abandoning.delete(orderId);
   try { _journal.markAbandoned(orderId); return true; } catch (e) { fail(`could not journal ABANDONED: ${e.message}`); return false; }
 }
 
@@ -680,9 +741,12 @@ function _connectNow() {
     return;
   }
 
+  // CR-007: the old connector (socket, heartbeat, listener) must not outlive its replacement, or its callbacks could flip a live sale to UNKNOWN
+  try { if (_connector && typeof _connector.dispose === "function") _connector.dispose(); } catch (e) { warn(`could not dispose the old connector: ${e.message}`); }
+  const gen = ++_connGen;
   if (_deps.connectorFactory) {                              // tests: a fake connector, no sockets, no pairing
     _connector = _deps.connectorFactory({ sdk, cfg: _cfg });
-    _connector.addCloverConnectorListener(_buildListener());
+    _connector.addCloverConnectorListener(_buildListener(gen));
     _connector.initializeConnection();
     return;
   }
@@ -717,7 +781,7 @@ function _connectNow() {
   );
 
   _connector = new CloverConnector(deviceConfig);
-  _connector.addCloverConnectorListener(_buildListener());
+  _connector.addCloverConnectorListener(_buildListener(gen));
   _connector.initializeConnection();
 }
 
@@ -758,14 +822,17 @@ function _flushWaiters() {
   }
 }
 
-function _buildListener() {
+function _buildListener(gen) {
   const sdk = _requireSdk();
   const { remotepay } = sdk;
   const str = v => (v == null ? null : String(v));
 
   // A plain object implementing ICloverConnectorListener (the SDK calls these by name).
   // Every callback is wrapped: a throw inside one must never reach the SDK's socket thread or strand a payment.
-  const safe = (name, fn) => (...a) => { try { return fn(...a); } catch (e) { fail(`${name} handler error: ${e && e.message}`); } };
+  const safe = (name, fn) => (...a) => {
+    if (gen !== _connGen) return;                                  // a callback from a connector that has been replaced: ignore it
+    try { return fn(...a); } catch (e) { fail(`${name} handler error: ${e && e.message}`); }
+  };
 
   return {
     onDeviceConnected: safe("onDeviceConnected", () => { _state = "connected"; _backoffIdx = 0; log("device connected (waiting for ready)"); }),
@@ -854,11 +921,11 @@ function _handleSaleResponse(resp, remotepay) {
   try { extId = payment && payment.getExternalPaymentId ? payment.getExternalPaymentId() : null; } catch {}
 
   if (extId) {
-    let entry = _journal.get(extId);
+    const entry = _journal.get(extId);
     if (!entry) {
-      if (EXTERNAL_ID_RE.test(extId)) entry = _adoptOrphan(extId, payment, rc);
+      if (EXTERNAL_ID_RE.test(extId)) _adoptOrphan(extId, payment, rc).then(e => { if (e) _applyOutcome(e, rc, payment, remotepay); }).catch(e => fail(`orphan check failed: ${e.message}`));
       else warn("onSaleResponse: a payment that is not ours (ignored)");
-      if (!entry) return;
+      return;
     }
     return _applyOutcome(entry, rc, payment, remotepay);
   }
@@ -888,6 +955,12 @@ function _applyOutcome(entry, rc, payment, remotepay) {
   if (J.isCharged(entry.state)) { log(`onSaleResponse for already-approved ${entry.externalId} ignored`); return; }
   let result; try { result = payment && payment.getResult ? payment.getResult() : null; } catch {}
   log(`onSaleResponse ${entry.externalId} result=${rc} paymentResult=${result}`);
+  if (result === "SUCCESS" && rc !== "SUCCESS") {
+    // CR-006: a payment that says SUCCESS is evidence of a charge whatever the response code says. Verify it; never settle "not charged" on top of it.
+    fail(`CRITICAL: ${entry.externalId} response code ${rc} carries a SUCCESS payment: verifying as a possible charge`);
+    if (!_approve(entry, payment, rc, "device")) _recover(entry, { reason: "hint", hint: undefined }).catch(e => fail("recovery error:", e.message));
+    return;
+  }
   switch (rc) {
     case "SUCCESS":
       // Approved needs BOTH: ResponseCode SUCCESS and payment result SUCCESS. A SUCCESS code on a non-success payment proves nothing.
@@ -900,16 +973,29 @@ function _applyOutcome(entry, rc, payment, remotepay) {
   }
 }
 
-/** A device payment for one of our ExternalIds that the journal has never heard of (journal lost). Only a proven SUCCESS is adopted. */
-function _adoptOrphan(extId, payment, rc) {
+/**
+ * A device payment for one of our ExternalIds that the journal has never heard of (journal lost). Adopted only when Clover confirms the order
+ * exists, is a Kiosk-typed order and its total equals the payment amount; anything else is logged CRITICAL and tagged nowhere (CR-009).
+ */
+async function _adoptOrphan(extId, payment, rc) {
   const m = EXTERNAL_ID_RE.exec(extId);
   const f = J.fromPayment(payment);
   if (!m || rc !== "SUCCESS" || f.paymentResult !== "SUCCESS") return null;
   let amt; try { amt = payment.getAmount(); } catch {}
+  if (typeof _deps.getOrder !== "function" || !_cfg.KIOSK_ORDER_TYPE_ID || !Number.isInteger(amt)) {
+    fail(`CRITICAL: the device reports an approved payment ${extId} that is not in the journal and cannot be checked against Clover: tag nothing, look it up by hand`);
+    return null;
+  }
+  let o;
+  try { o = await _deps.getOrder(m[1]); } catch (e) { fail(`CRITICAL: orphan payment ${extId}: order lookup failed (${e.message}): tag nothing, look it up by hand`); return null; }
+  if (!o || !o.orderType || o.orderType.id !== _cfg.KIOSK_ORDER_TYPE_ID || o.total !== amt) {
+    fail(`CRITICAL: orphan payment ${extId} does not match a Kiosk order of the same total: tag nothing, look it up by hand`);
+    return null;
+  }
   try {
     _journal.registerOrder(m[1]);
-    fail(`CRITICAL: adopting an approved device payment ${extId} that is not in the journal`);
-    return _journal.append({ externalId: extId, kioskOrderId: m[1], attempt: Number(m[2]), amountCents: Number.isInteger(amt) ? amt : undefined, state: "IN_FLIGHT", source: "device" }, { newAttempt: true });
+    fail(`CRITICAL: adopting an approved device payment ${extId} that was not in the journal (the order matches in Clover)`);
+    return _journal.append({ externalId: extId, kioskOrderId: m[1], attempt: Number(m[2]), amountCents: amt, state: "IN_FLIGHT", source: "device" }, { newAttempt: true });
   } catch (e) { fail(`could not adopt ${extId}: ${e.message}`); return null; }
 }
 

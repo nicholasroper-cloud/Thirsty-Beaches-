@@ -215,17 +215,17 @@ function createQuoteApi(d) {
     if (!enabled()) return { status: 409, body: { error: "atomic path off" } };
     const q = quotes.get(String(body && body.quoteId || ""));
     if (!q || q.used || now() - q.createdAt > QUOTE_TTL_MS) return { status: 409, body: { error: "quote-expired" } };
+    q.used = true;                                                      // CR-011: single use, claimed in the same tick as the check (two concurrent /order calls cannot both pass); given back only if the Maze burn is refused
     const name = d.cleanCustomerName(String((body && body.name) || "").trim().slice(0, 60));
     const wantCard = body && body.payMode === "card";
 
     // burn FIRST: a failed burn (offline, already used, wrong key) is a failed order, never a discount on a code that stays reusable
     if (q.code) {
       const chk = await d.prizeCheck(q.code, false);
-      if (!chk || !chk.ok) return { status: 400, body: { error: "bad-code", status: (chk && chk.status) || "unknown" } };
+      if (!chk || !chk.ok) { q.used = false; return { status: 400, body: { error: "bad-code", status: (chk && chk.status) || "unknown" } }; }
       const burn = await d.prizeCheck(q.code, true);
-      if (!burn || !burn.ok) return { status: 400, body: { error: "bad-code", status: (burn && burn.status) || "burn-failed" } };
+      if (!burn || !burn.ok) { q.used = false; return { status: 400, body: { error: "bad-code", status: (burn && burn.status) || "burn-failed" } }; }
     }
-    q.used = true;                                                      // single use, even if the order below fails
 
     const mode = wantCard && q.payNow && d.payRunning() ? "card" : "window";
     let order;

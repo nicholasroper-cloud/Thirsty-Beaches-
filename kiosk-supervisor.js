@@ -81,7 +81,7 @@ function relOk(rel) {
   }
   const base = path.posix.basename(rel.toLowerCase());
   if (base.endsWith(".env") || base.includes(".env.") || base === "update-state.json" || base === "flex-pairing.json" ||
-      base === "pay-token.key" || /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/.test(base)) return false;
+      base === "pay-token.key" || base === "pay-remote-kill.json" || base === "catalog.json" || base === "catalog-accept.flag" || base === "pay-off.flag" || /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/.test(base)) return false;
   if ([".exe", ".dll", ".node", ".sys", ".msi", ".scr", ".com"].includes(path.posix.extname(base))) return false;
   if (rel.toLowerCase().split("/")[0] === "node_modules") return false;
   return true;

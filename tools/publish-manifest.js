@@ -32,7 +32,7 @@ const DEFAULT_BASE = "https://raw.githubusercontent.com/nicholasroper-cloud/Thir
 const SOURCE = { "clover-menu-server.next.js": "clover-menu-server.js" };
 /* always shipped; in this order, after the existing entries */
 const KIOSK_FILES = [
-  "kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "catalog-map.json", "addons.json", "package.json", "package-lock.json",
+  "kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "catalog-map.json", "tools/pay-resolve.js", "PAY-RUNBOOK.txt", "addons.json", "package.json", "package-lock.json",
   "clover-menu-server.js", "clover-menu-server.next.js",
   "Run-Kiosk.bat", "Stop-Kiosk.bat", "Debug-Kiosk.bat", "Fix-And-Run.bat", "Install-AutoStart.bat", "Remove-AutoStart.bat",
   "assets/cup-80s-shell.webp", "assets/cup-80s-cream.png", "assets/cup-80s-liquid.png", "assets/logo-480.webp",
@@ -54,7 +54,7 @@ function relOk(rel) {
   if (typeof rel !== "string" || !/^[A-Za-z0-9._\-\/]+$/.test(rel)) return false;
   for (const s of rel.split("/")) if (!s || s.startsWith(".") || s.endsWith(".")) return false;
   const base = path.posix.basename(rel.toLowerCase());
-  return !(base.endsWith(".env") || base.includes(".env.") || ["update-state.json", "flex-pairing.json", "pay-token.key"].includes(base) || /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/.test(base) ||
+  return !(base.endsWith(".env") || base.includes(".env.") || ["update-state.json", "flex-pairing.json", "pay-token.key", "pay-remote-kill.json", "catalog.json", "catalog-accept.flag", "pay-off.flag"].includes(base) || /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/.test(base) ||
            [".exe", ".dll", ".node"].includes(path.posix.extname(base)) || rel.toLowerCase().startsWith("node_modules/"));
 }
 const SECRET_RES = [

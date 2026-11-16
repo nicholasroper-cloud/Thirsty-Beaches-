@@ -184,7 +184,7 @@ const clock = (start = T0) => { const c = { t: start, now: () => c.t }; return c
 /* ---- 7. the basename is on all three never-overwrite lists ---- */
 {
   const root = path.resolve(__dirname, "../..");
-  for (const name of ["pay-journal.jsonl", "pay-token.key"]) {
+  for (const name of ["pay-journal.jsonl", "pay-token.key", "catalog.json", "pay-remote-kill.json"]) {      // CR-015: the ADR listed catalog.json too
     ok(lib.blockedReason(name) !== null, "kiosk-lib blocks " + name);
     ok(lib.safeUpdatePath(root, name) === null, "safeUpdatePath refuses " + name);
     ok(lib.safeUpdatePath(root, "pay-journal.2026-11-15.jsonl") === null || true);
@@ -194,7 +194,16 @@ const clock = (start = T0) => { const c = { t: start, now: () => c.t }; return c
   const pub = fs.readFileSync(path.join(root, "tools/publish-manifest.js"), "utf8");
   ok(/pay-journal/.test(sup) && /pay-journal/.test(pub), "supervisor and publish-manifest name the journal");
   const supInt = require("../../kiosk-supervisor")._internals;
-  if (supInt && supInt.relOk) { ok(!supInt.relOk("pay-journal.jsonl") && !supInt.relOk("pay-journal.2026-11-15.jsonl") && !supInt.relOk("pay-token.key"), "supervisor relOk refuses them"); }
+  if (supInt && supInt.relOk) { ok(!supInt.relOk("pay-journal.jsonl") && !supInt.relOk("pay-journal.2026-11-15.jsonl") && !supInt.relOk("pay-token.key") && !supInt.relOk("catalog.json") && !supInt.relOk("pay-remote-kill.json"), "supervisor relOk refuses them"); ok(supInt.relOk("catalog-map.json") && supInt.relOk("catalog.js"), "the shipped map and module are still allowed"); }
+  ok(lib.blockedReason("catalog-map.json") === null, "catalog-map.json still ships");
+  for (const bn of ["catalog.json", "pay-remote-kill.json"]) ok(new RegExp(bn.replace(".", "\\.")).test(pub), "publish-manifest names " + bn);
 }
 
+/* ---- CR-015: the .tb folder is created owner-only ---- */
+if (process.platform !== "win32") {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "tb-mode-"));
+  const d1 = path.join(base, "a", ".tb"); lib.writeJsonAtomic(path.join(d1, "x.json"), {}); eq(fs.statSync(d1).mode & 0o777, 0o700, "writeJsonAtomic creates .tb 0700");
+  const d2 = path.join(base, "b", ".tb"); lib.loadOrCreateKey(path.join(d2, "k")); eq(fs.statSync(d2).mode & 0o777, 0o700, "loadOrCreateKey creates .tb 0700"); eq(fs.statSync(path.join(d2, "k")).mode & 0o777, 0o600, "key file 0600");
+  const d3 = path.join(base, "c", ".tb"); const jj = J.createJournal({ dir: d3 }); jj.load(); eq(fs.statSync(d3).mode & 0o777, 0o700, "the journal creates .tb 0700");
+}
 console.log(`pay-journal: ${passed} checks passed`);

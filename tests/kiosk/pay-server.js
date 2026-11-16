@@ -69,10 +69,14 @@ function req(port, method, p, obj, headers = {}) {
 
   // boot assertion
   eq(lib.payBootProblem({ PAY_ENABLED: false, IDLE_MS: 1000, PAY_TIMEOUT_MS: 90000 }), null, "only checked when pay is on");
-  eq(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 60000 }), null, "defaults pass: 120000 > 105000");
-  ok(/TB_IDLE_MS/.test(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 105000, PAY_TIMEOUT_MS: 60000 })), "equal is a refusal (must be strictly greater)");
-  ok(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 90000 }), "the old 90 s default no longer fits under the default idle time");
-  eq(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 105001, PAY_TIMEOUT_MS: 60000 }), null);
+  const RL = "On the counter, right of this screen";
+  eq(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: RL }), null, "defaults pass: 120000 > 105000");
+  ok(/READER_LOCATION_TEXT/.test(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: "  " })), "Snake Eyes 8: no reader location line, no card payment");
+  ok(/READER_SIDE/.test(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: RL, READER_SIDE: "up" })));
+  eq(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: RL, READER_SIDE: "left" }), null);
+  ok(/TB_IDLE_MS/.test(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 105000, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: RL })), "equal is a refusal (must be strictly greater)");
+  ok(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 120000, PAY_TIMEOUT_MS: 90000, READER_LOCATION_TEXT: RL }), "the old 90 s default no longer fits under the default idle time");
+  eq(lib.payBootProblem({ PAY_ENABLED: true, IDLE_MS: 105001, PAY_TIMEOUT_MS: 60000, READER_LOCATION_TEXT: RL }), null);
 
   // rate limiter: 6 per minute, sliding
   let t = 1000; const lim = lib.makeRateLimiter(6, 60000, () => t);
@@ -107,11 +111,11 @@ async function routeTests() {
   let port;
   const api = createPayApi({
     flexPay: fp, payEnabled: true, payAllowed: () => state.allowed, tokenKey: key,
-    cloverGet: async p => { const id = /\/orders\/([A-Za-z0-9]+)/.exec(p)[1]; const o = state.orders.get(id); if (!o) throw new Error("404"); return o; },
-    cloverDelete: async id => { state.deleted.push(id); state.orders.delete(id); },
+    cloverGet: async p => { if (state.getDelay && /expand=payments/.test(p)) await sleep(state.getDelay); const id = /\/orders\/([A-Za-z0-9]+)/.exec(p)[1]; const o = state.orders.get(id); if (!o) throw new Error("404"); return o; },
+    cloverDelete: async id => { if (state.failDelete) throw new Error("500"); state.deleted.push(id); state.orders.delete(id); },
     sendJSON: (res, status, obj) => { res.writeHead(status, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); },
     readBody: r => new Promise(res => { let d = ""; r.on("data", c => d += c); r.on("end", () => res(d)); }),
-    readerTimeoutMs: 60000, recoveryMs: 45000, now: () => clock.t,
+    readerTimeoutMs: 60000, recoveryMs: 45000, limiterNow: () => clock.t,
   });
   const server = http.createServer(async (rq, res) => {
     const pathname = new URL(rq.url, "http://x").pathname;
@@ -197,20 +201,60 @@ async function routeTests() {
     // declined attempt -> abandon allowed
     const D = newOrder("ROUTEDECLN01");
     fc.script.sale = () => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("FAIL", null, "declined"));
-    { clock.t = Date.now(); const dr = await payWait("ROUTEDECLN01", D); eq(dr.result, "declined");
-      ok(dr.stillThereInMs > 0 && dr.stillThereInMs <= 30000 && dr.abandonInMs === dr.stillThereInMs + 10000, "declined carries the server-side Still there? countdown (30 s) and the abandon countdown (40 s)"); }
+    { const dr = await payWait("ROUTEDECLN01", D); eq(dr.result, "declined");
+      ok(dr.stillThereInMs > 0 && dr.stillThereInMs <= 30000 && dr.abandonInMs === dr.stillThereInMs + 20000, "declined carries the server-side Still there? countdown (30 s) and the abandon countdown (+20 s)"); }
     eq((await post("/pay/abandon", { orderId: "ROUTEDECLN01", payToken: D })).json.result, "abandoned");
     // an UNKNOWN order is never deleted
     fc.deviceState = "BUSY"; fc.script.sale = () => {};
     const U = newOrder("ROUTEUNKNW01");
-    { clock.t = Date.now(); const ur = await payWait("ROUTEUNKNW01", U); eq(ur.result, "unknown"); ok(ur.resetInMs > 0 && ur.resetInMs <= 20000, "UNKNOWN carries the 20 s hold countdown"); }
+    { const ur = await payWait("ROUTEUNKNW01", U); eq(ur.result, "unknown"); ok(ur.resetInMs > 0 && ur.resetInMs <= 30000, "UNKNOWN carries the 30 s hold countdown"); }
     fc.deviceState = "IDLE";
     eq((await post("/pay/abandon", { orderId: "ROUTEUNKNW01", payToken: U })).json.result, "refused");
     eq((await post("/pay", { orderId: "ROUTEUNKNW01", amountCents: 349, payToken: U })).json.result, "blocked-unknown", "answered from the journal; the Clover order is locked");
     eq((await post("/pay/window", { orderId: "ROUTEUNKNW01", payToken: U })).json.result, "blocked-unknown");
+    { // CR-005: ANOTHER customer's /pay while the reader holds an unresolved attempt gets its own answer, so the page goes to the window instead of waiting on a prompt that never comes
+      const B = newOrder("ROUTEOTHER01"); const salesNow = fc.count("sale");
+      eq((await post("/pay", { orderId: "ROUTEOTHER01", amountCents: 349, payToken: B })).json.result, "reader-busy");
+      eq(fc.count("sale"), salesNow, "no Sale was sent for the second customer");
+    }
     // let reconcile settle it (device has nothing) so the reader is free for the next checks
     fc.script.retrievePayment = () => ({ status: "NOT_FOUND" });
     await waitFor(() => fp.orderState("ROUTEUNKNW01").state === "COLLECT", 5000, "UNKNOWN released to COLLECT");
+
+    // ---- CR-002: abandon vs a retry that lands while abandon is waiting on Clover ----
+    {
+      const R = newOrder("ROUTERACE001");
+      fc.script.sale = () => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("FAIL", null, "declined"));
+      eq((await payWait("ROUTERACE001", R)).result, "declined");
+      const salesBefore = fc.count("sale");
+      state.getDelay = 500;                                                       // abandon's own Clover lookup is slow: the window Flint used
+      const ab = post("/pay/abandon", { orderId: "ROUTERACE001", payToken: R });
+      await sleep(150);                                                           // abandon has passed canAbandon and is waiting on Clover
+      fc.script.sale = (id) => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("SUCCESS", mkPayment({ extId: id, amount: 349, id: "PAYIDRACE001" })));   // if a Sale WERE sent it would be approved
+      const retry = await post("/pay", { orderId: "ROUTERACE001", amountCents: 349, payToken: R });
+      eq(retry.json.result, "unavailable", "a retry during the abandon is refused"); ok(/being closed/.test(retry.json.message));
+      eq((await post("/pay/window", { orderId: "ROUTERACE001", payToken: R })).json.result, "unavailable", "and so is a window release");
+      eq(fc.count("sale"), salesBefore, "no attempt -2 was started on an order that is about to be deleted");
+      eq((await ab).json.result, "abandoned"); ok(!state.orders.has("ROUTERACE001"), "the order is gone and nothing was charged");
+      state.getDelay = 0;
+      // an abandon that is REFUSED (Clover shows a payment) releases the order: the customer can pay again
+      const S2 = newOrder("ROUTERACE002");
+      fc.script.sale = () => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("FAIL", null, "declined"));
+      eq((await payWait("ROUTERACE002", S2)).result, "declined");
+      state.orders.get("ROUTERACE002").payments = { elements: [{ id: "P9" }] };
+      eq((await post("/pay/abandon", { orderId: "ROUTERACE002", payToken: S2 })).json.result, "refused");
+      state.orders.get("ROUTERACE002").payments = { elements: [] };
+      fc.script.sale = (id) => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("SUCCESS", mkPayment({ extId: id, amount: 349, id: "PAYIDRACE002" })));
+      eq((await payWait("ROUTERACE002", S2)).result, "approved", "a refused abandon releases the order");
+      // and a delete that FAILS releases it too
+      const S3 = newOrder("ROUTERACE003");
+      fc.script.sale = () => fc.listener.onSaleResponse(require("./pay-fakes").mkSale("CANCEL", null, "x"));
+      eq((await payWait("ROUTERACE003", S3)).result, "cancelled");
+      const realDelete = api._deleteHook; state.failDelete = true;
+      eq((await post("/pay/abandon", { orderId: "ROUTERACE003", payToken: S3 })).status, 502);
+      state.failDelete = false;
+      eq((await post("/pay/window", { orderId: "ROUTERACE003", payToken: S3 })).json.result, "collect", "a failed delete releases the order");
+    }
 
     // ---- kill switch: status/config say off, new sale refused, journal answers continue ----
     state.allowed = false;
@@ -246,6 +290,13 @@ const cloverSrv = http.createServer((rq, res) => {
     const m = u.pathname.replace(/^\/v3\/merchants\/[^/]+/, "");
     if (u.pathname === "/control.json") return fake.controlFail ? j(500, { error: "down" }) : j(200, fake.control);
     let mm;
+    // a one-drink catalog (Thirst Trap $3.49, 7% tax) so the REAL server can price a quote, ask checkout, and create an atomic order
+    const ITEM = { id: "ITEMTEST00001", name: "Thirst Trap", price: 349, defaultTaxRates: true, taxRates: { elements: [] }, modifierGroups: { elements: [] } };
+    if (rq.method === "GET" && m === "/items") return j(200, { elements: [ITEM] });
+    if (rq.method === "GET" && m === "/modifier_groups") return j(200, { elements: [] });
+    if (rq.method === "GET" && m === "/tax_rates") return j(200, { elements: [{ id: "TAXTEST000001", name: "Test tax", rate: 700000, isDefault: true }] });
+    if (rq.method === "POST" && m === "/atomic_order/checkouts") { const n = JSON.parse(body).orderCart.lineItems.length; return j(200, { total: n * 373, lineItems: { elements: Array.from({ length: n }, () => ({ taxRates: { elements: [{ taxAmount: 24 }] } })) } }); }
+    if (rq.method === "POST" && m === "/atomic_order/orders") { const cart = JSON.parse(body).orderCart; const o = { id: "AORDER" + String(++fake.seq).padStart(6, "0"), state: "open", total: cart.lineItems.length * 373, orderType: cart.orderType, lineItems: { elements: cart.lineItems }, createdTime: Date.now() }; fake.orders.set(o.id, o); return j(200, o); }
     if (rq.method === "POST" && m === "/orders") { const o = { id: "KORDER" + String(++fake.seq).padStart(6, "0"), state: "open", total: 349, lineItems: { elements: [] }, createdTime: Date.now() }; fake.orders.set(o.id, o); return j(200, o); }
     if (rq.method === "POST" && (mm = /^\/orders\/([^/]+)\/line_items$/.exec(m))) { const o = fake.orders.get(mm[1]); o.lineItems.elements.push(JSON.parse(body)); return j(200, { id: "LI1" }); }
     if (rq.method === "POST" && (mm = /^\/orders\/([^/]+)$/.exec(m))) { Object.assign(fake.orders.get(mm[1]), JSON.parse(body)); return j(200, {}); }
@@ -256,13 +307,14 @@ const cloverSrv = http.createServer((rq, res) => {
 });
 function stage() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paysrv-"));
-  for (const f of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "catalog-map.json", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  for (const f of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  fs.writeFileSync(path.join(dir, "catalog-map.json"), JSON.stringify({ version: 1, floats: [], categories: { dirtysodas: { items: { "thirst-trap": { name: "Thirst Trap", clover: "ITEMTEST00001" } }, options: [] } } }));
   return dir;
 }
 function spawnKiosk(dir, port, cloverPort, env) {
   const child = cp.spawn(process.execPath, ["kiosk-server.js"], { cwd: dir, stdio: ["ignore", "pipe", "pipe"],
     env: { PATH: process.env.PATH, CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off",
-      CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json", TB_CONTROL_MS: "150", PRIZE_API: "http://127.0.0.1:" + cloverPort, ...env } });
+      CONTROL_URL: "http://127.0.0.1:" + cloverPort + "/control.json", TB_CONTROL_MS: "150", PRIZE_API: "http://127.0.0.1:" + cloverPort, KIOSK_ORDER_TYPE_ID: "KIOSKTYPE0001", CATALOG_TAX_RATES: "7", TB_CATALOG_MS: "400", ...env } });
   child.out = ""; child.stdout.on("data", d => child.out += d); child.stderr.on("data", d => child.out += d);
   return child;
 }
@@ -291,7 +343,7 @@ async function serverTests(cloverPort) {
 
   // ---- kill matrix 2: env true. true / "true" / 1 are NOT a kill; the flag and a literal false are ----
   fake.control = { payEnabled: true };
-  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1" }, async port => {
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {
     await sleep(450);
     eq(await enabled(port), true, "env true + remote true");
     for (const v of ["true", 1, null]) { fake.control = { payEnabled: v }; await sleep(450); eq(await enabled(port), true, "env true + remote " + JSON.stringify(v)); }
@@ -302,18 +354,30 @@ async function serverTests(cloverPort) {
     fs.unlinkSync(tb("pay-off.flag")); eq(await enabled(port), true, "flag removed: pay resumes");
     // payToken on the real server (journal exists because FLEX_IP is set; the SDK is not installed in this stage dir, so the reader is "disabled")
     ok(fs.existsSync(tb("pay-token.key")), "the token key is created when pay is on");
-    const o = await req(port, "POST", "/order", { cart: [{ name: "Thirst Trap", unit: 3.49, qty: 1, mods: [] }], name: "Sam" });
-    eq(o.status, 200); ok(/^[0-9a-f]{32}$/.test(o.json.payToken), "/order returns a 128-bit payToken");
-    const id = o.json.orderId, tok = o.json.payToken;
-    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: 349 })).status, 403, "no token");
-    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: 349, payToken: "0".repeat(32) })).status, 403, "wrong token");
+    // CR-001: a LEGACY order (priced by the page, no quote) never gets a payToken and is never registered for card payment, even with pay on
+    const legacy = await req(port, "POST", "/order", { cart: [{ name: "Thirst Trap", unit: 0.01, qty: 1, mods: [] }], name: "Sam" });
+    eq(legacy.status, 200); ok(!("payToken" in legacy.json), "CR-001: legacy /order returns no payToken");
+    for (const t of [undefined, "0".repeat(32), lib.payTokenFor(lib.loadOrCreateKey(tb("pay-token.key")), legacy.json.orderId)]) {
+      const lp = await req(port, "POST", "/pay", { orderId: legacy.json.orderId, amountCents: 1, payToken: t });
+      eq(lp.status, 403, "CR-001: /pay refuses a legacy order even with a correctly computed token (it is not in the journal)");
+    }
+    eq((await req(port, "GET", "/pay/state?orderId=" + legacy.json.orderId, undefined, { "X-Pay-Token": lib.payTokenFor(lib.loadOrCreateKey(tb("pay-token.key")), legacy.json.orderId) })).status, 403);
+    // the quote path is the only door to a card order: price it on the server, ask checkout, create atomically
+    await waitFor(async () => (await req(port, "GET", "/catalog")).json.payNow === true, 8000, "catalog synced");
+    const qt = await req(port, "POST", "/quote", { cart: [{ catKey: "dirtysodas", itemId: "thirst-trap", sel: {}, qty: 1 }] });
+    eq([qt.json.ok, qt.json.payNow, qt.json.total], [true, true, 373], "quote: server price with tax, agreed with checkout");
+    const o = await req(port, "POST", "/order", { quoteId: qt.json.quoteId, name: "Sam", payMode: "card" });
+    eq(o.status, 200); ok(/^[0-9a-f]{32}$/.test(o.json.payToken), "the quote order returns a 128-bit payToken");
+    const id = o.json.orderId, tok = o.json.payToken, AMT = o.json.total;
+    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: AMT })).status, 403, "no token");
+    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: AMT, payToken: "0".repeat(32) })).status, 403, "wrong token");
     eq((await req(port, "POST", "/pay/window", { orderId: id })).status, 403); eq((await req(port, "POST", "/pay/abandon", { orderId: id })).status, 403);
     eq((await req(port, "GET", "/pay/state?orderId=" + id)).status, 403);
     eq((await req(port, "GET", "/pay/state?orderId=" + id, undefined, { "X-Pay-Token": tok })).json.state, "PENDING");
-    const pr = await req(port, "POST", "/pay", { orderId: id, amountCents: 349, payToken: tok });
+    const pr = await req(port, "POST", "/pay", { orderId: id, amountCents: AMT, payToken: tok });
     eq(pr.status, 200); eq(pr.json.result, "unavailable", "valid token, reader not connected: refused without a Sale");
-    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: 349, payToken: tok }, { Origin: "http://evil.example" })).status, 403, "Origin guard kept");
-    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: 349, payToken: tok }, { Host: "evil.example" })).status, 403, "Host guard kept");
+    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: AMT, payToken: tok }, { Origin: "http://evil.example" })).status, 403, "Origin guard kept");
+    eq((await req(port, "POST", "/pay", { orderId: id, amountCents: AMT, payToken: tok }, { Host: "evil.example" })).status, 403, "Host guard kept");
     eq((await req(port, "POST", "/pay/window", { orderId: id, payToken: tok })).json.result, "collect");
     saved = { id, tok };
     // the journal holds ids and states only
@@ -321,14 +385,14 @@ async function serverTests(cloverPort) {
     for (const l of lines) for (const k of Object.keys(l)) ok(J.ALLOWED_KEYS.includes(k), "journal key " + k);
   });
   // the token and the registered order survive a restart (HMAC key + journal on disk)
-  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1" }, async port => {
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {
     const { id, tok } = saved;
     eq((await req(port, "GET", "/pay/state?orderId=" + id, undefined, { "X-Pay-Token": tok })).json.state, "COLLECT", "after a restart the order and its token are still valid");
   });
 
   // ---- kill matrix 3: env true + remote literal false = off; a failed fetch KEEPS the kill; a restart KEEPS it; only a good fetch clears it ----
   fake.control = { payEnabled: false }; fake.controlFail = false;
-  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1" }, async port => {
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {
     await waitFor(async () => (await enabled(port)) === false, 5000, "remote kill applied");
     eq(JSON.parse(fs.readFileSync(tb("pay-remote-kill.json"), "utf8")).kill, true, "last remote kill persisted under .tb/");
     let s = (await req(port, "GET", "/kiosk-status")).json.pay; eq([s.remoteKill, s.allowed], [true, false]);
@@ -339,7 +403,7 @@ async function serverTests(cloverPort) {
     fake.control = { payEnabled: false };
     fake.controlFail = true;
   });
-  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1" }, async port => {
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {
     await sleep(200);
     eq(await enabled(port), false, "restart with GitHub unreachable keeps the kill");
     fake.control = { payEnabled: true, updated: "x" }; fake.controlFail = false;
@@ -356,17 +420,22 @@ async function serverTests(cloverPort) {
   // ---- boot assertion: refuse to start with PAY_ENABLED=true unless IDLE_MS > PAY_TIMEOUT_MS + 45000 ----
   fake.control = {}; fake.controlFail = false;
   for (const [env, shouldRun] of [[{ PAY_TIMEOUT_MS: "90000" }, false], [{ PAY_TIMEOUT_MS: "60000", TB_IDLE_MS: "105000" }, false], [{ PAY_TIMEOUT_MS: "60000", TB_IDLE_MS: "105001" }, true], [{}, true], [{ PAY_TIMEOUT_MS: "90000", TB_IDLE_MS: "300000" }, true]]) {
-    const port = await freePort(); const c = spawnKiosk(dir, port, cloverPort, { PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", ...env });
+    const port = await freePort(); const c = spawnKiosk(dir, port, cloverPort, { PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen", ...env });
     if (shouldRun) { ok(await up(port), "starts with " + JSON.stringify(env) + ": " + c.out); await stop(c); }
-    else { await new Promise(r => c.on("exit", r)); eq(c.exitCode, 2, "refuses " + JSON.stringify(env)); ok(/REFUSING TO START/.test(c.out) && /TB_IDLE_MS/.test(c.out), "explains the fix"); }
+    else { await new Promise(r => c.on("exit", r)); eq(c.exitCode, 77, "refuses " + JSON.stringify(env) + " with 77: the supervisor's config-problem class, not a crash that rolls code back"); ok(/REFUSING TO START/.test(c.out) && /TB_IDLE_MS/.test(c.out), "explains the fix"); }
   }
   // pay off: the assertion does not apply
   { const port = await freePort(); const c = spawnKiosk(dir, port, cloverPort, { PAY_ENABLED: "false", PAY_TIMEOUT_MS: "90000", TB_IDLE_MS: "2000" }); ok(await up(port), "pay off is never refused"); await stop(c); }
 
-  // ---- rate limit on the real server: /pay 6 per minute ----
-  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1" }, async port => {
-    const codes = []; for (let i = 0; i < 8; i++) codes.push((await req(port, "POST", "/pay", { orderId: "X", amountCents: 1 })).status);
-    eq(codes.slice(0, 6).every(c => c !== 429), true); eq(codes.slice(6), [429, 429], "7th and 8th /pay in a minute are refused");
+  // ---- rate limit on the real server: /pay 6 per minute, spent only by AUTHORIZED requests (CR-013) ----
+  await run({ PAY_ENABLED: "true", FLEX_IP: "127.0.0.1", READER_LOCATION_TEXT: "On the counter, right of this screen" }, async port => {
+    await waitFor(async () => (await req(port, "GET", "/catalog")).json.payNow === true, 8000, "catalog synced");
+    const qt = (await req(port, "POST", "/quote", { cart: [{ catKey: "dirtysodas", itemId: "thirst-trap", sel: {}, qty: 1 }] })).json;
+    const o = (await req(port, "POST", "/order", { quoteId: qt.quoteId, name: "Rae", payMode: "card" })).json;
+    for (let i = 0; i < 25; i++) eq((await req(port, "POST", "/pay", { orderId: o.orderId, amountCents: o.total, payToken: "0".repeat(32) })).status, 403, "unauthorized spam is refused");
+    const codes = []; for (let i = 0; i < 8; i++) codes.push((await req(port, "POST", "/pay", { orderId: o.orderId, amountCents: o.total, payToken: o.payToken })).status);
+    eq(codes.slice(0, 6).every(c => c === 200), true, "25 unauthorized requests did not use up the budget: the first 6 real ones all pass");
+    eq(codes.slice(6), [429, 429], "the 7th and 8th /pay in a minute are refused");
   });
 }
 

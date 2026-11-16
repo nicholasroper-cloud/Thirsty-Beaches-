@@ -129,12 +129,15 @@ function createCatalog(d) {
     if (last) {
       const a = Object.keys(last.items).length, b = Object.keys(cand.items).length;
       if (a > 0 && b < a * 0.9) reject.push(`item count dropped from ${a} to ${b} (more than 10%)`);
-      for (const id of ids.items) if (last.items[id] && cand.items[id] && last.items[id].price !== null && last.items[id].price >= floor) {   // a baseline under the floor is not a baseline
-        const o = last.items[id].price, n = cand.items[id].price;
-        if (n === null || Math.abs(n - o) > o * 0.5) hold.push(`item ${id} price moved ${o} -> ${n} (more than 50%)`);
+      // CR-014: compare with the BASELINE (the last owner-accepted price, which only follows moves under 10%), not just the last sync,
+      // so a price walking up 40% at a time is caught on the second step.
+      const bi = (last.baseline && last.baseline.items) || {}, bm = (last.baseline && last.baseline.modifiers) || {};
+      for (const id of ids.items) if (last.items[id] && cand.items[id] && last.items[id].price !== null) {
+        const o = bi[id] !== undefined ? bi[id] : last.items[id].price, n = cand.items[id].price;
+        if (o >= floor && (n === null || Math.abs(n - o) > o * 0.5)) hold.push(`item ${id} price moved ${o} -> ${n} (more than 50% from the accepted price)`);   // a baseline under the floor is not a baseline
       }
       for (const id of ids.mods) if (last.modifiers[id] && cand.modifiers[id]) {
-        const o = last.modifiers[id].price, n = cand.modifiers[id].price;
+        const o = bm[id] !== undefined ? bm[id] : last.modifiers[id].price, n = cand.modifiers[id].price;
         if (o !== 0 && Math.abs(n - o) > Math.abs(o) * 0.5) hold.push(`modifier ${id} price moved ${o} -> ${n} (more than 50%)`);
         if (o === 0 && Math.abs(n) > 50) hold.push(`modifier ${id} price moved 0 -> ${n}`);
       }
@@ -143,7 +146,16 @@ function createCatalog(d) {
     return { reject, hold };
   }
 
-  function promote(cand, how) {
+  /** The baseline follows a price only when the move is under 10% (or the owner accepted it): slow, deliberate changes pass, big or stepped ones do not. */
+  function setBaseline(cand, last, accepted) {
+    const pb = (last && last.baseline) || { items: {}, modifiers: {} };
+    const follow = (o, n) => accepted || o === undefined || o === null || n === null || o === 0 || Math.abs(n - o) <= Math.abs(o) * 0.1;
+    cand.baseline = { items: {}, modifiers: {} };
+    for (const id of ids.items) { const n = cand.items[id].price, o = pb.items[id]; cand.baseline.items[id] = follow(o, n) ? n : o; }
+    for (const id of ids.mods) { const n = cand.modifiers[id].price, o = pb.modifiers[id]; cand.baseline.modifiers[id] = follow(o, n) ? n : o; }
+  }
+  function promote(cand, how, accepted) {
+    setBaseline(cand, st.table, accepted || !st.table);
     lib.writeJsonAtomic(file, cand);                           // temp, then rename
     st.table = cand; st.source = how; st.lastOkAt = now();
   }
@@ -174,7 +186,7 @@ function createCatalog(d) {
       }
       if (hold.length && accept) alert("owner accepted the new prices (catalog-accept.flag)");
       if (accept) { try { fs.unlinkSync(acceptFlag); } catch {} }
-      promote(cand, "clover"); st.hold = []; st.lastError = null;
+      promote(cand, "clover", accept); st.hold = []; st.lastError = null;
       log.log(`catalog: synced ${Object.keys(cand.items).length} items, ${Object.keys(cand.modifiers).length} modifiers, ${Object.keys(cand.taxRates).length} tax rates`);
     } catch (e) {
       st.lastError = e.message; alert(`sync failed (${e.message}); keeping the last good catalog`);
@@ -195,10 +207,15 @@ function createCatalog(d) {
     if (!t) return "catalog not synced";
     if (now() - t.syncedAt > maxAgeMs) return "catalog is older than " + Math.round(maxAgeMs / 3600000) + " hours (Clover unreachable?)";
     if (st.hold.length) return "catalog held: " + st.hold[0];
+    if (!ids.items.size) return "no catalog item is mapped yet (catalog-map.json)";
     if (!taxAllow.length) return "tax rate allow-list not configured (CATALOG_TAX_RATES)";
-    for (const id of ids.items) for (const r of ratesFor(t, id)) {
-      const pct = r.rate / RATE_PER_PERCENT;
-      if (!taxAllow.some(a => Math.abs(a - pct) < 1e-6)) return `tax rate ${r.name} ${pct}% is not in the allow-list`;
+    for (const id of ids.items) {
+      const rs = ratesFor(t, id);
+      if (!rs.length) return `mapped item ${id} has no tax rate in Clover (CR-004: a vacuous allow-list check would charge no tax)`;   // every mapped item must resolve to at least one allowed rate
+      for (const r of rs) {
+        const pct = r.rate / RATE_PER_PERCENT;
+        if (!taxAllow.some(a => Math.abs(a - pct) < 1e-6)) return `tax rate ${r.name} ${pct}% is not in the allow-list`;
+      }
     }
     return null;
   }

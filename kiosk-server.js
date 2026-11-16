@@ -68,7 +68,8 @@ const CATALOG_PRICE_FLOOR_CENTS = parseInt(process.env.CATALOG_PRICE_FLOOR_CENTS
 /* Where the card reader is, as ONE line the owner writes ("The reader is on the right of this screen"). Blank = the pay screen shows no location line. */
 /* The pay-screen countdowns (ADR section 7), served to the page by /payconfig and enforced by the abandon sweeper. Defaults are the ADR's 20 / 30 / 10 seconds. */
 const msEnv = (k, dflt) => Math.min(120000, Math.max(1000, parseInt(process.env[k] || String(dflt), 10) || dflt));
-const PAY_TIMERS = { unknownHoldMs: msEnv("PAY_UNKNOWN_HOLD_MS", 20000), declinedWaitMs: msEnv("PAY_DECLINED_WAIT_MS", 30000), stillThereMs: msEnv("PAY_STILL_THERE_MS", 10000) };
+const PAY_TIMERS = { unknownHoldMs: msEnv("PAY_UNKNOWN_HOLD_MS", 30000), declinedWaitMs: msEnv("PAY_DECLINED_WAIT_MS", 30000), stillThereMs: msEnv("PAY_STILL_THERE_MS", 20000) };
+const READER_SIDE = (process.env.READER_SIDE || "").trim().toLowerCase();       // left | right | below: which edge the reader arrow points to (blank = no arrow)
 const READER_LOCATION_TEXT = String(process.env.READER_LOCATION_TEXT || "").replace(/[\u0000-\u001f<>]/g, " ").trim().slice(0, 140);
 
 /* ---- Settings that kiosk-control.json "settings" may override (allow-list in kiosk-lib.js) ----
@@ -768,8 +769,9 @@ const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) 
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
 { // ADR section 7: the screen's idle timer must outlast the reader prompt plus recovery, or it would reset on a customer who is still paying
-  const bad = lib.payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS });
-  if (bad) { console.error("REFUSING TO START: " + bad); process.exit(2); }
+  const bad = lib.payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS, READER_LOCATION_TEXT, READER_SIDE: READER_SIDE || undefined });
+  // exit 77 is the supervisor's "configuration problem, retry in 3 s, never roll the code back" code (the same class as "port busy") (CR-016)
+  if (bad) { console.error("REFUSING TO START: " + bad); process.exit(77); }
 }
 function requestRestart(code, reason) {
   if (!SUPERVISED) { console.log(`restart needed (${reason}) — no supervisor; it happens at the next start`); return false; }
@@ -1011,7 +1013,7 @@ function heartbeatPayload() {
     lastUpdate: lu ? { version: lu.version == null ? null : lu.version, at: lu.at || null,
                        ok: lu.ok == null ? null : !!lu.ok, error: lu.error ? lib.scrub(lu.error) : null } : null,
     rollback: rb ? { at: rb.at, from: rb.from, to: rb.to, reason: lib.scrub(rb.reason) } : null,
-    pay: { enabled: PAY_ENABLED, allowed: payAllowed(), remoteKill: payRemoteKill, offFlag: payFlagPresent(), flexConnected: fp.state === "ready", state: String(fp.state || "disabled"), unresolved: fp.unresolved || 0 },
+    pay: { enabled: PAY_ENABLED, allowed: payAllowed(), remoteKill: payRemoteKill, offFlag: payFlagPresent(), flexConnected: fp.state === "ready", state: String(fp.state || "disabled"), unresolved: fp.unresolved || 0, doubles: fp.doubles || 0, alert: fp.doubles ? "DOUBLE CHARGE: void one payment in the Clover Dashboard, then run tools/pay-resolve.js <extId> ack-double" : null },
     catalog: catalogHeartbeat(),
     clover: { lastOk: cloverHealth.lastOk,
               lastError: cloverHealth.lastError ? `${cloverHealth.lastError.msg} @${cloverHealth.lastError.at}` : null },
@@ -1106,9 +1108,9 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || "{}");
       // atomic path: {quoteId, name, payMode}; legacy path: {cart, name, code}
       if (body && typeof body.quoteId === "string") { const r = await quoteApi.createOrder(body); return sendJSON(res, r.status, r.body); }
+      // CR-001: a legacy order is priced by the PAGE, so it is never registered for card payment and never gets a payToken (only quoteApi.createOrder does):
+      // /pay answers 403 for it and the page sends the customer to the window.
       const result = await createOrder(body.cart, String((body && body.name) || "").trim().slice(0, 60), body && body.code);
-      // Q5: a 128-bit payToken binds the page to THIS order; the pay routes act only on orders registered here
-      if (result.status === 200 && result.body && result.body.orderId) { const tok = payApi.registerOrder(result.body.orderId); if (tok) result.body.payToken = tok; }
       return sendJSON(res, result.status, result.body);
     } catch (e) { console.error("order error:", e.message); return sendJSON(res, 502, { error: "Could not create Clover order" }); }
   }
@@ -1186,7 +1188,7 @@ const payApi = require("./pay-routes").createPayApi({
   cloverGet,
   cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` } }); if (!r.ok) throw new Error(`delete ${r.status}`); },
   sendJSON, readBody,
-  readerTimeoutMs: PAY_TIMEOUT_MS, recoveryMs: 45000, readerLocationText: READER_LOCATION_TEXT, timers: PAY_TIMERS, payPerMinute: Math.min(60, Math.max(1, parseInt(process.env.PAY_RATE_PER_MIN || "6", 10) || 6)),
+  readerTimeoutMs: PAY_TIMEOUT_MS, recoveryMs: 45000, readerLocationText: READER_LOCATION_TEXT, readerSide: READER_SIDE, timers: PAY_TIMERS, payPerMinute: Math.min(60, Math.max(1, parseInt(process.env.PAY_RATE_PER_MIN || "6", 10) || 6)),
 });
 /* ---- catalog table + server-side quotes (ADR section 4) ---- */
 let catalogMap = { categories: {}, floats: [] };
@@ -1198,7 +1200,7 @@ const quoteApi = require("./quote").createQuoteApi({
   prizeCheck, nextOrderSeq, cleanCustomerName, modsNote, orderTypeId: KIOSK_ORDER_TYPE_ID, orderPath: ORDER_PATH,
   quoteAllowed: () => payApi.quoteAllowed(),
   payRunning: () => PAY_ENABLED && payAllowed() && flexPay.hasJournal(),
-  payRegister: (orderId, mode) => { const tok = payApi.registerOrder(orderId); if (tok && mode === "window") flexPay.collect(orderId); return tok; },
+  payRegister: (orderId, mode) => { const tok = payApi.registerOrder(orderId); if (tok && mode === "window") Promise.resolve(flexPay.collect(orderId)).catch(() => {}); return tok; },
 });
 function catalogHeartbeat() { try { return quoteApi.enabled() ? catalog.heartbeat() : { off: true }; } catch { return { off: true }; } }
 if (quoteApi.enabled()) catalog.start(parseInt(process.env.TB_CATALOG_MS || "", 10) || undefined);
@@ -1209,7 +1211,7 @@ if (PAY_ENABLED) {
     console.warn("Tap-to-pay: PAY_ENABLED=true but FLEX_IP is not set — tap-to-pay unavailable until FLEX_IP is configured.");
   } else {
     console.log(`Tap-to-pay ON — connecting to ${FLEX_SCHEME}://${FLEX_IP}:${FLEX_PORT}/remote_pay`);
-    try { flexPay.init({ FLEX_IP, FLEX_PORT, FLEX_SCHEME, POS_NAME, PAIRING_FILE, PAY_TIMEOUT_MS, JOURNAL_DIR: TB_DIR, payAllowed }, { tagOrder: tagKioskOrder, restFindPayments }); payApi.startSweeper(); }
+    try { flexPay.init({ FLEX_IP, FLEX_PORT, FLEX_SCHEME, POS_NAME, PAIRING_FILE, PAY_TIMEOUT_MS, JOURNAL_DIR: TB_DIR, payAllowed, KIOSK_ORDER_TYPE_ID }, { tagOrder: tagKioskOrder, restFindPayments, getOrder: id => cloverGet(`/orders/${id}`) }); payApi.startSweeper(); }
     catch (e) { console.error("Tap-to-pay could not start:", e.message); }
   }
   if (!payAllowed()) console.warn(`Tap-to-pay is held OFF (${payFlagPresent() ? "pay-off.flag present" : "remote kill in force"}): no new card Sales; reconcile keeps running`);

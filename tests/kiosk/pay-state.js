@@ -39,8 +39,9 @@ function rig(opts = {}) {
     tagOrder: async t => { r.tags.push(t); if (r.tagFail > 0) { r.tagFail--; throw new Error("clover 500"); } },
   };
   if (r.rest) deps.restFindPayments = async id => r.rest(id);
-  fp.init({ FLEX_IP: "x", FLEX_PORT: 1, FLEX_SCHEME: "wss", POS_NAME: "t", PAIRING_FILE: "x", JOURNAL_DIR: dir, PAY_TIMEOUT_MS: TIMING.PAY_TIMEOUT_MS,
-    timing: { ...TIMING, ...(opts.timing || {}) }, payAllowed: () => r.allowed }, deps);
+  if (opts.getOrder) deps.getOrder = opts.getOrder;
+  fp.init({ FLEX_IP: "x", FLEX_PORT: 1, FLEX_SCHEME: "wss", POS_NAME: "t", PAIRING_FILE: "x", JOURNAL_DIR: dir, PAY_TIMEOUT_MS: (opts.timing && opts.timing.PAY_TIMEOUT_MS) || TIMING.PAY_TIMEOUT_MS,
+    timing: { ...TIMING, ...(opts.timing || {}) }, payAllowed: () => r.allowed, ...(opts.cfgExtra || {}) }, deps);
   r.ready = () => { r.fc.listener.onDeviceConnected(); r.fc.listener.onDeviceReady({ deviceSerial: "C0TEST", merchantName: "Test" }); };
   r.disconnect = () => r.fc.listener.onDeviceDisconnected();
   r.order = (id = newOrderId()) => { fp.registerOrder(id); return id; };
@@ -164,10 +165,10 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     r.fc.script.sale = () => r.respond("CANCEL", null, "Request Canceled");
     const out = await fp.pay({ orderId: order, amountCents: 349 });
     eq(out.result, "cancelled"); eq(r.state(r.ext(order)), "CANCELLED"); eq(r.tags.length, 0);
-    const w = fp.collect(order); eq(w.result, "collect");
+    const w = await fp.collect(order); eq(w.result, "collect");
     await waitFor(() => r.tags.length === 1 && !J.needsTag(r.journal.order(order)), 2000, "COLLECT tag");
     eq(r.tags[0].title, "TBK:COLLECT"); eq(r.tags[0].lock, false);
-    eq(fp.collect(order).result, "collect", "idempotent");
+    eq((await fp.collect(order)).result, "collect", "idempotent");
     const blocked = await fp.pay({ orderId: order, amountCents: 349 });
     eq(blocked.result, "unavailable"); eq(r.fc.count("sale"), 1, "no card attempt after the order went to the window");
   });
@@ -239,9 +240,9 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     const salesBefore = r.fc.count("sale");
     // H: repeat /pay, repeat window, another order: no new Sale on the reader
     eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "blocked-unknown");
-    eq(fp.collect(order).result, "blocked-unknown");
+    eq((await fp.collect(order)).result, "blocked-unknown");
     const other = r.order();
-    eq((await fp.pay({ orderId: other, amountCents: 349 })).result, "busy", "one reader: an unresolved attempt keeps it");
+    eq((await fp.pay({ orderId: other, amountCents: 349 })).result, "reader-busy", "one reader: an unresolved attempt keeps it (CR-005: its own result, so the page goes to the window)");
     eq(r.fc.count("sale"), salesBefore, "no second prompt");
     ok((await fp.canAbandon(order)).ok === false, "an UNKNOWN order cannot be abandoned");
     await waitFor(() => r.tags.some(t => t.title === "TBK:CHECK") && !J.needsTag(r.journal.order(order)), 2000, "CHECK tag written");
@@ -382,7 +383,7 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     // window first, then a late card approval
     const o2 = r.order();
     r.fc.script.sale = () => r.respond("CANCEL", null, "x");
-    await fp.pay({ orderId: o2, amountCents: 349 }); fp.collect(o2);
+    await fp.pay({ orderId: o2, amountCents: 349 }); await fp.collect(o2);
     r.respond("SUCCESS", mkPayment({ extId: r.ext(o2, 1), id: "PAYIDIIIIII1" }));
     eq(r.state(r.ext(o2, 1)), "DOUBLE", "approved after COLLECT is DOUBLE so the owner can void one");
   });
@@ -471,7 +472,7 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     const p = fp.pay({ orderId: order, amountCents: 349 });
     await sleep(20);
     eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "busy");
-    eq((await fp.pay({ orderId: r.order(), amountCents: 349 })).result, "busy");
+    eq((await fp.pay({ orderId: r.order(), amountCents: 349 })).result, "reader-busy");
     // garbage into every handler: no throw escapes
     const l = r.fc.listener;
     l.onSaleResponse(null); l.onSaleResponse({}); l.onRetrievePaymentResponse(null); l.onRetrieveDeviceStatusResponse(undefined); l.onDeviceError(null);
@@ -547,12 +548,12 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
   await scenario("canAbandon: needs a quiet order and an idle reader", async () => {
     const r = rig(); r.ready();
     const order = r.order();
-    eq((await fp.canAbandon(order)).ok, true);
+    eq((await fp.canAbandon(order)).ok, true); fp.releaseAbandon(order);
     r.fc.deviceState = "BUSY"; eq((await fp.canAbandon(order)).ok, false); r.fc.deviceState = "IDLE";
     r.fc.script.sale = () => r.respond("CANCEL", null, "x");
     await fp.pay({ orderId: order, amountCents: 349 });
-    eq((await fp.canAbandon(order)).ok, true, "CANCELLED may be abandoned");
-    fp.collect(order); eq((await fp.canAbandon(order)).ok, false, "a COLLECT order has a ticket the window will take");
+    eq((await fp.canAbandon(order)).ok, true, "CANCELLED may be abandoned"); fp.releaseAbandon(order);
+    await fp.collect(order); eq((await fp.canAbandon(order)).ok, false, "a COLLECT order has a ticket the window will take");
     const o2 = r.order();
     r.fc.script.sale = (id) => r.respond("SUCCESS", mkPayment({ extId: id }));
     await fp.pay({ orderId: o2, amountCents: 349 }); eq((await fp.canAbandon(o2)).ok, false, "a paid order is never deleted");
@@ -560,13 +561,221 @@ const keepAlive = setInterval(() => {}, 1000);   // flex-pay's own timers are un
     r.disconnect(); eq((await fp.canAbandon(r.order())).ok, false, "device not confirmed idle");
   });
 
-  /* ================= orphan device payment ================= */
-  await scenario("a device approval the journal never heard of is adopted so its order gets tagged", async () => {
+  /* ================= Round 3 (Flint CR-001..016, Snake Eyes 4): each scenario reproduces the reviewer's trigger ================= */
+
+  await scenario("CR-002 canAbandon marks the order closed in the same tick; pay and collect refuse until it is released", async () => {
     const r = rig(); r.ready();
-    r.respond("SUCCESS", mkPayment({ extId: "TBKLOSTORDER0001-1", id: "PAYIDMMMMMM1", shell: "SHELLMMMMMM1" }));
-    eq(r.state("TBKLOSTORDER0001-1"), "APPROVED");
-    await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:PAID:PAYIDMMMMMM1", 2000, "orphan PAID tag");
-    r.respond("SUCCESS", mkPayment({ extId: "NOTOURS-1" }));                       // not a TBK id: ignored
+    const order = r.order();
+    const c = await fp.canAbandon(order); eq(c.ok, true);
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "unavailable", "no Sale while the order is being deleted");
+    eq(r.fc.count("sale"), 0);
+    eq((await fp.collect(order)).result, "unavailable");
+    eq((await fp.canAbandon(order)).ok, false, "a second abandon cannot start either");
+    fp.releaseAbandon(order);
+    r.fc.script.sale = (id) => r.respond("SUCCESS", mkPayment({ extId: id, amount: 349 }));
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "approved", "released: the customer can pay again");
+    // markAbandoned also clears the mark and the order stays abandoned
+    const o2 = r.order(); eq((await fp.canAbandon(o2)).ok, true); fp.markAbandoned(o2);
+    eq((await fp.pay({ orderId: o2, amountCents: 349 })).result, "mismatch");
+    // a sale that starts DURING the reader-idle check is caught by the re-check
+    const o3 = r.order(); r.fc.script.sale = () => {};
+    const slow = r.fc.retrieveDeviceStatus.bind(r.fc);
+    r.fc.retrieveDeviceStatus = req => { setImmediate(() => { fp.pay({ orderId: o3, amountCents: 349 }); }); slow(req); };
+    const racing = await fp.canAbandon(o3);
+    r.fc.retrieveDeviceStatus = slow;
+    eq(racing.ok, false, "an attempt that started while the reader was being asked blocks the abandon");
+  });
+
+  await scenario("CR-003 a SUCCESS payment for less than the sale is not an approval: CHECK, CRITICAL, the paid amount journaled", async () => {
+    const r = rig(); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    const errs = []; const oe = console.error; console.error = (...a) => errs.push(a.join(" "));
+    r.fc.script.sale = (id) => r.respond("SUCCESS", mkPayment({ extId: id, amount: 1, id: "PAYIDPART001" }));      // 1 cent against a 349 cent sale
+    const out = await fp.pay({ orderId: order, amountCents: 349 });
+    console.error = oe;
+    eq(out.result, "unknown", "not approved");
+    eq(r.state(ext), "TIMEOUT_UNKNOWN"); eq(r.journal.get(ext).paidCents, 1, "the amount the device really took is in the journal");
+    ok(errs.some(e => /CRITICAL/.test(e) && /349/.test(e)), "CRITICAL logged");
+    await waitFor(() => r.tags.some(t => t.title === "TBK:CHECK"), 2000, "CHECK tag");
+    ok(!r.tags.some(t => /PAID/.test(t.title)), "never PAID");
+    // the same payment found by a later lookup is still refused, and the CRITICAL line is not repeated
+    r.fc.script.retrievePayment = (id) => ({ status: "FOUND", payment: mkPayment({ extId: id, amount: 1, id: "PAYIDPART001" }) });
+    await sleep(900);
+    eq(r.state(ext), "TIMEOUT_UNKNOWN"); ok(!r.tags.some(t => /PAID/.test(t.title)));
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "blocked-unknown");
+    // an unreadable amount is refused too
+    const o2 = r.order(); r.fc.script.sale = (id) => { const p = mkPayment({ extId: id }); p.setAmount(undefined); r.respond("SUCCESS", p); };
+    eq((await fp.pay({ orderId: o2, amountCents: 349 })).result === "approved", false);
+  });
+
+  await scenario("CR-006 a SUCCESS payment under a FAIL or CANCEL code is evidence of a charge, never 'not charged'", async () => {
+    for (const rc of ["FAIL", "CANCEL"]) {
+      const r = rig(); r.ready();
+      const order = r.order(), ext = r.ext(order);
+      const oe = console.error; console.error = () => {};
+      r.fc.script.sale = (id) => r.respond(rc, mkPayment({ extId: id, amount: 349, id: "PAYIDCONTRA1" }));
+      const out = await fp.pay({ orderId: order, amountCents: 349 });
+      console.error = oe;
+      eq(out.result, "approved", rc + " code with a SUCCESS payment: verified and approved");
+      eq(r.state(ext), "APPROVED"); eq(r.fc.count("sale"), 1);
+      eq((await fp.pay({ orderId: order, amountCents: 349 })).cached, true, "no second Sale");
+      fp.shutdown();
+    }
+    // when the contradictory payment cannot be verified (wrong amount) the attempt is recovered, never declared DECLINED
+    const r = rig(); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    const oe = console.error; console.error = () => {};
+    r.fc.script.retrievePayment = () => ({ status: "IN_PROGRESS" });
+    r.fc.script.sale = (id) => r.respond("FAIL", mkPayment({ extId: id, amount: 5, id: "PAYIDCONTRA2" }));
+    const p = fp.pay({ orderId: order, amountCents: 349 }); await sleep(150); console.error = oe;
+    ok(r.state(ext) !== "DECLINED" && r.state(ext) !== "CANCELLED", "never settled not-charged on top of a SUCCESS payment (" + r.state(ext) + ")");
+    eq((await p).result, "unknown", "a payment of the wrong size under a FAIL code holds the order as CHECK"); eq(r.state(ext), "TIMEOUT_UNKNOWN");
+    r.respond("SUCCESS", mkPayment({ extId: ext, amount: 349 })); eq(r.state(ext), "APPROVED", "and the real full-size approval still lands");
+  });
+
+  await scenario("CR-007 the old connector is disposed on reconnect and its late callbacks are ignored", async () => {
+    const r = rig({ timing: { PAY_TIMEOUT_MS: 5000 } }); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    const stale = r.fc.listener;                                        // the connector generation that is about to be replaced
+    const p = fp.pay({ orderId: order, amountCents: 349 }); await sleep(30);
+    eq(r.state(ext), "IN_FLIGHT");
+    fp._internals.reconnectNow();                                       // what a reconnect does: build a new connector + listener
+    ok(r.fc.calls.some(c => c.m === "dispose"), "the old connector was disposed before it was replaced");
+    ok(r.fc.listener !== stale, "a new listener generation is installed");
+    stale.onDeviceDisconnected();                                       // a late callback from the dead connector
+    stale.onSaleResponse(mkSale("CANCEL", null, "stale"));
+    eq(fp.status().state !== "offline", true, "a stale disconnect does not flip the device offline");
+    eq(r.state(ext), "IN_FLIGHT", "and cannot turn the live sale UNKNOWN or cancel it");
+    r.fc.listener.onSaleResponse(mkSale("SUCCESS", mkPayment({ extId: ext, amount: 349 })));
+    eq((await p).result, "approved");
+  });
+
+  await scenario("CR-008 a payment without an externalPaymentId is not accepted for our attempt", async () => {
+    const r = rig(); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    const oe = console.warn; console.warn = () => {};
+    r.fc.script.retrievePayment = (id) => { const p = mkPayment({ extId: undefined, amount: 349 }); return { status: "FOUND", payment: p }; };
+    r.fc.script.sale = () => {};
+    const out = await fp.pay({ orderId: order, amountCents: 349 });                // times out; the device "finds" an id-less payment
+    console.warn = oe;
+    ok(out.result !== "approved", "id-less payment refused: " + out.result);
+    ok(r.state(ext) !== "APPROVED");
+  });
+
+  await scenario("CR-009 an orphan device approval is adopted only after Clover confirms a Kiosk order with the same total", async () => {
+    const TYPE = "KIOSKTYPE0001";
+    const cases = [
+      ["matching Kiosk order", { orderType: { id: TYPE }, total: 349 }, true],
+      ["wrong total", { orderType: { id: TYPE }, total: 500 }, false],
+      ["not a Kiosk order", { orderType: { id: "DUOTYPE00001" }, total: 349 }, false],
+      ["no such order", null, false],
+    ];
+    for (const [label, order, adopted] of cases) {
+      const r = rig({ getOrder: async () => { if (!order) throw new Error("404"); return order; }, cfgExtra: { KIOSK_ORDER_TYPE_ID: TYPE } }); r.ready();
+      const oe = console.error; console.error = () => {};
+      r.respond("SUCCESS", mkPayment({ extId: "TBKLOSTORDER0001-1", amount: 349, id: "PAYIDORPH001", shell: "SHELLORPH001" }));
+      await sleep(80); console.error = oe;
+      eq(r.state("TBKLOSTORDER0001-1") === "APPROVED", adopted, label);
+      if (adopted) await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:PAID:PAYIDORPH001", 2000, "orphan PAID tag");
+      else { eq(r.tags.length, 0, label + ": nothing tagged"); eq(r.journal.order("LOSTORDER0001"), null, label + ": no order registered"); }
+      fp.shutdown();
+    }
+    const r = rig(); r.ready();                                                          // no lookup configured: nothing is adopted
+    const oe = console.error; console.error = () => {};
+    r.respond("SUCCESS", mkPayment({ extId: "TBKLOSTORDER0002-1", amount: 349 })); await sleep(50); console.error = oe;
+    eq(r.journal.get("TBKLOSTORDER0002-1"), null);
+    r.respond("SUCCESS", mkPayment({ extId: "NOTOURS-1" })); eq(r.journal.get("NOTOURS-1"), null);
+  });
+
+  await scenario("CR-010 DOUBLE shows in status() until acknowledged", async () => {
+    const r = rig(); r.ready();
+    const order = r.order();
+    r.fc.script.sale = () => r.respond("CANCEL", null, "x");
+    await fp.pay({ orderId: order, amountCents: 349 });
+    r.fc.script.sale = (id) => r.respond("SUCCESS", mkPayment({ extId: id, amount: 349 }));
+    await fp.pay({ orderId: order, amountCents: 349 });
+    const oe = console.error; console.error = () => {};
+    r.respond("SUCCESS", mkPayment({ extId: r.ext(order, 1), amount: 349, id: "PAYIDDBL0001" })); console.error = oe;
+    eq(r.state(r.ext(order, 1)), "DOUBLE"); eq(fp.status().doubles, 1, "the heartbeat can report it");
+    r.journal.append({ externalId: r.ext(order, 1), kioskOrderId: order, ackedAt: r.journal.tick() });
+    eq(fp.status().doubles, 0, "acknowledged");
+  });
+
+  await scenario("CR-012 the 30 day purge runs at boot", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paystate-"));
+    const old = new Date(); old.setDate(old.getDate() - 45);
+    const key = J.dayKey(old.getTime()); const f = path.join(dir, `pay-journal.${key}.jsonl`);
+    const ts = old.getTime();
+    fs.writeFileSync(f, JSON.stringify({ ts, kioskOrderId: "OLDORDER0001", state: "PENDING" }) + "\n" + JSON.stringify({ ts: ts + 1, externalId: "TBKOLDORDER0001-1", kioskOrderId: "OLDORDER0001", attempt: 1, state: "DECLINED", amountCents: 349, createdAt: ts, stateAt: ts + 1 }) + "\n");
+    const r = rig({ dir, journal: J.createJournal({ dir }) });
+    ok(!fs.existsSync(f), "a resolved journal file older than 30 days is gone after init");
+    fp.shutdown();
+    const f2 = path.join(dir, `pay-journal.${J.dayKey(old.getTime() - 864e5)}.jsonl`);
+    fs.writeFileSync(f2, JSON.stringify({ ts: ts - 864e5, kioskOrderId: "OLDORDER0002", state: "PENDING" }) + "\n" + JSON.stringify({ ts: ts - 864e5 + 1, externalId: "TBKOLDORDER0002-1", kioskOrderId: "OLDORDER0002", attempt: 1, state: "TIMEOUT_UNKNOWN", amountCents: 349, createdAt: ts - 864e5, stateAt: ts - 864e5 + 1 }) + "\n");
+    const j2 = J.createJournal({ dir }); j2.load(); rig({ dir, journal: j2 });
+    ok(fs.existsSync(f2), "an UNKNOWN attempt's file is never purged");
+  });
+
+  await scenario("pay-resolve: the owner's decision for a stuck UNKNOWN (CR-013)", async () => {
+    const resolve = require("../../tools/pay-resolve");
+    const mk = () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-paystate-")); const j = J.createJournal({ dir }); j.load(); const O = "OWNERORDER" + String(Math.floor(Math.random() * 1e4)).padStart(4, "0"); j.registerOrder(O);
+      j.append({ externalId: `TBK${O}-1`, kioskOrderId: O, attempt: 1, state: "IN_FLIGHT", amountCents: 349, source: "local" }, { newAttempt: true });
+      j.append({ externalId: `TBK${O}-1`, kioskOrderId: O, state: "DISCONNECTED_UNKNOWN", source: "local" }); return { dir, O, ext: `TBK${O}-1` }; };
+    const lines = []; const out = l => lines.push(l);
+    // not-charged -> COLLECT tag, no device needed
+    let w = mk();
+    eq(resolve.run(["--dir", w.dir, "--list"], out), 0); ok(lines.some(l => l.includes(w.ext)), "--list names the stuck attempt");
+    eq(resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 0);
+    let r = rig({ dir: w.dir, journal: (() => { const j = J.createJournal({ dir: w.dir }); j.load(); return j; })() });
+    eq(r.state(w.ext), "CANCELLED"); eq(r.journal.get(w.ext).source, "local");
+    await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:COLLECT", 2000, "COLLECT tag from the owner's decision"); fp.shutdown();
+    // charged -> PAID tag WITHOUT asking the reader (the owner vouches); the device is not even connected
+    w = mk();
+    eq(resolve.run(["--dir", w.dir, w.ext, "charged", "PAYIDOWNER01"], out), 0);
+    r = rig({ dir: w.dir, journal: (() => { const j = J.createJournal({ dir: w.dir }); j.load(); return j; })() });
+    await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:PAID:PAYIDOWNER01", 2000, "PAID tag from the owner's decision"); fp.shutdown();
+    // refuses what is not stuck, a bad verb and a bad payment id; ack-double
+    eq(resolve.run(["--dir", w.dir, w.ext, "not-charged"], out), 1, "already resolved: refused");
+    eq(resolve.run(["--dir", w.dir, w.ext, "maybe"], out), 2);
+    w = mk(); eq(resolve.run(["--dir", w.dir, w.ext, "charged", "bad id!"], out), 2);
+    const dj = J.createJournal({ dir: w.dir }); dj.load();
+    dj.append({ externalId: w.ext, kioskOrderId: w.O, state: "DOUBLE", source: "device" });
+    eq(resolve.run(["--dir", w.dir, "--list"], out), 0);
+    eq(resolve.run(["--dir", w.dir, w.ext, "ack-double"], out), 0);
+    const dj2 = J.createJournal({ dir: w.dir }); dj2.load(); eq(dj2.doubles().length, 0, "acknowledged");
+  });
+
+  await scenario("Snake Eyes 4: Pay at the window while the reader is waiting cancels the prompt and resolves COLLECT", async () => {
+    const r = rig({ timing: { PAY_TIMEOUT_MS: 5000 } }); r.ready();
+    const order = r.order(), ext = r.ext(order);
+    r.fc.script.cancel = () => r.respond("CANCEL", null, "Request Canceled");          // the reader answers the ESC with a CANCEL response
+    r.fc.script.sale = () => {};                                                       // the customer has not tapped
+    const p = fp.pay({ orderId: order, amountCents: 349 }); await sleep(30);
+    eq(r.state(ext), "IN_FLIGHT");
+    const w = await fp.collect(order);
+    eq(w.result, "collect", "the button does what it says");
+    eq(r.fc.calls.filter(c => c.m === "cancel").length, 1, "an ESC (CANCEL_INPUT_OPTION) was sent to the reader");
+    eq(r.fc.calls.find(c => c.m === "cancel").key, "ESC");
+    eq(r.state(ext), "CANCELLED"); eq((await p).result, "cancelled");
+    await waitFor(() => r.lastTag() && r.lastTag().title === "TBK:COLLECT", 2000, "COLLECT tag");
+    eq((await fp.pay({ orderId: order, amountCents: 349 })).result, "unavailable", "and no card attempt can follow");
+    // the customer's tap wins the race: the card is charged, so the answer is "approved", not COLLECT
+    const o2 = r.order(), e2 = r.ext(o2); r.fc.script.cancel = () => r.respond("SUCCESS", mkPayment({ extId: e2, amount: 349, id: "PAYIDRACE999" }));
+    const p2 = fp.pay({ orderId: o2, amountCents: 349 }); await sleep(30);
+    eq((await fp.collect(o2)).result, "approved", "a charge always beats the window release");
+    eq(r.state(e2), "APPROVED"); await p2;
+    // if the reader never answers the ESC, the window release says "busy" (the page keeps waiting) and the sale stays IN_FLIGHT
+    const o3 = r.order(); r.fc.script.cancel = () => {}; r.fc.script.sale = () => {};
+    const p3 = fp.pay({ orderId: o3, amountCents: 349 }); await sleep(30);
+    const slow = fp.collect(o3); const fast = await Promise.race([slow, sleep(300).then(() => "pending")]);
+    eq(fast, "pending", "still waiting for the reader"); eq(r.state(r.ext(o3)), "IN_FLIGHT");
+    fp.shutdown(); void p3;
+  });
+
+  /* ================= orphan device payment (superseded by CR-009 above; kept for a not-ours id) ================= */
+  await scenario("a payment that is not one of ours is ignored", async () => {
+    const r = rig(); r.ready();
+    r.respond("SUCCESS", mkPayment({ extId: "NOTOURS-1" }));
     eq(r.journal.get("NOTOURS-1"), null);
   });
 

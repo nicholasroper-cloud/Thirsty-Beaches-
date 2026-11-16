@@ -53,6 +53,7 @@ class FakeConnector {
   }
   invokeInputOption(io) { this.calls.push({ m: "cancel", key: io.getKeyPress() }); if (this.script.cancel) setImmediate(() => this.script.cancel()); }
   resetDevice() { this.calls.push({ m: "reset" }); setImmediate(() => this.listener.onResetDeviceResponse(new sdk.remotepay.ResetDeviceResponse())); }
+  dispose() { this.calls.push({ m: "dispose" }); }
   rejectPayment() { this.calls.push({ m: "rejectPayment" }); }
   acceptSignature() { this.calls.push({ m: "acceptSignature" }); }
   count(m) { return this.calls.filter(c => c.m === m).length; }

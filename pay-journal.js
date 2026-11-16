@@ -59,6 +59,7 @@ const VALIDATORS = {
   attempt:       int(1, 9),
   quoteId:       pat(/^[A-Za-z0-9_-]{1,64}$/),
   amountCents:   int(0, 100000000),
+  paidCents:     int(0, 100000000),                         // what the device says it actually charged, when that differs from amountCents (CR-003)
   taxCents:      int(0, 100000000),
   state:         v => (ATTEMPT_STATES.has(v) || ORDER_STATES.has(v)) ? v : undefined,
   responseCode:  pat(/^[A-Z_]{2,16}$/),                     // remotepay.ResponseCode: SUCCESS, FAIL, CANCEL, ...
@@ -71,6 +72,7 @@ const VALIDATORS = {
   createdAt:     int(1, 8.64e15),
   stateAt:       int(1, 8.64e15),
   taggedAt:      int(1, 8.64e15),
+  ackedAt:       int(1, 8.64e15),                           // the owner acknowledged a DOUBLE (tools/pay-resolve.js ack-double)
   source:        oneOf(SOURCES),
 };
 const ALLOWED_KEYS = Object.freeze(Object.keys(VALIDATORS));
@@ -321,6 +323,7 @@ function createJournal(opts) {
     orders: () => [...orders.values()],
     attemptsFor: id => { const o = orders.get(id); return o ? o.attempts.slice() : []; },
     active: () => [...attempts.values()].filter(a => isActive(a.state)),
+    doubles: () => [...attempts.values()].filter(a => a.state === "DOUBLE" && !a.ackedAt),
     ordersNeedingTag: () => [...orders.values()].filter(needsTag),
     stats: () => ({ attempts: attempts.size, orders: orders.size, corrupt, bytes: totalBytes(), file: FILE }),
     dir, FILE,

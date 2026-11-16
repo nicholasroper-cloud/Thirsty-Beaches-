@@ -21,8 +21,8 @@ const lib = require("./kiosk-lib");
 
 const ORDER_ID_RE = /^[A-Za-z0-9]{4,24}$/;
 /* ADR section 7 timers, server-authoritative (the page only renders the countdown it is told):
-   UNKNOWN: hold the "checking your payment, do not pay again" screen 20 s, then the page resets (the order is KEPT and stays locked).
-   DECLINED / CANCELLED: wait 30 s, show "Still there?" for 10 s, then ABANDON (the server checks the reader is idle, then deletes the order).
+   UNKNOWN: hold the "don't pay again" screen 30 s, then the page resets (the order is KEPT and stays locked).
+   DECLINED / CANCELLED: wait 30 s, show "Still there?" for 20 s, then ABANDON (the server checks the reader is idle, then deletes the order).
    Backstops if the page is gone: a hidden TBK:PENDING order left declined/cancelled is abandoned after 55 s, one that never got a card attempt after 5 min. */
 const SWEEP_PENDING_MS = 5 * 60000, SWEEP_EVERY_MS = 5000;
 
@@ -33,10 +33,10 @@ const SWEEP_PENDING_MS = 5 * 60000, SWEEP_EVERY_MS = 5000;
  *           readerTimeoutMs: number, recoveryMs: number, now?: () => number }} d
  */
 function createPayApi(d) {
-  const payLimiter   = lib.makeRateLimiter(d.payPerMinute || 6, 60000, d.now);   // Q5: /pay 6 a minute by default
-  const quoteLimiter = lib.makeRateLimiter(30, 60000, d.now);
+  const payLimiter   = lib.makeRateLimiter(d.payPerMinute || 6, 60000, d.limiterNow || d.now);   // Q5: /pay 6 a minute by default
+  const quoteLimiter = lib.makeRateLimiter(30, 60000, d.limiterNow || d.now);
   const send = d.sendJSON;
-  const UNKNOWN_HOLD_MS = (d.timers && d.timers.unknownHoldMs) || 20000, DECLINED_WAIT_MS = (d.timers && d.timers.declinedWaitMs) || 30000, STILL_THERE_MS = (d.timers && d.timers.stillThereMs) || 10000;
+  const UNKNOWN_HOLD_MS = (d.timers && d.timers.unknownHoldMs) || 30000, DECLINED_WAIT_MS = (d.timers && d.timers.declinedWaitMs) || 30000, STILL_THERE_MS = (d.timers && d.timers.stillThereMs) || 20000;
   const SWEEP_DECLINED_MS = DECLINED_WAIT_MS + STILL_THERE_MS + 15000;
   const now = d.now || Date.now;
   const giveUp = new Map();                       // orderId -> time: orders the sweeper could not abandon (retry after 10 min)
@@ -72,14 +72,21 @@ function createPayApi(d) {
   async function abandonOrder(orderId) {
     const chk = await d.flexPay.canAbandon(orderId);
     if (!chk.ok) return { result: "refused", message: chk.reason };
-    let order;
-    try { order = await d.cloverGet(`/orders/${orderId}?expand=payments`); } catch { return { result: "refused", message: "order could not be checked" }; }
-    const pays = order && order.payments && Array.isArray(order.payments.elements) ? order.payments.elements.length : (order && order.payments ? 1 : 0);
-    if (!order || order.state !== "open" || pays > 0) return { result: "refused", message: "order is not an empty open order" };
-    if (order.title !== "TBK:PENDING") return { result: "refused", message: "order is already visible to the staff" };
-    try { await d.cloverDelete(orderId); } catch (e) { return { result: "error", message: "could not delete the order" }; }
-    d.flexPay.markAbandoned(orderId);
-    return { result: "abandoned" };
+    // canAbandon marked the order "being closed" in the same tick: /pay and /pay/window refuse it until we release it (CR-002). Every exit below but success releases.
+    let deleted = false;
+    try {
+      let order;
+      try { order = await d.cloverGet(`/orders/${orderId}?expand=payments`); } catch { return { result: "refused", message: "order could not be checked" }; }
+      const pays = order && order.payments && Array.isArray(order.payments.elements) ? order.payments.elements.length : (order && order.payments ? 1 : 0);
+      if (!order || order.state !== "open" || pays > 0) return { result: "refused", message: "order is not an empty open order" };
+      if (order.title !== "TBK:PENDING") return { result: "refused", message: "order is already visible to the staff" };
+      const now2 = d.flexPay.orderState(orderId);                                    // re-check the journal after the slow Clover call
+      if (!now2 || now2.attempts !== chk.attempts || !["PENDING", "DECLINED", "CANCELLED"].includes(now2.state)) return { result: "refused", message: "order changed while it was being checked" };
+      try { await d.cloverDelete(orderId); } catch (e) { return { result: "error", message: "could not delete the order" }; }
+      deleted = true;
+      d.flexPay.markAbandoned(orderId);
+      return { result: "abandoned" };
+    } finally { if (!deleted) d.flexPay.releaseAbandon(orderId); }
   }
 
   /** The backstop for a page that is gone (see the timers above). Runs only while pay is on; never touches an order with a live or charged attempt. */
@@ -113,7 +120,7 @@ function createPayApi(d) {
     }
     if (m === "GET" && pathname === "/payconfig")
       return send(res, 200, { enabled: d.payAllowed(), readerTimeoutMs: d.readerTimeoutMs, recoveryMs: d.recoveryMs,
-        unknownHoldMs: UNKNOWN_HOLD_MS, declinedWaitMs: DECLINED_WAIT_MS, stillThereMs: STILL_THERE_MS, readerLocationText: d.readerLocationText || "" }), true;
+        unknownHoldMs: UNKNOWN_HOLD_MS, declinedWaitMs: DECLINED_WAIT_MS, stillThereMs: STILL_THERE_MS, readerLocationText: d.readerLocationText || "", readerSide: d.readerSide || "" }), true;
 
     if (m === "GET" && pathname === "/pay/state") {
       const orderId = new URL(req.url, "http://x").searchParams.get("orderId") || "";
@@ -125,13 +132,14 @@ function createPayApi(d) {
 
     try {
       if (!d.payEnabled) return send(res, 200, { result: "unavailable", reason: "pay disabled" }), true;
-      if (pathname === "/pay" && !payLimiter.take()) return send(res, 429, { result: "unavailable", message: "too many payment requests" }), true;
       const b = await body(req);
       if (!b) return send(res, 200, { result: "mismatch", message: "invalid JSON body" }), true;
       const orderId = String(b.orderId || "").trim();
       if (!authorized(orderId, tokenOf(req, b))) return send(res, 403, { result: "forbidden", error: "forbidden" }), true;
+      // CR-013: the 6 a minute budget is spent only by authorized requests, so unauthenticated same-origin spam cannot use it up
+      if (pathname === "/pay" && !payLimiter.take()) return send(res, 429, { result: "unavailable", message: "too many payment requests" }), true;
 
-      if (pathname === "/pay/window") return send(res, 200, d.flexPay.collect(orderId)), true;
+      if (pathname === "/pay/window") return send(res, 200, await d.flexPay.collect(orderId)), true;
 
       if (pathname === "/pay/abandon") { const r = await abandonOrder(orderId); return send(res, r.result === "error" ? 502 : 200, r), true; }
 

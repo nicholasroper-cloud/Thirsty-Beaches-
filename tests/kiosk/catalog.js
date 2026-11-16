@@ -168,6 +168,28 @@ function mkFake() {
     f.taxRates[0].rate = 650000;
     const right = createCatalog({ cloverGet: f.get, dir: tmp(), map: MAP, taxAllow: [6.5], log: quiet }); await right.sync(); eq(right.payBlock(), null);
   }
+  { // CR-004: a mapped item that resolves to NO tax rate must block pay (an empty allow-list check is vacuous and Clover's own checkout also says 0)
+    const f = mkFake(); f.taxRates[0].isDefault = false;                             // the account has no default rate and the items list none
+    const cat = createCatalog({ cloverGet: f.get, dir: tmp(), map: MAP, taxAllow: [7], log: quiet }); await cat.sync();
+    ok(/has no tax rate/.test(cat.payBlock()), "no tax rate: " + cat.payBlock()); eq(cat.display().payNow, false);
+    f.taxRates[0].isDefault = true; await cat.sync(); eq(cat.payBlock(), null, "with a rate again, pay is allowed");
+    // one mapped item without a rate among rated ones is enough to block
+    const g = mkFake(); g.items[1].defaultTaxRates = false;
+    const cat2 = createCatalog({ cloverGet: g.get, dir: tmp(), map: MAP, taxAllow: [7], log: quiet }); await cat2.sync();
+    ok(/ITEMFLAM00001 has no tax rate/.test(cat2.payBlock()), cat2.payBlock());
+  }
+  { // CR-014: three +40% steps are caught against the accepted baseline; /catalog says payNow:false while nothing is mapped
+    const f = mkFake(), dir = tmp(); const trap = f.items[0];
+    const cat = createCatalog({ cloverGet: f.get, dir, map: MAP, taxAllow: [7], log: quiet }); await cat.sync();
+    trap.price = 488; await cat.sync(); eq([cat.table().items.ITEMTRAP00001.price, cat.payBlock()], [488, null], "a 40% step is under the hold line");
+    trap.price = 683; await cat.sync(); ok(cat.payBlock() && /held/.test(cat.payBlock()), "the second +40% step is 96% from the accepted 349: HELD (" + cat.payBlock() + ")");
+    eq(cat.table().items.ITEMTRAP00001.price, 488, "and the held price is not served");
+    trap.price = 366; await cat.sync(); eq(cat.payBlock(), null, "back near the baseline: released");   // 366 is +5% of 349
+    // slow creep of under 10% moves the baseline along
+    trap.price = 396; await cat.sync(); trap.price = 430; await cat.sync(); eq(cat.payBlock(), null, "small steps are fine");
+    const none = createCatalog({ cloverGet: f.get, dir: tmp(), map: { version: 1, categories: {}, floats: [] }, taxAllow: [7], log: quiet }); await none.sync();
+    eq([none.display().ok, none.display().payNow], [true, false], "nothing mapped: /catalog is not payNow"); ok(/no catalog item is mapped/.test(none.display().reason));
+  }
   eq(parseCheckout({ total: 1000, lineItems: { elements: [{ taxRates: { elements: [{ taxAmount: 65 }] } }] } }), { total: 1000, tax: 65 });
   eq(parseCheckout({ total: 1000, totalTaxAmount: 65 }), { total: 1000, tax: 65 });
   for (const bad of [null, {}, { total: "10" }, { total: 10 }, { total: 10, lineItems: { elements: [{ taxRates: { elements: [{}] } }] } }]) eq(parseCheckout(bad), null, "unreadable: " + JSON.stringify(bad));
@@ -292,6 +314,18 @@ function mkFake() {
     eq((await ex.api.createOrder({ quoteId: qe.quoteId, name: "Old" })).status, 409, "quotes live 10 minutes");
     // legacy switch
     const lg = await rig({ orderPath: "legacy" }); eq((await lg.api.createOrder({ quoteId: "x".repeat(32) })).status, 409);
+  }
+  { // CR-011: two concurrent POST /order calls with one quote and a Maze code: exactly one proceeds (and burns once)
+    const r = await rig();
+    const q = (await r.api.quote({ cart: [L({ sel: { size: SZ[1] } })], code: "MAZE-123456" })).body;
+    const [a, b] = await Promise.all([r.api.createOrder({ quoteId: q.quoteId, name: "A", payMode: "card" }), r.api.createOrder({ quoteId: q.quoteId, name: "B", payMode: "card" })]);
+    eq([a.status, b.status].sort(), [200, 409], "one order, one 409");
+    eq(r.prizeCalls.filter(c => c.redeem).length, 1, "the code was burned once");
+    eq(r.f.orders.size, 1);
+    // a refused burn gives the quote back (the page then orders without the code)
+    const x = await rig(); const qx = (await x.api.quote({ cart: [L({ sel: { size: SZ[1] } })], code: "MAZE-123456" })).body; x.prize.burn = { ok: false, status: "used" };
+    eq((await x.api.createOrder({ quoteId: qx.quoteId, name: "A" })).status, 400);
+    x.prize.burn = { ok: true }; eq((await x.api.createOrder({ quoteId: qx.quoteId, name: "A" })).status, 200, "the quote was released by the refusal");
   }
   { // burn-first
     const r = await rig();

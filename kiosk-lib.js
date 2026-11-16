@@ -31,7 +31,7 @@ function checkRelPath(rel) {
 
 /* Never written by an update, whatever the manifest says: secrets, local state, the
    Node runtime and native binaries. */
-const NEVER_BASENAMES = new Set(["update-state.json", "flex-pairing.json", "pay-journal.jsonl", "pay-token.key"]);
+const NEVER_BASENAMES = new Set(["update-state.json", "flex-pairing.json", "pay-journal.jsonl", "pay-token.key", "pay-remote-kill.json", "catalog.json", "catalog-accept.flag", "pay-off.flag"]);
 const PAY_JOURNAL_RE = /^pay-journal(\.\d{4}-\d{2}-\d{2})?\.jsonl$/;   // today's file and the daily-rotated ones (pay-journal.js)
 const NEVER_EXT = new Set([".env", ".exe", ".dll", ".node", ".sys", ".msi", ".scr", ".com"]);
 function blockedReason(rel) {
@@ -121,8 +121,11 @@ function readRemoteKill(fp) {
 function writeRemoteKill(fp, kill) { writeJsonAtomic(fp, { kill: kill === true, at: new Date().toISOString() }); }
 /* Boot assertion (ADR section 7): with pay on, the page idle timer must outlast the reader timeout plus recovery (30 s extension + 10 s
    answer + margin), or the screen would reset on a customer who is still paying. Returns a problem string, or null when fine. */
-function payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS }) {
+function payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS, READER_LOCATION_TEXT, READER_SIDE }) {
   if (PAY_ENABLED !== true) return null;
+  // Snake Eyes 8: the customer must be told where the reader is. No guess: the owner writes the sentence and names the side, or card payment does not start.
+  if (!String(READER_LOCATION_TEXT || "").trim()) return "PAY_ENABLED=true needs READER_LOCATION_TEXT (one line saying where the card reader is, for example: On the counter, right of this screen)";
+  if (READER_SIDE !== undefined && !/^(left|right|below)$/.test(String(READER_SIDE))) return "READER_SIDE must be left, right or below";
   if (!(IDLE_MS > PAY_TIMEOUT_MS + 45000))
     return `PAY_ENABLED=true needs TB_IDLE_MS > PAY_TIMEOUT_MS + 45000 (have TB_IDLE_MS=${IDLE_MS}, PAY_TIMEOUT_MS=${PAY_TIMEOUT_MS}): raise TB_IDLE_MS or lower PAY_TIMEOUT_MS`;
   return null;
@@ -151,7 +154,7 @@ function payTokenOk(key, orderId, token) {
 function loadOrCreateKey(fp) {
   try { const b = Buffer.from(fs.readFileSync(fp, "utf8").trim(), "hex"); if (b.length === 32) return b; } catch {}
   const key = crypto.randomBytes(32);
-  fs.mkdirSync(path.dirname(fp), { recursive: true });
+  fs.mkdirSync(path.dirname(fp), { recursive: true, mode: 0o700 });
   fs.writeFileSync(fp, key.toString("hex") + "\n", { encoding: "utf8", mode: 0o600 });
   return key;
 }
@@ -331,7 +334,7 @@ function renameRetry(from, to) {
   throw last;
 }
 function writeJsonAtomic(fp, obj) {
-  fs.mkdirSync(path.dirname(fp), { recursive: true });
+  fs.mkdirSync(path.dirname(fp), { recursive: true, mode: 0o700 });      // .tb/ holds the pay journal, keys and catalog: owner only on Unix (Windows: the icacls step)
   const tmp = fp + ".tmp" + process.pid;
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 1));
   renameRetry(tmp, fp);
