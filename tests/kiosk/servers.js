@@ -174,7 +174,7 @@ async function stationTests(cloverPort) {
 
 /* ---------------- kiosk-server.js ---------------- */
 async function kioskTests(cloverPort) {
-  const dir = stage(["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]);
+  const dir = stage(["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "moderation.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]);
   fake.orders = []; fake.posts = [];
   fake.control = { soldOut: ["thirst-trap"], healthcheckUrl: "http://10.0.0.1/steal", settings: { UPDATE_INTERVAL_MIN: 30 }, commands: {},
     greeter: { enabled: "true", volume: 0.5 },

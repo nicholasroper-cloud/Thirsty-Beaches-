@@ -3475,7 +3475,7 @@ async function doPay(){
     const r = await fetch(PAY_ENDPOINT, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ orderId: _payOrder.orderId, amountCents: _payAmount }),
+      body: JSON.stringify({ orderId: _payOrder.orderId, amountCents: _payAmount, payToken: _payOrder.payToken }),   // payToken from /order: the server acts only on orders it issued one for
     });
     out = await r.json();
   } catch(e){

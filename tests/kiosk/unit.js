@@ -25,7 +25,7 @@ t("safe paths", () => {
 });
 
 t("restart classification", () => {
-  for (const r of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "moderation.js", "kiosk-supervisor.js", "clover-menu-server.js", "addons.json", "Kiosk-Server.JS"])
+  for (const r of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "moderation.js", "kiosk-supervisor.js", "clover-menu-server.js", "addons.json", "Kiosk-Server.JS", "pay-journal.js", "pay-routes.js"])
     assert.ok(lib.isRestartFile(r), r);
   for (const c of ["drink-kiosk.html", "assets/logo.png", "make-station-server.js", "clover-menu-server.next.js", "Run-Kiosk.bat", "recipes.json", "assets/x.js", "package.json"])
     assert.ok(!lib.isRestartFile(c), c);

@@ -67,7 +67,7 @@ const ENV_CFG = {
   PAY_ENABLED:         String(process.env.PAY_ENABLED || "false").toLowerCase() === "true",
   FLEX_IP:             (process.env.FLEX_IP || "").trim(),
   FLEX_PORT:           parseInt((process.env.FLEX_PORT || "12345").trim(), 10) || 12345,
-  PAY_TIMEOUT_MS:      Math.max(15000, parseInt(process.env.PAY_TIMEOUT_MS || "90000", 10) || 90000),
+  PAY_TIMEOUT_MS:      Math.min(300000, Math.max(15000, parseInt(process.env.PAY_TIMEOUT_MS || "60000", 10) || 60000)),   // reader prompt budget before recovery (ADR 7: 60 s)
   UPDATE_INTERVAL_MIN: Math.max(5, parseInt(process.env.UPDATE_INTERVAL_MIN || "60", 10) || 60),
   HIDE_CATEGORIES:     (process.env.HIDE_CATEGORIES || "").split(",").map(s => s.trim()).filter(Boolean),
   AI_DESIGN_ENABLED:   String(process.env.AI_DESIGN_ENABLED || "false").toLowerCase() === "true",
@@ -94,6 +94,24 @@ const PAY_ENABLED    = BOOT_TYPED.PAY_ENABLED;
 const FLEX_IP        = BOOT_TYPED.FLEX_IP;
 const FLEX_PORT      = String(BOOT_TYPED.FLEX_PORT);
 const PAY_TIMEOUT_MS = BOOT_TYPED.PAY_TIMEOUT_MS;
+
+/* ---- Pay kill switch (security review S1, ADR section 9) ----
+   A NEW card Sale is allowed only when ALL of: env PAY_ENABLED is true, .tb/pay-off.flag does not exist, and the last remote
+   payEnabled from the Control repo was not the literal boolean false. The Control repo can only switch pay OFF, never on.
+   The last remote answer is kept in .tb/pay-remote-kill.json and survives a restart and a failed fetch. Kill stops new Sales only:
+   the journal, reconcile and tag retries never stop. */
+const PAY_OFF_FLAG  = path.join(TB_DIR, "pay-off.flag");
+const PAY_KILL_FILE = path.join(TB_DIR, "pay-remote-kill.json");
+let payRemoteKill = lib.readRemoteKill(PAY_KILL_FILE);
+const payFlagPresent = () => { try { return fs.existsSync(PAY_OFF_FLAG); } catch { return true; } };   // cannot tell = off
+const payAllowed = () => lib.payGate({ envEnabled: PAY_ENABLED, flagPresent: payFlagPresent(), remoteKill: payRemoteKill });
+function applyRemotePayKill(control) {
+  const k = lib.payKillFrom(control);                       // null = no usable control data: keep the last answer
+  if (k === null || k === payRemoteKill) return;
+  payRemoteKill = k;
+  try { lib.writeRemoteKill(PAY_KILL_FILE, k); } catch (e) { console.warn("could not save the remote pay kill:", e.message); }
+  console.warn(k ? "REMOTE PAY KILL: the Control file switched card payments OFF" : "remote pay kill cleared by the Control file (pay still needs env PAY_ENABLED and no pay-off.flag)");
+}
 
 if (!TOKEN || !MERCHANT_ID) {
   console.error("Missing CLOVER_API_TOKEN or CLOVER_MERCHANT_ID. Put them in .env next to this file.");
@@ -263,41 +281,28 @@ function adapt(items, categories, imgIdx) {
 }
 let cache = null, cacheTime = 0;
 
-// ---- mark order paid (called after a successful Flex Sale) ----
-// After the Flex captures the card on-device, the payment record is created
-// inside Clover automatically via the Sale. This step transitions the order out
-// of "Open Orders" on the Flex/Station dashboard so staff know it is settled.
-//
-// TODO (Flint / real-Flex test): Confirm the exact field to close an order.
-// Clover's order model supports state values: "open", "locked", "paid", "submitted".
-// The correct transition after a remote_pay Sale is believed to be state:"locked"
-// (which removes it from the Open Orders list), but some merchant configurations
-// may require state:"paid". Verify by checking the order's state in the Clover
-// dashboard after a test Sale on a live Flex. If "locked" doesn't remove it from
-// Open Orders, try "paid". This does NOT affect the customer charge — the payment
-// is recorded regardless.
-async function markOrderPaid(orderId) {
-  // Confirm the order exists and has a payment before attempting the transition
-  let orderData;
-  try {
-    orderData = await cloverGet(`/orders/${orderId}?expand=payments`);
-  } catch (e) {
-    throw new Error(`markOrderPaid: could not fetch order ${orderId}: ${e.message}`);
-  }
-
-  if (!orderData) throw new Error(`markOrderPaid: order ${orderId} not found`);
-
-  // Only transition if the order is still open
-  const currentState = orderData.state;
-  if (currentState !== "open") {
-    console.log(`markOrderPaid: order ${orderId} is already in state "${currentState}" — skipping transition`);
-    return;
-  }
-
-  // Transition to "locked" (removes from Open Orders; does not affect the payment record).
-  // If this fails, the customer was still charged — we log it and let staff close manually.
-  await cloverPost(`/orders/${orderId}`, { state: "locked" });
-  console.log(`markOrderPaid: order ${orderId} transitioned to "locked"`);
+// ---- tag the kiosk order after a card outcome (ADR section 1): title TBK:PAID:<paymentId> / TBK:CHECK / TBK:COLLECT, locked or open ----
+// flex-pay.js decides WHAT the tag is (derived only from its journal) and retries this until it succeeds. Rules enforced here:
+//   - a PAID title is never overwritten by CHECK or COLLECT (a failed or late write can never downgrade a paid order)
+//   - the order's state is touched only while Clover says it is open or locked (never an order already paid at the window)
+//   - the shell order the Flex created for the Sale gets TBK:SHELL:<kioskOrderId> so station and reports can hide it
+// ASSUMPTION to verify in real-Flex tests A and D: `title` and state "locked" are writable on a REST order and a locked order cannot be tendered on the Duo.
+async function tagKioskOrder(t) {
+  const cur = await cloverGet(`/orders/${t.kioskOrderId}`);
+  if (!cur) throw new Error("order not found");
+  const title = typeof cur.title === "string" ? cur.title : "";
+  if (title.startsWith("TBK:PAID") && t.kind !== "PAID") return;
+  const patch = {};
+  if (title !== t.title) patch.title = t.title;
+  const want = t.lock ? "locked" : "open";
+  if ((cur.state === "open" || cur.state === "locked") && cur.state !== want) patch.state = want;
+  if (Object.keys(patch).length) await cloverPost(`/orders/${t.kioskOrderId}`, patch);
+  for (const sh of t.shells) await cloverPost(`/orders/${sh.orderId}`, { title: sh.title });
+}
+// REST evidence for reconcile (positive evidence only: flex-pay.js ignores everything except a matching SUCCESS, unvoided payment)
+async function restFindPayments(externalId) {
+  const r = await cloverGet(`/payments?filter=externalPaymentId=${encodeURIComponent(externalId)}&expand=voids`);
+  return (r && r.elements) || [];
 }
 
 // ---- order creation (kiosk cart -> Clover open order) ----
@@ -745,10 +750,14 @@ const versionTag = () => (appState.screenEpoch ? `${CURRENT_VERSION}.${appState.
    A restart (code update, pay setting change, remote restart command) only happens when no
    order/payment/AI request is in flight and nothing customer-facing has happened for IDLE_MS.
    The supervisor brings the server back in ~1-2 s; the page itself is not reloaded. */
-const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/prize", "/mix", "/vibe", "/designdrink"]);
+const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/prize", "/mix", "/vibe", "/designdrink"]);
 const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) || 120000);
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
+{ // ADR section 7: the screen's idle timer must outlast the reader prompt plus recovery, or it would reset on a customer who is still paying
+  const bad = lib.payBootProblem({ PAY_ENABLED, IDLE_MS, PAY_TIMEOUT_MS });
+  if (bad) { console.error("REFUSING TO START: " + bad); process.exit(2); }
+}
 function requestRestart(code, reason) {
   if (!SUPERVISED) { console.log(`restart needed (${reason}) — no supervisor; it happens at the next start`); return false; }
   if (!restartWanted || code === 75) restartWanted = { code, reason, since: Date.now() };
@@ -777,6 +786,7 @@ async function checkControl() {
     controlFetchedAt = Date.now();
   } catch (e) { console.warn("control check failed:", e.message); return; }
   const c = (controlCache && typeof controlCache === "object") ? controlCache : {};
+  try { applyRemotePayKill(controlCache); } catch (e) { console.warn("remote pay kill failed:", e.message); }
   try { applyRemoteSettings(c.settings); } catch (e) { console.warn("remote settings failed:", e.message); }
   try { runRemoteCommands(c.commands); } catch (e) { console.warn("remote commands failed:", e.message); }
 }
@@ -988,7 +998,7 @@ function heartbeatPayload() {
     lastUpdate: lu ? { version: lu.version == null ? null : lu.version, at: lu.at || null,
                        ok: lu.ok == null ? null : !!lu.ok, error: lu.error ? lib.scrub(lu.error) : null } : null,
     rollback: rb ? { at: rb.at, from: rb.from, to: rb.to, reason: lib.scrub(rb.reason) } : null,
-    pay: { enabled: PAY_ENABLED, flexConnected: fp.state === "ready", state: String(fp.state || "disabled") },
+    pay: { enabled: PAY_ENABLED, allowed: payAllowed(), remoteKill: payRemoteKill, offFlag: payFlagPresent(), flexConnected: fp.state === "ready", state: String(fp.state || "disabled"), unresolved: fp.unresolved || 0 },
     clover: { lastOk: cloverHealth.lastOk,
               lastError: cloverHealth.lastError ? `${cloverHealth.lastError.msg} @${cloverHealth.lastError.at}` : null },
     errors: errorsRing.list(),
@@ -1071,105 +1081,14 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = JSON.parse((await readBody(req)) || "{}");
       const result = await createOrder(body.cart, String((body && body.name) || "").trim().slice(0, 60), body && body.code);
+      // Q5: a 128-bit payToken binds the page to THIS order; the pay routes act only on orders registered here
+      if (result.status === 200 && result.body && result.body.orderId) { const tok = payApi.registerOrder(result.body.orderId); if (tok) result.body.payToken = tok; }
       return sendJSON(res, result.status, result.body);
     } catch (e) { console.error("order error:", e.message); return sendJSON(res, 502, { error: "Could not create Clover order" }); }
   }
 
-  // ---- GET /pay/status — connection health for the kiosk pre-check ----
-  if (req.method === "GET" && pathname === "/pay/status")
-    return sendJSON(res, 200, flexPay.status());
-
-  // ---- GET /payconfig — exposes PAY_ENABLED flag to the kiosk page ----
-  if (req.method === "GET" && pathname === "/payconfig")
-    return sendJSON(res, 200, { enabled: PAY_ENABLED });
-
-  // ---- POST /pay — initiate a tap-to-pay Sale on the Flex ----
-  // Contract: { orderId: string, amountCents: number } → { result, paymentId?, last4?, cardBrand?, message? }
-  // HTTP 200 for all handled outcomes (approved/declined/cancelled/error/timeout/unavailable/busy/mismatch).
-  // HTTP 500 for genuine server faults only.
-  //
-  // Idempotency (defence-in-depth):
-  //   1. Device-native: ExternalId = "TB" + orderId.slice(-30) — Flex rejects duplicate ExternalIds.
-  //   2. Server in-flight guard in flex-pay.js: second call for an in-flight order → busy.
-  //   3. Cached approved result: a retry after a dropped response returns the cached approval.
-  //
-  // Reconcile-before-timeout (most important resilience rule):
-  //   On timeout, flex-pay.js queries the Clover order's payments for our ExternalId before
-  //   reporting timeout. If a payment exists, it returns approved. A retry after a genuine
-  //   timeout reuses the same ExternalId — the Flex rejects a duplicate charge.
-  //
-  // NO refunds from this endpoint, ever.
-  if (req.method === "POST" && pathname === "/pay") {
-    try {
-      // If pay is disabled, return unavailable immediately (never a 5xx)
-      if (!PAY_ENABLED) {
-        return sendJSON(res, 200, { result: "unavailable", reason: "pay disabled" });
-      }
-
-      const rawBody = await readBody(req);
-      let body;
-      try { body = JSON.parse(rawBody || "{}"); } catch (e) {
-        return sendJSON(res, 200, { result: "mismatch", message: "invalid JSON body" });
-      }
-
-      const orderId    = String(body.orderId || "").trim();
-      const amtClient  = parseInt(body.amountCents, 10);   // client cross-check value
-
-      if (!orderId) return sendJSON(res, 200, { result: "mismatch", message: "orderId required" });
-      if (!(amtClient > 0)) return sendJSON(res, 200, { result: "mismatch", message: "amountCents must be a positive integer" });
-
-      // Fetch the authoritative order total from Clover — the server, not the browser, decides the charge amount
-      let order;
-      try { order = await cloverGet(`/orders/${orderId}`); }
-      catch (e) {
-        console.error(`pay: cloverGet /orders/${orderId} failed: ${e.message}`);
-        return sendJSON(res, 200, { result: "mismatch", message: "order not found" });
-      }
-
-      if (!order || order.state !== "open") {
-        return sendJSON(res, 200, { result: "mismatch", message: `order not open (state: ${order && order.state})` });
-      }
-
-      const orderTotal = Number(order.total) || 0;   // cents, from Clover
-      if (orderTotal <= 0) {
-        return sendJSON(res, 200, { result: "mismatch", message: "order total is zero" });
-      }
-      if (orderTotal !== amtClient) {
-        // Client amount disagrees with the authoritative order total — refuse rather than charge a number the customer didn't see
-        console.warn(`pay: amount mismatch for orderId=${orderId}: client=${amtClient} order=${orderTotal}`);
-        return sendJSON(res, 200, { result: "mismatch", message: "amount does not match order total" });
-      }
-
-      // ExternalId: deterministic per order, max 32 chars, Flex rejects duplicates
-      const externalId = ("TB" + orderId).slice(0, 32);
-
-      // Delegate to flex-pay.js (handles device state, in-flight guard, timeout, reconcile)
-      const out = await flexPay.pay({ orderId, amountCents: orderTotal, externalId });
-
-      // On approval, transition the order out of Open Orders (best-effort; customer was charged regardless)
-      if (out.result === "approved") {
-        try {
-          await markOrderPaid(orderId);
-        } catch (e) {
-          // Non-fatal: payment is recorded in Clover via the Sale. Order may linger in Open Orders.
-          // Staff can close it manually. Log clearly so the reconciliation line picks it up.
-          console.error(`pay: markOrderPaid failed for orderId=${orderId}: ${e.message} — order may remain open on dashboard`);
-        }
-        // Include ticket (last 4 of order id) in the approved response for the confirm screen
-        out.ticket = orderId.slice(-4).toUpperCase();
-        out.orderId = orderId;
-      }
-
-      // Log structured outcome (never PAN/track data)
-      console.log(`pay: orderId=${orderId} result=${out.result} paymentId=${out.paymentId || "-"} last4=****${out.last4 || "?"} cardBrand=${out.cardBrand || "?"}`);
-      return sendJSON(res, 200, out);
-
-    } catch (e) {
-      // Genuine server fault — the only time we return 5xx from this endpoint
-      console.error("pay: unhandled error:", e.message);
-      return sendJSON(res, 500, { result: "error", message: "server error" });
-    }
-  }
+  // ---- tap-to-pay routes: /pay/status, /payconfig, /pay, /pay/state, /pay/window, /pay/abandon (pay-routes.js) ----
+  if (await payApi.handle(req, res, pathname)) return;
 
   // ---- POST /mix — "Snap a pic, we'll pick your drink" (forwarded to the website AI) ----
   if (req.method === "POST" && pathname === "/mix") {
@@ -1235,14 +1154,23 @@ server.listen(PORT, "127.0.0.1", () => console.log(`Thirsty Beaches kiosk runnin
 // flex-pay.js is always required (cheap — it does nothing until init() is called).
 // The SDK inside flex-pay.js only loads when PAY_ENABLED=true AND FLEX_IP is set.
 const flexPay = require("./flex-pay");
+const payApi = require("./pay-routes").createPayApi({
+  flexPay, payEnabled: PAY_ENABLED, payAllowed,
+  tokenKey: PAY_ENABLED ? lib.loadOrCreateKey(path.join(TB_DIR, "pay-token.key")) : Buffer.alloc(32),   // no key file is created while pay is off
+  cloverGet,
+  cloverDelete: async orderId => { const r = await fetch(`${BASE}/v3/merchants/${MERCHANT_ID}/orders/${orderId}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` } }); if (!r.ok) throw new Error(`delete ${r.status}`); },
+  sendJSON, readBody,
+  readerTimeoutMs: PAY_TIMEOUT_MS, recoveryMs: 45000,
+});
 if (PAY_ENABLED) {
   if (!FLEX_IP) {
     console.warn("Tap-to-pay: PAY_ENABLED=true but FLEX_IP is not set — tap-to-pay unavailable until FLEX_IP is configured.");
   } else {
     console.log(`Tap-to-pay ON — connecting to ${FLEX_SCHEME}://${FLEX_IP}:${FLEX_PORT}/remote_pay`);
-    try { flexPay.init({ FLEX_IP, FLEX_PORT, FLEX_SCHEME, POS_NAME, PAIRING_FILE, PAY_TIMEOUT_MS }); }
+    try { flexPay.init({ FLEX_IP, FLEX_PORT, FLEX_SCHEME, POS_NAME, PAIRING_FILE, PAY_TIMEOUT_MS, JOURNAL_DIR: TB_DIR, payAllowed }, { tagOrder: tagKioskOrder, restFindPayments }); }
     catch (e) { console.error("Tap-to-pay could not start:", e.message); }
   }
+  if (!payAllowed()) console.warn(`Tap-to-pay is held OFF (${payFlagPresent() ? "pay-off.flag present" : "remote kill in force"}): no new card Sales; reconcile keeps running`);
 } else {
   console.log("Tap-to-pay OFF (PAY_ENABLED=false) — kiosk uses pay-at-window. Set PAY_ENABLED=true in kiosk-config.env to enable.");
 }
