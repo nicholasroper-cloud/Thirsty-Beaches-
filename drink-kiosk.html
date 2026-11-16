@@ -1110,6 +1110,14 @@
   #payscreen .pay-where{max-width:640px;margin:0 auto 18px;padding:12px 24px;border-radius:16px;border:2px solid var(--cyan);background:rgba(42,245,228,.1);
     color:var(--ink);font-size:clamp(20px,2.6vw,30px);line-height:1.25;}
   #payscreen .pay-where b{color:var(--cyan);}
+  #payscreen .pay-where[hidden]{display:none;}
+  /* "We're checking your payment": the customer may already have been charged, so no retry and no "pay at the window" here, and the ticket number is huge */
+  #payscreen .pay-ticket{display:none;margin:0 auto 22px;padding:10px 40px;border-radius:22px;background:#fff;color:#163a5f;font-family:"Bungee",system-ui,sans-serif;font-size:clamp(48px,9vw,96px);line-height:1.1;}
+  #payscreen[data-state="unknown"] .pay-ticket{display:inline-block;}
+  #payscreen[data-state="unknown"] .pay-retry,#payscreen[data-state="unknown"] .pay-window,#payscreen[data-state="unknown"] .pay-point,#payscreen[data-state="unknown"] .pay-where{display:none;}
+  #payscreen[data-state="unknown"] .pay-headline{color:#ffd166;}
+  #payscreen .pay-still{display:none;margin:0 auto 20px;padding:14px 28px;border-radius:16px;background:#ffd166;color:#08011c;font-weight:800;font-size:clamp(20px,2.8vw,30px);}
+  #payscreen[data-still="1"] .pay-still{display:block;}
   /* age screen, idle warning, "order at the window" */
   #ageGate,#idleWarn,#windowFallback{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;background:rgba(4,0,14,.84);padding:24px;}
   #ageGate[hidden],#idleWarn[hidden],#windowFallback[hidden]{display:none;}
@@ -1249,7 +1257,8 @@
 <div id="payscreen" data-state="prompt">
   <img src="assets/logo.png?v=logo20261018" class="pay-logo" alt="Thirsty Beaches" onerror="this.remove()">
   <div class="pay-amount" id="payAmount">$0.00</div>
-  <div class="pay-label">Total with tax</div>
+  <div class="pay-label" id="payLabel">Total with tax</div>
+  <div class="pay-ticket" id="payTicket" aria-live="polite"></div>
   <div class="reader-icon">
     <!-- Card + NFC wave icon -->
     <svg viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1262,8 +1271,9 @@
     </svg>
     <div class="tap-rings"><span></span><span></span><span></span></div>
   </div>
-  <div class="pay-where" id="payWhere"><b>Where is the reader?</b> The card reader is right below this screen.</div>
+  <div class="pay-where" id="payWhere" hidden><b>Where is the reader?</b> <span id="payWhereText"></span></div>
   <div class="pay-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="16" rx="2.2"/><path d="M7.5 18.5h3"/><path d="M17.5 8.5q2 2.2 0 4.6M20 6q3.8 4.6 0 9.6"/></svg>Tap your card or phone on the reader</div>
+  <div class="pay-still" id="payStill" role="status">Still there? Touch the screen to keep your order.</div>
   <h2 class="pay-headline" id="payHeadline">Tap to pay</h2>
   <p class="pay-body" id="payBody">Tap, insert, or swipe your card on the reader.</p>
   <div class="pay-actions">
@@ -1488,7 +1498,10 @@ let orderInFlight = false;
 let _payEnabled = false;   // true only if server says PAY_ENABLED=true
 let _payOrder   = null;    // { orderId, ticket } from the last /order response
 let _payAmount  = 0;       // cents — matches the order total on the Flex
-let _payInFlight = false;  // a POST /pay is waiting on the card reader: the idle reset must not fire
+let _payInFlight = false;  // a card attempt is in flight on the reader (from POST /pay until /pay/state settles): the idle reset must not fire
+let _payCfg = { readerTimeoutMs:60000, recoveryMs:45000, unknownHoldMs:20000, declinedWaitMs:30000, stillThereMs:10000, readerLocationText:"" };
+let _quote = null, _quoteSig = "", _quoteBusy = null;   // the server-priced quote for the cart on screen (ADR section 4): totals, tax and the order all come from it
+let _payPoll = null;       // { timer, fails, order } while the pay screen is polling GET /pay/state
 
 const FALLBACK_MENU = {
   coffee: { label:"Coffee", icon:"☕", title:"Coffee & Espresso", blurb:"Hot or iced, made to order",
@@ -1903,7 +1916,7 @@ const IDLE_MS = 75000, IDLE_WARN_MS = 60000;
 let idleTimer = null, idleWarnTimer = null;
 function payScreenWaiting(){          // the customer is tapping a card on the reader, not touching this screen: do not time them out
   const ps = $("#payscreen");
-  return !!ps && ps.classList.contains("show") && /^(prompt|working)$/.test(ps.getAttribute("data-state") || "");
+  return !!ps && ps.classList.contains("show") && /^(prompt|working|unknown)$/.test(ps.getAttribute("data-state") || "");
 }
 function armIdle(){
   clearTimeout(idleTimer); clearTimeout(idleWarnTimer);
@@ -3169,6 +3182,63 @@ function cartTotals(){
   const tax = sub*TAX;
   return {sub,tax,total:sub+tax};
 }
+/* ---- server-side quote (ADR section 4): the page sends WHAT was picked, the server prices it and asks Clover for the tax ---- */
+function quoteUsable(){ return !!(_quote && _quote.ok && _quote.payNow && _quoteSig === cartSig() && !_quote.stale); }
+function cartSig(){ return JSON.stringify([cart.map(l=>[l.catKey,l.itemId,l.sel,l.qty,l.nick||""]), _prizeCode||""]); }
+function money(c){ return "$" + (c/100).toFixed(2); }
+function totalsHTML(){
+  const sub = cartTotals().sub;
+  if(!quoteUsable()) return `<div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>`;
+  const q = _quote;
+  return `<div class="row"><span>Subtotal</span><span>${money(q.subtotal)}</span></div>`
+    + (q.discount ? `<div class="row"><span>Thirsty Maze free upsize</span><span>-${money(q.discount)}</span></div>` : "")
+    + `<div class="row"><span>${escK(q.taxName||"Tax")} ${q.taxPct}%</span><span>${money(q.tax)}</span></div>`
+    + `<div class="row grand"><span>Total with tax</span><span>${money(q.total)}</span></div>`;
+}
+function displayTotal(){ return quoteUsable() ? _quote.total/100 : cartTotals().sub; }
+function quoteCart(){
+  return cart.map(l=>{ const sel={}; for(const k of Object.keys(l.sel||{})) if(k[0]!=="_") sel[k]=l.sel[k];
+    return {catKey:l.catKey, itemId:l.itemId, sel, float:(l.sel&&l.sel._float)||undefined, notes:(l.sel&&l.sel._notes)||undefined, nick:l.nick||undefined, qty:l.qty}; });
+}
+/* Ask the server for a quote for the cart on screen. Resolves with the usable quote or null (then the legacy order path runs). */
+async function ensureQuote(){
+  if(window.TB_PHONE || !cart.length || cart.some(l=>!l.catKey||!l.itemId)) return null;
+  const sig = cartSig();
+  if(_quote && _quoteSig===sig && _quote.ok && !_quote.stale && (Date.now()-_quote.at) < 8*60000) return quoteUsable() ? _quote : null;
+  if(_quoteBusy && _quoteBusy.sig===sig) return _quoteBusy.p;
+  const p = (async ()=>{
+    let q = null;
+    try{
+      const r = await fetch("/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cart:quoteCart(), code:_prizeCode||undefined})});
+      q = await r.json();
+    }catch(e){ q = null; }
+    if(sig !== cartSig()) return null;                      // the cart moved on while we waited: this answer is for an older cart
+    if(q && q.ok){ q.at = Date.now(); _quote = q; _quoteSig = sig; } else { _quote = null; _quoteSig = ""; }
+    if(q && q.ok && _prizeCode && q.codeStatus && q.codeStatus!=="ok") q.codeProblem = q.codeStatus;
+    return quoteUsable() ? _quote : null;
+  })();
+  _quoteBusy = {sig, p};
+  try{ return await p; } finally { if(_quoteBusy && _quoteBusy.p===p) _quoteBusy = null; }
+}
+async function refreshQuoteView(){
+  const q = await ensureQuote();
+  const box = $("#cartTotals"); if(box) box.innerHTML = totalsHTML();
+  const pb = $("#placeBtn"); if(pb) pb.innerHTML = "Place order &middot; $" + displayTotal().toFixed(2);
+  return q;
+}
+/* Display prices from the server's Clover table (GET /catalog): only keys the owner has mapped are touched; everything else keeps the menu price. */
+async function applyCatalog(){
+  if(window.TB_PHONE) return;
+  try{
+    const d = await (await fetch("/catalog",{cache:"no-store"})).json();
+    if(!d || !d.ok) return;
+    const menus = Object.assign({}, MENU, (typeof SECRET_MENU!=="undefined" ? {secret:SECRET_MENU} : {}));
+    for(const [catKey,cat] of Object.entries(menus)){
+      for(const it of cat.items||[]){ const c = d.items[catKey+"/"+it.id]; if(Number.isInteger(c)) it.price = c/100; }
+      for(const o of cat.options||[]) for(const ch of o.choices) { const c = d.mods[catKey+"/"+o.key+"/"+ch.name]; if(Number.isInteger(c)) ch.d = c/100; }
+    }
+  }catch(e){ /* menu prices stay as they are */ }
+}
 function openCart(){
   if(!cart.length) return;
   const {sub,tax,total}=cartTotals();
@@ -3196,12 +3266,9 @@ function openCart(){
       <div class="prizerow" id="prizeRow">${_prizeCode
         ? `<span class="prize-ok">🎮 Free upsize unlocked · ${_prizeCode}</span><button class="linkbtn" onclick="clearPrize()">Remove</button>`
         : `<button class="linkbtn prizebtn" onclick="askPrize()">🎮 Have a Thirsty Maze code?</button>`}</div>
-      <!-- One total: it is exactly what the window / card reader / phone-pay charges. The kiosk server sends the
-           line prices as-is and adds no tax (TAX above is not applied anywhere); if tax is ever added at the
-           register, bring back a Subtotal + Tax breakdown here. -->
-      <div class="totals">
-        <div class="row grand"><span>Total</span><span>$${sub.toFixed(2)}</span></div>
-      </div>
+      <!-- With a server quote (ADR section 4) this shows Clover's own subtotal, discount, tax and "Total with tax"; without one (legacy path,
+           catalog not mapped) it is the one plain Total the window charges, with no tax line, exactly as before. -->
+      <div class="totals" id="cartTotals">${totalsHTML()}</div>
       <button class="linkbtn" onclick="clearCart()">Clear order</button>
     </div>
     <div class="sheet-ft">
@@ -3209,6 +3276,7 @@ function openCart(){
       <button class="btn-primary" onclick="askName()">Next: your name &rarr;</button>
     </div>`;
   $("#overlay").classList.add("show");
+  if(!window.TB_PHONE) refreshQuoteView();                  // fills in the tax and the real total as soon as the server answers
 }
 
 /* ---- name entry (on-screen keyboard — no physical keyboard needed) ---- */
@@ -3216,7 +3284,7 @@ let _orderName = "";
 function askName(){ renderNamePad(); $("#overlay").classList.add("show"); }
 const NAME_MAX = 12;
 function renderNamePad(){
-  const sub = cartTotals().sub;
+  const sub = cartTotals().sub, shown = displayTotal();
   const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
   const kb = rows.map(r => `<div class="krow">`+[...r].map(c=>`<button class="kkey" onclick="nameKey('${c}')">${c}</button>`).join("")+`</div>`).join("")
     + `<div class="krow"><button class="kkey" aria-label="hyphen" onclick="nameKey('-')">-</button><button class="kkey" aria-label="apostrophe" onclick="nameKey('\\'')">'</button><button class="kkey kwide" onclick="nameBack()">&larr; delete</button></div>`;
@@ -3230,9 +3298,10 @@ function renderNamePad(){
     <div class="keyboard">${kb}</div>
     ${qrShown() ? qrFooter(sub) : `<div class="sheet-ft">
       <button class="linkbtn" onclick="openCart()">Back</button>
-      <button class="btn-primary" id="placeBtn" onclick="placeOrder()">Place order &middot; $${sub.toFixed(2)}</button>
+      <button class="btn-primary" id="placeBtn" onclick="placeOrder()">Place order &middot; $${shown.toFixed(2)}</button>
     </div>`}`;
   refreshName();
+  if(!window.TB_PHONE) refreshQuoteView();
 }
 function nameKey(c){ if(/^[A-Za-z'-]$/.test(c) && _orderName.length<NAME_MAX && !/ /.test(_orderName)) _orderName += c; refreshName(); }
 function nameSpace(){ /* first name only: there is no space key any more */ }
@@ -3249,7 +3318,7 @@ function refreshName(){
 let _prizeCode = "", _prizeDigits = "", _lastUpsize = false;
 const PRIZE_ENDPOINT = "/prize";
 function askPrize(){ _prizeDigits = ""; renderPrizePad(); $("#overlay").classList.add("show"); }
-function clearPrize(){ _prizeCode = ""; openCart(); }
+function clearPrize(){ _prizeCode = ""; _quote = null; openCart(); }
 function renderPrizePad(msg){
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
   const kb = `<div class="krow numpad">`+keys.map(k=>k===""?`<span class="kkey kblank"></span>`:`<button class="kkey" onclick="prizeKey('${k}')">${k}</button>`).join("")+`</div>`;
@@ -3279,7 +3348,7 @@ async function checkPrize(){
   const pb=$("#prizeBtn"); if(pb){ pb.textContent="Checking…"; pb.classList.add("disabled"); }
   let r = {ok:false,status:"offline"};
   try{ r = await (await fetch(PRIZE_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code})})).json(); }catch(e){}
-  if(r.ok){ _prizeCode = code; openCart(); return; }
+  if(r.ok){ _prizeCode = code; _quote = null; openCart(); return; }
   const why = r.status==="used" ? "That code has already been used." : r.status==="offline" ? "Can't reach the prize server — show the code at the window instead." : "That code isn't valid today.";
   renderPrizePad(why);
 }
@@ -3341,14 +3410,19 @@ async function placeOrder(){
   const btn = document.querySelector('.sheet-ft .btn-primary');
   if(btn){ btn.textContent = "Sending…"; btn.classList.add('disabled'); }
   try{
-    const res = await fetch(ORDER_ENDPOINT, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({cart, name:_orderName.trim(), code:_prizeCode||undefined})
-    });
+    // Server-priced path when the server has a verified quote for exactly this cart (ADR section 4); otherwise the legacy cart path as before
+    const q = await ensureQuote();
+    // The server priced this cart but would NOT vouch for the total (Clover disagreed, the catalog is held, the tax rate is not allowed): no card, window only
+    const noCard = !!(_quote && _quoteSig===cartSig() && _quote.ok && !_quote.payNow);
+    const wantCard = _payEnabled && !!q && !noCard;
+    const body = q ? {quoteId:q.quoteId, name:_orderName.trim(), payMode: wantCard ? "card" : "window"}
+                   : {cart, name:_orderName.trim(), code:_prizeCode||undefined};
+    const res = await fetch(ORDER_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     if(res.status===400 && _prizeCode){                      // the Maze code could not be used: do NOT retry or count a send failure, ask
       let bd=null; try{ bd = await res.clone().json(); }catch(e){}
-      if(bd && bd.error==="bad-code"){ codeFailed(); return; }
+      if(bd && bd.error==="bad-code"){ _quote = null; codeFailed(); return; }
     }
+    if(res.status===409 && q){ _quote = null; throw new Error("quote expired"); }   // re-quoted on the next try
     if(!res.ok) throw new Error("HTTP "+res.status);
     const d = await res.json();
     if(!d || !d.ticket || !d.orderId) throw new Error("no ticket returned");
@@ -3356,28 +3430,30 @@ async function placeOrder(){
 
     // Order created — record sales for leaderboard, then decide payment path
     recordSales(cart);
-    const amountCents = Math.round(cartTotals().sub * 100);  // subtotal (before tax) in cents
+    const amountCents = q ? d.total : Math.round(cartTotals().sub * 100);   // quote path: the server's total WITH tax; legacy: the menu subtotal
     d.name = d.name || _orderName.trim();                     // the name the SERVER cleaned (first word, filtered): that is what the board shows and says
     _sendFails = 0;
     cart = []; updateCartBtn(); closeSheet();
-    _orderName = ""; _lastUpsize = !!d.upsize; _prizeCode = "";
+    _orderName = ""; _lastUpsize = !!d.upsize; _prizeCode = ""; _quote = null; _quoteSig = "";
 
     // Check if tap-to-pay is live on the server (cheap local fetch, no Flex involved yet)
     let flexReady = false;
-    if(_payEnabled){
+    if(_payEnabled && !noCard && (!q || d.payMode==="card")){
       try{
         const st = await (await fetch(PAY_STATUS_ENDPOINT, {cache:"no-store"})).json();
         flexReady = (st && st.state === "ready");
       } catch(e){ /* fetch failed — Flex unavailable, fall back */ }
     }
 
-    if(flexReady){
+    if(flexReady && d.payToken){
       // TAP-TO-PAY PATH: show the pay screen and attempt the card tap
       _payOrder  = d;
       _payAmount = amountCents;
+      _payTaxLabel = !!q;
       openPayScreen();
     } else {
-      // PAY-AT-WINDOW PATH (always works; default when PAY_ENABLED=false or Flex offline)
+      // PAY-AT-WINDOW PATH (always works; default when PAY_ENABLED=false or Flex offline). A quote-path order is already tagged COLLECT.
+      if(q && d.payMode==="card" && d.payToken){ try{ await fetch("/pay/window",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:d.orderId,payToken:d.payToken})}); }catch(e){} }
       showConfirm(d, false);
     }
   }catch(err){
@@ -3429,10 +3505,14 @@ function showConfirm(order, paid){
 /* ---- openPayScreen() ----
    Shows the #payscreen overlay and starts the payment attempt. Called only
    when the Flex is confirmed READY. doPay() is called immediately.           */
+let _payTaxLabel = false;
 function openPayScreen(){
   const ps = $("#payscreen");
   if(!ps) return;
   $("#payAmount").textContent = "$" + (_payAmount / 100).toFixed(2);
+  const pl = $("#payLabel"); if(pl) pl.textContent = _payTaxLabel ? "Total with tax" : "Total";      // "with tax" only when the server really added it
+  const pw = $("#payWhere"), pwt = $("#payWhereText");                                                // the reader-location line is the owner's own sentence (READER_LOCATION_TEXT), never a guess
+  if(pw && pwt){ pwt.textContent = _payCfg.readerLocationText || ""; pw.hidden = !_payCfg.readerLocationText; }
   setPayState("prompt");
   ps.classList.add("show");
   doPay();
@@ -3447,79 +3527,151 @@ const PAY_COPY = {
   cancelled: { hl:"Payment cancelled",        body:"Want to try again, or pay at the window?" },
   error:     { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
   timeout:   { hl:"Hmm, that hiccuped",       body:"Let's try once more, or pay at the window and we'll sort it there." },
+  unknown:   { hl:"We're checking your payment", body:"Don't pay again. Show ticket # at the window." },
 };
 function setPayState(state){
   const ps = $("#payscreen");
   if(!ps) return;
   ps.setAttribute("data-state", state);
+  if(state!=="declined" && state!=="cancelled" && state!=="error" && state!=="timeout") ps.removeAttribute("data-still");
   const copy = PAY_COPY[state] || PAY_COPY.prompt;
   const hl = $("#payHeadline"); if(hl) hl.textContent = copy.hl;
-  const bd = $("#payBody");    if(bd) bd.textContent  = copy.body;
+  const tk = (_payOrder && _payOrder.ticket) ? String(_payOrder.ticket) : "";
+  const bd = $("#payBody");    if(bd) bd.textContent  = state==="unknown" ? "Don't pay again. Show ticket #" + tk + " at the window." : copy.body;
+  const pt = $("#payTicket");  if(pt) pt.textContent  = state==="unknown" ? "#" + tk : "";
 }
 
 /* ---- doPay() ----
-   Calls POST /pay and handles every result code. Every terminal state lands
-   on either the existing #confirm screen (paid or pay-at-window) — the
-   customer is never stranded on a dead-end screen.
-
-   Idempotency is enforced server-side (ExternalId + in-flight guard); it is
-   safe to call doPay() again on "Try again" — the server returns the cached
-   approved result if the card was already charged.                           */
+   Starts ONE card attempt with POST /pay (it answers at once: "pending" when the reader has the Sale) and then polls
+   GET /pay/state every second, so a late approval (the customer tapped after a slow reader) still reaches this screen.
+   Every terminal state lands on the confirm screen (paid, pay-at-window, or "we're checking your payment") or back on
+   this screen with a retry; the customer is never stranded and is never told to pay again while a charge is unproven.
+   Idempotency is server-side (attempt-scoped ExternalId, journal, one reader); doPay() is safe to call again.          */
+const payHdr = () => ({"Content-Type":"application/json"});
 async function doPay(){
   if(!_payOrder || !_payAmount || _payInFlight) return;
   setPayState("working");
   _payInFlight = true;
-
+  clearPayTimers();
   let out;
   try{
     const r = await fetch(PAY_ENDPOINT, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ orderId: _payOrder.orderId, amountCents: _payAmount, payToken: _payOrder.payToken }),   // payToken from /order: the server acts only on orders it issued one for
+      method:"POST", headers:payHdr(),
+      body: JSON.stringify({ orderId: _payOrder.orderId, amountCents: _payAmount, payToken: _payOrder.payToken }),
     });
     out = await r.json();
   } catch(e){
-    // Transport failure (server unreachable) → treat as unavailable → pay-at-window
-    out = { result:"unavailable" };
+    // The server did not answer at all: do NOT assume the card was not charged. Poll; if the server stays silent the poll falls back to "we're checking".
+    out = { result:"pending" };
   }
-  _payInFlight = false;
-  armIdle();                                   // idle clock starts again from the reader's answer
-
   switch(out.result){
+    case "pending":
+    case "busy":
+      startPayPoll(); break;
     case "approved":
-      // Card charged: hide pay screen and show the success confirm (not pay-at-window)
-      closePayScreen();
-      showConfirm(_payOrder, true);
-      break;
-
+      payApproved(); break;
+    case "unknown":
+    case "blocked-unknown":
+      startPayPoll(); setPayState("unknown"); break;
     case "declined":
     case "cancelled":
     case "error":
     case "timeout":
-      // Retriable: stay on the pay screen and offer "Try again" + pay-at-window
-      setPayState(out.result);
-      break;
-
+      _payInFlight = false; armIdle(); setPayState(out.result); armDeclinedTimers(0); break;
     case "unavailable":
-    case "busy":
     case "mismatch":
+    case "forbidden":
     default:
       // Can't take the tap right now — never strand the customer; go to pay-at-window
-      closePayScreen();
-      showConfirm(_payOrder, false);
-      break;
+      payAtWindow(true); break;
   }
 }
-
-/* ---- payAtWindow() — the persistent ghost button on the pay screen ---- */
-function payAtWindow(){
+function clearPayTimers(){ if(_payPoll){ clearTimeout(_payPoll.timer); } clearTimeout(_payStillT); clearTimeout(_payAbandonT); clearTimeout(_payHoldT); _payStillT=_payAbandonT=_payHoldT=null; }
+let _payStillT=null, _payAbandonT=null, _payHoldT=null;
+function stopPayPoll(){ clearPayTimers(); _payPoll = null; _payInFlight = false; }
+function payApproved(){
+  const o = _payOrder; stopPayPoll(); armIdle();
   closePayScreen();
-  showConfirm(_payOrder, false);
+  showConfirm(o, true);                       // _payOrder is kept until here: the poll only ends on a terminal state
+}
+function startPayPoll(){
+  clearTimeout(_payPoll && _payPoll.timer);
+  _payPoll = { timer:null, fails:0, order:_payOrder };
+  const tick = async ()=>{
+    if(!_payPoll) return;
+    const o = _payPoll.order;
+    let s = null;
+    try{
+      const r = await fetch("/pay/state?orderId="+encodeURIComponent(o.orderId), {cache:"no-store", headers:{"X-Pay-Token":o.payToken||""}});
+      if(r.ok) s = await r.json();
+    }catch(e){}
+    if(!_payPoll) return;
+    if(!s){ _payPoll.fails++; if(_payPoll.fails>=20 && $("#payscreen").getAttribute("data-state")==="working"){ setPayState("unknown"); armHold(_payCfg.unknownHoldMs); } }
+    else { _payPoll.fails = 0; onPayState(s); }
+    if(_payPoll) _payPoll.timer = setTimeout(tick, 1000);
+  };
+  _payPoll.timer = setTimeout(tick, 600);
+}
+function armHold(ms){
+  if(_payHoldT) return;
+  _payHoldT = setTimeout(()=>{ _payHoldT=null; stopPayPoll(); closePayScreen(); resetAll(); }, Math.max(1500, ms));   // the order is KEPT (locked) on the server; a late approval flips the station tile
+}
+function armDeclinedTimers(msIn){
+  clearTimeout(_payStillT); clearTimeout(_payAbandonT);
+  const wait = _payCfg.declinedWaitMs, still = _payCfg.stillThereMs;
+  _payStillT = setTimeout(()=>{ const ps=$("#payscreen"); if(ps) ps.setAttribute("data-still","1"); }, msIn||wait);
+  _payAbandonT = setTimeout(payAbandon, (msIn||wait) + still);
+}
+async function payAbandon(){
+  const o = _payOrder; stopPayPoll();
+  if(o){ try{ await fetch("/pay/abandon",{method:"POST",headers:payHdr(),body:JSON.stringify({orderId:o.orderId,payToken:o.payToken})}); }catch(e){} }
+  closePayScreen(); resetAll();
+}
+function onPayState(s){
+  const ps = $("#payscreen"); if(!ps || !ps.classList.contains("show")) return;
+  switch(s.state){
+    case "APPROVED": payApproved(); break;
+    case "IN_FLIGHT": _payInFlight = true; if(ps.getAttribute("data-state")!=="working") setPayState("working"); break;
+    case "TIMEOUT_UNKNOWN": case "DISCONNECTED_UNKNOWN":
+      if(ps.getAttribute("data-state")!=="unknown") setPayState("unknown");
+      armHold(Number.isFinite(s.resetInMs) ? s.resetInMs : _payCfg.unknownHoldMs); break;
+    case "DECLINED": case "CANCELLED":
+      _payInFlight = false;
+      if(!/^(declined|cancelled|error|timeout)$/.test(ps.getAttribute("data-state")||"")){ setPayState(s.state==="DECLINED"?"declined":"cancelled"); armIdle(); armDeclinedTimers(Number.isFinite(s.stillThereInMs) ? s.stillThereInMs : 0); }
+      break;
+    case "COLLECT": { const o=_payOrder; stopPayPoll(); armIdle(); closePayScreen(); showConfirm(o,false); break; }
+    case "ABANDONED": stopPayPoll(); closePayScreen(); resetAll(); break;
+    default: break;                                                      // PENDING: nothing started yet
+  }
+}
+// a touch on a declined / cancelled screen means the customer is still there: start the 30 s again
+["pointerdown","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{
+  const ps=$("#payscreen");
+  if(ps && ps.classList.contains("show") && /^(declined|cancelled|error|timeout)$/.test(ps.getAttribute("data-state")||"")) armDeclinedTimers(0);
+},{passive:true,capture:true}));
+
+/* ---- payAtWindow() — the persistent ghost button on the pay screen ----
+   Tells the server (POST /pay/window): the order becomes COLLECT. The server refuses while a card attempt is unproven
+   (the card may still be charged), and then this screen says so instead of sending the customer to pay twice. */
+async function payAtWindow(silent){
+  const o = _payOrder;
+  if(!o){ closePayScreen(); return; }
+  let out = null;
+  try{
+    const r = await fetch("/pay/window",{method:"POST",headers:payHdr(),body:JSON.stringify({orderId:o.orderId,payToken:o.payToken})});
+    out = await r.json();
+  }catch(e){ out = null; }
+  if(out && (out.result==="blocked-unknown")){ if(!_payPoll) startPayPoll(); setPayState("unknown"); return; }
+  if(out && out.result==="busy"){ if(!_payPoll) startPayPoll(); return; }
+  if(out && out.result==="approved"){ payApproved(); return; }
+  stopPayPoll(); armIdle();
+  closePayScreen();
+  showConfirm(o, false);
 }
 
 function closePayScreen(){
   const ps = $("#payscreen");
-  if(ps){ ps.classList.remove("show"); ps.setAttribute("data-state","prompt"); }
+  if(ps){ ps.classList.remove("show"); ps.setAttribute("data-state","prompt"); ps.removeAttribute("data-still"); }
 }
 
 /* ============ PAY ON MY PHONE (QR) ============
@@ -3699,7 +3851,7 @@ function resetAll(){
   stopVibeCam(); $("#vibe").classList.remove("show");     // camera off + close the vibe reader (privacy)
   snapClose();                                             // Snap-a-pic: camera off, photo/result state cleared
   closeDesignDrink();                                      // clear chip state + close design picker (COPPA)
-  closePayScreen(); _payOrder=null; _payAmount=0;         // clear pay screen state
+  stopPayPoll(); closePayScreen(); _payOrder=null; _payAmount=0; _quote=null; _quoteSig="";   // clear pay screen state (the poll only ends on a terminal state or here)
   qrStop(); _qrSkip=false;                                 // clear any phone-pay (QR) screen
   activeCat=Object.keys(MENU)[0];
   closeSheet();
@@ -3734,6 +3886,7 @@ async function loadMenu(){
 /* init */
 renderTabs(); renderMenu(); updateCartBtn();
 renderLeaderboard();                         // Today's Top Sips
+applyCatalog();                              // Clover display prices for the keys the owner mapped (GET /catalog)
 
 /* ---- Tap-to-pay: load PAY_ENABLED flag from the server at page load.
         This is a one-time read; the per-order Flex status check (GET /pay/status)
@@ -3743,6 +3896,7 @@ renderLeaderboard();                         // Today's Top Sips
   try{
     const d = await (await fetch(PAY_CONFIG_ENDPOINT, {cache:"no-store"})).json();
     _payEnabled = !!(d && d.enabled);
+    if(d && typeof d==="object") for(const k of Object.keys(_payCfg)) if(typeof d[k]===typeof _payCfg[k]) _payCfg[k] = d[k];   // readerTimeoutMs, recoveryMs, the 20/30/10 s timers, READER_LOCATION_TEXT
     if(_payEnabled) console.log("Tap-to-pay enabled (PAY_ENABLED=true on server).");
   }catch(e){ /* silent — pay-at-window is the safe default */ }
 })();
