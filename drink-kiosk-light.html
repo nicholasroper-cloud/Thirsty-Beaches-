@@ -1191,6 +1191,35 @@
     .arcadewin .aw-no{min-height:76px;font-size:28px;padding:0 40px;}
     .arcadenote{font-size:30px;max-width:900px;padding:20px 28px;}
   }
+
+  /* Boardwalk Arcade entry (the separate /arcade page): a secondary action, in the strip just above the category tabs (low on the screen, within a child's reach)
+     and on the attract screen under "Tap to begin". Hidden whenever the order has anything in it. */
+  .arcaderow{display:flex;justify-content:center;padding:10px 34px 12px;}
+  .arcaderow[hidden]{display:none;}
+  .arcadebtn{display:inline-flex;align-items:center;justify-content:center;gap:18px;width:100%;max-width:720px;min-height:84px;padding:6px 34px;border-radius:999px;cursor:pointer;
+    border:3px solid transparent;color:var(--gold);text-align:left;
+    background:linear-gradient(#150b31,#150b31) padding-box,linear-gradient(110deg,#FFC95C 0%,#FF3D97 52%,#34D7FF 104%) border-box;
+    box-shadow:0 0 28px -8px rgba(255,61,151,.7),inset 0 0 18px rgba(255,201,92,.10);}
+  .arcadebtn .ab-ico{font-size:40px;line-height:1;}
+  .arcadebtn .ab-t{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05;}
+  .arcadebtn .ab-t b{font-family:"Bungee",system-ui,sans-serif;font-weight:400;font-size:32px;letter-spacing:.04em;text-shadow:0 0 14px rgba(255,61,151,.7);}
+  .arcadebtn .ab-t small{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:18px;color:var(--ink);margin-top:5px;letter-spacing:.02em;}
+  .arcadebtn:active{transform:scale(.985);}
+  #attract .arcadebtn{width:auto;max-width:none;min-height:68px;margin-top:20px;padding:4px 32px;gap:14px;}
+  #attract .arcadebtn .ab-ico{font-size:34px;}
+  #attract .arcadebtn .ab-t b{font-size:25px;}
+  #attract .arcadebtn .ab-t small{font-size:15px;margin-top:3px;}
+  @media (orientation: portrait){
+    .arcaderow{padding:14px 44px 16px;}
+    .arcadebtn{min-height:112px;max-width:none;gap:24px;}
+    .arcadebtn .ab-ico{font-size:58px;}
+    .arcadebtn .ab-t b{font-size:46px;}
+    .arcadebtn .ab-t small{font-size:26px;margin-top:7px;}
+    #attract .arcadebtn{min-height:92px;padding:4px 44px;margin-top:24px;gap:18px;}
+    #attract .arcadebtn .ab-ico{font-size:50px;}
+    #attract .arcadebtn .ab-t b{font-size:38px;}
+    #attract .arcadebtn .ab-t small{font-size:22px;margin-top:5px;}
+  }
 </style>
 </head>
 <body>
@@ -1215,6 +1244,9 @@
     <div class="wordmark" id="wordmark"><span>Thirsty</span><span>Beaches</span></div>
     <p class="tagline" id="tagline" style="display:none">Stay Thirsty, Beaches</p>
     <div class="tap-cta">Tap to begin</div>
+    <button type="button" class="arcadebtn" id="arcadeAttractBtn" onclick="event.stopPropagation(); goArcade();" aria-label="Play and win at the Boardwalk Arcade">
+      <span class="ab-ico" aria-hidden="true">&#127918;</span><span class="ab-t"><b>Play &amp; win</b><small>Boardwalk Arcade</small></span>
+    </button>
     <button class="vibe-attract" onclick="event.stopPropagation(); start(); vibeStart();">Not sure? Let us match your drink</button>
     <button class="vibe-attract" onclick="event.stopPropagation(); start(); snapStart();">Snap a pic, we'll pick your drink</button>
     <div class="dotd" id="dotd" style="display:none" onclick="event.stopPropagation();"></div>
@@ -1258,6 +1290,12 @@
     <span class="ob-cta">View Order &middot; Checkout →</span>
     <span class="ob-total" id="obTotal">$0.00</span>
   </button>
+  <!-- Boardwalk Arcade: shown only while the order is empty, so tapping it can never cost anyone their cart (see updateArcadeEntry) -->
+  <div class="arcaderow" id="arcadeRow">
+    <button type="button" class="arcadebtn" id="arcadeBtn" onclick="goArcade()" aria-label="Play and win at the Boardwalk Arcade">
+      <span class="ab-ico" aria-hidden="true">&#127918;</span><span class="ab-t"><b>Play &amp; win</b><small>Boardwalk Arcade &middot; spin for a prize</small></span>
+    </button>
+  </div>
   <!-- categories: a 2-row, 6-across grid in the lower half of the screen (easy reach), not a hidden side-scroller -->
   <nav class="tabs" id="tabs" aria-label="Menu categories"></nav>
 </div>
@@ -3237,6 +3275,7 @@ function closeSheet(){ $("#overlay").classList.remove("show"); editing=null; }
 /* ---- cart ---- */
 function updateCartBtn(){
   const n = cart.reduce((a,c)=>a+c.qty,0);
+  updateArcadeEntry();
   $("#cartCount").textContent = n;
   $("#cartBtn").classList.toggle("empty", n===0);
   const bar = $("#orderBar");
@@ -4154,6 +4193,22 @@ function tapSpecial(id){
                 name: sp.name, blurb: sp.blurb });
 }
 
+/* ============ BOARDWALK ARCADE ENTRY ============
+   The arcade is a separate page (/arcade), so leaving for it drops this page's state. Cart guard: the entry is HIDDEN while the order has anything
+   in it (and goArcade refuses as a second line of defence), so nobody can lose a cart by tapping it. With an empty cart there is nothing to preserve,
+   and a prize won there comes back as the order-screen banner (the kiosk server holds it, see ARCADE WIN below). */
+function arcadeSafe(){
+  return !cart.length && !orderInFlight && !_payInFlight && !qrBusy() && !payScreenWaiting();
+}
+function updateArcadeEntry(){
+  const r = $("#arcadeRow"); if(r) r.hidden = cart.length > 0;
+}
+function goArcade(){
+  if(!arcadeSafe()){ updateArcadeEntry(); return; }
+  clearTimeout(idleTimer); clearTimeout(idleWarnTimer);
+  location.assign("/arcade");
+}
+
 /* ============ ARCADE WIN ON THIS ORDER ============
    The kiosk SERVER holds the pending prize (a Worker-issued claim from the arcade page). This page only READS it (GET /api/arcade/pending), shows it,
    can decline it, and after an order tells the server which ORDER was just placed (POST /api/arcade/pending/attach, {orderId} and nothing
@@ -4218,7 +4273,7 @@ async function checkControl(){
 checkControl();
 setInterval(checkControl, 90000);           // re-check sold-out every 90s
 // loadMenu(); // re-enable when the Clover catalog holds the real dirty-soda menu
-if(location.hash.includes("menu")) start(); // deep-link straight to the menu (skips attract)
+if(location.hash.includes("menu")){ start(); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} } // deep-link straight to the menu (skips attract); the hash is dropped so a reload starts at attract
 </script>
 <!-- Kiosk greeter: the camera notices people near the trailer and the speakers say a funny line.
      Only while the logo (attract) screen is showing; the camera is released as soon as someone starts.

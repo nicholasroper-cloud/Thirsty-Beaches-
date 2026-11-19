@@ -106,6 +106,8 @@
     };
 
     let ctx = null;
+    let stopped = false;               // stopAll() was called (the page is being left): nothing may start again
+    const missing = new Set();         // clip files that failed to load once: never requested again (no repeated 404s), the Web Speech / synth fallback is used
     let masterGain = null;
     let bgmGain = null;
     let bgmAudio = null;
@@ -113,7 +115,7 @@
     let activeVoiceAudio = null;
 
     function ensureCtx() {
-      if (typeof window === 'undefined') return null;
+      if (stopped || typeof window === 'undefined') return null;
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       if (!ctx) {
@@ -152,20 +154,32 @@
     }
 
     function startSynthwaveIdle() {
-      if (state.bgmRunning) return;
+      if (stopped || state.bgmRunning) return;
       state.bgmRunning = true;
       const a = ensureCtx();
-      // Try loading local synthwave-idle.mp3 first; if unavailable, run procedural 1986 Web Audio arpeggio pad
-      if (typeof Audio !== 'undefined') {
-        const el = new Audio(basePath + 'bgm/synthwave-idle.mp3');
-        el.loop = true;
-        el.volume = state.muted ? 0 : state.volume * 0.22;
-        el.play().then(() => {
-          bgmAudio = el;
-          applyGains();
-        }).catch(() => {
+      // Try loading local synthwave-idle.mp3 first; if unavailable (it ships without sound files), run procedural 1986 Web Audio arpeggio pad
+      if (typeof Audio !== 'undefined' && !missing.has('bgm/synthwave-idle.mp3')) {
+        let el = null;
+        try {
+          el = new Audio(basePath + 'bgm/synthwave-idle.mp3');
+          el.loop = true;
+          el.volume = state.muted ? 0 : state.volume * 0.22;
+          el.addEventListener('error', () => missing.add('bgm/synthwave-idle.mp3'));
+          const p = el.play();
+          if (p && typeof p.then === 'function') {
+            p.then(() => {
+              if (stopped) { try { el.pause(); } catch {} return; }
+              bgmAudio = el;
+              applyGains();
+            }).catch(() => {
+              missing.add('bgm/synthwave-idle.mp3');
+              if (!stopped) startProceduralSynthwave(a);
+            });
+          } else if (!stopped) startProceduralSynthwave(a);
+        } catch {
+          missing.add('bgm/synthwave-idle.mp3');
           startProceduralSynthwave(a);
-        });
+        }
       } else {
         startProceduralSynthwave(a);
       }
@@ -285,7 +299,7 @@
     function speakFallback(rawText, personaId) {
       return new Promise((resolve) => {
         const spoken = sanitizeSpokenText(rawText, state.pgMode);
-        if (state.muted || typeof window === 'undefined' || !window.speechSynthesis) {
+        if (stopped || state.muted || typeof window === 'undefined' || !window.speechSynthesis) {
           resolve({ source: 'silent', text: spoken });
           return;
         }
@@ -309,13 +323,14 @@
 
     async function playTrigger(trigger, customOverrideText) {
       const personaId = resolvePersona();
+      if (stopped) return { persona: personaId, trigger, source: 'stopped', text: '' };
       const pool = (CLIPS[personaId] && CLIPS[personaId][trigger]) || [];
       const clip = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
       const fallbackText = customOverrideText || (clip ? clip.text : '');
       if (state.muted) return { persona: personaId, trigger, source: 'muted', text: sanitizeSpokenText(fallbackText, state.pgMode) };
 
       // If custom text override was explicitly requested (e.g. reading out a custom line), go straight to TTS
-      if (customOverrideText || !clip || typeof Audio === 'undefined') {
+      if (customOverrideText || !clip || typeof Audio === 'undefined' || missing.has(clip.file)) {
         const r = await speakFallback(fallbackText, personaId);
         return { persona: personaId, trigger, ...r };
       }
@@ -329,7 +344,9 @@
         const finishFallback = () => {
           if (settled) return;
           settled = true;
+          missing.add(clip.file);       // not there (the kiosk ships without sound files): do not ask for it again
           activeVoiceAudio = null;
+          if (stopped) { resolve({ persona: personaId, trigger, source: 'stopped', text: '' }); return; }
           speakFallback(fallbackText, personaId).then((r) => resolve({ persona: personaId, trigger, ...r }));
         };
         el.onended = () => {
@@ -342,9 +359,21 @@
         el.onerror = finishFallback;
         setDucking(true);
         activeVoiceAudio = el;
-        const p = el.play();
+        let p;
+        try { p = el.play(); } catch { finishFallback(); return; }
         if (p && typeof p.catch === 'function') p.catch(finishFallback);
       });
+    }
+
+    /* Leaving the arcade (page hide, end of the session, back to the ordering screen): every sound stops and nothing can start again.
+       The pages navigate away so the browser would drop all of this anyway; this makes it explicit and covers a screen that stays open. */
+    function stopAll() {
+      stopped = true;
+      stopSynthwaveIdle();
+      if (activeVoiceAudio) { try { activeVoiceAudio.pause(); } catch {} activeVoiceAudio = null; }
+      try { if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); } catch {}
+      state.ducking = false;
+      if (ctx) { const c = ctx; ctx = null; masterGain = null; bgmGain = null; try { c.close().catch(() => {}); } catch {} }
     }
 
     return {
@@ -365,6 +394,7 @@
       setPgMode: (on) => { state.pgMode = Boolean(on); },
       startSynthwaveIdle,
       stopSynthwaveIdle,
+      stopAll,
       playReelClick,
       playSodaFizz,
       playArcadeFanfare,

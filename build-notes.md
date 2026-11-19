@@ -6,7 +6,7 @@ Published via publish-menu.command.
 
 ## Release v39 notes (2026-11-19)
 
-### The arcade (`/arcade`): a separate URL, not linked from the ordering screen
+### The arcade (`/arcade`): on the kiosk's own screen since v40 (see the v40 section below); it is still its own URL
 - Where it is: `http://localhost:8137/arcade` on the kiosk PC (the server listens on 127.0.0.1 only, so it can be opened by a browser on that PC, for example on a second screen). Nothing on the ordering screen links to it and none is added in this release. The arcade page has an "Order Drinks" link back to `/`.
 - Files: `kiosk/*` (page, css, js, audio bank, menu) arrive through the manifest and are swapped in place; `arcade-routes.js` is server code (staged, idle restart, 60 s trial, automatic rollback like the other engine files).
 - No camera, no microphone, no AI scan: the page never calls `getUserMedia` and is served with `Permissions-Policy: camera=(), microphone=()`. Scan My Vibe and the Presence Cam were removed.
@@ -43,3 +43,13 @@ Customer and crew text now says "pineapple soft serve": `drink-kiosk.html` (and 
 
 ### Known leftovers
 - Only identifiers still contain "Dole" (see "Dole Whip wording" above).
+
+### The arcade on the kiosk's own screen (manifest v40, 2026-11-19)
+- Entry: a "Play & win / Boardwalk Arcade" button on the ordering screen, in the strip just above the category tabs (low on the screen, a child can reach it), and a smaller secondary button under "Tap to begin" on the attract screen. `drink-kiosk.html` and `drink-kiosk-light.html` stay byte-identical. The only way in is `goArcade()` in the page.
+- Cart guard: the entry is HIDDEN while the cart has anything in it (and `goArcade` refuses while an order or payment is in flight), so a cart can never be lost by a tap. With an empty cart there is nothing to preserve. A win comes back as the order-screen banner (the kiosk server holds the pending prize for 15 minutes).
+- The way back: a permanent full-width "ORDER DRINKS" button at the bottom of the arcade (to `/#menu`), "Order now and use it" after a win, and a hands-off return to `/` (the attract screen) after `idleSeconds`, with a "Still playing?" warning `idleWarnSeconds` before.
+- One visit is limited (anti line-holding): `kiosk/arcade-session.json`, defaults 3 spins or 90 seconds, whichever first (a spin in progress always finishes), then "Thanks for playing" and the reels stop; the thanks screen returns to `/` after `endedReturnSeconds` (30). A missing or invalid file falls back to the defaults, never to "no limit"; `"enabled": false` switches the limit and the idle return off (second-screen use). Prize odds, the daily cap and the 2% free-drink ceiling are NOT here; the Worker and `arcade-routes.js` enforce those.
+- Idle restart: an open arcade page counts as customer activity (`/arcade` and a 20 s `GET /api/arcade/ping` are in `ACTIVITY_PATHS`), so the engine never restarts mid-game; the order screen's own 4 s prize poll deliberately is not. An abandoned arcade page can hold a restart or the new-version reload back for at most the idle time, because leaving it is a full page navigation to `/`, which loads the newest build.
+- Audio: the kiosk ships no sound files. A missing clip is requested once, then the Web Speech / synthesized fallback is used with no further 404s; the audio bank is optional (if it fails to load the arcade plays silently). `stopAll()` runs when the visit ends and on page hide: music, voice and the AudioContext stop and nothing can start again.
+- Test: `node tests/kiosk/arcade-prize.js` (section D, headless Chrome; `TB_SHOTS=<dir>` writes the screenshots) and `tests/boardwalk-arcade.test.mjs`.
+

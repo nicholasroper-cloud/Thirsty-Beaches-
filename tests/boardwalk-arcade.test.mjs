@@ -23,7 +23,7 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const ARCADE_FILES = [
-  'kiosk/boardwalk-slots.html', 'kiosk/boardwalk-slots.css', 'kiosk/boardwalk-slots.js', 'kiosk/audio-bank.js', 'kiosk/arcade-menu.json', 'kiosk/audio/README.txt', 'arcade-routes.js',
+  'kiosk/boardwalk-slots.html', 'kiosk/boardwalk-slots.css', 'kiosk/boardwalk-slots.js', 'kiosk/audio-bank.js', 'kiosk/arcade-menu.json', 'kiosk/arcade-session.json', 'kiosk/audio/README.txt', 'arcade-routes.js',
 ];
 
 /* ---------------- packaging ---------------- */
@@ -370,7 +370,18 @@ test('REAL kiosk server: /arcade is served without a camera, the config is staff
   assert.equal((await request(port, 'GET', '/kiosk/boardwalk-slots.js')).status, 200);
   assert.notEqual((await request(port, 'GET', '/kiosk/..%2fkiosk-server.js')).status, 200);
   assert.ok([403, 404].includes((await request(port, 'GET', '/kiosk/')).status));
-  assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'drink-kiosk.html'), 'utf8'), /(?<!\/api)\/arcade(?![\w-])/, 'no link from the ordering screen to the arcade page (the page only reads /api/arcade/pending)');
+  // since v40 the ordering screen links to it, from ONE guarded function (goArcade: empty cart only); nothing else on the page navigates there
+  const order = fs.readFileSync(path.join(ROOT, 'drink-kiosk.html'), 'utf8');
+  assert.equal([...order.matchAll(/["'`]\/arcade["'`]|href="\/arcade/g)].length, 1, 'exactly one navigation to /arcade on the ordering page');
+  assert.match(order, /function goArcade\(\)\{\s*if\(!arcadeSafe\(\)\)\{[^}]*return;\s*\}[\s\S]*?location\.assign\("\/arcade"\)/, 'the only way in is goArcade, behind the cart guard');
+  assert.match(order, /id="arcadeBtn"[^>]*onclick="goArcade\(\)"/); assert.match(order, /id="arcadeAttractBtn"[^>]*onclick="event\.stopPropagation\(\); goArcade\(\);"/);
+  assert.match(order, /function updateArcadeEntry\(\)\{\s*const r = \$\("#arcadeRow"\); if\(r\) r\.hidden = cart\.length > 0;/, 'hidden whenever the cart has anything');
+  // an open arcade page is customer activity (no idle restart mid-game); the order screen's own 4 s prize poll must NOT be (it would hold off restarts forever)
+  const serverSrc = read('kiosk-server.js');
+  const act = /const ACTIVITY_PATHS = new Set\(\[([^\]]*)\]\)/.exec(serverSrc)[1];
+  assert.match(act, /"\/arcade"/); assert.match(act, /"\/api\/arcade\/ping"/); assert.match(act, /"\/api\/arcade\/spin"/);
+  assert.doesNotMatch(act, /"\/api\/arcade\/pending"/, 'the pending-prize poll runs every 4 s on the order screen: it must not count as activity');
+  const ping = await request(port, 'GET', '/api/arcade/ping'); assert.equal(ping.status, 200); assert.deepEqual(ping.json, { ok: true });
 
   // E: a locked file answers an error and the server keeps running
   const locked = await request(port, 'GET', '/kiosk/locked.txt');
@@ -425,4 +436,52 @@ test('REAL kiosk server without arcade-routes.js (a half-delivered update) still
   const spin = await request(port, 'POST', '/api/arcade/spin', {});
   assert.equal(spin.json.win, false); assert.equal(spin.json.code, undefined);
   assert.equal((await request(port, 'POST', '/api/arcade-config', { volume: 0.5 }, { 'X-Key': 'staff-secret-key-1234' })).status, 503);
+});
+
+
+/* ---------------- one visit on the kiosk screen (arcade-session.json) ---------------- */
+test('arcade-session.json: shipped defaults are sane, bad values fall back, the limit can never be zero', () => {
+  const shipped = JSON.parse(read('kiosk/arcade-session.json'));
+  assert.deepEqual(slots.sessionLimits(shipped), { enabled: true, maxSpins: 3, maxSeconds: 90, idleSeconds: 60, idleWarnSeconds: 20, endedReturnSeconds: 30 });
+  assert.deepEqual(slots.sessionLimits(null), slots.sessionLimits({}), 'a missing file is the defaults');
+  assert.deepEqual(slots.sessionLimits('garbage'), slots.sessionLimits({}));
+  const bad = slots.sessionLimits({ maxSpins: 0, maxSeconds: -5, idleSeconds: 'soon', idleWarnSeconds: 9999, endedReturnSeconds: NaN });
+  assert.deepEqual(bad, slots.sessionLimits({}), 'zero, negative, text and absurd numbers all fall back');
+  assert.equal(slots.sessionLimits({ maxSpins: 5, maxSeconds: 120 }).maxSpins, 5, 'a sane edit is honoured');
+  assert.equal(slots.sessionLimits({ idleSeconds: 15, idleWarnSeconds: 60 }).idleWarnSeconds, 10, 'the warning always fits inside the idle time');
+  assert.equal(slots.sessionLimits({ enabled: false }).enabled, false, 'staff can switch the limit off (second-screen use)');
+});
+
+test('audio bank: stopAll stops everything and nothing starts again; a missing clip is asked for once and never throws', async () => {
+  const sent = [];
+  const ctxs = [];
+  class FakeCtx { constructor() { this.state = 'running'; this.currentTime = 0; this.sampleRate = 8000; this.destination = {}; ctxs.push(this); }
+    createGain() { return { gain: { setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {} }; }
+    createOscillator() { return { type: '', frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {}, start() {}, stop() {} }; }
+    createBiquadFilter() { return { type: '', frequency: { setValueAtTime() {} }, Q: { setValueAtTime() {} }, connect() {} }; }
+    resume() { return Promise.resolve(); } close() { this.state = 'closed'; return Promise.resolve(); } }
+  let canceled = 0;
+  class FakeAudio { constructor(u) { sent.push(u); this.volume = 1; } play() { return Promise.reject(new Error('NotSupportedError')); } pause() {} addEventListener() {} }
+  const g = globalThis;
+  const saved = { window: g.window, Audio: g.Audio, AC: g.AudioContext };
+  g.window = { AudioContext: FakeCtx, speechSynthesis: { cancel() { canceled++; }, speak() {} } }; g.Audio = FakeAudio;
+  try {
+    const bank = audioBank.createAudioBank({ basePath: '/kiosk/audio/' });
+    bank.setPersonaMode('shredder');
+    const r1 = await bank.playTrigger('slot_spin');
+    assert.ok(['speech', 'speech-unavailable', 'speech-error', 'silent'].includes(r1.source), 'missing mp3 falls back, no throw: ' + r1.source);
+    const n1 = sent.length;
+    for (let i = 0; i < 6; i++) await bank.playTrigger('slot_spin');
+    assert.ok(sent.length - n1 <= 1, 'the same missing file is not requested again and again (' + (sent.length - n1) + ' more requests)');
+    bank.startSynthwaveIdle(); await sleep(20);
+    const bgm = sent.filter((u) => /bgm\//.test(u)).length; bank.stopSynthwaveIdle(); bank.startSynthwaveIdle(); await sleep(20);
+    assert.equal(sent.filter((u) => /bgm\//.test(u)).length, bgm, 'the missing music file is asked for once');
+    bank.stopAll();
+    assert.ok(ctxs.length >= 1 && ctxs.every((c) => c.state === 'closed'), 'the audio context is closed');
+    assert.ok(canceled >= 1, 'speech is cancelled');
+    const before = ctxs.length;
+    bank.playReelClick(); bank.playSodaFizz(); bank.playArcadeFanfare(true); bank.startSynthwaveIdle();
+    assert.equal((await bank.playTrigger('prize_win')).source, 'stopped', 'nothing plays after stopAll');
+    assert.equal(ctxs.length, before, 'and no new audio context is created');
+  } finally { g.window = saved.window; g.Audio = saved.Audio; if (saved.window === undefined) delete g.window; if (saved.Audio === undefined) delete g.Audio; }
 });

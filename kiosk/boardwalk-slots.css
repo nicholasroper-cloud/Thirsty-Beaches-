@@ -46,7 +46,7 @@ body.is-flash::after {
 
 .cabinet {
   position: relative; z-index: 2;
-  max-width: 980px; margin: 0 auto; padding: 16px 16px 28px;
+  max-width: 980px; margin: 0 auto; padding: 16px 16px calc(28px + 130px);   /* the bottom 130px is kept clear for the Order drinks dock */
   display: grid; gap: 14px;
 }
 
@@ -206,4 +206,76 @@ dialog.staff-dlg::backdrop { background: rgba(4,0,12,0.78); }
 .odds-item input {
   width: 74px; padding: 6px; border-radius: 8px; border: 1px solid var(--teal);
   background: #080118; color: var(--gold); font-family: "DM Mono", monospace; text-align: right;
+}
+
+/* ---- one visit: spins left, the end-of-visit panel, the idle warning ---- */
+.session-hud {
+  width: 100%; text-align: center; font-family: "DM Mono", monospace; font-size: 0.9rem; letter-spacing: 0.12em; color: var(--teal);
+}
+.session-hud[hidden] { display: none; }
+.session-hud b { font-family: "Bungee", sans-serif; font-size: 1.3rem; color: var(--gold); margin-left: 6px; }
+.btn-spin[hidden] { display: none; }
+.session-end {
+  width: 100%; max-width: 820px; text-align: center; padding: 12px 18px 14px; border-radius: 18px;
+  border: 2px solid var(--teal); background: rgba(9,1,22,0.9); box-shadow: 0 0 26px rgba(42,245,228,0.28);
+}
+.session-end[hidden] { display: none; }
+.session-end h2 { margin: 0; font-family: "Bungee", sans-serif; font-size: 1.5rem; color: var(--gold); }
+.session-end p { margin: 6px 0 0; color: #EFE6FA; font-size: 1.05rem; }
+.session-end b { color: var(--teal); }
+.idle-warn {
+  position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 80; max-width: 92vw; text-align: center;
+  padding: 16px 28px; border-radius: 18px; border: 3px solid var(--gold); background: #1C053D; color: var(--foam);
+  font-family: "Bungee", sans-serif; font-size: 1.25rem; box-shadow: 0 0 34px rgba(255,209,102,0.6);
+}
+.idle-warn[hidden] { display: none; }
+
+/* ---- the persistent way back ---- */
+.orderdock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: flex; justify-content: center;
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(7,1,20,0) 0%, rgba(7,1,20,0.92) 38%);
+}
+.btn-orderdock {
+  display: flex; align-items: center; justify-content: center; width: 100%; max-width: 980px; min-height: 92px;
+  border-radius: 22px; text-decoration: none; cursor: pointer;
+  font-family: "Bungee", sans-serif; font-size: 1.9rem; letter-spacing: 0.05em; color: #08011c;
+  background: linear-gradient(90deg, var(--teal), #6FA8FF 55%, var(--pink));
+  border: 3px solid var(--foam); box-shadow: 0 0 30px rgba(42,245,228,0.5), 0 6px 0 #0b3a5c;
+}
+.btn-orderdock:active { transform: translateY(3px); box-shadow: 0 0 22px rgba(42,245,228,0.5), 0 3px 0 #0b3a5c; }
+.btn-orderdock:focus-visible { outline: 5px solid var(--gold); outline-offset: 3px; }
+
+/* the kiosk is a 47-inch touchscreen: finger-sized targets, bigger type (the phone-sized look stays below 900 px) */
+@media (min-width: 900px) {
+  .cabinet { max-width: 1500px; gap: 20px; padding-top: 28px; }
+  .pbtn { min-height: 56px; padding: 10px 22px; font-size: 1.05rem; }
+  .bezel__brand h1 { font-size: 3rem; }
+  .bezel__brand p { font-size: 1.05rem; }
+  .reel { min-height: 240px; padding: 20px 16px; }
+  .reel__k { font-size: 1rem; }
+  .reel__v { font-size: 2rem; }
+  .reel__sub { font-size: 1.15rem; }
+  .btn-spin { max-width: 760px; min-height: 120px; font-size: 2.1rem; }
+  .session-hud { font-size: 1.2rem; }
+  .result__title { font-size: 1.7rem; }
+  .result__desc { font-size: 1.25rem; }
+  .claim-pill b { font-size: 3rem; }
+  .btn-ordernow { min-height: 104px; font-size: 2.3rem; max-width: 900px; }
+  .win-two { font-size: 1.25rem; }
+  .barker-bar__msg { font-size: 1.15rem; }
+  .persona-pill { font-size: 1rem; }
+  .session-end h2 { font-size: 2.3rem; }
+  .session-end p { font-size: 1.4rem; }
+  .idle-warn { font-size: 2rem; top: 34px; padding: 26px 44px; }
+  .btn-orderdock { min-height: 128px; font-size: 3rem; max-width: 1500px; }
+  .orderdock { padding: 16px 28px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .cabinet { padding-bottom: 230px; }
+}
+/* a wide, short screen (1920x1080): keep the dock lower-profile so the reels still fit */
+@media (min-width: 900px) and (orientation: landscape) {
+  .reel { min-height: 170px; }
+  .btn-spin { min-height: 96px; font-size: 1.8rem; }
+  .btn-orderdock { min-height: 96px; font-size: 2.3rem; }
+  .cabinet { padding-bottom: 170px; }
 }

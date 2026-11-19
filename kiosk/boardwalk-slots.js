@@ -33,8 +33,25 @@
     }).join('');
   }
 
+  /* One arcade visit on the kiosk's own screen (kiosk/arcade-session.json). Anything missing, wrong or out of range falls back to a sane default,
+     so a bad edit can never leave the arcade without a way back or without a limit. */
+  const SESSION_DEFAULTS = { enabled: true, maxSpins: 3, maxSeconds: 90, idleSeconds: 60, idleWarnSeconds: 20, endedReturnSeconds: 30 };
+  function sessionLimits(raw) {
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const num = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? Math.round(n) : d; };
+    const idleSeconds = num(src.idleSeconds, 15, 300, SESSION_DEFAULTS.idleSeconds);
+    return {
+      enabled: src.enabled !== false,
+      maxSpins: num(src.maxSpins, 1, 20, SESSION_DEFAULTS.maxSpins),
+      maxSeconds: num(src.maxSeconds, 20, 900, SESSION_DEFAULTS.maxSeconds),
+      idleSeconds,
+      idleWarnSeconds: Math.min(num(src.idleWarnSeconds, 5, 120, SESSION_DEFAULTS.idleWarnSeconds), idleSeconds - 5),
+      endedReturnSeconds: num(src.endedReturnSeconds, 10, 180, SESSION_DEFAULTS.endedReturnSeconds),
+    };
+  }
+
   // Export pure helpers for unit testing
-  const exportsObj = { DEFAULT_ODDS, BARKER_COOLDOWN_MS, MAX_FREE_DRINK_PCT, esc, oddsGridHTML };
+  const exportsObj = { DEFAULT_ODDS, BARKER_COOLDOWN_MS, MAX_FREE_DRINK_PCT, SESSION_DEFAULTS, sessionLimits, esc, oddsGridHTML };
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = exportsObj;
     return;
@@ -45,9 +62,13 @@
 
   async function init() {
     const spinBtn = document.getElementById('spinBtn');
-    if (!spinBtn || !window.TBAudioBank) return;
+    if (!spinBtn) return;
 
-    const audio = window.TBAudioBank.createAudioBank({ basePath: '/kiosk/audio/', pgMode: true });
+    /* The audio bank is optional: if it did not load (or throws), the arcade plays silently and the session limit and the way back still work. */
+    const SILENT = { getState: () => ({ muted: true, pgMode: true, activePersona: 'shredder' }), toggleMute: () => true, playTrigger: () => Promise.resolve({ text: '' }) };
+    let audio = SILENT;
+    try { if (window.TBAudioBank) audio = window.TBAudioBank.createAudioBank({ basePath: '/kiosk/audio/', pgMode: true }); } catch {}
+    ['setPersonaMode', 'setVolume', 'setMuted', 'setPgMode', 'startSynthwaveIdle', 'stopSynthwaveIdle', 'stopAll', 'playReelClick', 'playSodaFizz', 'playArcadeFanfare', 'recordSpinForAutoRotate'].forEach((m) => { if (typeof audio[m] !== 'function') audio[m] = () => {}; });
     const $ = (id) => document.getElementById(id);
 
     /* Local (this screen only): persona, volume, mute. From the server (staff-set, needs the staff key to change): PG mode, winter board, odds. */
@@ -118,6 +139,17 @@
       }
     } catch {}
 
+    /* This visit's limits (kiosk/arcade-session.json); defaults when the file is missing or unreadable */
+    let limits = sessionLimits(null);
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 3000);
+      try {
+        const r = await fetch('/kiosk/arcade-session.json', { cache: 'no-store', signal: ctl.signal });
+        if (r.ok) limits = sessionLimits(await r.json());
+      } finally { clearTimeout(timer); }
+    } catch {}
+
     const r1 = $('reel1'), r1Val = $('reel1Val'), r1Sub = $('reel1Sub');
     const r2 = $('reel2'), r2Val = $('reel2Val'), r2Sub = $('reel2Sub');
     const r3 = $('reel3'), r3Val = $('reel3Val'), r3Sub = $('reel3Sub');
@@ -158,6 +190,67 @@
       });
     });
 
+    /* ---------- One visit: spin and time limits, the way back, and the idle return ----------
+       The arcade now lives on the kiosk's own screen, so one person must not hold it while others wait. After maxSpins spins or maxSeconds
+       (whichever comes first, a spin in progress always finishes) the reels stop and the page says thanks and points at "Order drinks".
+       A hands-off page returns to the ordering screen by itself, so an abandoned arcade can never sit there. The pending prize lives on the
+       kiosk server for 15 minutes, so none of this loses a win: it shows on the order screen. The prize caps are the Worker's, not here. */
+    const session = { startedAt: Date.now(), spins: 0, ended: false, endAfterSpin: false };
+    let lastTouch = Date.now(), leaving = false;
+    const spinsLeftEl = $('spinsLeft'), hudEl = $('sessionHud'), endEl = $('sessionEnd'), idleWarnEl = $('idleWarn');
+
+    function renderSession() {
+      document.body.dataset.session = session.ended ? 'ended' : 'playing';
+      document.body.dataset.spins = String(session.spins);
+      if (spinsLeftEl) spinsLeftEl.textContent = String(Math.max(0, limits.maxSpins - session.spins));
+      if (hudEl) hudEl.hidden = !limits.enabled || session.ended;
+    }
+    function leaveArcade(url) {
+      if (leaving) return;
+      leaving = true;
+      try { audio.stopAll(); } catch {}
+      location.replace(url);
+    }
+    function endSession() {
+      if (session.ended || !limits.enabled) return;
+      session.ended = true;
+      lastTouch = Date.now();                // the thanks screen always gets its full hands-off window (endedReturnSeconds) to be read
+      spinBtn.hidden = true;
+      if (endEl) endEl.hidden = false;
+      if (idleWarnEl) idleWarnEl.hidden = true;
+      try { audio.stopAll(); } catch {}      // the music and any voice line stop with the game
+      renderSession();
+      if (endEl && endEl.scrollIntoView) { try { endEl.scrollIntoView({ block: 'nearest' }); } catch {} }
+    }
+    function touched() {
+      lastTouch = Date.now();
+      if (idleWarnEl) idleWarnEl.hidden = true;
+    }
+    ['pointerdown', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, touched, { passive: true, capture: true }));
+    renderSession();
+
+    // Kiosk idle restarts wait for customer activity; an arcade page that is open is customer activity, for as long as it stays open (it is bounded by the idle return).
+    const ping = () => { try { fetch('/api/arcade/ping', { cache: 'no-store' }).catch(() => {}); } catch {} };
+    ping();
+    setInterval(ping, 20000);
+
+    if (limits.enabled) {
+      setInterval(() => {
+        if (leaving) return;
+        const now = Date.now();
+        if (!session.ended && now - session.startedAt >= limits.maxSeconds * 1000) {
+          if (spinning) session.endAfterSpin = true; else endSession();
+        }
+        if (spinning) return;                                       // never walk away mid-spin
+        const idleLimit = (session.ended ? Math.min(limits.idleSeconds, limits.endedReturnSeconds) : limits.idleSeconds) * 1000;
+        const idleFor = now - lastTouch;
+        if (idleFor >= idleLimit) { leaveArcade('/'); return; }     // nobody here: the attract screen
+        if (idleWarnEl && !session.ended) idleWarnEl.hidden = idleFor < idleLimit - limits.idleWarnSeconds * 1000;
+      }, 1000);
+    }
+    window.addEventListener('pagehide', () => { try { audio.stopAll(); } catch {} });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { try { audio.stopAll(); } catch {} } });
+
     /* ---------- 3-Reel Slot Spin (the prize comes from the server) ---------- */
     async function askServerForSpin() {
       const ctl = new AbortController();
@@ -173,8 +266,10 @@
 
     let spinning = false;
     spinBtn.addEventListener('click', async () => {
-      if (spinning) return;
+      if (spinning || session.ended) return;
       spinning = true;
+      session.spins++;
+      renderSession();
       spinBtn.disabled = true;
       audio.startSynthwaveIdle();
       audio.recordSpinForAutoRotate();
@@ -254,6 +349,8 @@
         spinning = false;
         spinBtn.disabled = false;
         syncPersonaUI();
+        lastTouch = Date.now();
+        if (limits.enabled && (session.spins >= limits.maxSpins || session.endAfterSpin || Date.now() - session.startedAt >= limits.maxSeconds * 1000)) endSession();
       }, 85);
     });
 

@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=1">
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=2">
 </head>
 <body>
 <div class="backdrop" aria-hidden="true">
@@ -59,7 +59,13 @@
     </div>
 
     <div class="controls">
+      <div class="session-hud" id="sessionHud" aria-live="polite">SPINS LEFT <b id="spinsLeft">3</b></div>
       <button type="button" class="btn-spin" id="spinBtn">PULL LEVER &middot; SPIN REELS</button>
+      <!-- shown by the page when this visit's spin or time limit is reached (kiosk/arcade-session.json) -->
+      <div class="session-end" id="sessionEnd" role="status" hidden>
+        <h2>Thanks for playing!</h2>
+        <p>Others are waiting for the arcade. Tap <b>ORDER DRINKS</b> below to grab a drink.</p>
+      </div>
     </div>
 
     <div class="result" id="resultBox" role="status" aria-live="polite">
@@ -82,10 +88,17 @@
     <p class="barker-bar__msg" id="barkerMsg"><b>Voice Barker:</b> Pull the lever for a custom drink and a chance at a boardwalk prize.</p>
     <div class="barker-controls">
       <span class="persona-pill" id="personaBadge">DJ: SHREDDER</span>
-      <a class="pbtn" href="/" style="text-decoration:none">Order Drinks</a>
     </div>
   </section>
 </main>
+
+<!-- "Still playing?" shown near the end of the idle time; any touch dismisses it -->
+<div class="idle-warn" id="idleWarn" role="alertdialog" aria-live="assertive" hidden>Still playing? Tap anywhere to keep playing.</div>
+
+<!-- The way back to the ordering screen: always on screen, never covered, big enough for a child's hand -->
+<nav class="orderdock" aria-label="Back to ordering">
+  <a class="btn-orderdock" id="orderDrinksBtn" href="/#menu">Order drinks</a>
+</nav>
 
 <!-- Staff Audio Bar & Configurable Prize Odds (3-Tap Top-Right Corner or 'M' shortcut) -->
 <dialog class="staff-dlg" id="staffDlg" aria-label="Staff Audio and Prize Odds Controls">
@@ -150,7 +163,7 @@
   </div>
 </dialog>
 
-<script src="/kiosk/audio-bank.js?v=2" defer></script>
-<script src="/kiosk/boardwalk-slots.js?v=2" defer></script>
+<script src="/kiosk/audio-bank.js?v=3" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=3" defer></script>
 </body>
 </html>

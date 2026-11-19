@@ -5,6 +5,8 @@
 //   B  the REAL kiosk-server.js against a fake Worker and a fake stateful Clover: browser-supplied prize fields are ignored, the legacy /order
 //      handler is untouched, line items / totals / discounts are identical with and without a prize, cross-origin attach is refused, the
 //      ticket the REAL make-station-server.js serves carries the tag, and the redeem relay forwards the ticket number.
+//   D  (needs Chrome) the arcade on the kiosk's own screen (v40): the entry on the home and attract screens, the cart guard, the way back, the idle return, the
+//      spin and time limit, win -> Order now -> banner, and the audio stopping. Time-based limits are driven with a skewed Date.now in the page, no waiting.
 //   C  (needs Chrome, skips without) the order screen banner, the confirm note, the make-station badge, bump -> redeem, and a station server
 //      from before this update (the badge still shows, nothing throws). TB_SHOTS=<dir> writes screenshots (kiosk 1080x1920, station 1920x1080).
 // Run: node tests/kiosk/arcade-prize.js
@@ -320,6 +322,24 @@ async function launchChrome() {
       fs.mkdirSync(process.env.TB_SHOTS, { recursive: true });
       fs.writeFileSync(path.join(process.env.TB_SHOTS, file), Buffer.from(data, "base64"));
     },
+    async spy() {   // before any page script runs: a skewable Date.now, error capture, and every AudioContext the page makes
+      await send("Page.addScriptToEvaluateOnNewDocument", { source: `(function(){window.__skew=0;var rn=Date.now.bind(Date);Date.now=function(){return rn()+window.__skew*1000;};
+        window.__errs=[];window.addEventListener('error',function(e){window.__errs.push(String(e.message))});window.addEventListener('unhandledrejection',function(e){window.__errs.push('rejection: '+(e.reason&&e.reason.message||e.reason))});
+        var ce=console.error;console.error=function(){window.__errs.push(Array.prototype.join.call(arguments,' '));return ce.apply(console,arguments)};
+        window.__ctxs=[];var AC=window.AudioContext||window.webkitAudioContext;if(AC){var W=function(){var c=new AC(...arguments);window.__ctxs.push(c);return c};W.prototype=AC.prototype;window.AudioContext=W;window.webkitAudioContext=W;}})();` }, sessionId);
+    },
+    async mock(handler) {   // answer matching /kiosk/* requests from the test: handler(url) -> null (let it through) | { status, body, type }
+      ws.on("message", async m => {
+        const d = JSON.parse(m); if (d.method !== "Fetch.requestPaused" || d.sessionId !== sessionId) return;
+        const h = handler(d.params.request.url);
+        try {
+          if (h) await send("Fetch.fulfillRequest", { requestId: d.params.requestId, responseCode: h.status || 200, responseHeaders: [{ name: "Content-Type", value: h.type || "application/json" }, { name: "Cache-Control", value: "no-store" }], body: Buffer.from(h.body || "").toString("base64") }, sessionId);
+          else await send("Fetch.continueRequest", { requestId: d.params.requestId }, sessionId);
+        } catch {}
+      });
+      await send("Fetch.enable", { patterns: [{ urlPattern: "*/kiosk/*" }] }, sessionId);
+    },
+    async resize(w, h) { await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false }, sessionId); },
     close() { try { ws.close(); } catch {} proc.kill("SIGKILL"); },
   };
   return page;
@@ -437,11 +457,223 @@ async function chromeTests() {
   } finally { chrome.close(); oldProxy.close(); }
 }
 
+/* ================================================================= D. the arcade on the kiosk's own screen ================================================================= */
+async function navTests() {
+  const { kioskPort } = ctx;
+  const base = `http://127.0.0.1:${kioskPort}`;
+  let SESS = null;            // null: the shipped kiosk/arcade-session.json; an object: this config for the test; "404": the file is missing
+  let NO_AUDIO_JS = false;    // audio-bank.js "fails to load"
+  const chrome = await launchChrome();
+  try {
+    await chrome.spy();
+    await chrome.mock(u => {
+      if (/\/kiosk\/arcade-session\.json/.test(u) && SESS) return SESS === "404" ? { status: 404, body: "Not found", type: "text/plain" } : { body: JSON.stringify(SESS) };
+      if (/\/kiosk\/audio-bank\.js/.test(u) && NO_AUDIO_JS) return { status: 404, body: "Not found", type: "text/plain" };
+      return null;
+    });
+    const R = sel => chrome.eval(`(function(){var e=document.querySelector(${JSON.stringify(sel)});if(!e)return null;var r=e.getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height};})()`);
+    const overlap = (a, b) => !!(a && b && a.w > 0 && a.h > 0 && b.w > 0 && b.h > 0 && a.l < b.r - 0.5 && a.r > b.l + 0.5 && a.t < b.b - 0.5 && a.b > b.t + 0.5);
+    const fresh = async (url, w, h) => { await chrome.goto("about:blank", w, h); await chrome.goto(url, w, h); };
+    const path_ = () => chrome.eval("location.pathname");
+    const onTop = async sel => chrome.eval(`(function(){var e=document.querySelector(${JSON.stringify(sel)});var r=e.getBoundingClientRect();var t=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return !!t&&!!t.closest(${JSON.stringify(sel)});})()`);
+    const arcadeReady = () => waitFor(() => chrome.eval("document.body.dataset.session==='playing'&&!!document.getElementById('spinBtn')"), 10000, "arcade ready");
+    const spinOnce = async () => { await chrome.eval("document.getElementById('spinBtn').click();1"); await waitFor(() => chrome.eval("!document.getElementById('spinBtn').disabled||document.body.dataset.session==='ended'"), 20000, "spin finished"); };
+    const wait = async (cond, what, ms = 6000) => waitFor(() => chrome.eval(cond), ms, what);
+    await req(kioskPort, "POST", "/api/arcade/pending/dismiss", {});
+
+    /* ---- 1. the entry on the home state of the ordering screen, both orientations: visible, big, on screen, on top, overlapping nothing ---- */
+    for (const [w, h, tag] of [[1080, 1920, "1080x1920"], [1920, 1080, "1920x1080"]]) {
+      await fresh(base + "/#menu", w, h);
+      await wait("getComputedStyle(document.getElementById('attract')).display==='none'", "home state (attract dismissed by the deep link)");
+      const b = await R("#arcadeBtn");
+      ok(b && b.w >= 400 && b.h >= (w < h ? 100 : 80), `the Arcade entry is a big target at ${tag}: ${b && Math.round(b.w)}x${b && Math.round(b.h)}`);
+      ok(b.l >= 0 && b.t >= 0 && b.r <= w && b.b <= h, "fully on screen at " + tag);
+      ok(/Play & win/i.test(await chrome.eval("document.getElementById('arcadeBtn').innerText")) && /Boardwalk Arcade/i.test(await chrome.eval("document.getElementById('arcadeBtn').innerText")), "it says Play & win / Boardwalk Arcade");
+      for (const sel of ["header", "#cartBtn", "#helpRow", "#specials-section", "#menu", "#tabs", "#orderBar", "#arcadeWin"]) ok(!overlap(b, await R(sel)), `the entry does not overlap ${sel} at ${tag}`);
+      ok(await onTop("#arcadeBtn"), "nothing sits on top of the entry at " + tag);
+      ok(b.t > (await R("#helpRow")).b && b.b <= (await R("#tabs")).t, "it sits between the menu and the category tabs, away from the primary actions");
+      await chrome.shot(`ordering-home-arcade-entry-${tag}.png`);
+    }
+
+    /* ---- 2. the attract screen: "Tap to begin" stays primary, the arcade is a secondary under it, nothing overlaps ---- */
+    for (const [w, h, tag] of [[1080, 1920, "1080x1920"], [1920, 1080, "1920x1080"]]) {
+      await fresh(base + "/", w, h);
+      const b = await R("#arcadeAttractBtn"), tap = await R(".tap-cta");
+      ok(b && b.w >= 250 && b.h >= 66, `the attract entry is a real target at ${tag}: ${b && Math.round(b.w)}x${b && Math.round(b.h)}`);
+      ok(b.l >= 0 && b.t >= 0 && b.r <= w && b.b <= h, "fully on screen at " + tag);
+      ok(tap.t < b.t && tap.h >= b.h * 0.6 && /Tap to begin/i.test(await chrome.eval("document.querySelector('.tap-cta').innerText")), "Tap to begin is still first, and still there");
+      for (const sel of [".tap-cta", ".attract-logo"]) ok(!overlap(b, await R(sel)), `no overlap with ${sel} at ${tag}`);
+      for (const r of await chrome.eval("[...document.querySelectorAll('.vibe-attract')].map(e=>{var r=e.getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height}})")) ok(!overlap(b, r), "no overlap with the helper buttons at " + tag);
+      ok(await onTop("#arcadeAttractBtn"), "nothing on top of it at " + tag);
+      await chrome.shot(`attract-arcade-entry-${tag}.png`);
+    }
+    // tapping it goes to the arcade (and does NOT start an order first)
+    await fresh(base + "/", 1080, 1920);
+    await chrome.eval("document.getElementById('arcadeAttractBtn').click();1");
+    await waitFor(async () => (await path_()) === "/arcade", 8000, "attract entry reaches /arcade");
+
+    /* ---- 3. cart guard: with anything in the cart the entry is hidden and goArcade refuses; empty again, it is back ---- */
+    await fresh(base + "/#menu", 1080, 1920);
+    ok(!(await chrome.eval("document.getElementById('arcadeRow').hidden")), "empty cart: the entry shows");
+    await chrome.eval(`cart.push({icon:"",name:"Neon Sunset Float",mods:["Large"],unit:6.5,qty:1,catKey:"floats",sel:{}}); updateCartBtn(); 1`);
+    ok(await chrome.eval("document.getElementById('arcadeRow').hidden"), "cart has an item: the entry is hidden");
+    eq((await R("#arcadeRow")).h, 0, "and takes no room");
+    await chrome.eval("goArcade();1"); await sleep(700);
+    eq(await path_(), "/", "even a direct call cannot leave the order screen"); eq(await chrome.eval("cart.length"), 1, "the cart is intact");
+    await chrome.shot("ordering-cart-guard-no-arcade-entry-1080x1920.png");
+    await chrome.eval("cart.length=0; updateCartBtn(); 1");
+    ok(!(await chrome.eval("document.getElementById('arcadeRow').hidden")), "cart emptied: the entry is back");
+
+    /* ---- 4. tap reaches /arcade; the way back is always there; empty-cart round trip; screenshots of the arcade with its back button ---- */
+    await fresh(base + "/#menu", 1080, 1920);
+    await chrome.eval("document.getElementById('arcadeBtn').click();1");
+    await waitFor(async () => (await path_()) === "/arcade", 8000, "the home entry reaches /arcade"); await arcadeReady();
+    for (const [w, h, tag] of [[1080, 1920, "1080x1920"], [1920, 1080, "1920x1080"]]) {
+      await chrome.resize(w, h); await sleep(200);
+      const d = await R("#orderDrinksBtn");
+      ok(d && d.h >= 92 && d.w >= 600, `Order drinks is a big target at ${tag}: ${Math.round(d.w)}x${Math.round(d.h)}`);
+      ok(d.l >= 0 && d.r <= w && d.b <= h && d.t >= 0, "Order drinks is on screen at " + tag);
+      ok(/Order drinks/i.test(await chrome.eval("document.getElementById('orderDrinksBtn').innerText")), "its label");
+      ok(await onTop("#orderDrinksBtn"), "nothing covers it at " + tag);
+      for (const sel of ["#spinBtn", "#resultBox", ".reels", ".barker-bar", ".bezel", "#sessionHud"]) ok(!overlap(d, await R(sel)), `Order drinks does not overlap ${sel} at ${tag}`);
+      await chrome.shot(`arcade-back-button-${tag}.png`);
+    }
+    await chrome.eval("document.getElementById('orderDrinksBtn').click();1");
+    await waitFor(async () => (await path_()) === "/", 8000, "Order drinks returns to /");
+    await wait("getComputedStyle(document.getElementById('attract')).display==='none'", "straight to the menu, not stuck on the attract screen");
+    eq(await chrome.eval("cart.length"), 0, "round trip with an empty cart: still empty, nothing to lose");
+    ok(await chrome.eval("document.getElementById('arcadeWin').hidden"), "no prize, no banner");
+    eq(await chrome.eval("location.hash"), "", "the #menu deep-link hash is dropped so a reload starts at the attract screen");
+
+    /* ---- 5. spin limit: the default is 3; with 2 the session ends after the 2nd spin ---- */
+    SESS = null;
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "3", "shipped default: 3 spins");
+    ok(!(await chrome.eval("document.getElementById('sessionHud').hidden")), "spins-left is shown");
+    SESS = { maxSpins: 2, maxSeconds: 900, idleSeconds: 300 };
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "2", "the configured limit is read from arcade-session.json");
+    await spinOnce();
+    eq(await chrome.eval("document.body.dataset.spins"), "1"); eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "1");
+    ok(await chrome.eval("document.getElementById('sessionEnd').hidden"), "one spin used: still playing");
+    await spinOnce();
+    eq(await chrome.eval("document.body.dataset.session"), "ended", "the 2nd spin ends the session");
+    ok(!(await chrome.eval("document.getElementById('sessionEnd').hidden")) && await chrome.eval("document.getElementById('spinBtn').hidden"), "reels stop: spin button gone, thanks panel shown");
+    ok(/Thanks for playing/i.test(await chrome.eval("document.getElementById('sessionEnd').innerText")) && /Order drinks/i.test(await chrome.eval("document.getElementById('sessionEnd').innerText")), "it says thanks and points at Order drinks");
+    eq(await chrome.eval("document.getElementById('orderDrinksBtn').getAttribute('href')"), "/#menu", "the persistent Order drinks button is the way out");
+    ok(await onTop("#orderDrinksBtn"), "and still on top after the session ended");
+    await chrome.eval("document.getElementById('spinBtn').click();1"); await sleep(400);
+    eq(await chrome.eval("document.body.dataset.spins"), "2", "a spin after the limit does nothing");
+    ok(await chrome.eval("window.__ctxs.every(c=>c.state==='closed')") && !(await chrome.eval("speechSynthesis.speaking")), "the music and voice stopped with the game");
+    eq(await chrome.eval("window.__errs"), [], "no page errors, including from the missing audio files");
+    const clipReqs = await chrome.eval("performance.getEntriesByType('resource').map(e=>e.name).filter(n=>/\\/kiosk\\/audio\\//.test(n))");
+    eq(clipReqs.length, new Set(clipReqs).size, "no sound file was asked for twice: " + clipReqs.join(","));
+    await chrome.shot("arcade-session-ended-1080x1920.png");
+    await chrome.resize(1920, 1080); await sleep(200);
+    ok(!overlap(await R("#orderDrinksBtn"), await R("#sessionEnd")), "landscape: the thanks panel and the dock do not overlap");
+    { const o = await R("#orderNowBtn"); if (o && o.h > 0) ok(!overlap(await R("#orderDrinksBtn"), o) && o.b <= 1080, "landscape: a win's Order now button is not hidden under the dock once the session ended"); }
+    await chrome.shot("arcade-session-ended-1920x1080.png");
+
+    /* ---- 6. time limit, then the hands-off return from the ended screen ---- */
+    SESS = { maxSeconds: 20, endedReturnSeconds: 10, idleSeconds: 300 };
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    await chrome.eval("window.__skew+=21;1");
+    await wait("document.body.dataset.session==='ended'", "the time limit ends the session", 4000);
+    eq(await chrome.eval("document.body.dataset.spins"), "0", "ended by the clock with no spins used");
+    await chrome.eval("window.__skew+=11;1");
+    await waitFor(async () => (await path_()) === "/", 5000, "the ended screen returns to the ordering screen by itself");
+    await wait("getComputedStyle(document.getElementById('attract')).display!=='none'", "and lands on the attract screen (nobody is there)");
+
+    /* ---- 7. idle: a warning, a touch dismisses it, hands-off returns to / ---- */
+    SESS = { idleSeconds: 15, idleWarnSeconds: 10, maxSeconds: 900, maxSpins: 20 };
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    ok(await chrome.eval("document.getElementById('idleWarn').hidden"), "no warning while fresh");
+    await chrome.eval("window.__skew+=6;1");
+    await wait("!document.getElementById('idleWarn').hidden", "the Still playing? warning", 4000);
+    await chrome.shot("arcade-idle-warning-1080x1920.png");
+    await chrome.eval("document.dispatchEvent(new Event('pointerdown'));1");
+    ok(await chrome.eval("document.getElementById('idleWarn').hidden"), "a touch dismisses the warning");
+    await chrome.eval("window.__skew+=8;1"); await sleep(1300);
+    eq(await path_(), "/arcade", "a touch restarted the idle clock: still here after 8 more seconds");
+    await chrome.eval("window.__skew+=10;1");
+    await waitFor(async () => (await path_()) === "/", 5000, "hands-off for the idle time returns to /");
+    await wait("getComputedStyle(document.getElementById('attract')).display!=='none'", "on the attract screen");
+    // the page does not block the version reload: leaving the arcade is a full navigation, so the order screen that loads is the newest build
+    ok(await chrome.eval("typeof checkVersion==='function'"), "the order screen runs its version check again after the arcade");
+
+    /* ---- 8. win -> Order now and use it -> the banner on the order screen; and again by the Order drinks dock ---- */
+    SESS = null;
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    await sleep(3300);                                         // the Worker wants a play token a few seconds old
+    let won = false;
+    for (let i = 0; i < 3 && !won; i++) { await spinOnce(); won = !(await chrome.eval("document.getElementById('winActions').hidden")); }
+    ok(won, "a win within the visit's spins (staff odds are 100% prize here)");
+    const code = await chrome.eval("document.getElementById('claimCode').textContent");
+    ok(/^[A-Z2-9]{4}$/.test(code), "the code shows: " + code);
+    ok(/Order now and use it/i.test(await chrome.eval("document.getElementById('orderNowBtn').innerText")), "Order now and use it");
+    for (const [w, h, tag] of [[1080, 1920, "1080x1920"], [1920, 1080, "1920x1080"]]) {
+      await chrome.resize(w, h); await sleep(250);
+      const dock = await R("#orderDrinksBtn"), on = await R("#orderNowBtn");
+      ok(!overlap(dock, on) && on.t >= 0 && on.b <= h, `the win button and the dock do not collide at ${tag}`);
+      await chrome.eval("window.scrollTo(0, 1e6);1");
+      const bar = await R(".barker-bar");
+      ok(bar.b <= (await R("#orderDrinksBtn")).t + 1, `scrolled to the end, nothing hides under the dock at ${tag}`);
+      await chrome.eval("window.scrollTo(0, 0);1");
+      await chrome.shot(`arcade-win-order-now-and-dock-${tag}.png`);
+    }
+    await chrome.resize(1080, 1920);
+    await chrome.eval("document.getElementById('orderNowBtn').click();1");
+    await waitFor(async () => (await path_()) === "/", 8000, "Order now returns to the ordering screen");
+    await wait("!document.getElementById('arcadeWin').hidden", "the prize banner appears on return", 10000);
+    ok(new RegExp("Arcade win: Free Size Upgrade").test(await chrome.eval("document.getElementById('arcadeWin').innerText")), "banner names the prize");
+    eq(await chrome.eval("document.getElementById('awCode').textContent"), code, "banner carries the same code");
+    await chrome.shot("order-screen-banner-after-arcade-1080x1920.png");
+    // the prize is still pending: arcade again, leave by the dock, banner is there again
+    await chrome.eval("document.getElementById('arcadeBtn').click();1");
+    await waitFor(async () => (await path_()) === "/arcade", 8000, "back into the arcade"); await arcadeReady();
+    await chrome.eval("document.getElementById('orderDrinksBtn').click();1");
+    await waitFor(async () => (await path_()) === "/", 8000, "dock returns");
+    await wait("!document.getElementById('arcadeWin').hidden", "banner again via the dock", 10000);
+    await req(kioskPort, "POST", "/api/arcade/pending/dismiss", {});
+
+    /* ---- 8b. the last spin of a visit wins: thanks panel, the prize and its Order now button, and the dock all fit, both orientations ---- */
+    SESS = { maxSpins: 1, maxSeconds: 900, idleSeconds: 300 };
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    await sleep(3300); await spinOnce();
+    eq(await chrome.eval("document.body.dataset.session"), "ended", "the only spin ended the visit");
+    ok(!(await chrome.eval("document.getElementById('winActions').hidden")), "and it was a win: the prize and Order now are still on screen after the thanks");
+    for (const [w, h, tag] of [[1080, 1920, "1080x1920"], [1920, 1080, "1920x1080"]]) {
+      await chrome.resize(w, h); await sleep(250); await chrome.eval("window.scrollTo(0,0);1");
+      const dock = await R("#orderDrinksBtn"), on = await R("#orderNowBtn"), te = await R("#sessionEnd");
+      ok(!overlap(dock, on) && !overlap(dock, te) && on.b <= h && te.b <= h, `win + thanks + dock all clear of each other at ${tag}`);
+      await chrome.shot(`arcade-win-then-thanks-${tag}.png`);
+    }
+    await req(kioskPort, "POST", "/api/arcade/pending/dismiss", {});
+
+    /* ---- 9. audio can fail to load entirely: the arcade still plays, ends, and leads back ---- */
+    NO_AUDIO_JS = true; SESS = { maxSpins: 1, maxSeconds: 900, idleSeconds: 300 };
+    await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    await spinOnce();
+    eq(await chrome.eval("document.body.dataset.session"), "ended", "no audio bank: the spin limit still ends the visit");
+    await chrome.eval("document.getElementById('orderDrinksBtn').click();1");
+    await waitFor(async () => (await path_()) === "/", 8000, "and the way back works"); NO_AUDIO_JS = false;
+
+    /* ---- 10. the session file missing or broken: defaults, never an arcade with no limit and no way back ---- */
+    for (const bad of ["404", { maxSpins: "lots", idleSeconds: -1 }]) {
+      SESS = bad;
+      await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+      eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "3", "defaults when the file is " + (bad === "404" ? "missing" : "nonsense"));
+      ok(await R("#orderDrinksBtn"), "the way back is there");
+    }
+    SESS = null;
+  } finally { chrome.close(); }
+}
+
 (async () => {
   try {
     await unit();
     await serverTests();
-    if (CHROME) await chromeTests(); else console.log("arcade-prize: Chrome part SKIPPED (no Chrome; set CHROME_BIN)");
+    if (CHROME) { await chromeTests(); await navTests(); } else console.log("arcade-prize: Chrome part SKIPPED (no Chrome; set CHROME_BIN)");
     console.log(`arcade-prize: ${passed} checks passed${CHROME ? " (incl. Chrome)" : ""}`);
   } catch (e) { console.error(e && e.stack || e); if (ctx) { console.error("--- kiosk log ---\n" + ctx.kiosk.out.slice(-1500)); console.error("--- station log ---\n" + ctx.station.out.slice(-800)); } process.exitCode = 1; }
   finally { if (ctx) { ctx.kiosk.kill(); ctx.station.kill(); } worker.close(); clover.close(); clearInterval(keepAlive); }

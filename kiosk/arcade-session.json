@@ -1,0 +1,9 @@
+{
+  "_about": "Boardwalk Arcade on the kiosk screen: one visit is limited so nobody camps while others wait. Edit, publish, done (the page re-reads this on every visit). Prize caps and odds are NOT here: the Worker and arcade-routes.js enforce those.",
+  "enabled": true,
+  "maxSpins": 3,
+  "maxSeconds": 90,
+  "idleSeconds": 60,
+  "idleWarnSeconds": 20,
+  "endedReturnSeconds": 30
+}

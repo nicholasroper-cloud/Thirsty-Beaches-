@@ -787,7 +787,7 @@ const versionTag = () => (appState.screenEpoch ? `${CURRENT_VERSION}.${appState.
    A restart (code update, pay setting change, remote restart command) only happens when no
    order/payment/AI request is in flight and nothing customer-facing has happened for IDLE_MS.
    The supervisor brings the server back in ~1-2 s; the page itself is not reloaded. */
-const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin", "/api/arcade/pending/attach"]);
+const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin", "/api/arcade/pending/attach", "/arcade", "/api/arcade/ping"]);   // an open arcade page is customer activity too: no idle restart mid-game (the page pings every 20 s and returns to the ordering screen when hands-off)
 const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) || 120000);
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
@@ -1190,7 +1190,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---- 80s Boardwalk Arcade Slot Machine & Dual-Persona Audio Bank ----
-  // NOT linked from the ordering screen (a separate URL for a second screen, see build-notes.md). Served without camera or microphone permission.
+  // Linked from the ordering screen and the attract screen (an empty cart only); the page limits one visit and returns to / when hands-off (kiosk/arcade-session.json). Served without camera or microphone permission.
   if (req.method === "GET" && (pathname === "/arcade" || pathname === "/arcade/")) {
     const page = path.join(__dirname, "kiosk", "boardwalk-slots.html");
     arcade.touch().catch(() => {});                        // have play tokens ready (the Worker wants them 45 s old) before the first win
@@ -1218,6 +1218,9 @@ const server = http.createServer(async (req, res) => {
     rs.once("open", () => { res.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff" }); rs.pipe(res); });
     res.on("close", () => rs.destroy());
     return;
+  }
+  if (req.method === "GET" && pathname === "/api/arcade/ping") {   // the open arcade page's heartbeat: counted as activity above (ACTIVITY_PATHS), nothing else
+    return sendJSON(res, 200, { ok: true });
   }
   if (req.method === "GET" && pathname === "/api/arcade-config") {
     return sendJSON(res, 200, { ok: true, config: arcade.getConfig(), prizes: arcade.prizesOn() });
