@@ -1,39 +1,40 @@
-/* Thirsty Beaches — 1986 Boardwalk Arcade Slot Machine + Camera Presence/Dog Barker
-   Zero video recording/storage. Configurable Staff Odds (81/6/5/4/3/1 default),
-   3-tap top-right corner gesture + 'M' mute shortcut, opt-in "Scan My Vibe" -> /api/vibe. */
+/* Thirsty Beaches — 1986 Boardwalk Arcade Slot Machine (voice barker clips are staff-triggered; this page never uses the camera or microphone)
+   Prizes are decided and issued by the kiosk SERVER (POST /api/arcade/spin -> the tb-where Worker): a claim code is shown only when the
+   Worker issued one. The odds below are only the fallback labels for the reel animation; the real table lives in arcade-routes.js
+   (tests/boardwalk-arcade.test.mjs pins them together). The 3-tap corner drawer needs the staff key (STATION_KEY) to change anything.
+   'M' mutes locally. */
 (function (root) {
   'use strict';
 
   const STORAGE_KEY = 'tb_boardwalk_arcade_cfg_v1';
   const BARKER_COOLDOWN_MS = 45000;
+  const MAX_FREE_DRINK_PCT = 2;   // mirrors arcade-routes.js; the server is the one that enforces it
 
   const DEFAULT_ODDS = [
     { id: 'standard', label: 'Standard Custom Drink', pct: 81, isPrize: false, trigger: 'drink_reveal' },
     { id: 'size_upgrade', label: 'Free Size Upgrade', pct: 6, isPrize: true, trigger: 'prize_win' },
-    { id: 'soft_serve_topper', label: 'Free Dole Whip or Vanilla Soft Serve Topper', pct: 5, isPrize: true, trigger: 'prize_win' },
+    { id: 'soft_serve_topper', label: 'Free Pineapple Soft Serve or Vanilla Soft Serve Topper', pct: 5, isPrize: true, trigger: 'prize_win' },
     { id: 'neon_charm', label: 'Free 3D-Printed Neon Straw Charm', pct: 4, isPrize: true, trigger: 'arcade_charm_win' },
     { id: 'topper_or_sticker', label: 'Free Freeze-Dried Topper or UV-DTF Sticker', pct: 3, isPrize: true, trigger: 'prize_win' },
     { id: 'free_drink_jackpot', label: 'FREE DRINK JACKPOT!', pct: 1, isPrize: true, trigger: 'mega_jackpot' },
   ];
 
-  function rollWeightedPrize(odds, rng = Math.random) {
-    const list = Array.isArray(odds) && odds.length ? odds : DEFAULT_ODDS;
-    const total = list.reduce((s, o) => s + Math.max(0, Number(o.pct) || 0), 0);
-    if (total <= 0) return list[0];
-    let target = rng() * total;
-    for (const item of list) {
-      target -= Math.max(0, Number(item.pct) || 0);
-      if (target <= 0) return item;
-    }
-    return list[list.length - 1];
+  /* Every string that reaches innerHTML goes through this first. */
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"'`]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c]));
   }
 
-  function generate4DigitCode(rng = Math.random) {
-    return String(Math.floor(1000 + rng() * 9000));
+  /* The staff odds editor rows. Labels are escaped; numbers are forced to numbers. */
+  function oddsGridHTML(odds) {
+    return (Array.isArray(odds) ? odds : []).map((o, idx) => {
+      const pct = Number.isFinite(Number(o && o.pct)) ? Number(o.pct) : 0;
+      return '<label class="odds-item"><span>' + esc(o && o.label) + '</span><span><input type="number" min="0" max="' +
+        (o && o.id === 'free_drink_jackpot' ? MAX_FREE_DRINK_PCT : 100) + '" step="1" data-odd-idx="' + idx + '" value="' + pct + '"> %</span></label>';
+    }).join('');
   }
 
   // Export pure helpers for unit testing
-  const exportsObj = { DEFAULT_ODDS, BARKER_COOLDOWN_MS, rollWeightedPrize, generate4DigitCode };
+  const exportsObj = { DEFAULT_ODDS, BARKER_COOLDOWN_MS, MAX_FREE_DRINK_PCT, esc, oddsGridHTML };
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = exportsObj;
     return;
@@ -47,6 +48,9 @@
     if (!spinBtn || !window.TBAudioBank) return;
 
     const audio = window.TBAudioBank.createAudioBank({ basePath: '/kiosk/audio/', pgMode: true });
+    const $ = (id) => document.getElementById(id);
+
+    /* Local (this screen only): persona, volume, mute. From the server (staff-set, needs the staff key to change): PG mode, winter board, odds. */
     let cfg = {
       personaMode: 'auto',
       volume: 0.75,
@@ -55,31 +59,40 @@
       winterEnabled: true,
       odds: DEFAULT_ODDS.map((o) => ({ ...o })),
     };
-
+    let localSaved = null;
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-      if (saved && typeof saved === 'object') {
-        cfg = { ...cfg, ...saved, odds: Array.isArray(saved.odds) && saved.odds.length === DEFAULT_ODDS.length ? saved.odds : cfg.odds };
-      }
+      if (saved && typeof saved === 'object') localSaved = saved;
     } catch {}
+    const okPersona = (v) => v === 'shredder' || v === 'neon86' || v === 'auto';
+    const okVolume = (v) => typeof v === 'number' && v >= 0 && v <= 1;
+    function applyAudioFields(src) {
+      if (okPersona(src.personaMode)) cfg.personaMode = src.personaMode;
+      if (okVolume(src.volume)) cfg.volume = src.volume;
+      if (typeof src.muted === 'boolean') cfg.muted = src.muted;
+    }
 
-    // Also pull Kiosk PC server config if running locally on work/kiosk-pay
     try {
       const r = await fetch('/api/arcade-config');
       if (r.ok) {
         const remote = await r.json();
-        if (remote && remote.config) {
-          cfg = { ...cfg, ...remote.config };
+        const c = remote && remote.config;
+        if (c && typeof c === 'object') {
+          if (!localSaved) applyAudioFields(c);
+          if (typeof c.pgMode === 'boolean') cfg.pgMode = c.pgMode;
+          if (typeof c.winterEnabled === 'boolean') cfg.winterEnabled = c.winterEnabled;
+          if (Array.isArray(c.odds) && c.odds.length === DEFAULT_ODDS.length) cfg.odds = c.odds;
         }
       }
     } catch {}
+    if (localSaved) applyAudioFields(localSaved);
 
     audio.setPersonaMode(cfg.personaMode);
     audio.setVolume(cfg.volume);
     audio.setMuted(cfg.muted);
     audio.setPgMode(cfg.pgMode);
 
-    // Load live menu inventory for Reels 1 & 2
+    // Live menu inventory for Reels 1 & 2 (the page cannot reach the website, so the schema copy shipped with the kiosk is used)
     let slotBases = [
       { id: 'dirty-soda', label: 'Dirty Soda', examples: ['Dr Pepper', 'Diet Coke', 'Sprite', 'Orange Soda'] },
       { id: 'energy-mixer', label: 'Energy Mixer', examples: ['Neon Tide Clean Energy'] },
@@ -90,35 +103,31 @@
     let slotFlavors = [
       'Coconut Cream + Cherry Lime',
       'Raspberry + Vanilla Cream + Berry Dust',
-      'Pineapple Dole Whip + Mango Purée',
+      'Pineapple soft serve + Mango Purée',
       'Vanilla + Caramel + Sweet Cream',
       'Strawberry Purée + Fresh Lime',
       'Salted Caramel + White Chocolate',
       'Peppermint + Crushed Candy Cane',
     ];
+    try {
+      const r = await fetch('/kiosk/arcade-menu.json');
+      if (r.ok) {
+        const schema = await r.json();
+        if (schema.slotReels && Array.isArray(schema.slotReels.bases) && schema.slotReels.bases.length) slotBases = schema.slotReels.bases;
+        if (schema.slotReels && Array.isArray(schema.slotReels.flavors) && schema.slotReels.flavors.length) slotFlavors = schema.slotReels.flavors;
+      }
+    } catch {}
 
-    for (const url of ['/menu-schema.json', '/kiosk/arcade-menu.json']) {
-      try {
-        const r = await fetch(url);
-        if (r.ok) {
-          const schema = await r.json();
-          if (schema.slotReels && Array.isArray(schema.slotReels.bases)) slotBases = schema.slotReels.bases;
-          if (schema.slotReels && Array.isArray(schema.slotReels.flavors)) slotFlavors = schema.slotReels.flavors;
-          break;
-        }
-      } catch {}
-    }
-
-    const r1 = document.getElementById('reel1'), r1Val = document.getElementById('reel1Val'), r1Sub = document.getElementById('reel1Sub');
-    const r2 = document.getElementById('reel2'), r2Val = document.getElementById('reel2Val'), r2Sub = document.getElementById('reel2Sub');
-    const r3 = document.getElementById('reel3'), r3Val = document.getElementById('reel3Val'), r3Sub = document.getElementById('reel3Sub');
-    const resultBox = document.getElementById('resultBox');
-    const resultTitle = document.getElementById('resultTitle');
-    const resultDesc = document.getElementById('resultDesc');
-    const claimPill = document.getElementById('claimPill');
-    const claimCodeEl = document.getElementById('claimCode');
-    const barkerMsg = document.getElementById('barkerMsg');
-    const personaBadge = document.getElementById('personaBadge');
+    const r1 = $('reel1'), r1Val = $('reel1Val'), r1Sub = $('reel1Sub');
+    const r2 = $('reel2'), r2Val = $('reel2Val'), r2Sub = $('reel2Sub');
+    const r3 = $('reel3'), r3Val = $('reel3Val'), r3Sub = $('reel3Sub');
+    const resultBox = $('resultBox');
+    const resultTitle = $('resultTitle');
+    const resultDesc = $('resultDesc');
+    const claimPill = $('claimPill');
+    const claimCodeEl = $('claimCode');
+    const barkerMsg = $('barkerMsg');
+    const personaBadge = $('personaBadge');
 
     function syncPersonaUI() {
       document.querySelectorAll('[data-persona]').forEach((b) => {
@@ -132,6 +141,11 @@
     }
     syncPersonaUI();
 
+    /* Persona, volume and mute live on this screen only. Nothing here talks to the server, so it can never carry the odds. */
+    function saveLocalCfg() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ personaMode: cfg.personaMode, volume: cfg.volume, muted: cfg.muted })); } catch {}
+    }
+
     document.querySelectorAll('[data-persona]').forEach((b) => {
       b.addEventListener('click', () => {
         audio.startSynthwaveIdle();
@@ -142,16 +156,19 @@
       });
     });
 
-    function saveLocalCfg() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch {}
-      fetch('/api/arcade-config', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(cfg),
-      }).catch(() => {});
+    /* ---------- 3-Reel Slot Spin (the prize comes from the server) ---------- */
+    async function askServerForSpin() {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 8000);
+      try {
+        const r = await fetch('/api/arcade/spin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', signal: ctl.signal });
+        const d = await r.json().catch(() => null);
+        if (r.ok && d && d.ok === true) return d;
+      } catch {}
+      finally { clearTimeout(timer); }
+      return { ok: true, win: false, thanks: true, prizeId: 'standard' };   // offline or refused: it still plays, with no code
     }
 
-    /* ---------- 3-Reel Slot Spin ---------- */
     let spinning = false;
     spinBtn.addEventListener('click', async () => {
       if (spinning) return;
@@ -167,11 +184,13 @@
       audio.playTrigger('slot_spin');
       const availBases = slotBases.filter((b) => cfg.winterEnabled || !b.winterOnly);
       const finalBase = availBases[Math.floor(Math.random() * availBases.length)];
-      const finalExample = (finalBase.examples || [finalBase.label])[Math.floor(Math.random() * (finalBase.examples || [finalBase.label]).length)];
+      const examples = finalBase.examples && finalBase.examples.length ? finalBase.examples : [finalBase.label];
+      const finalExample = examples[Math.floor(Math.random() * examples.length)];
       const finalFlavor = slotFlavors[Math.floor(Math.random() * slotFlavors.length)];
-      const finalPrize = rollWeightedPrize(cfg.odds);
+      let outcome = null;
+      askServerForSpin().then((d) => { outcome = d; });
 
-      // Animated staggered reel stops with mechanical clicks
+      // Animated staggered reel stops with mechanical clicks; reel 3 keeps turning until the server has answered
       let tick = 0;
       const ticker = setInterval(() => {
         tick++;
@@ -191,51 +210,51 @@
           r2Val.textContent = finalFlavor.toUpperCase();
           r2Sub.textContent = '+$1.50 Freeze-Dried Topper Ready';
         }
-        if (tick < 22) {
-          r3Val.textContent = cfg.odds[tick % cfg.odds.length].label.toUpperCase();
-        } else {
-          clearInterval(ticker);
-          r3.classList.remove('is-spinning');
-          r3Val.textContent = finalPrize.label.toUpperCase();
-          r3Sub.textContent = finalPrize.isPrize ? 'INSTANT BOARDWALK WIN!' : 'SHOW AT WINDOW TO ORDER';
-
-          audio.playSodaFizz();
-          if (finalPrize.isPrize) {
-            const code = generate4DigitCode();
-            r3.classList.add('is-win');
-            resultBox.classList.add('is-prize');
-            claimCodeEl.textContent = code;
-            claimPill.hidden = false;
-            const isMega = finalPrize.id === 'free_drink_jackpot';
-            audio.playArcadeFanfare(isMega);
-            document.body.classList.remove('is-flash');
-            void document.body.offsetWidth;
-            document.body.classList.add('is-flash');
-            setTimeout(() => document.body.classList.remove('is-flash'), 2100);
-            resultTitle.textContent = (isMega ? 'MEGA JACKPOT! ' : 'WINNER! ') + finalPrize.label;
-            resultDesc.textContent = `Custom Build: ${finalExample} · ${finalFlavor}. Flash claim code ${code} at the trailer window!`;
-            audio.playTrigger(finalPrize.trigger || 'prize_win');
-          } else {
-            resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
-            resultDesc.textContent = `${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
-            audio.playTrigger('drink_reveal');
-          }
-          spinning = false;
-          spinBtn.disabled = false;
-          syncPersonaUI();
+        if (tick < 22 || !outcome) {
+          r3Val.textContent = String(cfg.odds[tick % cfg.odds.length].label || '').toUpperCase();
+          return;
         }
+        clearInterval(ticker);
+        r3.classList.remove('is-spinning');
+        audio.playSodaFizz();
+        if (outcome.win === true && /^[A-Z2-9]{4}$/.test(String(outcome.code))) {
+          const t = outcome.ticket || {};
+          const reward = String(t.reward || 'Boardwalk Prize');
+          r3Val.textContent = reward.toUpperCase();
+          r3Sub.textContent = 'CODE ' + outcome.code;
+          r3.classList.add('is-win');
+          resultBox.classList.add('is-prize');
+          claimCodeEl.textContent = outcome.code;
+          claimPill.hidden = false;
+          audio.playArcadeFanfare(outcome.mega === true);
+          document.body.classList.remove('is-flash');
+          void document.body.offsetWidth;
+          document.body.classList.add('is-flash');
+          setTimeout(() => document.body.classList.remove('is-flash'), 2100);
+          resultTitle.textContent = (outcome.mega === true ? 'MEGA JACKPOT! ' : 'WINNER! ') + reward;
+          resultDesc.textContent = (t.drinkName ? t.drinkName + '. ' : '') + `Custom Build: ${finalExample} · ${finalFlavor}. Show claim code ${outcome.code} at the trailer window!`;
+          audio.playTrigger(typeof outcome.trigger === 'string' ? outcome.trigger : 'prize_win');
+        } else if (outcome.thanks === true) {
+          r3Val.textContent = 'THANKS FOR PLAYING';
+          r3Sub.textContent = 'ORDER AT THE WINDOW';
+          resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
+          resultDesc.textContent = `Thanks for playing! ${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
+          audio.playTrigger('drink_reveal');
+        } else {
+          r3Val.textContent = 'STANDARD CUSTOM DRINK';
+          r3Sub.textContent = 'SHOW AT WINDOW TO ORDER';
+          resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
+          resultDesc.textContent = `${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
+          audio.playTrigger('drink_reveal');
+        }
+        spinning = false;
+        spinBtn.disabled = false;
+        syncPersonaUI();
       }, 85);
     });
 
-    /* ---------- Local Camera Presence & Dog-Spotted Barker (Zero Storage, 45s Cooldown) ---------- */
-    const camToggleBtn = document.getElementById('camToggleBtn');
-    const camVideo = document.getElementById('camVideo');
-    const scanVibeBtn = document.getElementById('scanVibeBtn');
-    let camStream = null;
-    let camTimer = null;
-    let prevFrame = null;
+    /* ---------- Voice barker clips (staff demo buttons only; there is no camera and no automatic trigger) ---------- */
     let lastBarkAt = 0;
-
     async function triggerBarker(kind, bypassCooldown = false) {
       const now = Date.now();
       if (!bypassCooldown && now - lastBarkAt < BARKER_COOLDOWN_MS) return;
@@ -244,133 +263,49 @@
       const trigger = kind === 'dog' ? 'barker_dog_spotted' : 'barker_approach';
       const out = await audio.playTrigger(trigger);
       if (barkerMsg) {
-        barkerMsg.innerHTML = kind === 'dog'
-          ? `<b>Dog Spotted!</b> Pitching The $1 Menace Cup + $1 Freeze-Dried Dog Treat — “${out.text || ''}”`
-          : `<b>Walk-Up Detected!</b> “${out.text || ''}”`;
+        barkerMsg.textContent = '';
+        const b = document.createElement('b');
+        b.textContent = kind === 'dog' ? 'Dog Spotted! ' : 'Walk-Up! ';
+        barkerMsg.appendChild(b);
+        barkerMsg.appendChild(document.createTextNode(kind === 'dog' ? 'Pitching The $1 Menace Cup + $1 Freeze-Dried Dog Treat — “' + ((out && out.text) || '') + '”' : '“' + ((out && out.text) || '') + '”'));
       }
       syncPersonaUI();
     }
 
-    async function ensureCamera() {
-      if (camStream) return true;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+    /* ---------- Staff drawer (3-tap top-right corner). Locked until the staff key (STATION_KEY) is typed; every change is sent with it. ---------- */
+    const staffCornerBtn = $('staffCornerBtn');
+    const staffDlg = $('staffDlg');
+    const staffCloseBtn = $('staffCloseBtn');
+    const staffLock = $('staffLock');
+    const staffKeyInput = $('staffKeyInput');
+    const staffUnlockBtn = $('staffUnlockBtn');
+    const staffLockMsg = $('staffLockMsg');
+    const staffControls = $('staffControls');
+    const staffVol = $('staffVol');
+    const staffVolLbl = $('staffVolLbl');
+    const staffMuteBtn = $('staffMuteBtn');
+    const staffPgMode = $('staffPgMode');
+    const staffWinterMode = $('staffWinterMode');
+    const oddsGrid = $('oddsGrid');
+    const oddsTotalLbl = $('oddsTotalLbl');
+    const staffSaveMsg = $('staffSaveMsg');
+    let staffKey = '';   // in memory only: never stored, cleared whenever the drawer closes
+
+    function lockStaff() {
+      staffKey = '';
+      if (staffKeyInput) staffKeyInput.value = '';
+      if (staffControls) staffControls.hidden = true;
+      if (staffLock) staffLock.hidden = false;
+      if (staffLockMsg) staffLockMsg.textContent = '';
+    }
+
+    async function postStaff(body) {
       try {
-        camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false });
-        camVideo.srcObject = camStream;
-        await camVideo.play();
-        return true;
-      } catch {
-        return false;
-      }
+        const r = await fetch('/api/arcade-config', { method: 'POST', headers: { 'content-type': 'application/json', 'X-Key': staffKey }, body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        return { status: r.status, ok: r.ok && d && d.ok === true, data: d || {} };
+      } catch { return { status: 0, ok: false, data: { error: 'kiosk server not reachable' } }; }
     }
-
-    function stopCamera() {
-      if (camTimer) { clearInterval(camTimer); camTimer = null; }
-      if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; }
-      prevFrame = null;
-      if (camToggleBtn) camToggleBtn.textContent = 'Enable Presence Cam';
-    }
-
-    if (camToggleBtn) {
-      camToggleBtn.addEventListener('click', async () => {
-        if (camStream) { stopCamera(); return; }
-        const ok = await ensureCamera();
-        if (!ok) {
-          if (barkerMsg) barkerMsg.innerHTML = '<b>Camera unavailable:</b> Use Staff Drawer demo buttons or tap Spin anytime.';
-          return;
-        }
-        camToggleBtn.textContent = 'Presence Cam: ON';
-        const c = document.createElement('canvas'); c.width = 96; c.height = 72;
-        const g = c.getContext('2d', { willReadFrequently: true });
-        camTimer = setInterval(() => {
-          if (!camVideo || camVideo.readyState < 2) return;
-          g.drawImage(camVideo, 0, 0, 96, 72);
-          const data = g.getImageData(0, 0, 96, 72).data;
-          if (prevFrame) {
-            let upperDiff = 0, lowerDiff = 0;
-            for (let y = 0; y < 72; y++) {
-              for (let x = 0; x < 96; x++) {
-                const idx = (y * 96 + x) * 4;
-                const d = Math.abs(data[idx] - prevFrame[idx]) + Math.abs(data[idx + 1] - prevFrame[idx + 1]) + Math.abs(data[idx + 2] - prevFrame[idx + 2]);
-                if (d > 75) {
-                  if (y < 42) upperDiff++; else lowerDiff++;
-                }
-              }
-            }
-            // Lower-frame localized motion with minimal upper torso motion -> likely dog at window
-            if (lowerDiff > 110 && upperDiff < 55) triggerBarker('dog');
-            else if (upperDiff + lowerDiff > 190) triggerBarker('approach');
-          }
-          prevFrame = new Uint8ClampedArray(data);
-        }, 1200);
-      });
-    }
-
-    /* ---------- Opt-In "Scan My Vibe" (Single Frame -> /api/vibe gemini-3.1-flash-lite) ---------- */
-    if (scanVibeBtn) {
-      scanVibeBtn.addEventListener('click', async () => {
-        audio.startSynthwaveIdle();
-        scanVibeBtn.disabled = true;
-        const oldTxt = scanVibeBtn.textContent;
-        scanVibeBtn.textContent = 'SCANNING VIBE…';
-        try {
-          let imageBase64 = '';
-          const hasCam = await ensureCamera();
-          if (hasCam && camVideo.readyState >= 2) {
-            const snap = document.createElement('canvas');
-            snap.width = 320; snap.height = 240;
-            snap.getContext('2d').drawImage(camVideo, 0, 0, 320, 240);
-            imageBase64 = snap.toDataURL('image/jpeg', 0.72);
-          }
-          const res = await fetch('/api/vibe', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              mode: 'scan-my-vibe',
-              mood: '1986 boardwalk energy',
-              imageBase64: imageBase64 || undefined,
-            }),
-          });
-          const data = await res.json().catch(() => null);
-          if (res.status === 429) {
-            resultTitle.textContent = 'Vibe Scanner Cooling Down';
-            resultDesc.textContent = (data && data.error) || 'Too many scans this hour — spin the 80s Drink Slot Machine instead!';
-          } else if (data && (data.drink || data.name)) {
-            const name = data.drink || data.name;
-            const note = data.reason || data.blurb || data.vibe || 'Prescribed straight from our 1986 Neon Beach menu!';
-            r1Val.textContent = 'VIBE PRESCRIPTION';
-            r2Val.textContent = String(name).toUpperCase().slice(0, 28);
-            r3Val.textContent = 'GEMINI VISION MATCH';
-            resultTitle.textContent = `SCAN MY VIBE: ${name}`;
-            resultDesc.textContent = note;
-            audio.playSodaFizz();
-            audio.playTrigger('drink_reveal', `Vibe locked in! We prescribe the ${name}. ${note}`);
-          } else {
-            resultTitle.textContent = 'Vibe Match: Neon Sunset Float';
-            resultDesc.textContent = 'Dirty soda over chewable nugget ice crowned with pineapple Dole Whip!';
-          }
-        } catch {
-          resultTitle.textContent = 'Vibe Match: Miami Vice Swirl';
-          resultDesc.textContent = 'Pineapple Dole Whip twisted with rotating seasonal fruit whip — grab one at the window!';
-        } finally {
-          scanVibeBtn.disabled = false;
-          scanVibeBtn.textContent = oldTxt;
-        }
-      });
-    }
-
-    /* ---------- Staff Audio & Prize Odds Drawer (3-Tap Top-Right Corner + 'M' Shortcut) ---------- */
-    const staffCornerBtn = document.getElementById('staffCornerBtn');
-    const staffDlg = document.getElementById('staffDlg');
-    const staffCloseBtn = document.getElementById('staffCloseBtn');
-    const staffVol = document.getElementById('staffVol');
-    const staffVolLbl = document.getElementById('staffVolLbl');
-    const staffMuteBtn = document.getElementById('staffMuteBtn');
-    const staffPgMode = document.getElementById('staffPgMode');
-    const staffWinterMode = document.getElementById('staffWinterMode');
-    const oddsGrid = document.getElementById('oddsGrid');
-    const oddsTotalLbl = document.getElementById('oddsTotalLbl');
-    const staffSaveMsg = document.getElementById('staffSaveMsg');
 
     function renderStaffControls() {
       staffVol.value = String(Math.round(cfg.volume * 100));
@@ -378,11 +313,7 @@
       staffMuteBtn.textContent = cfg.muted ? 'Unmute (M)' : 'Mute (M)';
       staffPgMode.checked = cfg.pgMode;
       staffWinterMode.checked = cfg.winterEnabled;
-      oddsGrid.innerHTML = cfg.odds.map((o, idx) => `
-        <label class="odds-item">
-          <span>${o.label}</span>
-          <span><input type="number" min="0" max="100" step="1" data-odd-idx="${idx}" value="${o.pct}"> %</span>
-        </label>`).join('');
+      oddsGrid.innerHTML = oddsGridHTML(cfg.odds);
       updateOddsSum();
     }
 
@@ -403,18 +334,43 @@
         cornerTaps.push(now);
         if (cornerTaps.length >= 3) {
           cornerTaps = [];
-          renderStaffControls();
+          lockStaff();
           if (typeof staffDlg.showModal === 'function') staffDlg.showModal();
           else staffDlg.setAttribute('open', '');
+          staffKeyInput.focus();
         }
       });
     }
-    if (staffCloseBtn) staffCloseBtn.addEventListener('click', () => staffDlg.close());
+    function closeStaff() { lockStaff(); if (staffDlg.open) staffDlg.close(); }
+    if (staffCloseBtn) staffCloseBtn.addEventListener('click', closeStaff);
+    staffDlg.addEventListener('close', lockStaff);
+
+    async function unlockStaff() {
+      const typed = staffKeyInput.value.trim();
+      if (!typed) { staffLockMsg.textContent = 'Type the staff key.'; return; }
+      staffKey = typed;
+      staffUnlockBtn.disabled = true;
+      const r = await postStaff({ check: true });
+      staffUnlockBtn.disabled = false;
+      if (r.ok) {
+        staffLock.hidden = true;
+        staffControls.hidden = false;
+        staffKeyInput.value = '';
+        staffSaveMsg.textContent = '';
+        renderStaffControls();
+        return;
+      }
+      staffKey = '';
+      staffLockMsg.textContent = r.status === 401 ? 'Wrong staff key.' : r.status === 429 ? 'Too many tries. Wait a few minutes.' : r.status === 403 ? 'No staff key is set on this kiosk (STATION_KEY in kiosk-config.env).' : 'Could not check the key.';
+    }
+    staffUnlockBtn.addEventListener('click', unlockStaff);
+    staffKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') unlockStaff(); });
 
     staffVol.addEventListener('input', () => {
       cfg.volume = Number(staffVol.value) / 100;
       staffVolLbl.textContent = staffVol.value + '%';
       audio.setVolume(cfg.volume);
+      saveLocalCfg();
     });
     staffMuteBtn.addEventListener('click', () => {
       cfg.muted = audio.toggleMute();
@@ -422,40 +378,67 @@
       syncPersonaUI();
       saveLocalCfg();
     });
-    staffPgMode.addEventListener('change', () => {
-      cfg.pgMode = staffPgMode.checked;
-      audio.setPgMode(cfg.pgMode);
-      syncPersonaUI();
-    });
-    staffWinterMode.addEventListener('change', () => {
-      cfg.winterEnabled = staffWinterMode.checked;
-      try { localStorage.setItem('tb_winter_board_enabled', cfg.winterEnabled ? '1' : '0'); } catch {}
-    });
 
-    document.getElementById('demoApproachBtn').addEventListener('click', () => triggerBarker('approach', true));
-    document.getElementById('demoDogBtn').addEventListener('click', () => triggerBarker('dog', true));
-    document.getElementById('resetOddsBtn').addEventListener('click', () => {
+    // PG mode and the winter board are staff-set on the server; they change on this screen only once the server has accepted them.
+    async function saveFlag(key, value, el, label) {
+      const r = await postStaff({ [key]: value });
+      if (r.ok) {
+        cfg[key] = value;
+        if (key === 'pgMode') audio.setPgMode(value);
+        syncPersonaUI();
+        staffSaveMsg.textContent = `${label} saved.`;
+        staffSaveMsg.style.color = '#2AF5E4';
+      } else {
+        el.checked = cfg[key];
+        staffSaveMsg.textContent = (r.data && r.data.error) || 'Not saved.';
+        staffSaveMsg.style.color = '#FF3CAC';
+        if (r.status === 401) lockStaff();
+      }
+    }
+    staffPgMode.addEventListener('change', () => saveFlag('pgMode', staffPgMode.checked, staffPgMode, 'PG mode'));
+    staffWinterMode.addEventListener('change', () => saveFlag('winterEnabled', staffWinterMode.checked, staffWinterMode, 'Winter board'));
+
+    $('demoApproachBtn').addEventListener('click', () => triggerBarker('approach', true));
+    $('demoDogBtn').addEventListener('click', () => triggerBarker('dog', true));
+    $('resetOddsBtn').addEventListener('click', () => {
       cfg.odds = DEFAULT_ODDS.map((o) => ({ ...o }));
       renderStaffControls();
-      staffSaveMsg.textContent = 'Defaults restored (81/6/5/4/3/1). Click Save to apply.';
-    });
-    document.getElementById('saveOddsBtn').addEventListener('click', () => {
-      const sum = updateOddsSum();
-      if (sum !== 100) {
-        staffSaveMsg.textContent = `Odds must sum to 100% (currently ${sum}%).`;
-        staffSaveMsg.style.color = '#FF3CAC';
-        return;
-      }
-      oddsGrid.querySelectorAll('[data-odd-idx]').forEach((el) => {
-        cfg.odds[Number(el.dataset.oddIdx)].pct = Math.max(0, Math.min(100, Number(el.value) || 0));
-      });
-      saveLocalCfg();
-      staffSaveMsg.textContent = 'Saved! Prize odds & audio settings active immediately.';
+      staffSaveMsg.textContent = 'Defaults restored (81/6/5/4/3/1). Click Save Odds to apply.';
       staffSaveMsg.style.color = '#2AF5E4';
-      syncPersonaUI();
+    });
+    // Audio defaults only: persona, volume, mute. This button never sends the odds.
+    $('saveAudioBtn').addEventListener('click', async () => {
+      const r = await postStaff({ personaMode: cfg.personaMode, volume: cfg.volume, muted: cfg.muted });
+      staffSaveMsg.textContent = r.ok ? 'Audio defaults saved.' : ((r.data && r.data.error) || 'Not saved.');
+      staffSaveMsg.style.color = r.ok ? '#2AF5E4' : '#FF3CAC';
+      if (r.status === 401) lockStaff();
+    });
+    // Odds only: the one place the odds are sent.
+    $('saveOddsBtn').addEventListener('click', async () => {
+      const inputs = [...oddsGrid.querySelectorAll('[data-odd-idx]')];
+      const odds = inputs.map((el) => ({ id: cfg.odds[Number(el.dataset.oddIdx)].id, pct: Number(el.value) }));
+      const sum = odds.reduce((a, o) => a + (Number.isFinite(o.pct) ? o.pct : 0), 0);
+      const bad = odds.some((o) => !Number.isFinite(o.pct) || o.pct < 0 || o.pct > 100);
+      const jackpot = odds.find((o) => o.id === 'free_drink_jackpot');
+      let msg = '';
+      if (bad) msg = 'Each number must be 0 to 100.';
+      else if (sum !== 100) msg = `Odds must sum to 100% (currently ${sum}%).`;
+      else if (jackpot && jackpot.pct > MAX_FREE_DRINK_PCT) msg = `Free drink odds cannot be more than ${MAX_FREE_DRINK_PCT}%.`;
+      if (msg) { staffSaveMsg.textContent = msg; staffSaveMsg.style.color = '#FF3CAC'; return; }
+      const r = await postStaff({ odds });
+      if (r.ok && r.data.config && Array.isArray(r.data.config.odds)) {
+        cfg.odds = r.data.config.odds;
+        renderStaffControls();
+        staffSaveMsg.textContent = 'Saved! New prize odds are active for the next spin.';
+        staffSaveMsg.style.color = '#2AF5E4';
+      } else {
+        staffSaveMsg.textContent = (r.data && r.data.error) || 'Not saved.';
+        staffSaveMsg.style.color = '#FF3CAC';
+        if (r.status === 401) lockStaff();
+      }
     });
 
-    // Global keyboard shortcut: 'M' toggles Mute (unless typing inside an input)
+    // Global keyboard shortcut: 'M' toggles Mute on this screen (unless typing inside an input)
     document.addEventListener('keydown', (e) => {
       if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
       if (e.key === 'm' || e.key === 'M') {

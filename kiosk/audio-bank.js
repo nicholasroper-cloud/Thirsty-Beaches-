@@ -27,8 +27,8 @@
     shredder: {
       barker_approach: [
         { file: 'shredder/barker_approach_1.mp3', text: 'Whoa, righteous timing dude! Step up to the 1986 Drink Slots and catch a gnarly dirty soda wave!' },
-        { file: 'shredder/barker_approach_2.mp3', text: 'Hey beach cruiser! Tap spin for chewable nugget ice, Dole Whip floats, or a rad arcade prize!' },
-        { file: 'shredder/barker_approach_3.mp3', text: 'Aloha from 1986! Spin the neon reels or scan your vibe for a totally tubular drink!' },
+        { file: 'shredder/barker_approach_2.mp3', text: 'Hey beach cruiser! Tap spin for chewable nugget ice, pineapple soft serve floats, or a rad arcade prize!' },
+        { file: 'shredder/barker_approach_3.mp3', text: 'Aloha from 1986! Spin the neon reels for a totally tubular drink!' },
       ],
       barker_dog_spotted: [
         { file: 'shredder/barker_dog_spotted_1.mp3', text: 'Whoa, rad pup alert! Grab your furry beach buddy The One Dollar Menace Cup with a freeze-dried dog treat topper!' },
@@ -56,8 +56,8 @@
     neon86: {
       barker_approach: [
         { file: 'neon86/barker_approach_1.mp3', text: 'Live from the 1986 Neon Boardwalk! Step right up and spin the Thirsty Beaches Drink Machine!' },
-        { file: 'neon86/barker_approach_2.mp3', text: 'Caller number 86, you are on the air! Pull the lever for dirty sodas, Dole Whip floats, and instant prizes!' },
-        { file: 'neon86/barker_approach_3.mp3', text: 'Welcome back to Neon 86 FM! Spin three neon reels or hit Scan My Vibe for your custom beach prescription!' },
+        { file: 'neon86/barker_approach_2.mp3', text: 'Caller number 86, you are on the air! Pull the lever for dirty sodas, pineapple soft serve floats, and instant prizes!' },
+        { file: 'neon86/barker_approach_3.mp3', text: 'Welcome back to Neon 86 FM! Spin three neon reels for your custom beach prescription!' },
       ],
       barker_dog_spotted: [
         { file: 'neon86/barker_dog_spotted_1.mp3', text: 'VIP canine spotted on the boardwalk! Treat that legend to The One Dollar Menace Cup plus a freeze-dried dog treat!' },
@@ -314,7 +314,7 @@
       const fallbackText = customOverrideText || (clip ? clip.text : '');
       if (state.muted) return { persona: personaId, trigger, source: 'muted', text: sanitizeSpokenText(fallbackText, state.pgMode) };
 
-      // If custom text override was explicitly requested (e.g. reading out a scanned vibe drink), go straight to TTS
+      // If custom text override was explicitly requested (e.g. reading out a custom line), go straight to TTS
       if (customOverrideText || !clip || typeof Audio === 'undefined') {
         const r = await speakFallback(fallbackText, personaId);
         return { persona: personaId, trigger, ...r };

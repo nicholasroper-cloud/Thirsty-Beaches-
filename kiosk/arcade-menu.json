@@ -2,14 +2,14 @@
   "version": "2026.11-neon-beach",
   "corePillars": [
     {
-      "id": "dole-whip-floats",
-      "name": "Dole Whip & Real Soft-Serve Floats",
-      "tag": "01 · Dole Whip & Floats",
+      "id": "pineapple-soft-serve-floats",
+      "name": "Pineapple Soft Serve & Real Soft-Serve Floats",
+      "tag": "01 · Pineapple Soft Serve & Floats",
       "equipment": "Stoelting F231 + Spaceman 6210-C",
-      "blurb": "Authentic pineapple Dole Whip, rotating fruit swirls, and real vanilla soft-serve floats.",
+      "blurb": "Pineapple soft serve, rotating fruit swirls, and real vanilla soft-serve floats.",
       "items": [
-        { "id": "miami-vice-swirl", "name": "Miami Vice Swirl", "price": 5.50, "desc": "Pineapple Dole Whip twisted with rotating seasonal fruit whip", "tags": ["dairy-free-option", "topper-eligible"] },
-        { "id": "neon-sunset-float", "name": "Neon Sunset Float", "price": 6.50, "desc": "Dirty soda over chewable nugget ice crowned with Dole Whip", "tags": ["topper-eligible"] },
+        { "id": "miami-vice-swirl", "name": "Miami Vice Swirl", "price": 5.50, "desc": "Pineapple soft serve twisted with rotating seasonal fruit whip", "tags": ["dairy-free-option", "topper-eligible"] },
+        { "id": "neon-sunset-float", "name": "Neon Sunset Float", "price": 6.50, "desc": "Dirty soda over chewable nugget ice crowned with pineapple soft serve", "tags": ["topper-eligible"] },
         { "id": "orange-dream-float", "name": "Orange Dream Float", "price": 6.25, "desc": "Orange soda over nugget ice + vanilla cream + real vanilla soft-serve float topper", "tags": ["topper-eligible"] }
       ]
     },
@@ -45,7 +45,7 @@
       "equipment": "Waring MX1200 + Spaceman 6210-C",
       "blurb": "Thick blended slushes, espresso frappes, and trailer-window treats for your four-legged menace.",
       "items": [
-        { "id": "sand-hollow-freeze", "name": "Sand Hollow Freeze", "price": 5.75, "desc": "Blended Dole Whip slush or dirty-soda freeze", "tags": ["topper-eligible"] },
+        { "id": "sand-hollow-freeze", "name": "Sand Hollow Freeze", "price": 5.75, "desc": "Blended pineapple soft serve slush or dirty-soda freeze", "tags": ["topper-eligible"] },
         { "id": "vegas-vice-frappe", "name": "Vegas Vice Frappe", "price": 5.95, "desc": "Espresso, mocha/caramel, vanilla soft serve base, blended smooth", "caffeine": true },
         { "id": "menace-cup", "name": "The $1 Menace Cup", "price": 1.00, "desc": "Mini vanilla soft serve Pup Cup", "modifiers": [{ "id": "fd-dog-treat", "label": "+$1.00 Freeze-Dried Dog Treat", "price": 1.00 }], "dogFriendly": true }
       ]
@@ -68,7 +68,7 @@
   "freezeDriedToppers": {
     "price": 1.50,
     "label": "1-Tap Freeze-Dried Drink Toppers (+$1.50)",
-    "appliesTo": ["Dole Whip swirls", "Floats", "Dirty sodas", "Hot cocoa"],
+    "appliesTo": ["Pineapple soft serve swirls", "Floats", "Dirty sodas", "Hot cocoa"],
     "options": [
       { "id": "fd-skittles", "name": "Crushed Freeze-Dried Skittles" },
       { "id": "fd-sour-worms", "name": "Crushed Sour Worms" },
@@ -99,7 +99,7 @@
     "flavors": [
       "Coconut Cream + Cherry Lime",
       "Raspberry + Vanilla Cream + Berry Dust",
-      "Pineapple Dole Whip + Mango Purée",
+      "Pineapple soft serve + Mango Purée",
       "Vanilla + Caramel + Sweet Cream",
       "Strawberry Purée + Fresh Lime",
       "Peach + Passion Fruit + Coconut",
@@ -109,7 +109,7 @@
     "defaultOdds": [
       { "id": "standard", "label": "Standard Custom Drink", "pct": 81, "isPrize": false, "trigger": "drink_reveal" },
       { "id": "size_upgrade", "label": "Free Size Upgrade", "pct": 6, "isPrize": true, "trigger": "prize_win" },
-      { "id": "soft_serve_topper", "label": "Free Dole Whip or Vanilla Soft Serve Topper", "pct": 5, "isPrize": true, "trigger": "prize_win" },
+      { "id": "soft_serve_topper", "label": "Free Pineapple Soft Serve or Vanilla Soft Serve Topper", "pct": 5, "isPrize": true, "trigger": "prize_win" },
       { "id": "neon_charm", "label": "Free 3D-Printed Neon Straw Charm", "pct": 4, "isPrize": true, "trigger": "arcade_charm_win" },
       { "id": "topper_or_sticker", "label": "Free Freeze-Dried Topper or UV-DTF Sticker", "pct": 3, "isPrize": true, "trigger": "prize_win" },
       { "id": "free_drink_jackpot", "label": "FREE DRINK JACKPOT!", "pct": 1, "isPrize": true, "trigger": "mega_jackpot" }
