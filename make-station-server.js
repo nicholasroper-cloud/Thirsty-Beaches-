@@ -172,6 +172,27 @@ async function refreshPickupTags() {
   if (r.ok && r.data && Array.isArray(r.data.pickups)) { extrasCache.pickups = r.data.pickups; extrasCache.pickupsAt = now; }
   return extrasCache.pickups;
 }
+/* Redeem relay. A 4-character claim goes straight to the Worker. A Salty Dog Tags "VIP-XXXX" pickup pass is different: the Worker only
+   redeems it with sig = first 12 hex of HMAC-SHA256(CROSS_BRAND_SECRET, code), which proves the pass came from saltydogtags.com. The
+   station may send a sig only when it can prove the code itself: a sig scanned off the pass (body.sig), or the code is in the signed
+   SDT pickup feed (then the sig is computed from the shared secret). Never sign a code nobody vouched for. Otherwise nothing is sent to
+   the Worker and the answer is the plain status "verify-at-sdt" (not a 403): check the order at saltydogtags.com. */
+const VIP_RE = /^VIP-?([A-Z2-9]{4,8})$/;
+async function buildRedeemRequest(body) {
+  const clean = String((body && body.code) || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  const vip = VIP_RE.exec(clean);
+  const base = { by: "station", checkOnly: !!(body && body.checkOnly === true) };
+  if (!vip) return { send: { code: clean, ...base } };
+  const code = "VIP-" + vip[1];
+  const typedSig = String((body && body.sig) || "").trim().toLowerCase();
+  let sig = /^[0-9a-f]{12}$/.test(typedSig) ? typedSig : "";
+  if (!sig && CROSS_BRAND_KEY) {
+    const list = await refreshPickupTags();
+    if (list.some(p => String(p.vipCode || "").toUpperCase() === code)) sig = crypto.createHmac("sha256", CROSS_BRAND_KEY).update(code).digest("hex").slice(0, 12);
+  }
+  if (!sig) return { answer: { status: 200, data: { ok: false, status: "verify-at-sdt", code, message: "Verify this VIP pass on the Salty Dog Tags order (" + code + ") before handing over the free upgrade. It cannot be redeemed here without the pass signature." } } };
+  return { send: { code, sig, ...base } };
+}
 async function getKitchenExtras() {
   const now = Date.now();
   if (extrasCache.data && now - extrasCache.at < 15000) return extrasCache.data;
@@ -403,10 +424,13 @@ async function handle(req, res) {
     }
     if (!TB_SECRET && !KIOSK_KEY) return sendJSON(res, 503, { error: "tb-where-not-configured" });
     const target = p === "/api/kitchen/redeem" ? "/kitchen/claims/redeem" : "/kitchen/drops/complete";
-    const r = await fetchJsonTimeout(TB_WHERE_ORIGIN + target, {
-      method: "POST", headers: whereHeaders(true),
-      body: JSON.stringify(p === "/api/kitchen/redeem" ? { code: String(body.code || "").trim().toUpperCase(), by: "station", checkOnly: body.checkOnly === true } : { code: String(body.code || "").trim().toUpperCase() }),
-    }, 3500);
+    let payload = { code: String(body.code || "").trim().toUpperCase() };
+    if (p === "/api/kitchen/redeem") {
+      const built = await buildRedeemRequest(body);
+      if (built.answer) return sendJSON(res, built.answer.status, built.answer.data);
+      payload = built.send;
+    }
+    const r = await fetchJsonTimeout(TB_WHERE_ORIGIN + target, { method: "POST", headers: whereHeaders(true), body: JSON.stringify(payload) }, 3500);
     extrasCache.data = null;
     return sendJSON(res, r.status || 502, r.data || { error: "relay-failed" });
   }

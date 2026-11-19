@@ -160,14 +160,40 @@ export async function fetchKitchenExtras(env) {
   return out;
 }
 
+/* A Salty Dog Tags "VIP-XXXX" pickup pass: the Worker redeems it only with sig = first 12 hex of HMAC-SHA256(CROSS_BRAND_SECRET, code).
+   The station sends a sig only when it can prove the code itself: one scanned off the pass (body.sig), or the code is in the signed SDT
+   pickup feed (then the sig is computed from the shared secret). Never sign a code nobody vouched for. Otherwise nothing goes to the
+   Worker and the answer is the plain status "verify-at-sdt" (not a 403). Same rules as make-station-server.js. */
+async function hmacHex12(secret, msg) {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const buf = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, "0")).join("").slice(0, 12);
+}
+const VIP_RE = /^VIP-?([A-Z2-9]{4,8})$/;
+
 export async function redeemKitchenClaim(env, body) {
-  const code = String((body && body.code) || "").trim().toUpperCase();
-  if (!code) return { status: 400, body: { error: "missing-code" } };
+  const raw = String((body && body.code) || "").trim().toUpperCase();
+  if (!raw) return { status: 400, body: { error: "missing-code" } };
   if (!env || (!env.TB_SECRET && !env.KIOSK_KEY)) return { status: 503, body: { error: "tb-where-not-configured" } };
+  const clean = raw.replace(/[^A-Z0-9-]/g, "");
+  const vip = VIP_RE.exec(clean);
+  const payload = { code: vip ? "VIP-" + vip[1] : raw, by: "station", checkOnly: body.checkOnly === true };
+  if (vip) {
+    const code = payload.code;
+    const typedSig = String(body.sig || "").trim().toLowerCase();
+    let sig = /^[0-9a-f]{12}$/.test(typedSig) ? typedSig : "";
+    const secret = String((env && env.CROSS_BRAND_SECRET) || "").trim();
+    if (!sig && secret) {
+      const list = await fetchPickupTags(env);
+      if (list.some(p => String(p.vipCode || "").toUpperCase() === code)) sig = await hmacHex12(secret, code);
+    }
+    if (!sig) return { status: 200, body: { ok: false, status: "verify-at-sdt", code, message: "Verify this VIP pass on the Salty Dog Tags order (" + code + ") before handing over the free upgrade. It cannot be redeemed here without the pass signature." } };
+    payload.sig = sig;
+  }
   const r = await fetchJsonTimeout(whereOrigin(env) + "/kitchen/claims/redeem", {
     method: "POST",
     headers: whereHeaders(env, true),
-    body: JSON.stringify({ code, by: "station", checkOnly: body.checkOnly === true }),
+    body: JSON.stringify(payload),
   }, 3500);
   cache.extras = null;
   if (!r.data) return { status: r.status || 502, body: { error: "redeem-failed" } };
