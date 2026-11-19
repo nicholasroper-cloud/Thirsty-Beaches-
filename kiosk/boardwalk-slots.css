@@ -1,9 +1,12 @@
 :root {
   --bg: #070114;
   --pink: #FF3CAC;
+  --pink-hot: #FF1E8E;
   --teal: #2AF5E4;
   --gold: #FFD166;
+  --orange: #FF7A45;
   --foam: #FFF4FA;
+  --ink: #160430;
   --panel: rgba(16, 4, 38, 0.88);
 }
 * { box-sizing: border-box; }
@@ -12,158 +15,442 @@ html, body {
   background: var(--bg); color: var(--foam);
   font-family: "Archivo", system-ui, sans-serif;
   overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 body.is-flash::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 90;
-  background: radial-gradient(circle, rgba(255,209,102,0.55), rgba(255,60,172,0.45), transparent 72%);
-  animation: neonFlash 0.65s ease-out 3;
+  background: radial-gradient(circle, rgba(255,209,102,0.6), rgba(255,60,172,0.5), transparent 72%);
+  animation: neonFlash 0.55s ease-out 4;
 }
 @keyframes neonFlash {
   0%, 100% { opacity: 0; }
-  40% { opacity: 1; }
+  45% { opacity: 1; }
 }
 
-/* 1986 Sunset Horizon Grid + Palm Silhouettes */
+/* ---------- 1986 Sunset Beach Boardwalk Scene ---------- */
 .backdrop {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
   background:
-    radial-gradient(circle at 50% 24%, rgba(255,209,102,0.22) 0%, rgba(255,60,172,0.22) 26%, transparent 56%),
-    linear-gradient(180deg, #09011A 0%, #1C053D 52%, #070114 100%);
+    radial-gradient(circle at 50% 18%, rgba(255,122,69,0.28) 0%, rgba(255,60,172,0.22) 28%, transparent 56%),
+    linear-gradient(180deg, #09011D 0%, #24064E 46%, #3A0A5E 58%, #070116 100%);
+}
+.backdrop__sun {
+  position: absolute; left: 50%; top: 10%; width: min(62vw, 440px); height: min(62vw, 440px);
+  transform: translateX(-50%); border-radius: 50%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #FFD166 0%, #FFD166 54%,
+    transparent 54%, transparent 57%,
+    #FF7A45 57%, #FF7A45 66%,
+    transparent 66%, transparent 70%,
+    #FF3CAC 70%, #FF3CAC 80%,
+    transparent 80%, transparent 85%,
+    #D61A86 85%, #D61A86 100%
+  );
+  box-shadow: 0 0 90px rgba(255,60,172,0.55), 0 0 150px rgba(255,209,102,0.28);
+  opacity: 0.42;
+}
+.backdrop__ocean {
+  position: absolute; left: 0; right: 0; top: 56%; height: 14%;
+  background: linear-gradient(180deg, rgba(42,245,228,0.22), rgba(255,60,172,0.16), transparent);
+  border-top: 2px solid rgba(42,245,228,0.5);
 }
 .backdrop__grid {
-  position: absolute; left: -20%; right: -20%; bottom: -10%; height: 48%;
+  position: absolute; left: -24%; right: -24%; bottom: -14%; height: 46%;
   background-image:
-    linear-gradient(to right, rgba(42,245,228,0.26) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,60,172,0.34) 1px, transparent 1px);
-  background-size: 46px 34px;
-  transform: perspective(360px) rotateX(62deg);
+    linear-gradient(to right, rgba(42,245,228,0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,60,172,0.38) 1px, transparent 1px);
+  background-size: 48px 34px;
+  transform: perspective(360px) rotateX(64deg);
   transform-origin: bottom center;
   opacity: 0.65;
 }
 .backdrop__palms {
-  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.35;
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.55;
+  animation: palmSway 7s ease-in-out infinite alternate;
+  transform-origin: bottom center;
+}
+@keyframes palmSway {
+  from { transform: skewX(-0.6deg); }
+  to { transform: skewX(0.6deg); }
 }
 
+/* Discreet 3-tap corner button for staff controls */
+.staff-corner {
+  position: fixed; top: 0; right: 0; width: 68px; height: 68px; z-index: 60;
+  background: transparent; border: 0; cursor: pointer; opacity: 0.1;
+  color: var(--teal); font-family: "DM Mono", monospace; font-size: 11px;
+}
+.staff-corner:hover { opacity: 0.45; }
+
+/* ---------- Physical 1986 Slot Machine Stage (leaves room for permanent Order Drinks dock) ---------- */
 .cabinet {
   position: relative; z-index: 2;
-  max-width: 980px; margin: 0 auto; padding: 16px 16px calc(28px + 130px);   /* the bottom 130px is kept clear for the Order drinks dock */
+  max-width: 980px; margin: 0 auto; padding: 16px 16px 136px;
   display: grid; gap: 14px;
 }
+.machine-wrap {
+  position: relative;
+  display: flex; align-items: stretch; justify-content: center;
+  padding-right: 54px;
+}
+@media (max-width: 720px) {
+  .machine-wrap { padding-right: 0; }
+}
 
-/* Top Bezel + Discreet 3-Tap Staff Corner */
-.bezel {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
-  padding: 12px 16px; border-radius: 18px;
-  border: 2px solid var(--teal);
-  background: var(--panel);
-  box-shadow: 0 0 28px rgba(42,245,228,0.24), inset 0 0 18px rgba(255,60,172,0.16);
+.machine {
+  flex: 1 1 auto; max-width: 880px;
+  border-radius: 36px 36px 24px 24px;
+  padding: 5px;
+  background: linear-gradient(155deg, #FFF4FA 0%, #94A3B8 18%, #2AF5E4 45%, #FF3CAC 72%, #E2E8F0 100%);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.72),
+    0 0 46px rgba(255,60,172,0.42),
+    0 0 22px rgba(42,245,228,0.3);
 }
-.bezel__brand h1 {
-  margin: 0; font-family: "Bungee", sans-serif; font-size: clamp(1.25rem, 3.6vw, 2rem);
-  color: var(--gold); letter-spacing: 0.04em;
-  text-shadow: 0 0 16px rgba(255,60,172,0.85);
+.machine__body {
+  border-radius: 31px 31px 20px 20px;
+  background: linear-gradient(180deg, #27074E 0%, #150330 48%, #0E0222 100%);
+  padding: 16px 18px 18px;
+  position: relative;
+  box-shadow: inset 0 2px 12px rgba(255,255,255,0.18), inset 0 -8px 24px rgba(0,0,0,0.65);
 }
-.bezel__brand p {
-  margin: 2px 0 0; font-family: "DM Mono", monospace; font-size: 0.78rem;
-  color: var(--teal); text-transform: uppercase; letter-spacing: 0.09em;
+
+/* ---------- Illuminated Arch Crown Marquee with Chasing Bulbs ---------- */
+.crown {
+  position: relative;
+  border-radius: 24px 24px 12px 12px;
+  padding: 14px 18px 12px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,209,102,0.28), transparent 65%),
+    linear-gradient(180deg, #3C096C 0%, #180338 100%);
+  border: 2.5px solid var(--gold);
+  box-shadow: 0 0 28px rgba(255,60,172,0.35), inset 0 0 22px rgba(255,209,102,0.2);
+  text-align: center;
 }
+.bulbs {
+  display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  margin-bottom: 10px; padding: 0 4px;
+}
+.bulbs--bot { margin-bottom: 0; margin-top: 10px; }
+.bulb {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold), 0 0 4px #fff;
+  animation: bulbChase 1.2s infinite ease-in-out;
+}
+.bulb:nth-child(3n+1) { background: var(--gold); box-shadow: 0 0 10px var(--gold); animation-delay: 0s; }
+.bulb:nth-child(3n+2) { background: var(--pink); box-shadow: 0 0 10px var(--pink); animation-delay: 0.4s; }
+.bulb:nth-child(3n)   { background: var(--teal); box-shadow: 0 0 10px var(--teal); animation-delay: 0.8s; }
+body.is-flash .bulb { animation-duration: 0.25s; }
+@keyframes bulbChase {
+  0%, 100% { opacity: 1; transform: scale(1.12); }
+  50% { opacity: 0.32; transform: scale(0.84); }
+}
+
+.crown__kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px 12px; border-radius: 999px;
+  background: rgba(7,1,20,0.78); border: 1px solid var(--teal);
+  font-family: "DM Mono", monospace; font-size: 0.74rem; letter-spacing: 0.14em;
+  color: var(--teal); text-transform: uppercase;
+}
+.crown__title {
+  margin: 6px 0 2px;
+  font-family: "Bungee", sans-serif;
+  font-size: clamp(1.4rem, 4.2vw, 2.35rem);
+  line-height: 1.05;
+  background: linear-gradient(180deg, #FFF7CC 0%, #FFD166 48%, #FF7A45 78%, #FF3CAC 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 14px rgba(255,60,172,0.85)) drop-shadow(0 3px 0 #1A0336);
+}
+.crown__sub {
+  margin: 4px 0 0; font-family: "DM Mono", monospace; font-size: 0.78rem;
+  color: #F4E6FF; letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* Backlit Persona Switch Strip */
 .persona-switch {
-  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 10px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
 }
 .pbtn {
   appearance: none; cursor: pointer;
-  border: 1.5px solid rgba(42,245,228,0.5); border-radius: 999px;
-  background: rgba(9,1,22,0.85); color: var(--foam);
+  border: 1.5px solid rgba(42,245,228,0.55); border-radius: 999px;
+  background: linear-gradient(180deg, #1E0740, #0A011B); color: var(--foam);
   padding: 8px 13px; font-family: "DM Mono", monospace; font-size: 0.78rem; font-weight: 600;
-  transition: transform 0.12s, background 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.55);
+  transition: transform 0.1s, background 0.15s, border-color 0.15s;
 }
 .pbtn.is-on {
-  background: var(--pink); border-color: var(--gold); color: #fff;
-  box-shadow: 0 0 16px rgba(255,60,172,0.65);
+  background: linear-gradient(180deg, #FF5BB8, #D61A86);
+  border-color: var(--gold); color: #fff;
+  box-shadow: 0 0 16px rgba(255,60,172,0.7), inset 0 1px 0 rgba(255,255,255,0.45);
 }
-.pbtn:active { transform: scale(0.96); }
+.pbtn:active { transform: translateY(1px) scale(0.97); }
 
-/* Invisible/discreet 3-tap corner button for staff controls */
-.staff-corner {
-  position: fixed; top: 0; right: 0; width: 68px; height: 68px; z-index: 60;
-  background: transparent; border: 0; cursor: pointer; opacity: 0.08;
-  color: var(--teal); font-family: "DM Mono", monospace; font-size: 11px;
+/* ---------- Chrome-Trimmed 3-Drum Slot Reel Glass Window ---------- */
+.reel-housing {
+  position: relative;
+  margin-top: 14px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #060010 0%, #14032E 50%, #05000D 100%);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 3px #CBD5E1,
+    0 0 0 6px #334155,
+    inset 0 12px 26px rgba(0,0,0,0.9),
+    0 0 32px rgba(42,245,228,0.28);
 }
-.staff-corner:hover { opacity: 0.4; }
 
-/* 3-Reel Slot Machine Window */
-.slot-frame {
-  padding: 18px; border-radius: 22px;
-  border: 3px solid var(--pink);
-  background: linear-gradient(170deg, rgba(24,5,54,0.95), rgba(8,1,24,0.96));
-  box-shadow: 0 0 42px rgba(255,60,172,0.34), inset 0 0 28px rgba(42,245,228,0.18);
+.payline {
+  position: absolute; left: 4px; right: 4px; top: 50%; height: 3px;
+  transform: translateY(-50%); pointer-events: none; z-index: 6;
+  background: linear-gradient(90deg, var(--pink), rgba(255,209,102,0.35), rgba(42,245,228,0.2), rgba(255,209,102,0.35), var(--pink));
+  box-shadow: 0 0 12px var(--pink);
+  opacity: 0.75;
 }
+.payline-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 8;
+  width: 22px; height: 26px; display: grid; place-items: center;
+  background: linear-gradient(180deg, var(--gold), var(--orange));
+  color: #180336; font-weight: 900; font-size: 13px; border-radius: 6px;
+  box-shadow: 0 0 14px var(--gold); pointer-events: none;
+}
+.payline-arrow--l { left: -9px; }
+.payline-arrow--r { right: -9px; }
+
 .reels {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+  position: relative; z-index: 3;
 }
-@media (max-width: 680px) {
-  .reels { grid-template-columns: 1fr; }
+@media (max-width: 640px) {
+  .reels { gap: 6px; }
+  .reel-housing { padding: 10px 10px; }
 }
+
+/* Curved Cylindrical Backlit Slot Drum */
 .reel {
-  border-radius: 16px; padding: 14px 12px; min-height: 152px;
-  border: 2px solid var(--teal);
-  background: linear-gradient(180deg, #0A011B 0%, #1B073A 50%, #0A011B 100%);
-  box-shadow: inset 0 0 22px rgba(42,245,228,0.22);
-  display: flex; flex-direction: column; justify-content: space-between; text-align: center;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 236px;
+  border: 2.5px solid #94A3B8;
+  background: linear-gradient(
+    180deg,
+    #B6A6CC 0%,
+    #F3E8FF 14%,
+    #FFFBF4 34%,
+    #FFFFFF 50%,
+    #FFF7EB 66%,
+    #E9D8FD 86%,
+    #9C8AB8 100%
+  );
+  color: var(--ink);
+  box-shadow:
+    inset 0 22px 22px -12px rgba(15, 2, 34, 0.75),
+    inset 0 -22px 22px -12px rgba(15, 2, 34, 0.78),
+    0 0 14px rgba(42,245,228,0.22);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 8px 8px;
+  text-align: center;
 }
-.reel.is-spinning {
-  border-color: var(--gold);
-  box-shadow: 0 0 24px rgba(255,209,102,0.5), inset 0 0 24px rgba(255,60,172,0.45);
+.reel::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: linear-gradient(125deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.08) 28%, transparent 45%);
+}
+.reel.is-spinning .reel__drum {
+  filter: blur(1.4px);
+  animation: drumBlur 0.14s linear infinite;
+}
+@keyframes drumBlur {
+  0% { transform: translateY(-6px); }
+  50% { transform: translateY(6px); }
+  100% { transform: translateY(-6px); }
+}
+.reel.is-locked {
+  animation: reelStopBounce 0.28s cubic-bezier(0.22, 1.4, 0.36, 1);
+}
+@keyframes reelStopBounce {
+  0% { transform: translateY(-8px); }
+  65% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
 }
 .reel.is-win {
   border-color: var(--gold);
-  background: linear-gradient(180deg, #2D0849 0%, #4A0B52 50%, #200537 100%);
+  background: linear-gradient(180deg, #FFD166 0%, #FFF7D6 24%, #FFFFFF 50%, #FFE4F3 76%, #FF3CAC 100%);
+  box-shadow: 0 0 28px var(--gold), inset 0 0 18px rgba(255,60,172,0.4);
 }
+
 .reel__k {
-  font-family: "DM Mono", monospace; font-size: 0.72rem; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--teal);
+  position: relative; z-index: 4;
+  font-family: "DM Mono", monospace; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: #FFF4FA; background: #1E0542;
+  padding: 3px 6px; border-radius: 6px;
 }
+.reel__drum {
+  position: relative; z-index: 4;
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+  padding: 4px 2px;
+}
+.reel__ghost {
+  font-family: "DM Mono", monospace; font-size: 0.64rem; font-weight: 600;
+  color: rgba(22, 4, 48, 0.34); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  transform: scaleY(0.82);
+}
+.reel__center {
+  width: 100%; padding: 6px 4px;
+  border-top: 1.5px dashed rgba(255,60,172,0.32);
+  border-bottom: 1.5px dashed rgba(255,60,172,0.32);
+  background: rgba(255,255,255,0.68);
+  border-radius: 8px;
+}
+.reel__icon {
+  width: 44px; height: 44px; margin: 0 auto 4px; display: grid; place-items: center;
+}
+.reel__icon svg { width: 42px; height: 42px; filter: drop-shadow(0 2px 3px rgba(22,4,48,0.22)); }
 .reel__v {
-  font-family: "Bungee", sans-serif; font-size: clamp(1rem, 2.2vw, 1.32rem);
-  line-height: 1.2; color: var(--foam); margin: 10px 0;
-  text-shadow: 0 0 12px rgba(42,245,228,0.45);
+  font-family: "Bungee", sans-serif;
+  font-size: clamp(0.78rem, 1.9vw, 1.08rem);
+  line-height: 1.15; color: #190438;
+  word-break: break-word;
 }
 .reel__sub {
-  font-size: 0.8rem; color: #D8CBEF; min-height: 1.1em;
+  position: relative; z-index: 4;
+  font-size: 0.74rem; font-weight: 700; color: #5B197A;
+  min-height: 1.15em; line-height: 1.15;
 }
 
-.controls {
-  margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+/* ---------- Right-Side Mechanical Chrome Pull-Lever ---------- */
+.lever-mount {
+  position: absolute; right: 2px; top: 32%;
+  width: 52px; height: 190px;
+  display: flex; align-items: flex-start; justify-content: flex-start;
+}
+@media (max-width: 720px) {
+  .lever-mount { display: none; }
+}
+.lever-hub {
+  position: absolute; left: 0; top: 96px; width: 22px; height: 52px;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(180deg, #F8FAFC 0%, #94A3B8 45%, #334155 100%);
+  border: 2px solid #1E293B; border-left: 0;
+  box-shadow: 4px 6px 14px rgba(0,0,0,0.6);
+}
+.lever-btn {
+  position: relative; width: 52px; height: 150px;
+  background: transparent; border: 0; cursor: pointer; padding: 0;
+  transform-origin: 8px 122px;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lever-btn:hover .lever-knob { transform: scale(1.08); }
+.lever-btn.is-pulled { transform: rotate(52deg) translateY(18px); }
+.lever-shaft {
+  position: absolute; left: 16px; top: 34px; width: 12px; height: 92px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #475569 0%, #F8FAFC 42%, #94A3B8 100%);
+  box-shadow: 3px 4px 10px rgba(0,0,0,0.55);
+}
+.lever-knob {
+  position: absolute; left: 2px; top: 0; width: 42px; height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #FFF4FA 0%, #FF5BB8 30%, #FF1E8E 65%, #8A064B 100%);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 22px rgba(255,60,172,0.85), 0 6px 12px rgba(0,0,0,0.6);
+  display: grid; place-items: center;
+  font-family: "DM Mono", monospace; font-size: 9px; font-weight: 700; color: #fff;
+  transition: transform 0.14s;
+}
+
+/* ---------- Slanted Arcade Control Deck ---------- */
+.deck {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #2D0958 0%, #14032D 100%);
+  border: 2px solid rgba(42,245,228,0.45);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.16), 0 8px 20px rgba(0,0,0,0.55);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
+}
+.coin-slot {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 10px;
+  background: linear-gradient(180deg, #1E293B, #0F172A);
+  border: 1.5px solid #94A3B8;
+  font-family: "DM Mono", monospace; font-size: 0.72rem; color: var(--gold);
+}
+.coin-slot__slit {
+  width: 7px; height: 24px; border-radius: 3px;
+  background: #020617; border: 1px solid #64748B;
+  box-shadow: inset 0 0 4px #000;
 }
 .btn-spin {
-  flex: 1 1 240px; max-width: 420px; cursor: pointer;
-  border: 2px solid var(--gold); border-radius: 16px;
-  padding: 16px 24px; font-family: "Bungee", sans-serif; font-size: 1.25rem;
-  color: #14032E; background: linear-gradient(90deg, var(--gold), #FF7A45, var(--pink));
-  box-shadow: 0 0 28px rgba(255,60,172,0.55);
-  transition: transform 0.12s;
+  flex: 1 1 260px; max-width: 520px; cursor: pointer;
+  border: 3px solid #FFF4FA; border-radius: 16px;
+  padding: 16px 24px; font-family: "Bungee", sans-serif; font-size: clamp(1.05rem, 2.5vw, 1.4rem);
+  color: #160330;
+  background: linear-gradient(180deg, #FFE48F 0%, #FFD166 42%, #FF7A45 78%, #FF3CAC 100%);
+  box-shadow: 0 6px 0 #8F0A53, 0 0 30px rgba(255,60,172,0.72);
+  transition: transform 0.08s, box-shadow 0.08s;
 }
-.btn-spin:disabled { opacity: 0.6; cursor: wait; }
-.btn-spin:active { transform: scale(0.97); }
+.btn-spin:active, .btn-spin:disabled {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #8F0A53, 0 0 18px rgba(255,60,172,0.5);
+}
+.btn-spin[hidden] { display: none; }
 
-/* Result + 4-Digit Claim Banner */
+/* ---------- Illuminated Belly Payout Glass & Chrome Ticket Tray ---------- */
+.paytable {
+  margin-top: 12px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  padding: 8px 10px; border-radius: 12px;
+  background: rgba(8, 1, 22, 0.82);
+  border: 1px solid rgba(255,209,102,0.38);
+}
+.ptag {
+  font-family: "DM Mono", monospace; font-size: 0.72rem; font-weight: 600;
+  padding: 4px 8px; border-radius: 999px;
+  background: rgba(42,245,228,0.1); border: 1px solid rgba(42,245,228,0.32);
+  color: #E9DEF7;
+}
+.ptag b { color: var(--gold); }
+.ptag--jackpot {
+  background: rgba(255,60,172,0.22); border-color: var(--gold); color: var(--gold);
+}
+
 .result {
-  margin-top: 14px; padding: 14px 16px; border-radius: 16px;
-  border: 2px solid rgba(42,245,228,0.45); background: rgba(9,1,22,0.86);
+  margin-top: 12px; padding: 14px 16px; border-radius: 16px;
+  background: linear-gradient(180deg, #070112 0%, #180534 100%);
+  border: 2px solid #64748B;
+  box-shadow: inset 0 8px 18px rgba(0,0,0,0.85);
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
 }
 .result.is-prize {
   border-color: var(--gold);
-  background: linear-gradient(135deg, rgba(255,60,172,0.22), rgba(255,209,102,0.14));
+  background: linear-gradient(135deg, rgba(255,60,172,0.28), rgba(255,209,102,0.16), #12032E);
+  box-shadow: 0 0 28px rgba(255,209,102,0.35), inset 0 0 18px rgba(255,60,172,0.25);
 }
-.result__title { margin: 0; font-family: "Bungee", sans-serif; font-size: 1.15rem; color: var(--gold); }
+.result__title { margin: 0; font-family: "Bungee", sans-serif; font-size: 1.12rem; color: var(--gold); }
 .result__desc { margin: 4px 0 0; color: #EFE6FA; font-size: 0.94rem; }
 .claim-pill {
-  padding: 10px 18px; border-radius: 14px; border: 2px dashed var(--gold);
-  background: #12032E; text-align: center;
+  padding: 10px 18px; border-radius: 12px;
+  border: 2.5px dashed #1A0336;
+  background: linear-gradient(135deg, #FFF3B0 0%, #FFD166 55%, #FF9F43 100%);
+  color: #1A0336; text-align: center;
+  box-shadow: 0 0 24px rgba(255,209,102,0.65);
+  animation: ticketDrop 0.4s cubic-bezier(0.22, 1.4, 0.36, 1);
 }
-.claim-pill span { display: block; font-family: "DM Mono", monospace; font-size: 0.72rem; color: var(--teal); }
-.claim-pill b { font-family: "Bungee", sans-serif; font-size: 2rem; color: var(--gold); letter-spacing: 0.12em; }
+@keyframes ticketDrop {
+  from { opacity: 0; transform: translateY(-18px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.claim-pill span { display: block; font-family: "DM Mono", monospace; font-size: 0.7rem; font-weight: 700; color: #4A0B52; }
+.claim-pill b { font-family: "Bungee", sans-serif; font-size: 2rem; color: #160330; letter-spacing: 0.12em; }
 
 /* A win: the one big button to the ordering screen (same display) and the two-screen line */
 .win-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; }
@@ -180,8 +467,9 @@ body.is-flash::after {
 
 /* Voice barker bar */
 .barker-bar {
+  max-width: 880px; width: 100%; margin: 0 auto;
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
-  padding: 12px 16px; border-radius: 16px;
+  padding: 10px 16px; border-radius: 16px;
   border: 1.5px solid rgba(42,245,228,0.38); background: var(--panel);
 }
 .barker-bar__msg { margin: 0; font-size: 0.9rem; color: #E9DEF7; flex: 1 1 260px; }
@@ -214,7 +502,6 @@ dialog.staff-dlg::backdrop { background: rgba(4,0,12,0.78); }
 }
 .session-hud[hidden] { display: none; }
 .session-hud b { font-family: "Bungee", sans-serif; font-size: 1.3rem; color: var(--gold); margin-left: 6px; }
-.btn-spin[hidden] { display: none; }
 .session-end {
   width: 100%; max-width: 820px; text-align: center; padding: 12px 18px 14px; border-radius: 18px;
   border: 2px solid var(--teal); background: rgba(9,1,22,0.9); box-shadow: 0 0 26px rgba(42,245,228,0.28);
@@ -246,36 +533,14 @@ dialog.staff-dlg::backdrop { background: rgba(4,0,12,0.78); }
 .btn-orderdock:active { transform: translateY(3px); box-shadow: 0 0 22px rgba(42,245,228,0.5), 0 3px 0 #0b3a5c; }
 .btn-orderdock:focus-visible { outline: 5px solid var(--gold); outline-offset: 3px; }
 
-/* the kiosk is a 47-inch touchscreen: finger-sized targets, bigger type (the phone-sized look stays below 900 px) */
+/* 47-inch portrait kiosk touchscreen scaling */
 @media (min-width: 900px) {
-  .cabinet { max-width: 1500px; gap: 20px; padding-top: 28px; }
-  .pbtn { min-height: 56px; padding: 10px 22px; font-size: 1.05rem; }
-  .bezel__brand h1 { font-size: 3rem; }
-  .bezel__brand p { font-size: 1.05rem; }
-  .reel { min-height: 240px; padding: 20px 16px; }
-  .reel__k { font-size: 1rem; }
-  .reel__v { font-size: 2rem; }
-  .reel__sub { font-size: 1.15rem; }
-  .btn-spin { max-width: 760px; min-height: 120px; font-size: 2.1rem; }
-  .session-hud { font-size: 1.2rem; }
-  .result__title { font-size: 1.7rem; }
-  .result__desc { font-size: 1.25rem; }
-  .claim-pill b { font-size: 3rem; }
-  .btn-ordernow { min-height: 104px; font-size: 2.3rem; max-width: 900px; }
-  .win-two { font-size: 1.25rem; }
-  .barker-bar__msg { font-size: 1.15rem; }
-  .persona-pill { font-size: 1rem; }
-  .session-end h2 { font-size: 2.3rem; }
-  .session-end p { font-size: 1.4rem; }
-  .idle-warn { font-size: 2rem; top: 34px; padding: 26px 44px; }
-  .btn-orderdock { min-height: 128px; font-size: 3rem; max-width: 1500px; }
-  .orderdock { padding: 16px 28px calc(20px + env(safe-area-inset-bottom, 0px)); }
-  .cabinet { padding-bottom: 230px; }
-}
-/* a wide, short screen (1920x1080): keep the dock lower-profile so the reels still fit */
-@media (min-width: 900px) and (orientation: landscape) {
-  .reel { min-height: 170px; }
-  .btn-spin { min-height: 96px; font-size: 1.8rem; }
-  .btn-orderdock { min-height: 96px; font-size: 2.3rem; }
-  .cabinet { padding-bottom: 170px; }
+  .cabinet { max-width: 1020px; padding: 24px 20px 150px; gap: 18px; }
+  .reel { min-height: 280px; }
+  .reel__icon { width: 56px; height: 56px; }
+  .reel__icon svg { width: 54px; height: 54px; }
+  .btn-spin { min-height: 96px; font-size: 1.85rem; }
+  .pbtn { min-height: 46px; padding: 10px 16px; font-size: 0.9rem; }
+  .session-hud { font-size: 1.05rem; }
+  .session-hud b { font-size: 1.55rem; }
 }

@@ -153,6 +153,19 @@
     const r1 = $('reel1'), r1Val = $('reel1Val'), r1Sub = $('reel1Sub');
     const r2 = $('reel2'), r2Val = $('reel2Val'), r2Sub = $('reel2Sub');
     const r3 = $('reel3'), r3Val = $('reel3Val'), r3Sub = $('reel3Sub');
+    const r1Prev = $('reel1Prev'), r1Next = $('reel1Next'), r1Icon = $('reel1Icon');
+    const r2Prev = $('reel2Prev'), r2Next = $('reel2Next'), r2Icon = $('reel2Icon');
+    const r3Prev = $('reel3Prev'), r3Next = $('reel3Next'), r3Icon = $('reel3Icon');
+    const leverBtn = $('leverBtn');
+
+    // Retro 1980s Neon Beach Slot Machine SVG Sprite icon switcher (zero innerHTML)
+    const setIcon = (useEl, key) => { if (useEl) useEl.setAttribute('href', '#ico-' + key); };
+    const iconForBase = (id) => ({ 'dirty-soda': 'soda', 'energy-mixer': 'energy', 'coffee-espresso': 'coffee', 'hot-seasonal': 'hot', 'blended-freeze': 'freeze' }[id] || 'soda');
+    const iconForFlavor = (txt) => (/pineapple|mango|swirl/i.test(txt) ? 'pineapple' : /peppermint|cocoa|caramel/i.test(txt) ? 'hot' : 'palm');
+    const iconForPrize = (p) => (!p || !p.isPrize ? 'soda' : p.id === 'free_drink_jackpot' ? 'jackpot' : p.id === 'neon_charm' ? 'charm' : 'prize');
+    setIcon(r1Icon, 'soda');
+    setIcon(r2Icon, 'palm');
+    setIcon(r3Icon, 'jackpot');
     const resultBox = $('resultBox');
     const resultTitle = $('resultTitle');
     const resultDesc = $('resultDesc');
@@ -216,6 +229,7 @@
       session.ended = true;
       lastTouch = Date.now();                // the thanks screen always gets its full hands-off window (endedReturnSeconds) to be read
       spinBtn.hidden = true;
+      if (leverBtn) leverBtn.disabled = true;
       if (endEl) endEl.hidden = false;
       if (idleWarnEl) idleWarnEl.hidden = true;
       try { audio.stopAll(); } catch {}      // the music and any voice line stop with the game
@@ -265,26 +279,32 @@
     }
 
     let spinning = false;
-    spinBtn.addEventListener('click', async () => {
+    async function triggerSpin() {
       if (spinning || session.ended) return;
       spinning = true;
       session.spins++;
       renderSession();
       spinBtn.disabled = true;
+      if (leverBtn) {
+        leverBtn.classList.add('is-pulled');
+        setTimeout(() => leverBtn.classList.remove('is-pulled'), 340);
+      }
       audio.startSynthwaveIdle();
       audio.recordSpinForAutoRotate();
       syncPersonaUI();
       claimPill.hidden = true;
       if (winActions) winActions.hidden = true;
       resultBox.classList.remove('is-prize');
-      [r1, r2, r3].forEach((el) => { el.classList.remove('is-win'); el.classList.add('is-spinning'); });
+      [r1, r2, r3].forEach((el) => { el.classList.remove('is-win', 'is-locked'); el.classList.add('is-spinning'); });
 
       audio.playTrigger('slot_spin');
       const availBases = slotBases.filter((b) => cfg.winterEnabled || !b.winterOnly);
-      const finalBase = availBases[Math.floor(Math.random() * availBases.length)];
+      const finalBaseIdx = Math.floor(Math.random() * availBases.length);
+      const finalBase = availBases[finalBaseIdx];
       const examples = finalBase.examples && finalBase.examples.length ? finalBase.examples : [finalBase.label];
       const finalExample = examples[Math.floor(Math.random() * examples.length)];
-      const finalFlavor = slotFlavors[Math.floor(Math.random() * slotFlavors.length)];
+      const finalFlavorIdx = Math.floor(Math.random() * slotFlavors.length);
+      const finalFlavor = slotFlavors[finalFlavorIdx];
       let outcome = null;
       askServerForSpin().then((d) => { outcome = d; });
 
@@ -296,29 +316,47 @@
         if (tick < 10) {
           const b = availBases[tick % availBases.length];
           r1Val.textContent = b.label.toUpperCase();
+          setIcon(r1Icon, iconForBase(b.id));
+          if (r1Prev) r1Prev.textContent = availBases[(tick + availBases.length - 1) % availBases.length].label.toUpperCase();
+          if (r1Next) r1Next.textContent = availBases[(tick + 1) % availBases.length].label.toUpperCase();
         } else if (tick === 10) {
-          r1.classList.remove('is-spinning');
+          r1.classList.remove('is-spinning'); r1.classList.add('is-locked');
           r1Val.textContent = finalBase.label.toUpperCase();
+          setIcon(r1Icon, iconForBase(finalBase.id));
+          if (r1Prev) r1Prev.textContent = availBases[(finalBaseIdx + availBases.length - 1) % availBases.length].label.toUpperCase();
+          if (r1Next) r1Next.textContent = availBases[(finalBaseIdx + 1) % availBases.length].label.toUpperCase();
           r1Sub.textContent = finalExample;
         }
         if (tick < 16) {
-          r2Val.textContent = slotFlavors[tick % slotFlavors.length].toUpperCase();
+          const fl = slotFlavors[tick % slotFlavors.length];
+          r2Val.textContent = fl.toUpperCase();
+          setIcon(r2Icon, iconForFlavor(fl));
+          if (r2Prev) r2Prev.textContent = slotFlavors[(tick + slotFlavors.length - 1) % slotFlavors.length].toUpperCase();
+          if (r2Next) r2Next.textContent = slotFlavors[(tick + 1) % slotFlavors.length].toUpperCase();
         } else if (tick === 16) {
-          r2.classList.remove('is-spinning');
+          r2.classList.remove('is-spinning'); r2.classList.add('is-locked');
           r2Val.textContent = finalFlavor.toUpperCase();
+          setIcon(r2Icon, iconForFlavor(finalFlavor));
+          if (r2Prev) r2Prev.textContent = slotFlavors[(finalFlavorIdx + slotFlavors.length - 1) % slotFlavors.length].toUpperCase();
+          if (r2Next) r2Next.textContent = slotFlavors[(finalFlavorIdx + 1) % slotFlavors.length].toUpperCase();
           r2Sub.textContent = '+$1.50 Freeze-Dried Topper Ready';
         }
         if (tick < 22 || !outcome) {
-          r3Val.textContent = String(cfg.odds[tick % cfg.odds.length].label || '').toUpperCase();
+          const pr = cfg.odds[tick % cfg.odds.length];
+          r3Val.textContent = String(pr.label || '').toUpperCase();
+          setIcon(r3Icon, iconForPrize(pr));
+          if (r3Prev) r3Prev.textContent = String(cfg.odds[(tick + cfg.odds.length - 1) % cfg.odds.length].label || '').toUpperCase();
+          if (r3Next) r3Next.textContent = String(cfg.odds[(tick + 1) % cfg.odds.length].label || '').toUpperCase();
           return;
         }
         clearInterval(ticker);
-        r3.classList.remove('is-spinning');
+        r3.classList.remove('is-spinning'); r3.classList.add('is-locked');
         audio.playSodaFizz();
         if (outcome.win === true && /^[A-Z2-9]{4}$/.test(String(outcome.code))) {
           const t = outcome.ticket || {};
           const reward = String(outcome.label || t.reward || 'Boardwalk Prize');     // the prize itself (the server's fixed label)
           r3Val.textContent = reward.toUpperCase();
+          setIcon(r3Icon, outcome.mega === true ? 'jackpot' : 'prize');
           r3Sub.textContent = 'CODE ' + outcome.code;
           r3.classList.add('is-win');
           resultBox.classList.add('is-prize');
@@ -335,12 +373,14 @@
           audio.playTrigger(typeof outcome.trigger === 'string' ? outcome.trigger : 'prize_win');
         } else if (outcome.thanks === true) {
           r3Val.textContent = 'THANKS FOR PLAYING';
+          setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'ORDER AT THE WINDOW';
           resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
           resultDesc.textContent = `Thanks for playing! ${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
           audio.playTrigger('drink_reveal');
         } else {
           r3Val.textContent = 'STANDARD CUSTOM DRINK';
+          setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'SHOW AT WINDOW TO ORDER';
           resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
           resultDesc.textContent = `${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
@@ -352,7 +392,9 @@
         lastTouch = Date.now();
         if (limits.enabled && (session.spins >= limits.maxSpins || session.endAfterSpin || Date.now() - session.startedAt >= limits.maxSeconds * 1000)) endSession();
       }, 85);
-    });
+    }
+    spinBtn.addEventListener('click', triggerSpin);
+    if (leverBtn) leverBtn.addEventListener('click', triggerSpin);
 
     /* While a win is on screen, follow the kiosk's pending prize: once it is on an order, declined or past its 15 minutes, say so
        (the code itself still works at the window). Read-only: this page never sends a prize anywhere. */

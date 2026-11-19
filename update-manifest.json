@@ -1,5 +1,5 @@
 {
-  "version": 40,
+  "version": 41,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -261,21 +261,21 @@
     },
     {
       "path": "kiosk/boardwalk-slots.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=d92f7ce62b1c",
-      "sha256": "d92f7ce62b1cbb1ad89f4804784aa885e7ce8f6183c8d5442c79403eb119ae50",
-      "size": 8718
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=ba70f8806212",
+      "sha256": "ba70f8806212fb91ad7284a448578fed90029c441f1c581a531b26d7101c677e",
+      "size": 16735
     },
     {
       "path": "kiosk/boardwalk-slots.css",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=7d4456bf11c7",
-      "sha256": "7d4456bf11c7262c50c94163205104b2c2099400cd4bc24b38de756a34a5014b",
-      "size": 12455
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=9953a2cbdb26",
+      "sha256": "9953a2cbdb26e9c7cd66cf1e7e31fbe6a94dcd61e5739b403d753fc8352c15a8",
+      "size": 21577
     },
     {
       "path": "kiosk/boardwalk-slots.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=155b9d706fca",
-      "sha256": "155b9d706fcae86351202d5c078298059583022ac056d94a8d82c2dd81c1bf87",
-      "size": 29567
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=b7897b8434b2",
+      "sha256": "b7897b8434b2bf38f355251591d3ef17f0cc90c52fb4891116c39bdfb6f481d7",
+      "size": 32734
     },
     {
       "path": "kiosk/audio-bank.js",

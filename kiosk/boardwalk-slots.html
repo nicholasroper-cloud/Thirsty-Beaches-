@@ -10,79 +10,169 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=2">
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=3">
 </head>
 <body>
 <div class="backdrop" aria-hidden="true">
+  <div class="backdrop__sun"></div>
+  <div class="backdrop__ocean"></div>
   <div class="backdrop__grid"></div>
   <svg class="backdrop__palms" viewBox="0 0 1200 700" preserveAspectRatio="none">
-    <path d="M90 700 C115 510 140 360 175 260" stroke="#04000A" stroke-width="20" fill="none" stroke-linecap="round"/>
-    <path d="M175 260 Q95 215 30 260 M175 260 Q120 175 60 185 M175 260 Q225 185 285 225 M175 260 Q230 245 270 305" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
-    <path d="M1110 700 C1085 510 1060 360 1025 260" stroke="#04000A" stroke-width="20" fill="none" stroke-linecap="round"/>
-    <path d="M1025 260 Q1105 215 1170 260 M1025 260 Q1080 175 1140 185 M1025 260 Q975 185 915 225 M1025 260 Q970 245 930 305" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M84 700 C108 500 135 350 172 248" stroke="#04000A" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <path d="M172 248 Q90 202 22 252 M172 248 Q115 162 54 176 M172 248 Q228 172 292 216 M172 248 Q232 238 274 300 M172 248 Q154 148 122 128" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M1116 700 C1092 500 1065 350 1028 248" stroke="#04000A" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <path d="M1028 248 Q1110 202 1178 252 M1028 248 Q1085 162 1146 176 M1028 248 Q972 172 908 216 M1028 248 Q968 238 926 300 M1028 248 Q1046 148 1078 128" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
   </svg>
 </div>
+
+<!-- Retro 1980s Beach Slot Machine SVG Symbol Sprite (zero innerHTML in JS) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ico-soda" viewBox="0 0 48 48"><path d="M27 5l6 2-3 9h5v4H13v-4h13z" fill="#FF3CAC"/><path d="M15 20h18l-2.5 22H17.5z" fill="#2AF5E4" stroke="#160430" stroke-width="2.5"/><path d="M16 29h16" stroke="#FFD166" stroke-width="3"/><circle cx="22" cy="35" r="2.2" fill="#FFF4FA"/><circle cx="27" cy="33" r="1.8" fill="#FF3CAC"/></symbol>
+    <symbol id="ico-energy" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#160430" stroke="#2AF5E4" stroke-width="2.5"/><path d="M26 7L13 26h9l-2 15 15-20h-9z" fill="#FFD166" stroke="#FF3CAC" stroke-width="2"/></symbol>
+    <symbol id="ico-coffee" viewBox="0 0 48 48"><path d="M12 18h20v15a9 9 0 0 1-9 9h-2a9 9 0 0 1-9-9z" fill="#FF7A45" stroke="#160430" stroke-width="2.5"/><path d="M32 21h5a4 4 0 0 1 0 8h-5" fill="none" stroke="#160430" stroke-width="3"/><path d="M18 13c0-3 3-3 3-6M25 13c0-3 3-3 3-6" fill="none" stroke="#FF3CAC" stroke-width="2.5" stroke-linecap="round"/></symbol>
+    <symbol id="ico-hot" viewBox="0 0 48 48"><rect x="11" y="18" width="22" height="22" rx="5" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M33 22h4a4 4 0 0 1 0 8h-4" fill="none" stroke="#160430" stroke-width="3"/><circle cx="18" cy="17" r="4" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/><circle cx="25" cy="16" r="4.5" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/></symbol>
+    <symbol id="ico-freeze" viewBox="0 0 48 48"><path d="M15 24c0-9 18-9 18 0z" fill="#FFD166" stroke="#160430" stroke-width="2.2"/><path d="M14 24h20l-3 18H17z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M26 7l5 2-3 8" fill="none" stroke="#2AF5E4" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="ico-palm" viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#FFD166" stroke="#FF3CAC" stroke-width="2.5"/><path d="M22 41c1-9 3-15 5-21" stroke="#160430" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M27 20q-8-5-14 0M27 20q-5-9-11-7M27 20q7-7 13-2M27 20q8 0 11 6" stroke="#0E7490" stroke-width="3" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="ico-pineapple" viewBox="0 0 48 48"><path d="M24 6l-4 9 4-2 4 2zM17 10l4 7M31 10l-4 7" stroke="#0D9488" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="29" rx="11" ry="13" fill="#FFD166" stroke="#160430" stroke-width="2.5"/><path d="M17 24l14 10M31 24L17 34" stroke="#FF7A45" stroke-width="2"/></symbol>
+    <symbol id="ico-charm" viewBox="0 0 48 48"><path d="M9 17h12l3 4 3-4h12v10a6 6 0 0 1-6 6h-5l-4-5-4 5h-5a6 6 0 0 1-6-6z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><rect x="13" y="21" width="8" height="7" rx="2" fill="#2AF5E4"/><rect x="27" y="21" width="8" height="7" rx="2" fill="#FFD166"/></symbol>
+    <symbol id="ico-jackpot" viewBox="0 0 48 48"><path d="M24 4l5.8 12.2L43 18l-9.6 9.1 2.4 13.4L24 34 12.2 40.5l2.4-13.4L5 18l13.2-1.8z" fill="#FFD166" stroke="#FF1E8E" stroke-width="2.8" stroke-linejoin="round"/><text x="24" y="28" text-anchor="middle" font-family="Bungee,sans-serif" font-size="13" fill="#160430">777</text></symbol>
+    <symbol id="ico-prize" viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#FF3CAC" stroke="#FFD166" stroke-width="3"/><path d="M24 11l3.6 7.8 8.4 1.1-6.2 5.8 1.5 8.3L24 30l-7.3 4 1.5-8.3-6.2-5.8 8.4-1.1z" fill="#FFD166"/></symbol>
+  </defs>
+</svg>
 
 <!-- Discreet 3-tap corner gesture for Staff Audio & Prize Odds (needs the staff key) -->
 <button type="button" class="staff-corner" id="staffCornerBtn" aria-label="Staff settings (tap 3 times)">•••</button>
 
 <main class="cabinet" id="arcadeCabinet">
-  <header class="bezel">
-    <div class="bezel__brand">
-      <h1>1986 BOARDWALK DRINK SLOTS</h1>
-      <p id="bezelStatus">THIRSTY BEACHES · ZERO QUARTERS NEEDED · SPIN FOR DRINKS &amp; PRIZES</p>
-    </div>
-    <div class="persona-switch" role="group" aria-label="Voice Persona Mode">
-      <button type="button" class="pbtn" data-persona="shredder">Surfer Mode</button>
-      <button type="button" class="pbtn" data-persona="neon86">80s DJ Mode</button>
-      <button type="button" class="pbtn is-on" data-persona="auto">Auto-Rotate (3 Spins)</button>
-    </div>
-  </header>
+  <div class="machine-wrap">
+    <section class="machine" aria-label="1986 Beach Boardwalk Slot Machine">
+      <div class="machine__body">
 
-  <section class="slot-frame" aria-label="3-Reel Drink Slot Machine">
-    <div class="reels">
-      <div class="reel" id="reel1">
-        <span class="reel__k">Reel 01 · Drink Base</span>
-        <div class="reel__v" id="reel1Val">DIRTY SODA</div>
-        <span class="reel__sub" id="reel1Sub">Chewable Nugget Ice</span>
-      </div>
-      <div class="reel" id="reel2">
-        <span class="reel__k">Reel 02 · Flavor Mix</span>
-        <div class="reel__v" id="reel2Val">COCONUT + CHERRY LIME</div>
-        <span class="reel__sub" id="reel2Sub">Live Inventory Mix</span>
-      </div>
-      <div class="reel" id="reel3">
-        <span class="reel__k">Reel 03 · Prize / Wildcard</span>
-        <div class="reel__v" id="reel3Val">SPIN TO WIN!</div>
-        <span class="reel__sub" id="reel3Sub">Charms · Toppers · Free Drink</span>
-      </div>
-    </div>
+        <!-- Illuminated Arch Marquee with Chasing Arcade Bulbs -->
+        <header class="crown">
+          <div class="bulbs" aria-hidden="true">
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+          </div>
+          <span class="crown__kicker">&#9733; THIRSTY BEACHES &middot; EST. 1986 &middot; FREE PLAY &#9733;</span>
+          <h1 class="crown__title">MIAMI BEACH DRINK SLOTS</h1>
+          <p class="crown__sub" id="bezelStatus">SPIN 3 NEON REELS &middot; INSTANT DRINKS, CHARMS &amp; FREE DRINK JACKPOT</p>
+          <div class="persona-switch" role="group" aria-label="Voice Persona Mode">
+            <button type="button" class="pbtn" data-persona="shredder">Surfer Mode</button>
+            <button type="button" class="pbtn" data-persona="neon86">80s DJ Mode</button>
+            <button type="button" class="pbtn is-on" data-persona="auto">Auto-Rotate (3 Spins)</button>
+          </div>
+          <div class="bulbs bulbs--bot" aria-hidden="true">
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+            <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+          </div>
+        </header>
 
-    <div class="controls">
-      <div class="session-hud" id="sessionHud" aria-live="polite">SPINS LEFT <b id="spinsLeft">3</b></div>
-      <button type="button" class="btn-spin" id="spinBtn">PULL LEVER &middot; SPIN REELS</button>
-      <!-- shown by the page when this visit's spin or time limit is reached (kiosk/arcade-session.json) -->
-      <div class="session-end" id="sessionEnd" role="status" hidden>
-        <h2>Thanks for playing!</h2>
-        <p>Others are waiting for the arcade. Tap <b>ORDER DRINKS</b> below to grab a drink.</p>
-      </div>
-    </div>
+        <!-- Curved 3-Drum Backlit Slot Window with Neon Payline -->
+        <div class="reel-housing" aria-label="3-Reel Drink Slot Machine">
+          <div class="payline" aria-hidden="true"></div>
+          <span class="payline-arrow payline-arrow--l" aria-hidden="true">&#9654;</span>
+          <span class="payline-arrow payline-arrow--r" aria-hidden="true">&#9664;</span>
 
-    <div class="result" id="resultBox" role="status" aria-live="polite">
-      <div>
-        <h2 class="result__title" id="resultTitle">Ready on the 1986 Boardwalk</h2>
-        <p class="result__desc" id="resultDesc">Tap Spin to generate a custom dirty soda, pineapple soft serve float, craft coffee, or score an instant boardwalk prize.</p>
+          <div class="reels">
+            <div class="reel" id="reel1">
+              <span class="reel__k">Reel 01 · Base</span>
+              <div class="reel__drum">
+                <span class="reel__ghost" id="reel1Prev">BLENDED FREEZE</span>
+                <div class="reel__center">
+                  <div class="reel__icon" aria-hidden="true"><svg viewBox="0 0 48 48"><use id="reel1Icon" href="#ico-soda"/></svg></div>
+                  <div class="reel__v" id="reel1Val">DIRTY SODA</div>
+                </div>
+                <span class="reel__ghost" id="reel1Next">ENERGY MIXER</span>
+              </div>
+              <span class="reel__sub" id="reel1Sub">Chewable Nugget Ice</span>
+            </div>
+
+            <div class="reel" id="reel2">
+              <span class="reel__k">Reel 02 · Mix</span>
+              <div class="reel__drum">
+                <span class="reel__ghost" id="reel2Prev">RASPBERRY CREAM</span>
+                <div class="reel__center">
+                  <div class="reel__icon" aria-hidden="true"><svg viewBox="0 0 48 48"><use id="reel2Icon" href="#ico-palm"/></svg></div>
+                  <div class="reel__v" id="reel2Val">COCONUT + CHERRY LIME</div>
+                </div>
+                <span class="reel__ghost" id="reel2Next">PINEAPPLE SWIRL</span>
+              </div>
+              <span class="reel__sub" id="reel2Sub">Live Inventory Mix</span>
+            </div>
+
+            <div class="reel" id="reel3">
+              <span class="reel__k">Reel 03 · Bonus</span>
+              <div class="reel__drum">
+                <span class="reel__ghost" id="reel3Prev">FREE SIZE UPGRADE</span>
+                <div class="reel__center">
+                  <div class="reel__icon" aria-hidden="true"><svg viewBox="0 0 48 48"><use id="reel3Icon" href="#ico-jackpot"/></svg></div>
+                  <div class="reel__v" id="reel3Val">SPIN TO WIN!</div>
+                </div>
+                <span class="reel__ghost" id="reel3Next">3D NEON CHARM</span>
+              </div>
+              <span class="reel__sub" id="reel3Sub">Charms · Toppers · Jackpot</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slanted Arcade Button Deck + One-Visit Session HUD -->
+        <div class="deck controls">
+          <div class="session-hud" id="sessionHud" aria-live="polite">SPINS LEFT <b id="spinsLeft">3</b></div>
+          <div class="coin-slot" aria-hidden="true">
+            <span class="coin-slot__slit"></span>
+            <span>INSERT 0&cent;<br>FREE PLAY</span>
+          </div>
+          <button type="button" class="btn-spin" id="spinBtn">PULL LEVER &middot; SPIN!</button>
+          <!-- shown by the page when this visit's spin or time limit is reached (kiosk/arcade-session.json) -->
+          <div class="session-end" id="sessionEnd" role="status" hidden>
+            <h2>Thanks for playing!</h2>
+            <p>Others are waiting for the arcade. Tap <b>ORDER DRINKS</b> below to grab a drink.</p>
+          </div>
+        </div>
+
+        <!-- Illuminated Belly Glass Payout Legend -->
+        <div class="paytable" aria-label="Boardwalk Prize Payouts">
+          <span class="ptag ptag--jackpot">&#9733; 1% FREE DRINK JACKPOT</span>
+          <span class="ptag"><b>3%</b> Freeze-Dried / Sticker</span>
+          <span class="ptag"><b>4%</b> 3D Neon Charm</span>
+          <span class="ptag"><b>5%</b> Soft Serve Topper</span>
+          <span class="ptag"><b>6%</b> Free Size Upgrade</span>
+        </div>
+
+        <!-- Chrome Ticket & Payout Tray -->
+        <div class="result tray" id="resultBox" role="status" aria-live="polite">
+          <div>
+            <h2 class="result__title" id="resultTitle">Ready on the 1986 Boardwalk</h2>
+            <p class="result__desc" id="resultDesc">Pull the chrome handle or tap SPIN to generate a custom dirty soda, pineapple soft serve float, craft coffee, or instant boardwalk prize.</p>
+          </div>
+          <div class="claim-pill" id="claimPill" hidden>
+            <span>CLAIM CODE &middot; SHOW AT WINDOW</span>
+            <b id="claimCode">0000</b>
+          </div>
+        </div>
+        <div class="win-actions" id="winActions" hidden>
+          <a class="btn-ordernow" id="orderNowBtn" href="/#menu">Order now and use it</a>
+          <p class="win-two" id="winTwo">Using the other screen? Your prize is waiting on the order screen.</p>
+        </div>
+
       </div>
-      <div class="claim-pill" id="claimPill" hidden>
-        <span>CLAIM CODE · SHOW AT WINDOW</span>
-        <b id="claimCode">0000</b>
-      </div>
+    </section>
+
+    <!-- Mechanical Right-Side Chrome Pull-Lever -->
+    <div class="lever-mount">
+      <div class="lever-hub" aria-hidden="true"></div>
+      <button type="button" class="lever-btn" id="leverBtn" aria-label="Pull slot machine lever to spin">
+        <span class="lever-shaft" aria-hidden="true"></span>
+        <span class="lever-knob">PULL</span>
+      </button>
     </div>
-    <div class="win-actions" id="winActions" hidden>
-      <a class="btn-ordernow" id="orderNowBtn" href="/#menu">Order now and use it</a>
-      <p class="win-two" id="winTwo">Using the other screen? Your prize is waiting on the order screen.</p>
-    </div>
-  </section>
+  </div>
 
   <section class="barker-bar" aria-label="Voice barker">
     <p class="barker-bar__msg" id="barkerMsg"><b>Voice Barker:</b> Pull the lever for a custom drink and a chance at a boardwalk prize.</p>
@@ -164,6 +254,6 @@
 </dialog>
 
 <script src="/kiosk/audio-bank.js?v=3" defer></script>
-<script src="/kiosk/boardwalk-slots.js?v=3" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=4" defer></script>
 </body>
 </html>
