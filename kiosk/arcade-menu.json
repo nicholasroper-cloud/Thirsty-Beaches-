@@ -1,0 +1,118 @@
+{
+  "version": "2026.11-neon-beach",
+  "corePillars": [
+    {
+      "id": "dole-whip-floats",
+      "name": "Dole Whip & Real Soft-Serve Floats",
+      "tag": "01 · Dole Whip & Floats",
+      "equipment": "Stoelting F231 + Spaceman 6210-C",
+      "blurb": "Authentic pineapple Dole Whip, rotating fruit swirls, and real vanilla soft-serve floats.",
+      "items": [
+        { "id": "miami-vice-swirl", "name": "Miami Vice Swirl", "price": 5.50, "desc": "Pineapple Dole Whip twisted with rotating seasonal fruit whip", "tags": ["dairy-free-option", "topper-eligible"] },
+        { "id": "neon-sunset-float", "name": "Neon Sunset Float", "price": 6.50, "desc": "Dirty soda over chewable nugget ice crowned with Dole Whip", "tags": ["topper-eligible"] },
+        { "id": "orange-dream-float", "name": "Orange Dream Float", "price": 6.25, "desc": "Orange soda over nugget ice + vanilla cream + real vanilla soft-serve float topper", "tags": ["topper-eligible"] }
+      ]
+    },
+    {
+      "id": "dirty-sodas-energy",
+      "name": "Dirty Sodas & Energy Mixers (Chewable Nugget Ice)",
+      "tag": "02 · Dirty Sodas & Energy",
+      "equipment": "Cornelius FlavorFusion + Scotsman HID525",
+      "blurb": "Precision fountain pours and clean energy mixers over chewable nugget ice.",
+      "items": [
+        { "id": "red-rock-wave", "name": "Red Rock Wave", "price": 3.99, "desc": "Dr. Pepper or Cola, coconut cream, cherry/lime purée", "caffeine": true, "tags": ["topper-eligible"] },
+        { "id": "malibu-barbie", "name": "Malibu Barbie", "price": 4.25, "desc": "Lemon-lime soda, raspberry, vanilla cream, freeze-dried berry dust", "tags": ["topper-eligible"] },
+        { "id": "classic-dirty-diet", "name": "Classic Dirty Diet", "price": 3.49, "desc": "Diet Coke, coconut, fresh lime", "caffeine": true, "sugarFree": true, "tags": ["topper-eligible"] },
+        { "id": "neon-tide-energy", "name": "Neon Tide Energy", "price": 4.99, "desc": "Customizable clean energy mixer + tropical fruit purée over nugget ice", "caffeine": true, "tags": ["energy", "topper-eligible"] }
+      ]
+    },
+    {
+      "id": "craft-coffee-espresso",
+      "name": "Craft Coffee & Espresso",
+      "tag": "03 · Craft Coffee & Espresso",
+      "equipment": "Bunn Sure Immersion + Azkoyen Vitro X1 + Terra Kaffe TK-02",
+      "blurb": "Fresh-ground bean-to-cup immersion coffee, regular or dedicated decaf espresso, and real soft-serve affogatos.",
+      "items": [
+        { "id": "high-tide-iced-coffee", "name": "High Tide Iced Coffee", "price": 4.75, "desc": "Fresh-ground immersion coffee brewed concentrated over nugget ice + sweet cream", "caffeine": true },
+        { "id": "boardwalk-affogato", "name": "Boardwalk Affogato", "price": 5.95, "desc": "Hot double-shot espresso poured over real vanilla soft serve", "caffeine": true },
+        { "id": "electric-beach-latte", "name": "Electric Beach Latte", "price": 5.25, "desc": "Fresh-ground regular or decaf espresso + vanilla/caramel + whole milk", "modifiers": [{ "id": "oat-milk", "label": "+$1.00 Oat Milk", "price": 1.00 }], "caffeine": true }
+      ]
+    },
+    {
+      "id": "blended-dog-crossover",
+      "name": "Blended & Dog Crossover",
+      "tag": "04 · Blended & Pup Crossover",
+      "equipment": "Waring MX1200 + Spaceman 6210-C",
+      "blurb": "Thick blended slushes, espresso frappes, and trailer-window treats for your four-legged menace.",
+      "items": [
+        { "id": "sand-hollow-freeze", "name": "Sand Hollow Freeze", "price": 5.75, "desc": "Blended Dole Whip slush or dirty-soda freeze", "tags": ["topper-eligible"] },
+        { "id": "vegas-vice-frappe", "name": "Vegas Vice Frappe", "price": 5.95, "desc": "Espresso, mocha/caramel, vanilla soft serve base, blended smooth", "caffeine": true },
+        { "id": "menace-cup", "name": "The $1 Menace Cup", "price": 1.00, "desc": "Mini vanilla soft serve Pup Cup", "modifiers": [{ "id": "fd-dog-treat", "label": "+$1.00 Freeze-Dried Dog Treat", "price": 1.00 }], "dogFriendly": true }
+      ]
+    }
+  ],
+  "winterSeasonalBoard": {
+    "configFlag": "WINTER_BOARD_ENABLED",
+    "defaultEnabled": true,
+    "title": "Winter / Holiday Seasonal Board",
+    "subtitle": "High-margin hot drinks, toasted marshmallow cocoa floats, and bean-to-cup immersion coffee.",
+    "items": [
+      { "id": "peppermint-mocha", "name": "Peppermint Mocha", "price": 5.75, "desc": "Regular or decaf espresso + chocolate + peppermint + crushed freeze-dried candy cane topper", "caffeine": true },
+      { "id": "toasted-marshmallow-mocha", "name": "Toasted Marshmallow Mocha / Hot Cocoa Float", "price": 5.25, "desc": "Rich mocha or hot chocolate topped with freeze-dried mini marshmallows", "modifiers": [{ "id": "vanilla-float", "label": "+$1.50 Vanilla Soft Serve Float", "price": 1.50 }] },
+      { "id": "salted-caramel-mocha", "name": "Salted Caramel Mocha", "price": 5.50, "desc": "Hot or iced over chewable nugget ice", "caffeine": true },
+      { "id": "white-choc-raspberry-latte", "name": "White Chocolate Raspberry Latte", "price": 5.75, "desc": "Espresso + white chocolate + raspberry purée", "caffeine": true },
+      { "id": "caramel-apple-cider", "name": "Caramel Apple Cider (Apple Pie Float)", "price": 4.75, "desc": "Hot spiced cider + caramel drizzle", "modifiers": [{ "id": "vanilla-float", "label": "+$1.50 Vanilla Soft Serve", "price": 1.50 }] },
+      { "id": "fresh-ground-hot-coffee", "name": "Fresh-Ground Hot Immersion Coffee", "price": 3.25, "desc": "Brewed bean-to-cup on demand", "caffeine": true }
+    ]
+  },
+  "freezeDriedToppers": {
+    "price": 1.50,
+    "label": "1-Tap Freeze-Dried Drink Toppers (+$1.50)",
+    "appliesTo": ["Dole Whip swirls", "Floats", "Dirty sodas", "Hot cocoa"],
+    "options": [
+      { "id": "fd-skittles", "name": "Crushed Freeze-Dried Skittles" },
+      { "id": "fd-sour-worms", "name": "Crushed Sour Worms" },
+      { "id": "fd-peach-rings", "name": "Crushed Peach Rings" },
+      { "id": "fd-strawberries", "name": "Freeze-Dried Strawberries" },
+      { "id": "fd-candy-cane", "name": "Crushed Candy Cane" },
+      { "id": "fd-mini-marshmallows", "name": "Freeze-Dried Mini Marshmallows" }
+    ]
+  },
+  "grabAndGoDrawer": [
+    { "sku": "FD-CANDY-POUCH", "name": "Neon Freeze-Dried Candy / Fruit Pouches", "priceDisplay": "$6–$8", "price": 7.00, "priceCents": 700, "category": "pouch", "desc": "Crunchy neon Skittles, sour worms, peach rings & seasonal fruit pouches." },
+    { "sku": "FD-DOG-TREAT-POUCH", "name": "Single-Ingredient Freeze-Dried Dog Treat Pouches", "priceDisplay": "$6", "price": 6.00, "priceCents": 600, "category": "pouch", "desc": "100% single-ingredient freeze-dried dog treats — pair with a $1 Menace Cup!" },
+    { "sku": "3DP-STRAW-CHARM", "name": "3D-Printed 80s Neon Straw Toppers & Tumbler Charms", "priceDisplay": "$4", "price": 4.00, "priceCents": 400, "category": "3d-printed", "variants": ["Palm Tree", "Retro Sunglasses", "Cassette Tape", "Mini Surfboard", "Pineapple"], "desc": "Custom neon PLA+ charms printed in-house for 32oz tumblers & straws." },
+    { "sku": "3DP-POUCH-CLIP", "name": "3D-Printed Neon Beach Pouch Clip", "priceDisplay": "$2 ($1 w/ pouch)", "price": 2.00, "bundlePrice": 1.00, "priceCents": 200, "bundlePriceCents": 100, "category": "clip", "desc": "Reseal your freeze-dried pouch in neon style — $1 bundle with any freeze-dried pouch!" }
+  ],
+  "holidayStockingStuffers": [
+    { "sku": "HOL-PET-ORNAMENT", "name": "Custom Pet Ornament", "price": 16.00, "priceCents": 1600, "desc": "Standard metal tag blank + holiday ribbon, laser engraved with your dog's name & saying.", "url": "https://saltydogtags.com/#holiday-bundles" },
+    { "sku": "HOL-STOCKING-SET", "name": "Stocking Stuffer Set", "price": 26.00, "priceCents": 2600, "desc": "1 Custom Boutique 3D UV Dog Tag + 3-Pack Waterproof UV-DTF Stickers.", "url": "https://saltydogtags.com/#holiday-bundles" }
+  ],
+  "slotReels": {
+    "bases": [
+      { "id": "dirty-soda", "label": "Dirty Soda", "pillar": "dirty-sodas-energy", "examples": ["Dr Pepper", "Diet Coke", "Sprite", "Orange Soda", "Root Beer"] },
+      { "id": "energy-mixer", "label": "Energy Mixer", "pillar": "dirty-sodas-energy", "examples": ["Neon Tide Clean Energy", "Sugar-Free Beach Energy"] },
+      { "id": "coffee-espresso", "label": "Fresh-Ground Coffee / Espresso", "pillar": "craft-coffee-espresso", "examples": ["High Tide Iced Coffee", "Electric Beach Latte", "Boardwalk Affogato"] },
+      { "id": "hot-seasonal", "label": "Hot Seasonal", "pillar": "winter-seasonal", "winterOnly": true, "examples": ["Peppermint Mocha", "Toasted Marshmallow Cocoa Float", "Caramel Apple Cider"] },
+      { "id": "blended-freeze", "label": "Blended Freeze", "pillar": "blended-dog-crossover", "examples": ["Sand Hollow Freeze", "Vegas Vice Frappe"] }
+    ],
+    "flavors": [
+      "Coconut Cream + Cherry Lime",
+      "Raspberry + Vanilla Cream + Berry Dust",
+      "Pineapple Dole Whip + Mango Purée",
+      "Vanilla + Caramel + Sweet Cream",
+      "Strawberry Purée + Fresh Lime",
+      "Peach + Passion Fruit + Coconut",
+      "Salted Caramel + White Chocolate",
+      "Peppermint + Crushed Candy Cane"
+    ],
+    "defaultOdds": [
+      { "id": "standard", "label": "Standard Custom Drink", "pct": 81, "isPrize": false, "trigger": "drink_reveal" },
+      { "id": "size_upgrade", "label": "Free Size Upgrade", "pct": 6, "isPrize": true, "trigger": "prize_win" },
+      { "id": "soft_serve_topper", "label": "Free Dole Whip or Vanilla Soft Serve Topper", "pct": 5, "isPrize": true, "trigger": "prize_win" },
+      { "id": "neon_charm", "label": "Free 3D-Printed Neon Straw Charm", "pct": 4, "isPrize": true, "trigger": "arcade_charm_win" },
+      { "id": "topper_or_sticker", "label": "Free Freeze-Dried Topper or UV-DTF Sticker", "pct": 3, "isPrize": true, "trigger": "prize_win" },
+      { "id": "free_drink_jackpot", "label": "FREE DRINK JACKPOT!", "pct": 1, "isPrize": true, "trigger": "mega_jackpot" }
+    ]
+  }
+}

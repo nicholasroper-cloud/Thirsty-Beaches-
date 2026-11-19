@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>1986 Boardwalk Drink Slots | Thirsty Beaches Kiosk</title>
+<meta name="theme-color" content="#070114">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png?v=logo20261018">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=1">
+</head>
+<body>
+<div class="backdrop" aria-hidden="true">
+  <div class="backdrop__grid"></div>
+  <svg class="backdrop__palms" viewBox="0 0 1200 700" preserveAspectRatio="none">
+    <path d="M90 700 C115 510 140 360 175 260" stroke="#04000A" stroke-width="20" fill="none" stroke-linecap="round"/>
+    <path d="M175 260 Q95 215 30 260 M175 260 Q120 175 60 185 M175 260 Q225 185 285 225 M175 260 Q230 245 270 305" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M1110 700 C1085 510 1060 360 1025 260" stroke="#04000A" stroke-width="20" fill="none" stroke-linecap="round"/>
+    <path d="M1025 260 Q1105 215 1170 260 M1025 260 Q1080 175 1140 185 M1025 260 Q975 185 915 225 M1025 260 Q970 245 930 305" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<!-- Discreet 3-tap corner gesture for Staff Audio & Prize Odds -->
+<button type="button" class="staff-corner" id="staffCornerBtn" aria-label="Staff settings (tap 3 times)">•••</button>
+
+<main class="cabinet" id="arcadeCabinet">
+  <header class="bezel">
+    <div class="bezel__brand">
+      <h1>1986 BOARDWALK DRINK SLOTS</h1>
+      <p id="bezelStatus">THIRSTY BEACHES · ZERO QUARTERS NEEDED · SPIN FOR DRINKS &amp; PRIZES</p>
+    </div>
+    <div class="persona-switch" role="group" aria-label="Voice Persona Mode">
+      <button type="button" class="pbtn" data-persona="shredder">Surfer Mode</button>
+      <button type="button" class="pbtn" data-persona="neon86">80s DJ Mode</button>
+      <button type="button" class="pbtn is-on" data-persona="auto">Auto-Rotate (3 Spins)</button>
+    </div>
+  </header>
+
+  <section class="slot-frame" aria-label="3-Reel Drink Slot Machine">
+    <div class="reels">
+      <div class="reel" id="reel1">
+        <span class="reel__k">Reel 01 · Drink Base</span>
+        <div class="reel__v" id="reel1Val">DIRTY SODA</div>
+        <span class="reel__sub" id="reel1Sub">Chewable Nugget Ice</span>
+      </div>
+      <div class="reel" id="reel2">
+        <span class="reel__k">Reel 02 · Flavor Mix</span>
+        <div class="reel__v" id="reel2Val">COCONUT + CHERRY LIME</div>
+        <span class="reel__sub" id="reel2Sub">Live Inventory Mix</span>
+      </div>
+      <div class="reel" id="reel3">
+        <span class="reel__k">Reel 03 · Prize / Wildcard</span>
+        <div class="reel__v" id="reel3Val">SPIN TO WIN!</div>
+        <span class="reel__sub" id="reel3Sub">Charms · Toppers · Free Drink</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button type="button" class="btn-spin" id="spinBtn">PULL LEVER &middot; SPIN REELS</button>
+      <button type="button" class="btn-vibe" id="scanVibeBtn">SCAN MY VIBE (AI)</button>
+    </div>
+
+    <div class="result" id="resultBox" role="status" aria-live="polite">
+      <div>
+        <h2 class="result__title" id="resultTitle">Ready on the 1986 Boardwalk</h2>
+        <p class="result__desc" id="resultDesc">Tap Spin to generate a custom dirty soda, Dole Whip float, craft coffee, or score an instant boardwalk prize.</p>
+      </div>
+      <div class="claim-pill" id="claimPill" hidden>
+        <span>4-DIGIT CLAIM CODE</span>
+        <b id="claimCode">0000</b>
+      </div>
+    </div>
+  </section>
+
+  <section class="barker-bar" aria-label="Local Camera Presence and Dog Barker">
+    <p class="barker-bar__msg" id="barkerMsg"><b>Voice Barker:</b> Waiting for walk-ups or dogs (local in-memory sensor, zero video saved, 45s cooldown).</p>
+    <div class="cam-controls">
+      <span class="cam-pill" id="personaBadge">DJ: SHREDDER</span>
+      <button type="button" class="pbtn" id="camToggleBtn">Enable Presence Cam</button>
+      <a class="pbtn" href="/menu" style="text-decoration:none">Full Menu</a>
+    </div>
+    <video id="camVideo" playsinline muted width="160" height="120" hidden></video>
+  </section>
+</main>
+
+<!-- Staff Audio Bar & Configurable Prize Odds (3-Tap Top-Right Corner or 'M' shortcut) -->
+<dialog class="staff-dlg" id="staffDlg" aria-label="Staff Audio and Prize Odds Controls">
+  <div class="staff-dlg__in">
+    <div class="staff-row">
+      <h2 style="margin:0;font-family:'Bungee',sans-serif;color:#FFD166">Staff Audio &amp; Odds Bar</h2>
+      <button type="button" class="pbtn" id="staffCloseBtn">&times; Close</button>
+    </div>
+
+    <div class="staff-row">
+      <label for="staffVol">Master Volume: <b id="staffVolLbl">75%</b></label>
+      <input type="range" id="staffVol" min="0" max="100" value="75" style="flex:1;max-width:260px">
+      <button type="button" class="pbtn" id="staffMuteBtn">Mute (M)</button>
+    </div>
+
+    <div class="staff-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="staffPgMode" checked>
+        <span><b>PG Audio Mode</b> (ON by default — censors 18+ words in spoken audio)</span>
+      </label>
+    </div>
+
+    <div class="staff-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="staffWinterMode" checked>
+        <span><b>Winter / Holiday Seasonal Board</b> (includes Hot Seasonal on Reel 1)</span>
+      </label>
+    </div>
+
+    <div class="staff-row" style="border-top:1px solid rgba(42,245,228,.25);padding-top:10px">
+      <span style="font-family:'DM Mono',monospace;font-size:.8rem;color:#2AF5E4">TEST BARKER CLIPS (IGNORES COOLDOWN):</span>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="pbtn" id="demoApproachBtn">Demo Walk-Up</button>
+        <button type="button" class="pbtn" id="demoDogBtn">Demo Dog ($1 Menace Cup)</button>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid rgba(42,245,228,.25);padding-top:10px">
+      <div class="staff-row" style="margin-bottom:8px">
+        <strong style="color:#FFD166">Configurable Prize Odds (must sum to 100%)</strong>
+        <span id="oddsTotalLbl" style="font-family:'DM Mono',monospace;color:#2AF5E4">Total: 100%</span>
+      </div>
+      <div class="odds-grid" id="oddsGrid"></div>
+      <div class="staff-row" style="margin-top:10px">
+        <button type="button" class="pbtn" id="resetOddsBtn">Reset Defaults (81/6/5/4/3/1)</button>
+        <button type="button" class="pbtn is-on" id="saveOddsBtn">Save Odds &amp; Audio</button>
+      </div>
+      <p id="staffSaveMsg" style="margin:6px 0 0;font-size:.84rem;color:#2AF5E4"></p>
+    </div>
+  </div>
+</dialog>
+
+<script src="/kiosk/audio-bank.js?v=1" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=1" defer></script>
+</body>
+</html>

@@ -1170,6 +1170,51 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ---- 80s Boardwalk Arcade Slot Machine & Dual-Persona Audio Bank ----
+  if (req.method === "GET" && (pathname === "/arcade" || pathname === "/arcade/")) {
+    return serveFile(res, path.join(__dirname, "kiosk", "boardwalk-slots.html"));
+  }
+  if (req.method === "GET" && pathname.startsWith("/kiosk/")) {
+    const rel = pathname.slice("/kiosk/".length).replace(/^\/+/, "");
+    const safeRoot = path.resolve(__dirname, "kiosk");
+    const target = path.resolve(safeRoot, rel);
+    if (!target.startsWith(safeRoot + path.sep) || rel.includes("..")) return send(res, 403, "Forbidden");
+    if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) return send(res, 404, "Not found");
+    const ext = path.extname(target).toLowerCase();
+    const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".txt": "text/plain; charset=utf-8" }[ext] || "application/octet-stream";
+    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-cache" });
+    return fs.createReadStream(target).pipe(res);
+  }
+  if (req.method === "GET" && pathname === "/api/arcade-config") {
+    const cfgPath = path.join(TB_DIR, "arcade-config.json");
+    let saved = null;
+    try { saved = JSON.parse(fs.readFileSync(cfgPath, "utf8")); } catch {}
+    return sendJSON(res, 200, { ok: true, config: saved });
+  }
+  if (req.method === "POST" && pathname === "/api/arcade-config") {
+    try {
+      const body = JSON.parse((await readBody(req)) || "{}");
+      if (Array.isArray(body.odds)) {
+        const sum = body.odds.reduce((s, o) => s + (Number(o && o.pct) || 0), 0);
+        if (Math.round(sum) !== 100) return sendJSON(res, 400, { ok: false, error: "Prize odds must sum to 100%" });
+      }
+      fs.mkdirSync(TB_DIR, { recursive: true });
+      const clean = {
+        personaMode: ["shredder", "neon86", "auto"].includes(body.personaMode) ? body.personaMode : "auto",
+        volume: Math.max(0, Math.min(1, Number(body.volume ?? 0.75))),
+        muted: Boolean(body.muted),
+        pgMode: body.pgMode !== false,
+        winterEnabled: body.winterEnabled !== false,
+        odds: Array.isArray(body.odds) ? body.odds.slice(0, 12) : undefined,
+        updatedAt: Date.now(),
+      };
+      fs.writeFileSync(path.join(TB_DIR, "arcade-config.json"), JSON.stringify(clean, null, 2));
+      return sendJSON(res, 200, { ok: true, config: clean });
+    } catch {
+      return sendJSON(res, 400, { ok: false, error: "Invalid arcade config JSON" });
+    }
+  }
+
   send(res, 404, "Not found");
 });
 
