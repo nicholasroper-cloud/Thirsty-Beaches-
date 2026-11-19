@@ -339,10 +339,19 @@ async function prizeCheck(code, redeem) {
 
 /* ---- Boardwalk arcade (arcade-routes.js): the prize is rolled and the code is issued HERE, by the tb-where Worker, never in the browser.
    KIOSK_KEY and STATION_KEY stay in this process; no code without a Worker-issued claim; the staff config needs STATION_KEY. ---- */
-const arcade = require("./arcade-routes").createArcade({
-  tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
-  log: m => console.log(m),
-});
+/* The arcade is not the order path: if arcade-routes.js is missing or broken the kiosk still boots and orders; the arcade just plays with no codes. */
+let arcade;
+try {
+  arcade = require("./arcade-routes").createArcade({
+    tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
+    log: m => console.log(m),
+  });
+} catch (e) {
+  console.warn("arcade-routes.js could not load, the arcade will show no prize codes: " + e.message);
+  const off = { status: 503, body: { ok: false, error: "arcade config unavailable" } };
+  arcade = { getConfig: () => ({ personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: [], updatedAt: null }),
+    saveConfig: () => off, spin: async () => ({ ok: true, prizeId: "standard", win: false, thanks: true }), touch: async () => {}, refill: async () => {}, refillIfActive: async () => {}, prizesOn: () => false };
+}
 const arcadeSpinLimiter = lib.makeRateLimiter(20, 60000, undefined);   // 20 spins a minute on this one kiosk
 
 /* ---- customer name on a public screen: moderated at the one server-side choke point (moderation.js), beach-name fallback ---- */

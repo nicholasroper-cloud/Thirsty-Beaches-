@@ -405,3 +405,24 @@ test('REAL kiosk server: /arcade is served without a camera, the config is staff
   assert.doesNotMatch(JSON.stringify(wins) + (await request(port, 'GET', '/api/arcade-config')).body + page.body, new RegExp(KEY + '|staff-secret-key'));
   assert.equal(child.exitCode, null, out);
 });
+
+test('REAL kiosk server without arcade-routes.js (a half-delivered update) still boots and the arcade plays with no codes', async (t) => {
+  const clover = http.createServer((rq, rs) => { rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end('{"elements":[]}'); });
+  const cloverPort = await freePort();
+  await new Promise((r) => clover.listen(cloverPort, '127.0.0.1', r));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-arcmissing-'));
+  for (const f of ['kiosk-server.js', 'kiosk-lib.js', 'flex-pay.js', 'pay-journal.js', 'pay-routes.js', 'catalog.js', 'quote.js', 'moderation.js', 'addons.json', 'drink-kiosk.html', 'drink-kiosk-light.html']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  fs.writeFileSync(path.join(dir, 'catalog-map.json'), JSON.stringify({ version: 1, floats: [], categories: {} }));
+  fs.cpSync(path.join(ROOT, 'kiosk'), path.join(dir, 'kiosk'), { recursive: true });
+  const port = await freePort();
+  const child = cp.spawn(process.execPath, ['kiosk-server.js'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], env: { PATH: process.env.PATH, CLOVER_API_TOKEN: 't', CLOVER_MERCHANT_ID: 'M', CLOVER_BASE_URL: 'http://127.0.0.1:' + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: 'off', STATION_KEY: 'staff-secret-key-1234' } });
+  let out = ''; child.stdout.on('data', (d) => (out += d)); child.stderr.on('data', (d) => (out += d));
+  t.after(() => { child.kill(); clover.close(); });
+  for (let i = 0; i < 80; i++) { try { if ((await request(port, 'GET', '/health')).status) break; } catch {} await sleep(100); }
+  assert.equal((await request(port, 'GET', '/health')).status, 200, out);
+  assert.match(out, /arcade-routes\.js could not load/);
+  assert.equal((await request(port, 'GET', '/arcade')).status, 200);
+  const spin = await request(port, 'POST', '/api/arcade/spin', {});
+  assert.equal(spin.json.win, false); assert.equal(spin.json.code, undefined);
+  assert.equal((await request(port, 'POST', '/api/arcade-config', { volume: 0.5 }, { 'X-Key': 'staff-secret-key-1234' })).status, 503);
+});
