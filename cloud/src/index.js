@@ -15,6 +15,7 @@ import { cloverGet, getCatalog } from "./clover.js";
 import { REPORT_CRON, runDailyReport, handleReport } from "./report.js";
 import { MONITOR_CRON, runMonitor, handleMonitor } from "./monitor.js";
 import { splitLine, authFailure, fetchOrders, seqMap, startOfDayMs, loadState, markDone, markPicked, markUndo, ticketGate } from "./ticket.js";
+import { fetchKitchenExtras, redeemKitchenClaim, completeKitchenDrop, readStationStockOverlay, toggleStationStock, fetchPickupTags, matchTagPickup, fireOrderReady } from "./kitchen-sync.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const text = (s, status = 200) => new Response(s, { status, headers: { "content-type": "text/plain" } });
@@ -68,7 +69,13 @@ async function getOrders(env, st) {
     const who = parseCustomer(o);
     list.push({ id: o.id, ticket: String(seqs.get(o.id)), seq: seqs.get(o.id), ref: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
       paid: gate.paid !== undefined ? gate.paid : (o.paymentState || "").toUpperCase() === "PAID", badge: gate.badge || null, customer: who.name, source: who.source, total: o.total || 0,
+      orderNote: String(o.note || "").slice(0, 160),
       items: groupLines(lines.map(li => normalizeLine(li, catalog, grabCats))) });
+  }
+  const pickups = await fetchPickupTags(env);
+  for (const ord of list) {
+    const tp = matchTagPickup(ord, pickups);
+    if (tp) ord.tagPickup = tp;
   }
   memo.orders = { list, at: Date.now() };
   return list.map(stamp);
@@ -89,7 +96,7 @@ async function denied(req, env) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const p = url.pathname;
 
@@ -117,6 +124,18 @@ export default {
       const no = await denied(req, env); if (no) return no;
       return handleMonitor(req, env, url);
     }
+    if (p === "/api/kitchen/extras" || p === "/api/kitchen/redeem" || p === "/api/kitchen/drop-complete" || p === "/api/stock" || p === "/api/stock/toggle") {
+      const no = await denied(req, env); if (no) return no;
+      if (p === "/api/kitchen/extras" && req.method === "GET") return json(await fetchKitchenExtras(env));
+      if (p === "/api/stock" && req.method === "GET") return json(await readStationStockOverlay(env));
+      if (req.method !== "POST") return json({ error: "method" }, 405);
+      if (!/^application\/json\b/i.test(req.headers.get("content-type") || "")) return json({ error: "json only" }, 415);
+      let body = {};
+      try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
+      if (p === "/api/kitchen/redeem") { const r = await redeemKitchenClaim(env, body); return json(r.body, r.status); }
+      if (p === "/api/kitchen/drop-complete") { const r = await completeKitchenDrop(env, body); return json(r.body, r.status); }
+      if (p === "/api/stock/toggle") { const r = await toggleStationStock(env, body); return json(r.body, r.status); }
+    }
     if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup") {
       const no = await denied(req, env); if (no) return no;
       if (req.method === "POST" && (p === "/done" || p === "/undo" || p === "/pickedup")) {
@@ -127,7 +146,16 @@ export default {
         const id = String((body && body.id) || "");
         if (!/^[A-Z0-9]{6,20}$/i.test(id)) return json({ error: "bad id" }, 400);
         let st = await loadState(env);
-        if (p === "/done") { await markDone(env, id); st = { ...st, done: { ...st.done, [id]: Date.now() } }; }
+        if (p === "/done") {
+          await markDone(env, id);
+          st = { ...st, done: { ...st.done, [id]: Date.now() } };
+          const hit = memo.orders && memo.orders.list.find(x => x.id === id);
+          const readyPayload = hit
+            ? { ...hit, tagPickup: hit.tagPickup || (body.tagId ? { id: body.tagId } : null) }
+            : { id, ticket: body.ticket || id.slice(-4).toUpperCase(), customer: body.customer || "", source: body.source || "", tagPickup: body.tagId ? { id: body.tagId } : null };
+          const job = fireOrderReady(env, readyPayload).catch(() => {});
+          if (ctx && ctx.waitUntil) ctx.waitUntil(job);
+        }
         else if (p === "/undo") { await markUndo(env, id); }
         else { if (!st.done[id]) return json({ error: "not made yet" }, 409); await markPicked(env, id); }
         st = await loadState(env);

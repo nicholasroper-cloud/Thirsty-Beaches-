@@ -15,15 +15,15 @@
     },
     {
       "path": "make-station.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html?v=25ac03729725",
-      "sha256": "25ac037297250ea00091bd01c10bea3f69115f29d707548cc8e7e0977272ba9d",
-      "size": 90256
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/make-station.html?v=978a9310774d",
+      "sha256": "978a9310774dd621904f420a7d3df33d6ac8f1821c2002c54b58b24bfd798f7b",
+      "size": 127535
     },
     {
       "path": "pickup-board.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html?v=9d2b872118bf",
-      "sha256": "9d2b872118bfa7d63a8821f5cc93abb6d29043ff06b7480c6c6bd86883b22b3b",
-      "size": 23677
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/pickup-board.html?v=f4e8488578c4",
+      "sha256": "f4e8488578c466dfe4685ad47b4607bbf18b42522de9d1730b9330712626ee88",
+      "size": 24473
     },
     {
       "path": "recipes.json",

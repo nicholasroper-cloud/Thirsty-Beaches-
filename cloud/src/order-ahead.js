@@ -13,6 +13,7 @@
    Kiosk carts (no source) never come through here.                                              */
 import { norm } from "./pricebook.js";
 import { checkoutConfigured } from "./relay.js";
+import { readStationStockOverlay } from "./kitchen-sync.js";
 
 const WHERE_URL = "https://tb-where.nicholasroper.workers.dev/where";
 const CONTROL_URL = "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-Control/main/kiosk-control.json";
@@ -80,20 +81,34 @@ export async function controlData(env) {
     out = { soldOut: [], soldOutOptions: [], specials: [], updated: "", stale: true };
   }
   oaMemo.control = out; oaMemo.controlAt = now;
+  const ov = await readStationStockOverlay(env);
+  if (ov && (ov.items.length || ov.ingredients.length)) {
+    const soldOut = Array.from(new Set([...(out.soldOut || []), ...ov.items]));
+    const soldOutOptions = Array.from(new Set([...(out.soldOutOptions || []), ...ov.ingredients]));
+    return { ...out, soldOut, soldOutOptions, stationStock: ov };
+  }
   return out;
 }
 
 /* First cart line asking for something marked sold out -> {line, what} | null.
-   Same ids the kiosk greys out: drink ids (soldOut) and "<option key>:<choice name>" (soldOutOptions). */
+   Same ids the kiosk greys out: drink ids (soldOut) and "<option key>:<choice name>" (soldOutOptions),
+   plus real-time Kitchen Board 86 names (case-insensitive item or ingredient names). */
 export function soldOutProblem(lines, control, menu) {
   const ids = new Set(control.soldOut || []), opts = new Set(control.soldOutOptions || []);
+  const normItems = new Set((control.soldOut || []).map(norm).filter(Boolean));
+  const normIngs = new Set((control.soldOutOptions || []).map(s => norm(s.includes(":") ? s.split(":").slice(1).join(":") : s)).filter(Boolean));
   if (!ids.size && !opts.size) return null;
   for (const [i, l] of lines.entries()) {
     const n = norm(l.name);
+    if (normItems.has(n)) return { line: i, what: l.name };
     const cats = l.catKey && Object.prototype.hasOwnProperty.call(menu.cats, l.catKey) ? [menu.cats[l.catKey]] : Object.values(menu.cats);
     for (const cat of cats) for (const it of cat.items) if (ids.has(it.id) && norm(it.name) === n) return { line: i, what: it.name };
-    for (const m of l.mods || []) for (const cat of cats) for (const o of cat.options)
-      if (opts.has(o.key + ":" + m) && o.choices.some(ch => ch.name === m)) return { line: i, what: m };
+    for (const m of l.mods || []) {
+      const mn = norm(m);
+      if (normIngs.has(mn)) return { line: i, what: m };
+      for (const cat of cats) for (const o of cat.options)
+        if (opts.has(o.key + ":" + m) && o.choices.some(ch => ch.name === m)) return { line: i, what: m };
+    }
   }
   return null;
 }

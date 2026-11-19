@@ -426,6 +426,120 @@ body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
  .items{grid-template-columns:repeat(auto-fill,minmax(600px,1fr))}
  .aka{font-size:28px}
 }
+/* ===== V2 KITCHEN BOARD UPGRADES: Pump & Pour, Secret Menu Gold, Batch xN, Rush Aging, 86 Drawer, Dual-Pickup, Pinned Undo ===== */
+.top{gap:8px;padding:8px 14px}
+.top .modes{margin-left:6px}
+.top .mode{white-space:nowrap;padding:8px 14px;min-height:46px}
+.mode.fs,.mode.voice,.mode.vsel{margin-right:0;white-space:nowrap;padding:8px 12px;font-size:14px}
+.mode.vsel{max-width:155px}
+.stat{white-space:nowrap}
+.stat b,.clock{white-space:nowrap;font-size:1.3rem}
+.stat span{font-size:12px}
+.mode.v2btn{border:1.5px solid var(--line);background:var(--pane);margin-right:0;font-family:var(--mono);font-size:14px;letter-spacing:.03em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;white-space:nowrap}
+.mode.v2btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#08011c;box-shadow:0 0 14px rgba(42,245,228,.45)}
+.mode.v2btn.s86-active{border-color:#ff6b6b;background:rgba(255,107,107,.18);color:#fff}
+.mode.v2btn .bcount{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#ff3cac;color:#08011c;font-family:var(--display);font-size:.8rem}
+.mode.v2btn.s86-active .bcount{background:#ff6b6b;color:#08011c}
+.tk{height:auto}
+.mhead{gap:10px 14px;padding:10px 20px 8px}
+.nextpane{padding-bottom:96px}
+
+/* Rush-Hour Ticket Aging Spectrum: Cool Cyan (0-90s) -> Amber (90s-2m) -> Pulsing Neon Pink (2m+) */
+.tk.fresh{border-left-color:var(--accent)}
+.tk.fresh .age{color:var(--accent)}
+.tk.warn{border-left-color:#ffd166;background:linear-gradient(90deg,rgba(255,209,102,.12),var(--card) 35%)}
+.tk.warn .age{color:#ffd166}
+.tk.late{border:2px solid #ff3cac;border-left:14px solid #ff3cac;background:linear-gradient(90deg,rgba(255,60,172,.22),#240826 42%);animation:rushPink 1.4s ease-in-out infinite}
+.tk.late .age{color:#ff6ec7;text-shadow:0 0 10px rgba(255,60,172,.75)}
+.tk.late .lateb{background:#ff3cac;color:#08011c;box-shadow:0 0 14px rgba(255,60,172,.8)}
+.mhead.fresh{border-left-color:var(--accent);background:linear-gradient(90deg,rgba(42,245,228,.12),transparent 42%)}
+.mhead.warn{border-left-color:#ffd166;background:linear-gradient(90deg,rgba(255,209,102,.16),transparent 45%)}
+.mhead.late{border-left-color:#ff3cac;background:linear-gradient(90deg,rgba(255,60,172,.24),transparent 52%);animation:rushPinkHead 1.4s ease-in-out infinite}
+.mhead.late .mlate{background:#ff3cac;color:#08011c}
+.mhead.late .code{color:#ff6ec7;text-shadow:0 0 16px rgba(255,60,172,.8)}
+@keyframes rushPink{0%,100%{box-shadow:0 0 14px rgba(255,60,172,.35)}50%{box-shadow:0 0 28px rgba(255,60,172,.85)}}
+@keyframes rushPinkHead{0%,100%{box-shadow:inset 0 0 14px rgba(255,60,172,.22)}50%{box-shadow:inset 0 0 32px rgba(255,60,172,.55)}}
+@media (prefers-reduced-motion:reduce){.tk.late,.mhead.late{animation:none}}
+
+/* Visual "Pump & Pour" Color-Coded Build Strip */
+.pp-wrap{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center;padding:10px 12px;border-radius:14px;background:rgba(9,1,15,.65);border:1.5px solid rgba(42,245,228,.26)}
+.pp-cup{position:relative;width:58px;height:78px;margin:0 auto;display:flex;flex-direction:column-reverse;overflow:hidden;border:2.5px solid rgba(255,244,250,.7);border-top-width:4px;border-top-color:var(--accent);border-radius:6px 6px 14px 14px;background:#0d0424;box-shadow:0 0 14px rgba(42,245,228,.2)}
+.pp-layer{width:100%;min-height:8px;border-top:1px solid rgba(0,0,0,.22)}
+.pp-cup-sz{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:15px;color:#fff;text-shadow:0 1px 4px #000,0 0 8px #000;pointer-events:none}
+.pp-flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pp-arr{color:var(--mute);font-weight:900;font-size:18px;line-height:1;user-select:none}
+.pp-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:10px;border:2px solid var(--pcol,var(--line));background:rgba(27,5,56,.92);color:#FFF4FA;font-weight:800;font-size:18px;line-height:1.1;box-shadow:0 0 10px rgba(0,0,0,.25)}
+.pp-pill .pp-qty{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:7px;background:var(--pcol,var(--accent));color:#08011c;font-family:var(--display);font-size:19px;line-height:1;letter-spacing:.02em}
+.pp-pill.pp-size{border-color:var(--accent);background:var(--accent);color:#08011c;font-family:var(--display);font-size:20px}
+.pp-pill.pp-ice{border-color:#9ce8ff;background:rgba(156,232,255,.15);color:#dff8ff}
+.pp-pill.pp-no{border-color:#ff6b6b;background:#ff6b6b;color:#08011c}
+.pp-pill.pp-base{border-color:var(--pcol,#fff);background:rgba(255,244,250,.12)}
+@media (min-width:1101px){.pp-pill{font-size:21px;padding:7px 13px}.pp-pill .pp-qty{font-size:22px}.pp-pill.pp-size{font-size:23px}}
+
+/* Secret Menu & Arcade Champ Glowing Neon-Gold Perk Banner */
+.secret-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;border:2px solid #FFD166;background:linear-gradient(90deg,rgba(255,209,102,.28),rgba(255,60,172,.18));color:#FFF4FA;box-shadow:0 0 22px rgba(255,209,102,.42)}
+.secret-banner b{font-family:var(--display);font-weight:400;font-size:1.15rem;color:#FFD166;letter-spacing:.04em;text-shadow:0 0 10px rgba(255,209,102,.55)}
+.secret-banner small{display:block;font-family:var(--mono);font-size:.9rem;color:#FFF4FA;margin-top:2px}
+.secret-redeem{min-height:46px;padding:8px 16px;border-radius:10px;border:none;background:#FFD166;color:#08011c;font-family:var(--display);font-size:.95rem;letter-spacing:.04em}
+.secret-redeem.done{background:#3be08a;color:#08011c}
+
+/* Salty Dog Tag Dual-Pickup Reminder Badge */
+.tag-pickup{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:10px;border:2px solid #FFD166;background:linear-gradient(90deg,rgba(255,209,102,.24),rgba(42,245,228,.16));color:#FFF4FA;font-family:var(--display);font-size:.95rem;letter-spacing:.04em;box-shadow:0 0 16px rgba(255,209,102,.38);white-space:nowrap}
+.tag-pickup svg{width:1.1em;height:1.1em;flex:none;fill:#FFD166}
+.tag-pickup em{font-style:normal;color:#FFD166}
+.tag-pickup small{font-family:var(--mono);font-size:.8rem;color:#2AF5E4;margin-left:4px}
+.tk .tag-pickup{grid-column:1/-1;justify-self:start;font-size:.88rem;padding:4px 10px;margin-top:4px}
+.mhead .tag-pickup{font-size:1.05rem;padding:6px 13px}
+
+/* Batch Mode View (MAKE xN Consolidation + Group Drink Drops) */
+#batchView{overflow-y:auto;padding:18px 24px 96px;display:none;align-content:start;gap:18px}
+#batchView.on{display:grid}
+.batch-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.batch-top h2{margin:0;font-family:var(--display);font-weight:400;font-size:1.6rem;color:var(--accent)}
+.batch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:16px;align-content:start}
+.bcard{background:var(--card);border:2px solid var(--accent);border-left:10px solid var(--cat,var(--accent));border-radius:16px;padding:14px 16px;display:grid;gap:12px;box-shadow:0 0 20px rgba(42,245,228,.14)}
+.bcard.is-drop{border-color:#FF3CAC;border-left-color:#FF3CAC;box-shadow:0 0 22px rgba(255,60,172,.2)}
+.bcard-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bcard-x{display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border-radius:12px;background:#FFD166;color:#08011c;font-family:var(--display);font-size:1.7rem;line-height:1;box-shadow:0 0 18px rgba(255,209,102,.45)}
+.bcard-x.drop-x{background:#FF3CAC;color:#08011c}
+.bcard-title{font-family:var(--display);font-weight:400;font-size:1.5rem;margin:0;line-height:1.08;flex:1;min-width:160px}
+.bcard-cups{display:flex;flex-wrap:wrap;gap:8px}
+.bcup{min-height:48px;padding:6px 14px;border-radius:10px;border:2px solid var(--line);background:var(--pane);color:#fff;font-weight:800;font-size:1rem;display:inline-flex;align-items:center;gap:8px}
+.bcup b{font-family:var(--display);color:var(--accent)}
+.bcup.poured{border-color:#3be08a;background:#0f2a22;color:#b9ffda;text-decoration:line-through}
+.bcard-acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.bcard-bump{min-height:56px;padding:10px 22px;border-radius:12px;border:none;background:linear-gradient(110deg,#2AF5E4,#3be08a);color:#08011c;font-family:var(--display);font-size:1.05rem}
+
+/* Pinned Wet-Hand "Undo Last Bump" Floating Button */
+.pinned-undo{position:fixed;right:22px;bottom:18px;z-index:35;min-height:64px;padding:12px 22px;border-radius:16px;border:2.5px solid #FFD166;background:rgba(18,3,46,.95);color:#FFD166;font-family:var(--display);font-size:1.15rem;letter-spacing:.04em;box-shadow:0 12px 34px rgba(0,0,0,.65),0 0 22px rgba(255,209,102,.38);display:inline-flex;align-items:center;gap:10px}
+.pinned-undo[hidden]{display:none}
+.pinned-undo:active{transform:scale(.97)}
+
+/* Slide-Out Drawers (Live 1-Tap 86 Stock & Active Claims Lookup) */
+.drawer-bg{position:fixed;inset:0;z-index:42;background:rgba(6,1,18,.72);display:flex;justify-content:flex-end}
+.drawer-bg[hidden]{display:none}
+.drawer{width:min(680px,96vw);height:100%;background:#12032E;border-left:2px solid var(--accent);display:grid;grid-template-rows:auto auto minmax(0,1fr);box-shadow:-18px 0 60px rgba(0,0,0,.7)}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:#1B0538}
+.drawer-h h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.45rem;color:var(--accent)}
+.drawer-close{min-width:56px;min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--pane);color:#fff;font-family:var(--display);font-size:1.1rem}
+.drawer-sub{padding:10px 20px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.9rem;color:var(--mute);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.drawer-body{overflow-y:auto;padding:16px 20px 32px;display:grid;gap:18px;align-content:start}
+.s86-sec h4{margin:0 0 10px;font-family:var(--display);font-weight:400;font-size:1rem;letter-spacing:.06em;color:var(--sun);text-transform:uppercase}
+.s86-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.s86-tile{min-height:60px;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:#FFF4FA;font-weight:800;font-size:1rem;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.s86-tile.out{border-color:#ff6b6b;background:rgba(255,107,107,.22);color:#ffd6d6}
+.s86-tile.out .s86-lbl{text-decoration:line-through}
+.s86-badge{flex:none;padding:3px 8px;border-radius:7px;font-family:var(--display);font-size:.8rem;background:#1f1142;color:#3be08a}
+.s86-tile.out .s86-badge{background:#ff6b6b;color:#08011c}
+.claim-form{display:flex;gap:10px;align-items:stretch}
+.claim-form input{flex:1;min-height:56px;padding:10px 14px;border-radius:12px;border:2px solid var(--accent);background:var(--card);color:#fff;font-family:var(--display);font-size:1.3rem;text-transform:uppercase;letter-spacing:.08em}
+.claim-form button{min-height:56px;padding:10px 20px;border-radius:12px;border:none;background:var(--sun);color:#08011c;font-family:var(--display);font-size:1.05rem}
+.claim-card{background:var(--card);border:2px solid #FFD166;border-radius:14px;padding:14px 16px;display:grid;gap:10px}
+.claim-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.claim-code{font-family:var(--display);font-size:1.6rem;color:#FFD166;letter-spacing:.08em}
+.card.tap-bump-on .chead{cursor:pointer}
+.card.tap-bump-on .chead:hover{filter:brightness(1.08)}
+@media (max-width:1100px){body{padding-bottom:84px}.batch-grid{grid-template-columns:1fr}.pinned-undo{right:12px;bottom:12px;min-height:54px;padding:10px 16px;font-size:1rem}}
 </style>
 </head>
 <body>
@@ -435,9 +549,14 @@ body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
     <div class="wordmark">Make Station<small>Stay thirsty, beaches</small></div>
     <div class="modes">
       <button class="mode" id="mTickets" aria-pressed="true">Tickets<span class="n" id="nWait">0</span></button>
+      <button class="mode" id="mBatch" aria-pressed="false" title="Group identical drinks & Drink Drops into MAKE xN batches">Batch<span class="n" id="nBatch" hidden>0</span></button>
       <button class="mode" id="mLookup" aria-pressed="false">Lookup</button>
     </div>
     <div class="spacer"></div>
+    <button class="mode v2btn" id="ageModeBtn" aria-pressed="true" title="Switch between Rush (90s/2m) and Classic (4m/8m) ticket aging">Rush 90s/2m</button>
+    <button class="mode v2btn" id="tapBumpBtn" aria-pressed="false" title="Tap any drink header to check off all steps in 1 tap">Tap-Bump</button>
+    <button class="mode v2btn" id="claimsBtn" title="Decode 4-char Arcade Secret Menu & VIP pickup codes">Claims<span class="bcount" id="nClaims" hidden>0</span></button>
+    <button class="mode v2btn" id="stock86Btn" title="1-tap 86 / Out of Stock synced live to 47-inch Kiosk & Web Menu">86 Stock<span class="bcount" id="n86" hidden>0</span></button>
     <button class="mode fs" id="fsBtn" title="Fill the whole screen">Full screen</button>
     <button class="mode voice" id="trainBtn" aria-pressed="false" title="Show the how-to hint under every step (for training)">Training off</button>
     <button class="mode voice" id="voiceBtn" aria-pressed="false" title="Read new tickets out loud">Voice off</button>
@@ -455,6 +574,8 @@ body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
     <div class="make" id="make" aria-live="polite"></div>
   </section>
 
+  <section class="view" id="batchView" aria-label="Batch identical drinks and Drink Drops"></section>
+
   <section class="view" id="lookup">
     <div class="find" aria-label="Find a drink">
       <input id="q" type="search" placeholder="Search a drink or ingredient…" aria-label="Search drinks" autocomplete="off">
@@ -465,6 +586,25 @@ body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
     <div class="lmake" id="lbuild"></div>
   </section>
 </div>
+<button class="pinned-undo" id="pinnedUndo" type="button" hidden>↩ UNDO LAST BUMP</button>
+<div class="drawer-bg" id="stockDrawer" hidden role="dialog" aria-modal="true" aria-labelledby="stockDrawerT">
+  <div class="drawer">
+    <div class="drawer-h"><h3 id="stockDrawerT">Live 86 / Out of Stock</h3><button class="drawer-close" id="stockClose" type="button">Close</button></div>
+    <div class="drawer-sub"><span id="stockSyncMsg">Tapping any item updates the 47" Kiosk, Order Ahead &amp; Web Menu live.</span><input id="stockSearch" type="search" placeholder="Filter items…" style="max-width:220px;min-height:42px;padding:6px 12px;font-size:.95rem"></div>
+    <div class="drawer-body" id="stockBody"></div>
+  </div>
+</div>
+<div class="drawer-bg" id="claimsDrawer" hidden role="dialog" aria-modal="true" aria-labelledby="claimsDrawerT">
+  <div class="drawer">
+    <div class="drawer-h"><h3 id="claimsDrawerT">Secret Menu &amp; Claim Codes</h3><button class="drawer-close" id="claimsClose" type="button">Close</button></div>
+    <div class="drawer-sub"><span>Decode any 4-char Arcade code or Salty Dog VIP-XXXX pass.</span></div>
+    <div class="drawer-body">
+      <form class="claim-form" id="claimLookupForm"><input id="claimInput" maxlength="12" placeholder="A7K2 or VIP-XXXX" autocomplete="off"><button type="submit">Decode</button></form>
+      <div id="claimLookupResult"></div>
+      <div id="claimsList"></div>
+    </div>
+  </div>
+</div>
 <div class="bar" id="bar" hidden></div>
 <div class="savemsg" id="saveMsg" role="alert" hidden></div>
 <div class="ask" id="doneAsk" hidden role="dialog" aria-modal="true" aria-labelledby="doneAskT"><div class="box"><h3 id="doneAskT"></h3><p>Tick each item as you hand it over, or finish anyway.</p><div class="btns"><button class="keep">Keep making</button><button class="anyway">Done anyway</button></div></div></div>
@@ -472,7 +612,7 @@ body:not(.training) #tickets ol li .what .hint:not(.keep){display:none}
 <script>
 /* ---- access key: ?k=... on the address is read once, remembered, and sent as an X-Key header (never in the URL of a data call) ---- */
 (function(){try{var u=new URL(location.href),k=u.searchParams.get('k');if(k){localStorage.setItem('tb-key',k);u.searchParams.delete('k');history.replaceState(null,'',u.pathname+u.search+u.hash);}
-var K=localStorage.getItem('tb-key')||'';if(!K)return;var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\/(queue|done|undo|pickedup)\b/.test(i)){o=Object.assign({},o);o.headers=Object.assign({},o.headers,{'X-Key':K});}}catch(e){}return of.call(this,i,o);};}catch(e){}})();
+var K=localStorage.getItem('tb-key')||'';if(!K)return;var of=window.fetch;window.fetch=function(i,o){try{if(typeof i==='string'&&/^\/(queue|done|undo|pickedup|api\/kitchen|api\/stock)\b/.test(i)){o=Object.assign({},o);o.headers=Object.assign({},o.headers,{'X-Key':K});}}catch(e){}return of.call(this,i,o);};}catch(e){}})();
 </script>
 <script>
 /* ---- keep the Echo Show from closing the browser: a silent audio loop makes Silk treat the page as active (starts after the first touch) ---- */
@@ -620,10 +760,304 @@ function markSteps(ol,key,ck){const lis=[...ol.querySelectorAll('li')];let first
 let PICKED_OK=true;   // false once the server says it has no /pickedup (an old make-station-server.js): hide the button instead of showing an error
 const tagHTML=t=>{if(!t)return'';if(t.startsWith('sub:'))return`<b class="tag sub">SUB</b>`;if(t.startsWith('add'))return`<b class="tag add">ADD</b>`;if(t==='no')return`<b class="tag no">NO</b>`;return'';};
 const stepsHTML=(key,steps)=>`<ol data-k="${esc(key)}">${steps.map(([w,h,a,t])=>`<li tabindex="0" class="${t?'chg':''}"><div class="what">${tagHTML(t)}${/^(lid|pour \+ lid|dome lid|spoon|hand off|blend$)/i.test(w)||t==='no'?'':dot(w)}${esc(w)}${t&&t.startsWith('sub:')?`<span class="inst">Instead of ${esc(t.slice(4))}</span>`:''}<span class="hint${a==='?'?' keep':''}">${esc(h)}</span></div><div class="amt">${esc(a)}</div></li>`).join('')}</ol>`;
+
+/* ================= V2 ENGINE: PUMP & POUR, SECRET MENU DECODE, BATCH xN, RUSH AGING, 86 STOCK, DUAL-PICKUP ================= */
+const SECRET_FALLBACK=[
+  {id:'neon-rip-curl',name:'Neon Rip Curl',minScore:600,base:'Sprite',syrups:'2p Blue Raspberry, 1p Coconut, 1p Fresh Lime',cream:'1oz Coconut Cream',garnish:'Fresh Lime Wedge',build:'Sprite · 2p Blue Raz, 1p Coconut, 1p Lime · 1oz Coconut Cream · Lime Wedge'},
+  {id:'80s-sunset-cream',name:'80s Sunset Cream',minScore:900,base:'Dr Pepper',syrups:'2p Peach, 1p Raspberry, 1p Vanilla',cream:'1oz Sweet Cream',garnish:'Maraschino Cherry',build:'Dr Pepper · 2p Peach, 1p Raz, 1p Vanilla · 1oz Sweet Cream · Cherry'},
+  {id:'synthwave-shark-bite',name:'Synthwave Shark Bite',minScore:1200,base:'Mountain Dew',syrups:'2p Mango Purée, 1p Strawberry Purée, 1p Passion Fruit',cream:'Splash Coconut Cream',garnish:'Passion Fruit Popping Pearls',build:'Mtn Dew · 2p Mango, 1p Strawberry, 1p Passion Fruit · Splash Coconut Cream · Popping Pearls'},
+  {id:'turbo-beach-bum',name:'Turbo Beach Bum',minScore:1500,base:'Energy Base',syrups:'2p Pineapple, 1p Blue Raspberry, 1p Coconut',cream:'1oz Vanilla Cream',garnish:'Fresh Lime Squeeze',build:'Energy · 2p Pineapple, 1p Blue Raz, 1p Coconut · 1oz Vanilla Cream · Fresh Lime'},
+  {id:'velvet-palm',name:'Velvet Palm',minScore:1800,base:'Root Beer',syrups:'2p Butterscotch, 1p Toasted Marshmallow',cream:'1oz Vanilla Cream',garnish:'Whipped Cream Swirl',build:'Root Beer · 2p Butterscotch, 1p Marshmallow · 1oz Vanilla Cream · Whip Swirl'}
+];
+let extras={secretMenu:SECRET_FALLBACK.slice(),claims:[],drops:[],stock:{items:[],ingredients:[],updatedAt:null},pickups:[]};
+let RUSH_AGE=true,TAP_BUMP=false,lastBumped=[],bumpLockUntil=0,batchPoured={};
+try{if(localStorage.getItem('tb-age-mode')==='classic')RUSH_AGE=false;TAP_BUMP=localStorage.getItem('tb-tap-bump')==='1';}catch(e){}
+
+function ageThresholds(){return RUSH_AGE?{warn:90*1000,late:120*1000}:{warn:4*60000,late:8*60000};}
+function buildSecretSteps(sm){
+  const steps=[];
+  String(sm.syrups||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{
+    const m=part.match(/^(\d+(?:\.\d+)?)\s*p(?:umps?)?\s+(.+)$/i);
+    if(m)steps.push([m[2].trim(),HOW.syrup,m[1]+' pump'+(Number(m[1])===1?'':'s'),'']);
+    else steps.push([part,HOW.syrup,'1 pump','']);
+  });
+  steps.push(['Ice',HOW.ice,'Fill','']);
+  if(sm.base)steps.push([sm.base,HOW.base,'Fill','']);
+  if(sm.cream){
+    const cm=String(sm.cream).match(/^(\d+(?:\.\d+)?\s*oz|Splash)\s+(.+)$/i);
+    steps.push(cm?[cm[2].trim(),HOW.cream,cm[1],'']:[sm.cream,HOW.cream,'1 oz','']);
+  }
+  if(sm.garnish)steps.push([sm.garnish,HOW.garnish,'Top','']);
+  steps.push(['Lid + straw',HOW.lid,'✓','']);
+  return steps;
+}
+function findSecretByName(name){
+  const n=norm(name);if(!n)return null;
+  return (extras.secretMenu||SECRET_FALLBACK).find(d=>norm(d.name)===n||norm(d.id)===n||n.includes(norm(d.name)))||null;
+}
+function decodeOrderClaim(it,order){
+  const hay=[it&&it.name,it&&it.note,...((it&&it.mods)||[]),order&&order.orderNote].filter(Boolean).join(' ');
+  const smDirect=findSecretByName(it&&it.name)||findSecretByName(hay);
+  const vipM=hay.match(/\b(VIP-[A-Z2-9]{4,8})\b/i);
+  let matchedClaim=null;
+  for(const cl of (extras.claims||[])){
+    if(cl&&cl.code&&new RegExp('\\b'+cl.code.replace(/[^A-Z0-9]/gi,'')+'\\b','i').test(hay)){matchedClaim=cl;break;}
+  }
+  if(matchedClaim){
+    const sm=(matchedClaim.drinkId&&(extras.secretMenu||SECRET_FALLBACK).find(d=>d.id===matchedClaim.drinkId))||findSecretByName(matchedClaim.drinkName)||smDirect;
+    return{claim:matchedClaim,secret:sm,vipCode:null,label:(matchedClaim.type==='arcade-champ'?'★ ARCADE CHAMP FREE UPGRADE':'★ SECRET MENU UNLOCK')+' · CODE '+matchedClaim.code,sub:matchedClaim.drinkName+' · '+(matchedClaim.build||'')};
+  }
+  if(vipM){
+    return{claim:null,secret:smDirect,vipCode:vipM[1].toUpperCase(),label:'★ SALTY DOG VIP FREE UPGRADE · '+vipM[1].toUpperCase(),sub:'Free Size Upgrade / Extra Cream or Purée'};
+  }
+  if(smDirect){
+    return{claim:null,secret:smDirect,vipCode:null,label:'★ SECRET MENU · '+smDirect.name.toUpperCase(),sub:smDirect.build};
+  }
+  return null;
+}
+function planForItem(it,order){
+  const decoded=decodeOrderClaim(it,order);
+  const p=plan(it.name,it.mods,it.category);
+  if(decoded&&decoded.secret&&(!p.recipe||!p.ingredients.length)){
+    const sSteps=buildSecretSteps(decoded.secret);
+    return{...p,steps:sSteps,ingredients:[decoded.secret.base],decoded};
+  }
+  return{...p,decoded};
+}
+function shortAmt(a){
+  const s=String(a||'').trim();
+  if(!s||s==='✓'||s==='–'||s==='Fill')return'';
+  const pm=s.match(/^([0-9¼½¾.]+)\s*pumps?$/i);if(pm)return pm[1]+'×';
+  const wm=s.match(/^([0-9¼½¾.]+)\s*(?:wedges?|scoops?|swirls?)$/i);if(wm)return wm[1]+'×';
+  return s;
+}
+function renderPumpPour(steps,cupBadgeObj){
+  const szLabel=cupBadgeObj&&cupBadgeObj.s&&cupBadgeObj.s!=='one size'?cupBadgeObj.s.replace(/\s+/g,''):((cupBadgeObj&&cupBadgeObj.l!=='–')?cupBadgeObj.l:'CUP');
+  const buildSteps=steps.filter(([w])=>!/^(lid \+ straw|lid|hand off|dome lid|spoon)$/i.test(String(w||'').trim()));
+  const layers=[];
+  const pills=[`<span class="pp-pill pp-size">${esc(szLabel)}</span>`];
+  for(const [w,,a,t] of buildSteps){
+    const name=String(w||'').trim();
+    const lc=name.toLowerCase();
+    const col=ingColor(name)||'#2AF5E4';
+    if(t==='no'||/^no\s+/i.test(name)){
+      pills.push(`<span class="pp-pill pp-no">${esc(name)}</span>`);
+      continue;
+    }
+    if(lc==='ice'){
+      pills.push(`<span class="pp-pill pp-ice">ICE</span>`);
+      layers.push({c:'#a7e9ff',h:12});
+      continue;
+    }
+    const q=shortAmt(a);
+    const isBase=a==='Fill'||a==='2/3'||/^blend with /i.test(name);
+    layers.push({c:col,h:isBase?34:16});
+    pills.push(`<span class="pp-pill${isBase?' pp-base':''}" style="--pcol:${col}">${q?`<b class="pp-qty">${esc(q)}</b>`:dot(name)}<span>${esc(name)}</span></span>`);
+  }
+  const cupHTML=`<div class="pp-cup" aria-hidden="true">${layers.map(l=>`<div class="pp-layer" style="background:${l.c};flex:${l.h}"></div>`).join('')}<span class="pp-cup-sz">${esc(szLabel)}</span></div>`;
+  return`<div class="pp-wrap" aria-label="Pump and pour build">${cupHTML}<div class="pp-flow">${pills.join('<span class="pp-arr">→</span>')}</div></div>`;
+}
+const PAW_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.5" cy="8.5" r="2.2"/><circle cx="10.5" cy="5.5" r="2.2"/><circle cx="14.8" cy="5.5" r="2.2"/><circle cx="18.5" cy="8.8" r="2.2"/><path d="M12 10.5c-3.2 0-5.8 2.8-5.8 5.4 0 1.8 1.4 3.1 3.3 3.1 1 0 1.8-.4 2.5-.4s1.5.4 2.5.4c1.9 0 3.3-1.3 3.3-3.1 0-2.6-2.6-5.4-5.8-5.4z"/></svg>';
+function tagPickupHTML(o,detailed){
+  if(!o||!o.tagPickup)return'';
+  const tp=o.tagPickup;
+  const dogs=detailed&&tp.dogNames&&tp.dogNames.length?' · '+tp.dogNames.join(', '):'';
+  const st=tp.ready?'READY':'ENGRAVING';
+  return`<span class="tag-pickup">${PAW_SVG}+ PICKUP TAG <em>#${esc(tp.id)}</em>${detailed?`<small>${esc(st+dogs)}</small>`:''}</span>`;
+}
+function updatePinnedUndo(){
+  const btn=$('#pinnedUndo');if(!btn)return;
+  const top=lastBumped[0]||(queue.ready&&queue.ready[0]?{id:queue.ready[0].id,ticket:queue.ready[0].ticket,customer:queue.ready[0].customer}:null);
+  if(!top){btn.hidden=true;return;}
+  btn.hidden=false;
+  btn.dataset.id=top.id;
+  btn.textContent='↩ UNDO #'+(top.ticket||top.id.slice(-4));
+}
+function setAgeMode(rush){
+  RUSH_AGE=!!rush;
+  const b=$('#ageModeBtn');if(b){b.setAttribute('aria-pressed',RUSH_AGE);b.textContent=RUSH_AGE?'Rush 90s/2m':'Classic 4m/8m';}
+  try{localStorage.setItem('tb-age-mode',RUSH_AGE?'rush':'classic');}catch(e){}
+  renderQueue();renderTicket();
+}
+function setTapBump(on){
+  TAP_BUMP=!!on;
+  const b=$('#tapBumpBtn');if(b){b.setAttribute('aria-pressed',TAP_BUMP);b.textContent=TAP_BUMP?'Tap-Bump ON':'Tap-Bump';}
+  try{localStorage.setItem('tb-tap-bump',TAP_BUMP?'1':'0');}catch(e){}
+  renderTicket();
+}
+function updateV2Badges(){
+  const n86=((extras.stock&&extras.stock.items&&extras.stock.items.length)||0)+((extras.stock&&extras.stock.ingredients&&extras.stock.ingredients.length)||0);
+  const b86=$('#n86'),btn86=$('#stock86Btn');
+  if(b86){b86.hidden=!n86;b86.textContent=String(n86);}
+  if(btn86)btn86.classList.toggle('s86-active',n86>0);
+  const nc=(extras.claims&&extras.claims.length)||0;
+  const bc=$('#nClaims');if(bc){bc.hidden=!nc;bc.textContent=String(nc);}
+  const groups=computeBatches();
+  const dupCount=groups.filter(g=>g.totalQty>1).length+((extras.drops&&extras.drops.length)||0);
+  const nb=$('#nBatch');if(nb){nb.hidden=!dupCount;nb.textContent=String(dupCount);}
+}
+function computeBatches(){
+  const map=new Map();
+  for(const o of (queue.waiting||[])){
+    for(let ix=0;ix<o.items.length;ix++){
+      const it=o.items[ix];if(it.kind!=='drink')continue;
+      const akaM=it.mods.find(m=>/^AKA /.test(m));
+      const cleanMods=it.mods.filter(m=>m!==akaM).slice().sort();
+      const sig=norm(it.name)+'|'+cleanMods.map(norm).join(',')+'|'+norm(it.note||'');
+      if(!map.has(sig))map.set(sig,{sig,item:it,order:o,totalQty:0,cups:[]});
+      const g=map.get(sig);
+      g.totalQty+=it.qty;
+      g.cups.push({orderId:o.id,ticket:o.ticket,customer:o.customer||o.source,qty:it.qty,singleItem:o.items.length===1,order:o,ix});
+    }
+  }
+  return[...map.values()].sort((a,b)=>b.totalQty-a.totalQty||a.cups[0].ticket.localeCompare(b.cups[0].ticket));
+}
+function renderBatch(){
+  const el=$('#batchView');if(!el)return;
+  const batches=computeBatches();
+  const drops=extras.drops||[];
+  const multi=batches.filter(b=>b.totalQty>1),singles=batches.filter(b=>b.totalQty===1);
+  let html=`<div class="batch-top"><h2>Smart Batch &amp; Station Mode</h2><span class="chip">Duplicates: ${multi.length} · Drink Drops: ${drops.length} · Waiting Tickets: ${queue.waiting.length}</span></div>`;
+  const ordered=multi.concat(singles);
+  if(!ordered.length&&!drops.length){
+    html+=`<div class="blank">No drinks in the queue to batch<small>Identical orders &amp; Group Drink Drops consolidate here automatically.</small></div>`;
+  }else{
+    html+=`<div class="batch-grid">`;
+    if(drops.length){
+      html+=drops.map(d=>{
+        const items=Array.isArray(d.items)?d.items:[];
+        const tally={};items.forEach(x=>{const k=(x.size||'24oz')+' '+(x.drink||'Drink')+(x.mods&&x.mods.length?' ('+x.mods.join(', ')+')':'');tally[k]=(tally[k]||0)+1;});
+        return`<div class="bcard is-drop"><div class="bcard-head"><span class="bcard-x drop-x">DROP ×${items.length}</span><h3 class="bcard-title">${esc(d.groupName||'Group Drink Drop')} <small style="display:block;font-family:var(--mono);font-size:.9rem;color:var(--mute)">Host: ${esc(d.host||'Group')} · Code ${esc(d.code)}</small></h3></div>
+          <div class="bcard-cups">${items.map((x,i)=>`<button class="bcup${batchPoured['drop:'+d.code+':'+i]?' poured':''}" data-bcup="drop:${esc(d.code)}:${i}"><b>${esc(x.person||'Cup '+(i+1))}</b> ${esc(x.size||'24oz')} ${esc(x.drink||'')}</button>`).join('')}</div>
+          <div class="chips">${Object.entries(tally).map(([k,n])=>`<span class="chip hot">${n}× ${esc(k)}</span>`).join('')}</div>
+          <div class="bcard-acts"><button class="bcard-bump" data-dropdone="${esc(d.code)}">✓ Complete Drink Drop</button></div></div>`;
+      }).join('');
+    }
+    html+=ordered.map(g=>{
+      const p=planForItem(g.item,g.order);
+      const cb=cupBadge(p.cup);
+      const c=catColor(g.item.category)||catColor(p.recipe&&p.recipe.c);
+      const singleOrders=g.cups.filter(x=>x.singleItem);
+      return`<div class="bcard" style="${c?`--cat:${c}`:''}"><div class="bcard-head"><span class="bcard-x">MAKE ×${g.totalQty}</span><h3 class="bcard-title">${esc(g.item.name)}${p.cup?` <small style="color:var(--accent)">${esc(p.cup)}</small>`:''}</h3></div>
+        ${renderPumpPour(p.steps,cb)}
+        <div class="bcard-cups">${g.cups.map((cp,i)=>{const ck='b:'+g.sig+':'+cp.orderId+':'+i;return`<button class="bcup${batchPoured[ck]?' poured':''}" data-bcup="${esc(ck)}" data-jump="${esc(cp.orderId)}"><b>#${esc(cp.ticket)}</b> ${esc(cp.customer)}${cp.qty>1?' ×'+cp.qty:''}</button>`;}).join('')}</div>
+        <div class="bcard-acts">${singleOrders.length?`<button class="bcard-bump" data-batchbump="${esc(singleOrders.map(x=>x.orderId).join(','))}">✓ Bump ${singleOrders.length} Single-Drink Ticket${singleOrders.length===1?'':'s'}</button>`:''}</div></div>`;
+    }).join('')+`</div>`;
+  }
+  el.innerHTML=html;
+  el.querySelectorAll('[data-bcup]').forEach(b=>b.onclick=()=>{const k=b.dataset.bcup;batchPoured[k]=!batchPoured[k];b.classList.toggle('poured',!!batchPoured[k]);});
+  el.querySelectorAll('[data-batchbump]').forEach(b=>b.onclick=async()=>{
+    const ids=b.dataset.batchbump.split(',').filter(Boolean);
+    for(const id of ids){const o=queue.waiting.find(x=>x.id===id);if(o)await bumpTicket(o);}
+  });
+  el.querySelectorAll('[data-dropdone]').forEach(b=>b.onclick=async()=>{
+    const code=b.dataset.dropdone;b.disabled=true;b.textContent='Completing…';
+    try{await fetch('/api/kitchen/drop-complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});await pollExtras();renderBatch();}catch(e){b.disabled=false;b.textContent='Retry Complete';}
+  });
+}
+
+const STOCK_GROUPS=[
+  {title:'Ice & Bases',kind:'ingredient',items:['Pebble Ice','Dr Pepper','Diet Dr Pepper','Diet Coke','Coca-Cola','Sprite','Mountain Dew','Root Beer','Cream Soda','Energy Base','Lemonade','Dole Whip','Vanilla Soft Serve']},
+  {title:'Creams & Toppers',kind:'ingredient',items:['Coconut Cream','Half & Half','Sweet Cream','Vanilla Cream','Whipped Cream','Cold Foam','Popping Pearls','Freeze-Dried Candy','Maraschino Cherry']},
+  {title:'Syrups & Purées',kind:'ingredient',items:['Coconut','Peach','Blue Raspberry','Raspberry','Strawberry Puree','Mango Puree','Pineapple','Vanilla','Passion Fruit','Fresh Lime','Butterscotch','Toasted Marshmallow','Watermelon','Blackberry','Caramel','Chamoy','Tajin']}
+];
+function is86d(kind,name){
+  const list=(extras.stock&&(kind==='ingredient'?extras.stock.ingredients:extras.stock.items))||[];
+  return list.includes(name.toLowerCase());
+}
+function renderStockDrawer(){
+  const body=$('#stockBody');if(!body)return;
+  const q=($('#stockSearch')?$('#stockSearch').value:'').trim().toLowerCase();
+  const drinks=[...new Set([...Object.keys(RECIPES),...(extras.secretMenu||SECRET_FALLBACK).map(d=>d.name)])].sort();
+  const allGroups=[...STOCK_GROUPS,{title:'Signature & Secret Menu Drinks',kind:'item',items:drinks}];
+  body.innerHTML=allGroups.map(g=>{
+    const filt=g.items.filter(nm=>!q||nm.toLowerCase().includes(q));
+    if(!filt.length)return'';
+    return`<div class="s86-sec"><h4>${esc(g.title)}</h4><div class="s86-grid">${filt.map(nm=>{
+      const out=is86d(g.kind,nm);
+      return`<button type="button" class="s86-tile${out?' out':''}" data-skind="${g.kind}" data-sname="${esc(nm)}"><span class="s86-lbl">${dot(nm)}${esc(nm)}</span><span class="s86-badge">${out?"86'D":'IN'}</span></button>`;
+    }).join('')}</div></div>`;
+  }).join('')||'<p class="empty">No matching items.</p>';
+  body.querySelectorAll('.s86-tile').forEach(btn=>btn.onclick=()=>toggleStock86(btn.dataset.skind,btn.dataset.sname));
+}
+async function toggleStock86(kind,name){
+  const key=name.toLowerCase();
+  const arrKey=kind==='ingredient'?'ingredients':'items';
+  const cur=new Set((extras.stock&&extras.stock[arrKey])||[]);
+  const nextOut=!cur.has(key);
+  if(nextOut)cur.add(key);else cur.delete(key);
+  extras.stock={...(extras.stock||{items:[],ingredients:[]}),[arrKey]:[...cur].sort(),updatedAt:Date.now()};
+  updateV2Badges();renderStockDrawer();
+  const msg=$('#stockSyncMsg');if(msg)msg.textContent='Syncing '+name+'…';
+  try{
+    const r=await fetch('/api/stock/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,name,out:nextOut})});
+    const d=await r.json().catch(()=>null);
+    if(r.ok&&d&&d.stock){extras.stock=d.stock;updateV2Badges();renderStockDrawer();}
+    if(msg)msg.textContent=(d&&d.synced)?'✓ Synced live to 47" Kiosk, Order Ahead & Web Menu':'✓ Saved on station (syncs when tb-where secret is set)';
+  }catch(e){if(msg)msg.textContent='Saved locally — offline';}
+}
+function renderClaimsDrawer(){
+  const box=$('#claimsList');if(!box)return;
+  const active=extras.claims||[];
+  const secrets=extras.secretMenu||SECRET_FALLBACK;
+  let html='';
+  if(active.length){
+    html+=`<div class="s86-sec"><h4>Active 4-Char Arcade Claims</h4>`+active.map(cl=>{
+      const sm=secrets.find(d=>d.id===cl.drinkId)||findSecretByName(cl.drinkName);
+      const steps=sm?buildSecretSteps(sm):[];
+      return`<div class="claim-card"><div class="claim-card-h"><span class="claim-code">${esc(cl.code)}</span><b>${esc(cl.drinkName||'Free Upgrade')} (${esc(cl.who||'TB')})</b><button type="button" class="secret-redeem" data-redeem="${esc(cl.code)}">Redeem</button></div><small style="color:var(--sun)">${esc(cl.reward||'')}</small>${steps.length?renderPumpPour(steps,{l:'M',s:'24 oz'}):`<div class="note">${esc(cl.build||'')}</div>`}</div>`;
+    }).join('')+`</div>`;
+  }
+  html+=`<div class="s86-sec"><h4>All Arcade Secret Menu Recipes</h4>`+secrets.map(sm=>`<div class="claim-card"><div class="claim-card-h"><b>★ ${esc(sm.name)}</b><span class="chip">${sm.minScore}+ pts</span></div>${renderPumpPour(buildSecretSteps(sm),{l:'M',s:'24 oz'})}</div>`).join('')+`</div>`;
+  box.innerHTML=html;
+  box.querySelectorAll('[data-redeem]').forEach(b=>b.onclick=()=>redeemClaimCode(b.dataset.redeem,b));
+}
+async function redeemClaimCode(code,btn){
+  if(btn){btn.disabled=true;btn.textContent='Redeeming…';}
+  try{
+    const r=await fetch('/api/kitchen/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){
+      if(btn){btn.classList.add('done');btn.textContent='✓ Redeemed';}
+      await pollExtras();
+      return d;
+    }
+    if(btn){btn.disabled=false;btn.textContent=d.status==='used'?'Already Used':'Retry';}
+    return d;
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='Offline';}return null;}
+}
+async function pollExtras(){
+  try{
+    const r=await fetch('/api/kitchen/extras',{cache:'no-store'});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d){
+      const prevClaims=(extras.claims||[]).map(c=>c.code).join(',');
+      extras={secretMenu:(d.secretMenu&&d.secretMenu.length)?d.secretMenu:SECRET_FALLBACK,claims:d.claims||[],drops:d.drops||[],stock:d.stock||extras.stock,pickups:d.pickups||[]};
+      updateV2Badges();
+      if(prevClaims!==(extras.claims||[]).map(c=>c.code).join(','))renderTicket();
+      if(!$('#stockDrawer').hidden)renderStockDrawer();
+      if(!$('#claimsDrawer').hidden)renderClaimsDrawer();
+      if($('#batchView').classList.contains('on'))renderBatch();
+    }
+  }catch(e){}
+}
+async function bumpTicket(o){
+  const now=Date.now();
+  if(now<bumpLockUntil)return false;
+  bumpLockUntil=now+650;
+  const ok=await post('/done',o.id,{ticket:o.ticket,customer:o.customer||'',source:o.source||'',tagId:o.tagPickup?o.tagPickup.id:null});
+  if(ok){
+    delete checks[o.id];
+    lastBumped=[{id:o.id,ticket:o.ticket,customer:o.customer||o.source},...lastBumped.filter(x=>x.id!==o.id)].slice(0,10);
+    updatePinnedUndo();
+  }
+  return ok;
+}
 /* ================= TICKETS ================= */
-const age=t=>{const s=Math.max(0,Math.floor((queue.now-t)/1000));if(s<60)return s+"s";const m=Math.floor(s/60);if(m<60)return m+"m";const h=Math.floor(m/60);return h<24?h+"h "+(m%60)+"m":Math.floor(h/24)+"d"};
-const WARN_MS=4*60000,LATE_MS=8*60000;   // age bands: yellow over 4 min, red over 8 (a thick left border on the tile)
-const ageBand=o=>{const a=queue.now-o.created;return a>LATE_MS?'late':a>WARN_MS?'warn':'';};
+const age=t=>{const s=Math.max(0,Math.floor((queue.now-t)/1000));if(s<60)return s+"s";const m=Math.floor(s/60);if(m<60)return m+"m "+(s%60<10?'0':'')+(s%60)+'s';const h=Math.floor(m/60);return h<24?h+"h "+(m%60)+"m":Math.floor(h/24)+"d"};
+const WARN_MS=4*60000,LATE_MS=8*60000;
+const ageBand=o=>{const a=queue.now-o.created,th=ageThresholds();return a>th.late?'late':a>th.warn?'warn':'fresh';};
 const cents=o=>o.total||o.items.reduce((s,it)=>s+(it.price||0)*it.qty,0);
 const money=c=>'$'+(c/100).toFixed(2);
 /* big hand-off badge: PAID, or COLLECT $x (what to charge at the window) */
@@ -632,31 +1066,32 @@ const payBadge=(o,long)=>o.badge&&o.badge.kind?'<b class="paybadge '+String(o.ba
 let TRAIN=false,SAYNAMES=false;try{TRAIN=localStorage.getItem('tb-train')==='1';SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 function setTrain(v){TRAIN=v;document.body.classList.toggle('training',v);$('#trainBtn').setAttribute('aria-pressed',v);$('#trainBtn').textContent=v?'Training on':'Training off';try{localStorage.setItem('tb-train',v?'1':'0');}catch(e){}}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
-function renderQueue(){const w=queue.waiting;
+function renderQueue(){const w=queue.waiting;const th=ageThresholds();
  $('#nWait').textContent=w.length;$('#stMade').textContent=queue.madeToday;
- const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>LATE_MS);
+ const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>th.late);
  $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);const band=ageBand(o);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${band?' '+band:''}" data-id="${esc(o.id)}">
-   ${band==='late'?'<b class="lateb">LATE</b>':''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
-   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span><span class="pb">${payBadge(o)}</span></button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
+   ${band==='late'?`<b class="lateb">${RUSH_AGE?'RUSH 2m+':'LATE'}</b>`:''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
+   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span><span class="pb">${payBadge(o)}</span>${tagPickupHTML(o,false)}</button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
- let newlyLate=false;for(const o of w)if(queue.now-o.created>LATE_MS&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
+ let newlyLate=false;for(const o of w)if(queue.now-o.created>th.late&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
  if(newlyLate)lateDing();
- const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh){mh.classList.toggle('late',!!so2&&queue.now-so2.created>LATE_MS);mh.classList.toggle('warn',!!so2&&ageBand(so2)==='warn');}
+ const so2=w.find(x=>x.id===sel),mh=$('#make .mhead');if(mh){const b2=so2?ageBand(so2):'';mh.classList.toggle('late',b2==='late');mh.classList.toggle('warn',b2==='warn');mh.classList.toggle('fresh',b2==='fresh');}
  /* "Just made": up to 4 rows with Undo + Picked up; past 6 tickets waiting it shrinks to ONE chip so it stops eating the queue */
  if(queue.waiting.concat(queue.ready).some(o=>o.ref===undefined))PICKED_OK=false;   // an old server sends no daily number or ref: it cannot do Picked up either
  const r=queue.ready;const rec=$('#recent');rec.hidden=!r.length;
  if(r.length){const tight=w.length>6;
   rec.innerHTML=tight?`<div class="rchip"><span>Just made <b>${esc(r[0].ticket)}</b></span><button class="undo" data-id="${esc(r[0].id)}">Undo</button>${PICKED_OK?`<button class="undo pick" data-id="${esc(r[0].id)}">Picked up</button>`:''}</div>`
    :`<h3>Just made</h3>`+r.slice(0,4).map(o=>`<div class="rrow"><b>${esc(o.ticket)}</b><span>${esc(o.customer||o.source)} · ${esc(summary(o))}</span><button class="undo" data-id="${esc(o.id)}">Undo</button>${PICKED_OK?`<button class="undo pick" data-id="${esc(o.id)}">Picked up</button>`:''}</div>`).join('');
-  rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post(b.classList.contains('pick')?'/pickedup':'/undo',b.dataset.id));}}
+  rec.querySelectorAll('.undo').forEach(b=>b.onclick=()=>post(b.classList.contains('pick')?'/pickedup':'/undo',b.dataset.id));}
+ updatePinnedUndo();updateV2Badges();if($('#batchView').classList.contains('on'))renderBatch();}
 /* NEXT pane: the ticket after this one, compact (cup, name, what goes in it) so batching and prep never need a tap-around */
 function nextPane(nx){
  if(!nx)return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><p class="nxnone">Nothing after this one</p></aside>`;
  const items=nx.items.map(it=>{if(it.kind==='grab')return`<div class="nxi"><span class="sb">G</span><div><b>${esc(it.name)}</b>${it.qty>1?` ×${it.qty}`:''}<small>grab</small></div></div>`;
-  const aka=it.mods.find(m=>/^AKA /.test(m));const ms=it.mods.filter(m=>m!==aka);const p=plan(it.name,ms,it.category);const cb=cupBadge(p.cup);
+  const aka=it.mods.find(m=>/^AKA /.test(m));const ms=it.mods.filter(m=>m!==aka);const p=planForItem({...it,mods:ms},nx);const cb=cupBadge(p.cup);
   const parts=p.ingredients.length?p.ingredients:p.steps.map(s=>s[0]).filter(x=>!/^(lid|ice|pour \+ lid|dome lid|spoon|hand off)/i.test(x)).slice(0,5);
   return`<div class="nxi"><span class="sb">${esc(cb.l)}</span><div><b>${esc(it.name)}</b>${it.qty>1?` ×${it.qty}`:''}<small>${esc(parts.map(modText).join(' · '))}</small></div></div>`;}).join('');
- return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><div class="nxhead"><b class="nxcode">${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)}</span>${payBadge(nx)}</div>${items}<button class="nxgo" data-id="${esc(nx.id)}">Start this one now</button></aside>`;}
+ return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><div class="nxhead"><b class="nxcode">${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)}</span>${payBadge(nx)}${tagPickupHTML(nx,false)}</div>${items}<button class="nxgo" data-id="${esc(nx.id)}">Start this one now</button></aside>`;}
 function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
  if(!o){const t=queue.today||{};const fmt=s=>s?(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'–';const hr=t.busiestHour==null?'–':((t.busiestHour%12)||12)+(t.busiestHour<12?' am':' pm');
   m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="strip"></div><div class="items"><div class="blank">All caught up
@@ -664,12 +1099,13 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
    ${t.top&&t.top.length?`<div class="top">Top drinks today: ${t.top.map(x=>'<i>'+esc(x.name)+'</i> ×'+x.count).join(' · ')}</div>`:''}</div></div></div><div class="upnext"></div></div>`;return;}
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
- m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${payBadge(o,true)}<b class="lateb mlate">LATE</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">Done, next ticket</button></div>
+ const band=ageBand(o);
+ m.innerHTML=`<div class="nowpane"><div class="mhead ${band}"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${tagPickupHTML(o,true)}${payBadge(o,true)}<b class="lateb mlate">${RUSH_AGE?'RUSH 2m+':'LATE'}</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">✓ Bump / Done</button></div>
   <div class="prep" id="prep"></div>
   <div class="strip" id="strip">${o.items.length>1?o.items.map((it,ix)=>stripItem(it,ix)).join(''):''}</div>
-  <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck)).join('')}</div>
+  <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck,o)).join('')}</div>
   <div class="upnext"><div class="un">${nx?`Up next <b>${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)} · ${esc(summary(nx))}</span>`:'<span>Nothing after this one</span>'}</div><button class="morebelow" id="moreBelow" hidden></button></div></div>${nextPane(nx)}`;
- const finish=async()=>{if(await post('/done',o.id))delete checks[o.id];};
+ const finish=async()=>{await bumpTicket(o);};
  $('#doneBtn').onclick=()=>{const left=[...m.querySelectorAll('.items .card')].filter(c=>!c.classList.contains('ok')).length;
   if(!left){finish();return;}
   const a=$('#doneAsk');a.querySelector('h3').textContent=left+(left===1?' item':' items')+' not ticked. Done anyway?';a.hidden=false;
@@ -679,7 +1115,15 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
  m.querySelectorAll('.sitem').forEach(b=>b.onclick=()=>{const c=its.querySelector('.card[data-k="'+b.dataset.k+'"]');if(c)its.scrollTo({top:c.offsetTop-its.offsetTop-8,behavior:'smooth'});});$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
- progress(o,ck);renderPrep(o);moreBelow();const mh=m.querySelector('.mhead');mh.classList.toggle('late',queue.now-o.created>LATE_MS);mh.classList.toggle('warn',ageBand(o)==='warn');}
+ m.querySelectorAll('[data-redeem-inline]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();redeemClaimCode(b.dataset.redeemInline,b);});
+ if(TAP_BUMP){
+  m.querySelectorAll('.card:not(.grab) .chead').forEach(ch=>ch.onclick=()=>{
+   const card=ch.closest('.card'),ol=card&&card.querySelector('ol');if(!ol)return;
+   const lis=[...ol.querySelectorAll('li')],allDone=lis.every((_,j)=>!!ck[ol.dataset.k+':'+j]);
+   lis.forEach((_,j)=>{ck[ol.dataset.k+':'+j]=!allDone;});markSteps(ol,ol.dataset.k,ck);progress(o,ck);
+  });
+ }
+ progress(o,ck);renderPrep(o);moreBelow();}
 /* "N more below": counts cards whose top edge is under the visible part of the items list */
 function moreBelow(){const b=$('#moreBelow'),it=$('#make .items');if(!b||!it)return;
  if(it.scrollHeight-it.scrollTop-it.clientHeight<8){b.hidden=true;return;}
@@ -701,11 +1145,14 @@ function progress(o,ck){const cards=[...$('#make').querySelectorAll('.card')];co
 function stripItem(it,ix){const k=(it.kind==='grab'?'g':'d')+ix;const akaM=it.mods.find(m=>/^AKA /.test(m));const mods=it.mods.filter(m=>m!==akaM);
  const c=catColor(it.category);const cb=it.kind==='grab'?{l:'G'}:cupBadge(mods.find(m=>classify(m)==='size'));
  return`<button class="sitem" data-k="${k}" style="${c?`--cat:${c}`:''}"><span class="sb">${esc(cb.l)}</span><span class="sn">${esc(it.name)}${akaM?`<small>“${esc(akaM.slice(4))}”</small>`:''}</span>${it.qty>1?`<span class="sq">×${it.qty}</span>`:''}</button>`;}
-function drinkCard(it,ix,ck){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=plan(it.name,it.mods,it.category);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c);const cb=cupBadge(p.cup);
+function drinkCard(it,ix,ck,order){const akaM=it.mods.find(m=>/^AKA /.test(m));const aka=akaM?akaM.slice(4):'';if(akaM)it={...it,mods:it.mods.filter(m=>m!==akaM)};const p=planForItem(it,order);const k='d'+ix;const c=catColor(it.category)||catColor(p.recipe&&p.recipe.c)||(p.decoded?'#FFD166':'');const cb=cupBadge(p.cup);
  const chips=it.mods.map(m=>{const k=classify(m,it.category||(p.recipe&&p.recipe.c));const noM=/^(no|without|hold)\s+/i.test(m);const capBase=k==='cap'&&!UP_FLOAT.test(m);const t=noM?'no':(p.CH[norm(m)]||p.CH[norm(m)+' puree']||(k==='other'||(!capBase&&['extra','topper','boost','top','cap','serve','temp','milk'].includes(k))?'add':''));
   return`<span class="chip${t?' hot c-'+(t==='no'?'no':t.startsWith('sub')?'sub':'add'):''}">${tagHTML(t)}${esc(m)}</span>`;}).join('');
- return`<div class="card" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||'')}${p.ingredients.length?'<span class="ingw"> · '+ingList(p.ingredients)+'</span>':''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
-  ${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
+ const dec=p.decoded;
+ const redeemCode=dec&&((dec.claim&&dec.claim.code)||dec.vipCode);
+ const secretHTML=dec?`<div class="secret-banner"><div><b>${esc(dec.label)}</b><small>${esc(dec.sub||'')}</small></div>${redeemCode?`<button type="button" class="secret-redeem" data-redeem-inline="${esc(redeemCode)}">Redeem</button>`:''}</div>`:'';
+ return`<div class="card${TAP_BUMP?' tap-bump-on':''}" data-k="${k}" style="${c?`--cat:${c}`:''}">${it.qty>1?`<div class="makeqty">MAKE ${it.qty}<small>same build, ${it.qty} cups</small></div>`:''}${secretHTML}<div class="chead"><div class="cupb${p.cup?'':' none'}"><b>${esc(cb.l)}</b><small>${esc(cb.s)}</small></div><div><h2>${esc(it.name)}</h2>${aka?`<div class="aka">Call it: “${esc(aka)}”</div>`:''}<div class="cup">${esc(it.category||(p.recipe&&p.recipe.c)||(dec?'Secret Menu':''))}${p.ingredients.length?'<span class="ingw"> · '+ingList(p.ingredients)+'</span>':''}</div></div>${it.qty>1?'':`<span class="qty">×1</span>`}</div>
+  ${renderPumpPour(p.steps,cb)}${chips?`<div class="chips">${chips}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}${stepsHTML(k,p.steps)}</div>`;}
 function grabCard(it,ix,ck){const k='g'+ix;
  return`<div class="card grab${ck[k]?' ok':''}" data-k="${k}" tabindex="0"><div><div class="tag">Grab</div><h2>${esc(it.name)}</h2>${it.mods.length?`<div class="hint">${esc(it.mods.join(', '))}</div>`:''}${it.note?`<div class="note">${esc(it.note)}</div>`:''}<div class="hint">${esc(it.category||'')}</div></div><div class="big-qty">×${it.qty}</div></div>`;}
 /* ================= LOOKUP (Build Cards) ================= */
@@ -728,7 +1175,7 @@ function renderLookup(){const all=recipeList();const cats=['All',...new Set(all.
  $('#list').querySelectorAll('.pick').forEach(b=>b.onclick=()=>{lcur=b.dataset.n;lck={};renderLookup();});
  if(!d){$('#lbuild').innerHTML='';return;}
  const cupName=cups[lcup][0];const p=plan(d.n,[cupName]);
- $('#lbuild').innerHTML=`<div><h2>${esc(d.n)}</h2><p class="sub">${esc(d.c)} · ${esc(cupName)} · ${d.i.length?ingList(d.i):esc(d.note||'')}</p></div>${stepsHTML('L',p.steps)}
+ $('#lbuild').innerHTML=`<div><h2>${esc(d.n)}</h2><p class="sub">${esc(d.c)} · ${esc(cupName)} · ${d.i.length?ingList(d.i):esc(d.note||'')}</p>${renderPumpPour(p.steps,cupBadge(cupName))}</div>${stepsHTML('L',p.steps)}
   <div class="foot"><button class="ghost" id="lreset">Start over</button><span class="status" id="lstatus"></span><button class="big" id="lnext">Next drink</button></div>`;
  const ol=$('#lbuild ol');const upd=()=>{const lis=[...ol.querySelectorAll('li')];const done=lis.filter(l=>l.classList.contains('done')).length;const st=$('#lstatus');if(done===lis.length){st.textContent='Done. Hand it off.';st.classList.add('ok');}else{st.textContent=done?done+' of '+lis.length+' steps done':'Tap each step as you go';st.classList.remove('ok');}};
  wireSteps(ol,'L',lck,upd);upd();
@@ -736,8 +1183,45 @@ function renderLookup(){const all=recipeList();const cats=['All',...new Set(all.
  $('#lnext').onclick=()=>{$('#q').value='';lck={};renderLookup();$('#q').focus();};}
 $('#q').oninput=renderLookup;
 /* ================= modes, data, polling ================= */
-function setMode(m){$('#tickets').classList.toggle('on',m==='tickets');$('#lookup').classList.toggle('on',m==='lookup');$('#mTickets').setAttribute('aria-pressed',m==='tickets');$('#mLookup').setAttribute('aria-pressed',m==='lookup');if(m==='lookup')renderLookup();}
-$('#mTickets').onclick=()=>setMode('tickets');$('#mLookup').onclick=()=>setMode('lookup');
+function setMode(m){
+ $('#tickets').classList.toggle('on',m==='tickets');
+ $('#batchView').classList.toggle('on',m==='batch');
+ $('#lookup').classList.toggle('on',m==='lookup');
+ $('#mTickets').setAttribute('aria-pressed',m==='tickets');
+ $('#mBatch').setAttribute('aria-pressed',m==='batch');
+ $('#mLookup').setAttribute('aria-pressed',m==='lookup');
+ if(m==='lookup')renderLookup();
+ if(m==='batch')renderBatch();
+}
+$('#mTickets').onclick=()=>setMode('tickets');$('#mBatch').onclick=()=>setMode('batch');$('#mLookup').onclick=()=>setMode('lookup');
+$('#ageModeBtn').onclick=()=>setAgeMode(!RUSH_AGE);
+$('#tapBumpBtn').onclick=()=>setTapBump(!TAP_BUMP);
+$('#stock86Btn').onclick=()=>{$('#stockDrawer').hidden=false;renderStockDrawer();};
+$('#stockClose').onclick=()=>{$('#stockDrawer').hidden=true;};
+$('#stockDrawer').onclick=e=>{if(e.target===$('#stockDrawer'))$('#stockDrawer').hidden=true;};
+$('#stockSearch').oninput=renderStockDrawer;
+$('#claimsBtn').onclick=()=>{$('#claimsDrawer').hidden=false;renderClaimsDrawer();};
+$('#claimsClose').onclick=()=>{$('#claimsDrawer').hidden=true;};
+$('#claimsDrawer').onclick=e=>{if(e.target===$('#claimsDrawer'))$('#claimsDrawer').hidden=true;};
+$('#claimLookupForm').onsubmit=async e=>{
+ e.preventDefault();
+ const code=($('#claimInput').value||'').trim().toUpperCase();
+ const out=$('#claimLookupResult');if(!code){out.innerHTML='';return;}
+ out.innerHTML='<div class="note">Checking code '+esc(code)+'…</div>';
+ const res=await fetch('/api/kitchen/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,checkOnly:true})}).then(r=>r.json()).catch(()=>null);
+ if(res&&res.ok&&res.ticket){
+  const t=res.ticket;const sm=findSecretByName(t.drinkName)||(extras.secretMenu||SECRET_FALLBACK).find(d=>d.id===t.drinkId);
+  out.innerHTML=`<div class="claim-card"><div class="claim-card-h"><span class="claim-code">${esc(t.code)}</span><b>${esc(t.drinkName)}</b><button type="button" class="secret-redeem" id="lookupRedeemBtn">Redeem Now</button></div><small style="color:var(--sun)">${esc(t.reward||'')}</small>${sm?renderPumpPour(buildSecretSteps(sm),{l:'M',s:'24 oz'}):`<div class="note">${esc(t.build||'')}</div>`}</div>`;
+  $('#lookupRedeemBtn').onclick=()=>redeemClaimCode(t.code,$('#lookupRedeemBtn'));
+ }else{
+  out.innerHTML=`<div class="note" style="border-color:#ff6b6b">Code ${esc(code)}: ${esc((res&&(res.status||res.error))||'not found or offline')}</div>`;
+ }
+};
+$('#pinnedUndo').onclick=async()=>{
+ const id=$('#pinnedUndo').dataset.id;if(!id)return;
+ const ok=await post('/undo',id);
+ if(ok){lastBumped=lastBumped.filter(x=>x.id!==id);updatePinnedUndo();}
+};
 let audioCtx=null;document.addEventListener('pointerdown',()=>{try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();}catch(e){}},{once:true});
 let VOICE=false;try{VOICE=localStorage.getItem('tb-voice')==='1';}catch(e){}
 function setVoice(v){VOICE=v;$('#voiceBtn').setAttribute('aria-pressed',v);$('#voiceBtn').textContent=v?'Voice on':'Voice off';try{localStorage.setItem('tb-voice',v?'1':'0');}catch(e){}}
@@ -769,7 +1253,7 @@ function orderText(o){const parts=o.items.map(it=>{const sz=it.mods.find(m=>clas
 function announce(list){if(!list.length)return;const head=list.length>1?list.length+' new orders. ':'';const more=list.length>2?' And '+(list.length-2)+' more.':'';say(head+list.slice(0,2).map(orderText).join(' ')+more);}
 function ding(){try{if(!audioCtx)return;[880,1175].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.16);o.stop(audioCtx.currentTime+i*.16+.15);});}catch(e){}}
 function lateDing(){try{if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=523;g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.7);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.7);}catch(e){}}
-async function post(p,id){let st=0;try{const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});st=r.status;if(!r.ok)throw 0;}
+async function post(p,id,meta){let st=0;try{const payload=Object.assign({id},meta||{});const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});st=r.status;if(!r.ok)throw 0;}
  catch(e){if(p==='/pickedup'&&st===404){PICKED_OK=false;renderQueue();await poll();return false;}
   const what=p==='/undo'?'Undo':'Done';const el=$('#saveMsg');
   el.textContent=st===401?'Not saved: the access key is missing. Open the station from the ?k= link.':st?'Not saved (station error '+st+'). Tap '+what+' again.':'Not saved, offline. Tap '+what+' again when the Wi-Fi is back.';
@@ -783,7 +1267,7 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
   const freshOnes=queue.waiting.filter(o=>!announced.has(o.id)&&!firstLoad);if(freshOnes.length)fresh=true;
-  if(firstLoad){queue.waiting.forEach(o=>{seen.add(o.id);announced.add(o.id);if(queue.now-o.created>LATE_MS)lateSeen.add(o.id);});firstLoad=false;}
+  if(firstLoad){const th=ageThresholds();queue.waiting.forEach(o=>{seen.add(o.id);announced.add(o.id);if(queue.now-o.created>th.late)lateSeen.add(o.id);});firstLoad=false;}
   freshOnes.forEach(o=>announced.add(o.id));
   if(fresh){hideSaver();ding();setTimeout(()=>announce(freshOnes),400);if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
@@ -801,8 +1285,8 @@ setInterval(()=>{if(!saverOn&&queue.waiting.length===0&&Date.now()-lastTouch>SAV
 function tick(){const d=new Date();$('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});queue.now=Date.now();renderQueue();}
 (async()=>{try{RECIPES=(await (await fetch('/recipes.json')).json()).recipes||{};}catch(e){}
  try{loadGroups(await (await fetch('/addons.json')).json());}catch(e){}
- setVoice(VOICE);setTrain(TRAIN);if(location.hash==='#names'){SAYNAMES=true;try{localStorage.setItem('tb-say-names','1');}catch(e){}}tick();await poll();setInterval(poll,5000);setInterval(tick,15000);
- if(location.hash==='#lookup')setMode('lookup');if(location.hash==='#saver'){saverForced=true;showSaver();}
+ setVoice(VOICE);setTrain(TRAIN);setAgeMode(RUSH_AGE);setTapBump(TAP_BUMP);if(location.hash==='#names'){SAYNAMES=true;try{localStorage.setItem('tb-say-names','1');}catch(e){}}tick();await Promise.all([pollExtras(),poll()]);setInterval(poll,5000);setInterval(pollExtras,20000);setInterval(tick,5000);
+ if(location.hash==='#lookup')setMode('lookup');if(location.hash==='#batch')setMode('batch');if(location.hash==='#saver'){saverForced=true;showSaver();}
  try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}})();
 </script>
 </body>

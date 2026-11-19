@@ -45,6 +45,20 @@ const POLL_MS     = Math.max(3, parseInt(process.env.MAKE_POLL_SEC || "6", 10)) 
 const KIOSK_TYPE  = (process.env.KIOSK_ORDER_TYPE_ID || "").trim();   // Clover orderType id of the kiosk's orders (ticket release gate, ADR section 5)
 const GRAB_CATS   = new Set((process.env.GRAB_CATEGORIES || "Treats").split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
 const STATE_FILE  = path.join(__dirname, "make-state.json");
+const TB_WHERE_ORIGIN = (process.env.TB_WHERE_ORIGIN || process.env.WHERE_URL || "https://tb-where.nicholasroper.workers.dev").trim().replace(/\/where\/?$/i, "").replace(/\/+$/, "");
+const TB_SECRET       = (process.env.TB_SECRET || "").trim();
+const KIOSK_KEY       = (process.env.KIOSK_KEY || "").trim();
+const SDT_PICKUP_URL  = (process.env.SDT_PICKUP_URL || "https://saltydogtags.com/api/tags-pickup").trim();
+const CROSS_BRAND_KEY = (process.env.CROSS_BRAND_SECRET || "").trim();
+const SDT_ADMIN_TOKEN = (process.env.SDT_ADMIN_TOKEN || "").trim();
+
+const FALLBACK_SECRET_MENU = [
+  { id: "neon-rip-curl", name: "Neon Rip Curl", minScore: 600, base: "Sprite", syrups: "2p Blue Raspberry, 1p Coconut, 1p Fresh Lime", cream: "1oz Coconut Cream", garnish: "Fresh Lime Wedge", build: "Sprite · 2p Blue Raz, 1p Coconut, 1p Lime · 1oz Coconut Cream · Lime Wedge" },
+  { id: "80s-sunset-cream", name: "80s Sunset Cream", minScore: 900, base: "Dr Pepper", syrups: "2p Peach, 1p Raspberry, 1p Vanilla", cream: "1oz Sweet Cream", garnish: "Maraschino Cherry", build: "Dr Pepper · 2p Peach, 1p Raz, 1p Vanilla · 1oz Sweet Cream · Cherry" },
+  { id: "synthwave-shark-bite", name: "Synthwave Shark Bite", minScore: 1200, base: "Mountain Dew", syrups: "2p Mango Purée, 1p Strawberry Purée, 1p Passion Fruit", cream: "Splash Coconut Cream", garnish: "Passion Fruit Popping Pearls", build: "Mtn Dew · 2p Mango, 1p Strawberry, 1p Passion Fruit · Splash Coconut Cream · Popping Pearls" },
+  { id: "turbo-beach-bum", name: "Turbo Beach Bum", minScore: 1500, base: "Energy Base", syrups: "2p Pineapple, 1p Blue Raspberry, 1p Coconut", cream: "1oz Vanilla Cream", garnish: "Fresh Lime Squeeze", build: "Energy · 2p Pineapple, 1p Blue Raz, 1p Coconut · 1oz Vanilla Cream · Fresh Lime" },
+  { id: "velvet-palm", name: "Velvet Palm", minScore: 1800, base: "Root Beer", syrups: "2p Butterscotch, 1p Toasted Marshmallow", cream: "1oz Vanilla Cream", garnish: "Whipped Cream Swirl", build: "Root Beer · 2p Butterscotch, 1p Marshmallow · 1oz Vanilla Cream · Whip Swirl" },
+];
 
 if (!TOKEN || !MERCHANT_ID) {
   console.error("Missing CLOVER_API_TOKEN or CLOVER_MERCHANT_ID in kiosk-config.env.");
@@ -91,14 +105,100 @@ async function cloverGet(p) {
   return r.json();
 }
 
-// ---- local done-state (never leaves this PC) ----
-let state = { done: {}, picked: {} };   // orderId -> epoch ms when marked done / handed to the customer ("Picked up")
-try { state = JSON.parse(fs.readFileSync(STATE_FILE, "utf8")); if (!state.done) state.done = {}; if (!state.picked) state.picked = {}; } catch {}
+// ---- local done-state & 86 stock (never leaves this PC except voluntary tb-where sync) ----
+let state = { done: {}, picked: {}, stock86: { items: [], ingredients: [], updatedAt: null } };
+try {
+  state = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  if (!state.done) state.done = {};
+  if (!state.picked) state.picked = {};
+  if (!state.stock86 || !Array.isArray(state.stock86.items)) state.stock86 = { items: [], ingredients: [], updatedAt: null };
+} catch {}
 function saveState() {
   const cutoff = Date.now() - 48 * 3600000;
   for (const [id, t] of Object.entries(state.done)) if (t < cutoff) delete state.done[id];
   for (const [id, t] of Object.entries(state.picked)) if (t < cutoff) delete state.picked[id];
   try { fs.writeFileSync(STATE_FILE + ".tmp", JSON.stringify(state)); fs.renameSync(STATE_FILE + ".tmp", STATE_FILE); } catch (e) { console.error("state save failed:", e.message); }
+}
+
+// ---- Kitchen Board V2 sync helpers (worker-tb-where + Salty Dog Tags pickup feed) ----
+const extrasCache = { data: null, at: 0, pickups: [], pickupsAt: 0 };
+function whereHeaders(hasBody) {
+  const h = { Accept: "application/json" };
+  if (hasBody) h["Content-Type"] = "application/json";
+  if (TB_SECRET) h["Authorization"] = "Bearer " + TB_SECRET;
+  if (KIOSK_KEY) h["X-Kiosk-Key"] = KIOSK_KEY;
+  return h;
+}
+async function fetchJsonTimeout(url, opts, ms) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms || 3000);
+  try {
+    const r = await fetch(url, Object.assign({}, opts || {}, { signal: ctl.signal }));
+    const data = await r.json().catch(() => null);
+    return { ok: r.ok, status: r.status, data };
+  } catch { return { ok: false, status: 0, data: null }; }
+  finally { clearTimeout(t); }
+}
+const normName = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function matchTagPickup(order, pickups) {
+  const note = String((order && (order.orderNote || order.note)) || "");
+  const explicit = note.match(/\b(SDT-[A-Z0-9]{4,10}|SD-[A-Z0-9]{3,10})\b/i);
+  const vipM = note.match(/\b(VIP-[A-Z2-9]{4,8})\b/i);
+  const list = Array.isArray(pickups) ? pickups : [];
+  if (explicit) {
+    const code = explicit[1].toUpperCase();
+    return list.find(p => String(p.id || "").toUpperCase() === code) || { id: code, customerName: order.customer || "", dogNames: [], ready: true, vipCode: vipM ? vipM[1].toUpperCase() : null };
+  }
+  if (vipM) {
+    const vc = vipM[1].toUpperCase();
+    const hit = list.find(p => String(p.vipCode || "").toUpperCase() === vc);
+    if (hit) return hit;
+  }
+  const who = normName(order && order.customer);
+  if (!who || who.length < 3 || !list.length) return null;
+  const first = who.split(" ")[0];
+  return list.find(p => {
+    const pn = normName(p.customerName);
+    if (!pn) return false;
+    return pn === who || (who.includes(" ") && pn.startsWith(who)) || (first.length >= 4 && pn.split(" ")[0] === first && who.split(" ").length > 1 && pn.split(" ")[1] && pn.split(" ")[1][0] === who.split(" ")[1][0]);
+  }) || null;
+}
+async function refreshPickupTags() {
+  const now = Date.now();
+  if (now - extrasCache.pickupsAt < 60000 && extrasCache.pickupsAt > 0) return extrasCache.pickups;
+  if (!CROSS_BRAND_KEY && !SDT_ADMIN_TOKEN) return [];
+  const headers = CROSS_BRAND_KEY ? { Accept: "application/json", "X-Cross-Brand-Key": CROSS_BRAND_KEY } : { Accept: "application/json", Authorization: "Bearer " + SDT_ADMIN_TOKEN };
+  const r = await fetchJsonTimeout(SDT_PICKUP_URL, { headers }, 3000);
+  if (r.ok && r.data && Array.isArray(r.data.pickups)) { extrasCache.pickups = r.data.pickups; extrasCache.pickupsAt = now; }
+  return extrasCache.pickups;
+}
+async function getKitchenExtras() {
+  const now = Date.now();
+  if (extrasCache.data && now - extrasCache.at < 15000) return extrasCache.data;
+  const authed = !!(TB_SECRET || KIOSK_KEY);
+  const [smR, clR, drR, stR, pickups] = await Promise.all([
+    authed ? fetchJsonTimeout(TB_WHERE_ORIGIN + "/secret-menu", { headers: { Accept: "application/json" } }, 2500) : Promise.resolve({ ok: false }),
+    authed ? fetchJsonTimeout(TB_WHERE_ORIGIN + "/kitchen/claims", { headers: whereHeaders(false) }, 2500) : Promise.resolve({ ok: false }),
+    authed ? fetchJsonTimeout(TB_WHERE_ORIGIN + "/kitchen/drops", { headers: whereHeaders(false) }, 2500) : Promise.resolve({ ok: false }),
+    authed ? fetchJsonTimeout(TB_WHERE_ORIGIN + "/stock", { headers: { Accept: "application/json" } }, 2500) : Promise.resolve({ ok: false }),
+    refreshPickupTags(),
+  ]);
+  const secretMenu = (smR.ok && smR.data && Array.isArray(smR.data.drinks) && smR.data.drinks.length) ? smR.data.drinks : FALLBACK_SECRET_MENU;
+  const claims = (clR.ok && clR.data && Array.isArray(clR.data.claims)) ? clR.data.claims.filter(c => !c.redeemed).slice(0, 24) : [];
+  const drops = (drR.ok && drR.data && Array.isArray(drR.data.drops)) ? drR.data.drops.slice(0, 12) : [];
+  const remoteSt = (stR.ok && stR.data && Array.isArray(stR.data.items)) ? stR.data : state.stock86;
+  const stock = (state.stock86.updatedAt || 0) >= (remoteSt.updatedAt || 0) ? state.stock86 : remoteSt;
+  const out = { secretMenu, claims, drops, stock, pickups, syncedAt: now };
+  extrasCache.data = out; extrasCache.at = now;
+  return out;
+}
+function fireOrderReady(order) {
+  if ((!TB_SECRET && !KIOSK_KEY) || !order) return;
+  fetchJsonTimeout(TB_WHERE_ORIGIN + "/kitchen/ready", {
+    method: "POST",
+    headers: whereHeaders(true),
+    body: JSON.stringify({ id: order.id, ticket: order.ticket || order.seq || order.id, customer: order.customer || "", source: order.source || "", tagId: order.tagPickup ? order.tagPickup.id : null }),
+  }, 2500).catch(() => {});
 }
 
 // ---- catalog cache: item id -> { name, category } ----
@@ -238,11 +338,15 @@ async function refreshQueue() {
       const lines = (((o.lineItems || {}).elements) || []).filter(li => !li.exchanged && !li.refunded);
       const items = groupLines(lines.map(normalizeLine));
       const who = parseCustomer(o);
-      orders.push({
+      const ord = {
         id: o.id, ticket: String(seqs.get(o.id)), seq: seqs.get(o.id), ref: o.id.slice(-4).toUpperCase(), created: o.createdTime, state: o.state || "",
         paid: gate.paid !== undefined ? gate.paid : (o.paymentState || "").toUpperCase() === "PAID", badge: gate.badge || null, customer: who.name, source: who.source,
+        orderNote: String(o.note || "").slice(0, 160),
         total: o.total || 0, items, done: state.done[o.id] || 0, picked: state.picked[o.id] || 0
-      });
+      };
+      const tp = matchTagPickup(ord, extrasCache.pickups);
+      if (tp) ord.tagPickup = tp;
+      orders.push(ord);
     }
     queue = { orders, at: Date.now(), error: null };
   } catch (e) { queue = { ...queue, error: e.message, at: Date.now() }; console.error("queue refresh failed:", e.message); }
@@ -267,8 +371,44 @@ async function handle(req, res) {
     return sendFile(res, fp);
   }
   if (req.method === "GET" && p === "/health") return sendJSON(res, 200, { ok: true, orders: queue.orders.length, catalogItems: Object.keys(catalog.byId).length, lastPoll: queue.at, error: queue.error, keyRequired: !!STATION_KEY, bind: BIND });
-  if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup") {
+  if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup" || p.startsWith("/api/kitchen/") || p === "/api/stock" || p === "/api/stock/toggle") {
     if (!keyOk(req, url)) return sendJSON(res, 401, { error: "key required" });
+  }
+  if (req.method === "GET" && p === "/api/kitchen/extras") return sendJSON(res, 200, await getKitchenExtras());
+  if (req.method === "GET" && p === "/api/stock") return sendJSON(res, 200, state.stock86);
+  if (req.method === "POST" && (p === "/api/stock/toggle" || p === "/api/kitchen/redeem" || p === "/api/kitchen/drop-complete")) {
+    if (!/^application\/json\b/i.test(String(req.headers["content-type"] || ""))) return sendJSON(res, 415, { error: "json only" });
+    let body = {};
+    try { body = JSON.parse(await readBody(req) || "{}"); } catch { return sendJSON(res, 400, { error: "bad json" }); }
+    if (p === "/api/stock/toggle") {
+      const kind = body.kind === "ingredient" ? "ingredients" : "items";
+      const name = String(body.name || "").trim().toLowerCase().replace(/[^a-z0-9 '&-]/g, "").slice(0, 60);
+      if (!name) return sendJSON(res, 400, { error: "bad-name" });
+      const set = new Set(state.stock86[kind] || []);
+      let out;
+      if (typeof body.out === "boolean") { if (body.out) set.add(name); else set.delete(name); out = body.out; }
+      else { if (set.has(name)) { set.delete(name); out = false; } else { set.add(name); out = true; } }
+      state.stock86[kind] = [...set].sort().slice(0, 120);
+      state.stock86.updatedAt = Date.now();
+      saveState();
+      let synced = false;
+      if (TB_SECRET || KIOSK_KEY) {
+        const r = await fetchJsonTimeout(TB_WHERE_ORIGIN + "/stock/toggle", {
+          method: "POST", headers: whereHeaders(true), body: JSON.stringify({ kind: kind === "ingredients" ? "ingredient" : "item", name, out }),
+        }, 3500);
+        if (r.ok && r.data && r.data.stock) { state.stock86 = r.data.stock; saveState(); synced = true; }
+      }
+      extrasCache.data = null;
+      return sendJSON(res, 200, { ok: true, kind, name, out, synced, stock: state.stock86 });
+    }
+    if (!TB_SECRET && !KIOSK_KEY) return sendJSON(res, 503, { error: "tb-where-not-configured" });
+    const target = p === "/api/kitchen/redeem" ? "/kitchen/claims/redeem" : "/kitchen/drops/complete";
+    const r = await fetchJsonTimeout(TB_WHERE_ORIGIN + target, {
+      method: "POST", headers: whereHeaders(true),
+      body: JSON.stringify(p === "/api/kitchen/redeem" ? { code: String(body.code || "").trim().toUpperCase(), by: "station", checkOnly: body.checkOnly === true } : { code: String(body.code || "").trim().toUpperCase() }),
+    }, 3500);
+    extrasCache.data = null;
+    return sendJSON(res, r.status || 502, r.data || { error: "relay-failed" });
   }
   if (req.method === "GET" && p === "/queue") {
     const now = Date.now();
@@ -302,6 +442,7 @@ async function handle(req, res) {
     else { if (!state.done[id]) return sendJSON(res, 409, { error: "not made yet" }); state.picked[id] = Date.now(); }
     saveState();
     const o = queue.orders.find(x => x.id === id); if (o) { o.done = state.done[id] || 0; o.picked = state.picked[id] || 0; }
+    if (p === "/done") fireOrderReady(o || { id, ticket: body.ticket || id.slice(-4).toUpperCase(), customer: body.customer || "", source: body.source || "", tagPickup: body.tagId ? { id: body.tagId } : null });
     return sendJSON(res, 200, { ok: true, id, done: !!state.done[id], picked: !!state.picked[id] });
   }
   send(res, 404, "Not found");

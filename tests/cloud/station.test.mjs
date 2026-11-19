@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import worker from "../../cloud/src/index.js";
 import { _resetStateMemo, splitLine, authFailure, loadState, markDone, markPicked } from "../../cloud/src/ticket.js";
+import { matchTagPickup } from "../../cloud/src/kitchen-sync.js";
 
 function makeKV(init = {}) {
   const m = new Map(Object.entries(init).map(([k, v]) => [k, { v: typeof v === "string" ? v : JSON.stringify(v) }]));
@@ -141,5 +142,56 @@ orders[148].note = "Sam — Kiosk order #777";
   assert.deepEqual(splitLine({ name: "X · A, B, Z", note: "MODS: A | B" }).mods, ["A", "B", "Z"], "a name-only add-on is kept if the note was cut short");
   assert.equal(splitLine({ name: "X", note: "KQ-ABCD1234 · Kiosk" }).note, "", "phone-pay tag is not a drink note");
   assert.equal(splitLine({ name: "X", note: "no ice please" }).note, "no ice please");
+}
+
+// ---- Kitchen Board V2: 86 stock toggle + Order Ahead control merge + extras + dual-pickup + Order Up webhook ----
+{
+  const e = env();
+  assert.equal((await call(e, "/api/kitchen/extras")).status, 401, "extras requires STATION_KEY");
+  assert.equal((await call(e, "/api/stock/toggle", { method: "POST", headers: KEY, body: { kind: "ingredient", name: "Coconut Cream", out: true } })).status, 200);
+  const stRes = await (await call(e, "/api/stock", { headers: KEY })).json();
+  assert.ok(stRes.ingredients.includes("coconut cream"), "86 ingredient persisted to STATE KV");
+  const exRes = await (await call(e, "/api/kitchen/extras", { headers: KEY })).json();
+  assert.ok(Array.isArray(exRes.secretMenu) && exRes.secretMenu.length >= 5, "secret menu fallback always present");
+  assert.ok(exRes.stock.ingredients.includes("coconut cream"), "extras returns live 86 stock");
+  const ctlRes = await (await call(e, "/api/control")).json();
+  assert.ok(ctlRes.soldOutOptions.includes("coconut cream"), "Order Ahead /api/control merges live Kitchen Board 86 overlay");
+
+  // Dual-pickup matching (explicit #SDT- note, VIP code, and customer name)
+  const pickups = [
+    { id: "SDT-9A4K", customerName: "Sarah Miller", dogNames: ["Biscuit"], ready: true, vipCode: "VIP-7M2Q" },
+  ];
+  assert.equal(matchTagPickup({ customer: "Walk-up", orderNote: "Pickup #SDT-9A4K" }, pickups).id, "SDT-9A4K");
+  assert.equal(matchTagPickup({ customer: "Walk-up", orderNote: "Pass VIP-7M2Q" }, pickups).id, "SDT-9A4K");
+  assert.equal(matchTagPickup({ customer: "Sarah M.", orderNote: "" }, pickups).id, "SDT-9A4K");
+  assert.equal(matchTagPickup({ customer: "Someone Else", orderNote: "" }, pickups), null);
+
+  // Order Up webhook fires non-blocking when TB_SECRET is configured
+  const prevFetch = globalThis.fetch;
+  let readyPosted = null;
+  globalThis.fetch = async (url, init) => {
+    const u = new URL(url);
+    if (u.pathname === "/kitchen/ready") {
+      readyPosted = JSON.parse(init.body);
+      return new Response(JSON.stringify({ ok: true }));
+    }
+    return prevFetch(url, init);
+  };
+  const eHook = env({ TB_SECRET: "tb-sec-123", TB_WHERE_ORIGIN: "https://tb-where.test" });
+  const waited = [];
+  const res = await worker.fetch(
+    new Request("https://station.test/done", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...KEY },
+      body: JSON.stringify({ id: "ORD00145", ticket: "145", customer: "Sarah Miller", source: "Kiosk", tagId: "SDT-9A4K" }),
+    }),
+    eHook,
+    { waitUntil: p => waited.push(p) }
+  );
+  assert.equal(res.status, 200);
+  await Promise.all(waited);
+  assert.equal(readyPosted.ticket, "246");
+  assert.equal(readyPosted.tagId, "SDT-9A4K");
+  globalThis.fetch = prevFetch;
 }
 console.log("station worker: ok");

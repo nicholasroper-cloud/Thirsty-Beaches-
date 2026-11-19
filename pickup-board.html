@@ -110,7 +110,9 @@ h2{white-space:nowrap}
 #wait.n32 .wait .code{font-size:2.2rem}
 #wait.n32 .wait{padding:6px 4px}
 .wait.old{border-color:var(--sun)}
-@media (max-width:900px){#wait{grid-template-columns:repeat(3,minmax(0,1fr))}.wait .code{font-size:2.4rem}}
+.ready .tagpick{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:4px 14px;border-radius:10px;background:rgba(255,209,102,.2);border:2px solid var(--sun);color:var(--sun);font-family:var(--mono);font-size:1.25rem;letter-spacing:.06em}
+.ready .tagpick svg{width:1.1em;height:1.1em;flex:none;fill:var(--sun)}
+@media (max-width:900px){#wait{grid-template-columns:repeat(3,minmax(0,1fr))}.wait .code{font-size:2.4rem}.ready .tagpick{font-size:.9rem;padding:2px 8px}}
 </style>
 </head>
 <body>
@@ -167,7 +169,7 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   const newest=ready.reduce((a,o)=>!a||(o.done||0)>(a.done||0)?o:a,null),newId=newest&&q.now-(newest.done||0)<60000?newest.id:null;
   const more=(id,n,w)=>{const e=$(id);e.hidden=!(n>0);e.textContent='+'+n+' more '+w;};
   more('#moreReady',q.ready.length-ready.length,'ready');
-  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(shortName(o.customer))}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
+  $('#ready').innerHTML=ready.length?ready.map(o=>`<div class="ready${!seenReady.has(o.id)&&!first?' fresh':''}${o.id===newId?' newest':''}"><div class="code">${esc(o.ticket)}</div><div class="who">${esc(shortName(o.customer))}${o.tagPickup?`<span class="tagpick"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.5" cy="8.5" r="2.2"/><circle cx="10.5" cy="5.5" r="2.2"/><circle cx="14.8" cy="5.5" r="2.2"/><circle cx="18.5" cy="8.8" r="2.2"/><path d="M12 10.5c-3.2 0-5.8 2.8-5.8 5.4 0 1.8 1.4 3.1 3.3 3.1 1 0 1.8-.4 2.5-.4s1.5.4 2.5.4c1.9 0 3.3-1.3 3.3-3.1 0-2.6-2.6-5.4-5.8-5.4z"/></svg>+ SALTY DOG TAG #${esc(o.tagPickup.id)}</span>`:''}</div></div>`).join(''):`<div class="empty">Nothing ready yet. Keep an eye here.</div>`;
   const wl=$('#wait');wl.className='list'+(wait.length>32?' n32':wait.length>20?' n20':'');
   wl.innerHTML=wait.length?wait.map(o=>`<div class="wait${q.now-o.created>8*60000?' old':''}"><div class="code">${esc(o.ticket)}</div></div>`).join(''):`<div class="empty" style="grid-column:1/-1">All caught up.</div>`;
   for(const o of ready){if(!seenReady.has(o.id)&&!first)say(persona().up+'. Number '+o.ticket+(SAYNAMES&&o.customer?', for '+shortName(o.customer):'')+'.');seenReady.add(o.id);}
