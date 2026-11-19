@@ -126,6 +126,8 @@
     const resultDesc = $('resultDesc');
     const claimPill = $('claimPill');
     const claimCodeEl = $('claimCode');
+    const winActions = $('winActions');
+    const winTwo = $('winTwo');
     const barkerMsg = $('barkerMsg');
     const personaBadge = $('personaBadge');
 
@@ -178,6 +180,7 @@
       audio.recordSpinForAutoRotate();
       syncPersonaUI();
       claimPill.hidden = true;
+      if (winActions) winActions.hidden = true;
       resultBox.classList.remove('is-prize');
       [r1, r2, r3].forEach((el) => { el.classList.remove('is-win'); el.classList.add('is-spinning'); });
 
@@ -219,7 +222,7 @@
         audio.playSodaFizz();
         if (outcome.win === true && /^[A-Z2-9]{4}$/.test(String(outcome.code))) {
           const t = outcome.ticket || {};
-          const reward = String(t.reward || 'Boardwalk Prize');
+          const reward = String(outcome.label || t.reward || 'Boardwalk Prize');     // the prize itself (the server's fixed label)
           r3Val.textContent = reward.toUpperCase();
           r3Sub.textContent = 'CODE ' + outcome.code;
           r3.classList.add('is-win');
@@ -232,7 +235,8 @@
           document.body.classList.add('is-flash');
           setTimeout(() => document.body.classList.remove('is-flash'), 2100);
           resultTitle.textContent = (outcome.mega === true ? 'MEGA JACKPOT! ' : 'WINNER! ') + reward;
-          resultDesc.textContent = (t.drinkName ? t.drinkName + '. ' : '') + `Custom Build: ${finalExample} · ${finalFlavor}. Show claim code ${outcome.code} at the trailer window!`;
+          resultDesc.textContent = (t.drinkName ? t.drinkName + '. ' : '') + `Custom Build: ${finalExample} · ${finalFlavor}. Use it on your order, or show claim code ${outcome.code} at the trailer window!`;
+          if (winActions) { winTwo.textContent = 'Using the other screen? Your prize is waiting on the order screen.'; winActions.hidden = false; watchPending(outcome.code); }
           audio.playTrigger(typeof outcome.trigger === 'string' ? outcome.trigger : 'prize_win');
         } else if (outcome.thanks === true) {
           r3Val.textContent = 'THANKS FOR PLAYING';
@@ -252,6 +256,25 @@
         syncPersonaUI();
       }, 85);
     });
+
+    /* While a win is on screen, follow the kiosk's pending prize: once it is on an order, declined or past its 15 minutes, say so
+       (the code itself still works at the window). Read-only: this page never sends a prize anywhere. */
+    let pendingTimer = null;
+    function watchPending(code) {
+      clearInterval(pendingTimer);
+      pendingTimer = setInterval(async () => {
+        if (!winActions || winActions.hidden) { clearInterval(pendingTimer); return; }
+        try {
+          const r = await fetch('/api/arcade/pending', { cache: 'no-store' });
+          const d = await r.json();
+          if (!d || d.pending) return;
+          clearInterval(pendingTimer);
+          const btn = $('orderNowBtn');
+          if (btn) btn.hidden = true;
+          winTwo.textContent = 'Your prize is on an order, or the 15 minutes ran out. If you still need it, show code ' + code + ' at the window.';
+        } catch (e) { /* offline: leave the button */ }
+      }, 8000);
+    }
 
     /* ---------- Voice barker clips (staff demo buttons only; there is no camera and no automatic trigger) ---------- */
     let lastBarkAt = 0;

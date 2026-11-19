@@ -67,6 +67,14 @@ let passed = 0; const ok = (c, m) => { assert.ok(c, m); passed++; }; const eq = 
   r = await call({ code: "K7QD" }); eq(r.body.status, "used", "second redeem is used");
 
   reset();
+  r = await call({ code: "K7QD", order: "10<4>" });                      // an arcade prize honoured on kitchen ticket 104
+  eq([r.body.ok, calls[0].order], [true, "104"], "cloud: the ticket number rides to the Worker, sanitised");
+  reset();
+  r = await call({ code: "K7QD" }); ok(!("order" in calls[0]), "cloud: no order field when none was sent");
+  reset();
+  r = await call({ code: "VIP-ABCD", order: "104" }); ok(!("order" in calls[0]), "cloud: a VIP pass never carries an order field");
+
+  reset();
   r = await call({ code: "VIP-ABCD" });                                  // the pass is in the signed SDT feed: the relay can prove it
   eq([r.status, r.body.ok, r.body.status], [200, true, "redeemed"], "VIP in the SDT feed redeems, no 403");
   eq(calls[0].sig, hmac12(CB, "VIP-ABCD"), "the relay sent the signature the Worker requires");
@@ -114,6 +122,13 @@ let passed = 0; const ok = (c, m) => { assert.ok(c, m); passed++; }; const eq = 
     reset();
     let r = await s.post({ code: "k7qd" });
     eq([r.status, r.body.ok, r.body.status], [200, true, "redeemed"], "local: 4-char claim redeems");
+    reset();
+    r = await s.post({ code: "K7QD", order: "10<4>" });
+    eq([r.body.ok, calls[0].order], [true, "104"], "local: the ticket number rides to the Worker, sanitised");
+    reset();
+    r = await s.post({ code: "K7QD" }); ok(!("order" in calls[0]), "local: no order field when none was sent");
+    reset();
+    r = await s.post({ code: "VIP-ABCD", order: "104" }); ok(!("order" in calls[0]), "local: a VIP pass never carries an order field");
     reset();
     r = await s.post({ code: "VIP-ABCD" });
     eq([r.status, r.body.ok, r.body.status], [200, true, "redeemed"], "local: VIP in the SDT feed redeems, no 403");

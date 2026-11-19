@@ -344,13 +344,15 @@ let arcade;
 try {
   arcade = require("./arcade-routes").createArcade({
     tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
+    clover: { get: cloverGet, post: cloverPost },          // only used to append the prize tag to a kiosk order's note (see attachToOrder)
     log: m => console.log(m),
   });
 } catch (e) {
   console.warn("arcade-routes.js could not load, the arcade will show no prize codes: " + e.message);
   const off = { status: 503, body: { ok: false, error: "arcade config unavailable" } };
   arcade = { getConfig: () => ({ personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: [], updatedAt: null }),
-    saveConfig: () => off, spin: async () => ({ ok: true, prizeId: "standard", win: false, thanks: true }), touch: async () => {}, refill: async () => {}, refillIfActive: async () => {}, prizesOn: () => false };
+    saveConfig: () => off, spin: async () => ({ ok: true, prizeId: "standard", win: false, thanks: true }), touch: async () => {}, refill: async () => {}, refillIfActive: async () => {}, prizesOn: () => false,
+    getPending: () => null, dismissPending: () => ({ ok: true, dismissed: false }), attachToOrder: async () => ({ status: 200, body: { ok: false, error: "no-pending" } }) };
 }
 const arcadeSpinLimiter = lib.makeRateLimiter(20, 60000, undefined);   // 20 spins a minute on this one kiosk
 
@@ -785,7 +787,7 @@ const versionTag = () => (appState.screenEpoch ? `${CURRENT_VERSION}.${appState.
    A restart (code update, pay setting change, remote restart command) only happens when no
    order/payment/AI request is in flight and nothing customer-facing has happened for IDLE_MS.
    The supervisor brings the server back in ~1-2 s; the page itself is not reloaded. */
-const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin"]);
+const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin", "/api/arcade/pending/attach"]);
 const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) || 120000);
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
@@ -1232,6 +1234,23 @@ const server = http.createServer(async (req, res) => {
     await readBody(req);
     try { return sendJSON(res, 200, await arcade.spin()); }
     catch (e) { console.error("arcade spin error:", e.message); return sendJSON(res, 200, { ok: true, prizeId: "standard", win: false, thanks: true }); }
+  }
+
+  // ---- the arcade win riding an order: read, decline, attach (loopback, same-origin, JSON-only for the POSTs: lib.requestProblem above) ----
+  if (req.method === "GET" && pathname === "/api/arcade/pending") {
+    res.setHeader("Cache-Control", "no-store");
+    return sendJSON(res, 200, { ok: true, pending: arcade.getPending() });
+  }
+  if (req.method === "POST" && pathname === "/api/arcade/pending/dismiss") {
+    await readBody(req);                                  // the body is never read for a prize: dismissing takes no input
+    return sendJSON(res, 200, arcade.dismissPending());
+  }
+  if (req.method === "POST" && pathname === "/api/arcade/pending/attach") {
+    let body = null; try { body = JSON.parse((await readBody(req)) || "{}"); } catch {}
+    try {
+      const out = await arcade.attachToOrder(body && typeof body === "object" ? body.orderId : "");   // ONLY orderId is read from the page
+      return sendJSON(res, out.status, out.body);
+    } catch (e) { console.error("arcade attach error:", e.message); return sendJSON(res, 200, { ok: false, error: "attach-failed" }); }
   }
 
   send(res, 404, "Not found");

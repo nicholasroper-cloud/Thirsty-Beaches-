@@ -370,7 +370,7 @@ test('REAL kiosk server: /arcade is served without a camera, the config is staff
   assert.equal((await request(port, 'GET', '/kiosk/boardwalk-slots.js')).status, 200);
   assert.notEqual((await request(port, 'GET', '/kiosk/..%2fkiosk-server.js')).status, 200);
   assert.ok([403, 404].includes((await request(port, 'GET', '/kiosk/')).status));
-  assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'drink-kiosk.html'), 'utf8'), /\/arcade/, 'no link from the ordering screen in this release');
+  assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'drink-kiosk.html'), 'utf8'), /(?<!\/api)\/arcade(?![\w-])/, 'no link from the ordering screen to the arcade page (the page only reads /api/arcade/pending)');
 
   // E: a locked file answers an error and the server keeps running
   const locked = await request(port, 'GET', '/kiosk/locked.txt');

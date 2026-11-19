@@ -182,7 +182,10 @@ async function buildRedeemRequest(body) {
   const clean = String((body && body.code) || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
   const vip = VIP_RE.exec(clean);
   const base = { by: "station", checkOnly: !!(body && body.checkOnly === true) };
-  if (!vip) return { send: { code: clean, ...base } };
+  if (!vip) {
+    const ord = String((body && body.order) || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);   // the kitchen ticket an arcade prize was honoured on
+    return { send: { code: clean, ...base, ...(ord ? { order: ord } : {}) } };
+  }
   const code = "VIP-" + vip[1];
   const typedSig = String((body && body.sig) || "").trim().toLowerCase();
   let sig = /^[0-9a-f]{12}$/.test(typedSig) ? typedSig : "";

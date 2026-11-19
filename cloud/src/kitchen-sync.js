@@ -178,6 +178,8 @@ export async function redeemKitchenClaim(env, body) {
   const clean = raw.replace(/[^A-Z0-9-]/g, "");
   const vip = VIP_RE.exec(clean);
   const payload = { code: vip ? "VIP-" + vip[1] : raw, by: "station", checkOnly: body.checkOnly === true };
+  const ord = String(body.order || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);   // the kitchen ticket an arcade prize was honoured on
+  if (ord && !vip) payload.order = ord;
   if (vip) {
     const code = payload.code;
     const typedSig = String(body.sig || "").trim().toLowerCase();

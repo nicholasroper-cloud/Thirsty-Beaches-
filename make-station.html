@@ -390,6 +390,14 @@ body{font-synthesis:none}
 .mhead{flex-wrap:wrap}
 .mhead .paybadge{order:20;flex:1 0 100%;justify-content:center;white-space:normal;font-size:40px;padding:6px 18px;text-align:center}
 .nxhead .paybadge{font-size:32px}
+/* ARCADE WIN: the prize the kiosk attached to this ticket (the Worker-issued claim code). Distinct from PAID/COLLECT/CHECK: cyan fill, dashed ring, star. Crew honour it; tap to redeem. */
+.arcbadge{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--display);font-weight:400;background:#7cf2ff;color:#08011c;border-radius:12px;padding:4px 16px;letter-spacing:.04em;line-height:1.15;font-size:30px;max-width:100%;text-align:center;border:0;cursor:default;box-shadow:inset 0 0 0 4px #08011c,0 0 0 3px #ff3cac}
+.arcbadge small{font-family:inherit;font-size:.5em;letter-spacing:.06em;opacity:.9}
+.arcbadge.retry{background:#ffd166}
+.arcbadge.done{background:#2a1a55;color:#7cf2ff;box-shadow:inset 0 0 0 3px #7cf2ff}
+.arcbadge.head{order:21;flex:1 0 100%;font-size:36px;padding:8px 18px;cursor:pointer;min-height:64px}
+.tk .arcbadge{font-size:26px;margin-top:4px;padding:2px 12px}
+.nxhead .arcbadge{font-size:26px;margin-top:4px}
 /* age bands: thick left border (yellow past 4 min, red past 8) instead of one saturating red */
 .tk{border-left-width:14px;border-left-color:var(--line)}
 .tk.warn{border-left-color:#ffd166}
@@ -624,7 +632,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const CAT_COLOR={"floats":"#a07bff","dirty sodas":"#ff6f9c","new waves":"#28cdff","energy":"#ffb300","lemonades":"#ffcf33","italian sodas":"#ff86d6","soft serve":"#46e9c4","coffee":"#dcab73","beach babies":"#8fe0ff","treats":"#ff5ec7","seasonal":"#ff7a59","refreshers":"#5ee0a0","secret":"#cda44e"};
-const ING=[["diet dr pepper","#5a2a1a"],["dr pepper","#7a3b26"],["black cherry","#5c0a2a"],["diet coke","#2a1a12"],["coke","#3a2418"],["coca","#3a2418"],["pepsi","#1d3b7a"],["sprite zero","#a8d86b"],["sprite","#b9e86b"],["mountain dew","#c8f05a"],["mtn dew","#c8f05a"],["root beer","#5a2e14"],["cream soda","#e8c88a"],["big red","#e03a3a"],["fanta","#ff9e5e"],["orange soda","#ff9e5e"],["squirt","#d7f0a0"],["fresca","#d8ecff"],["ginger ale","#f3e3a0"],["tonic","#d8ecff"],["sparkling water","#cfefff"],["coconut water","#e8fff8"],["strawberry lemonade","#ff9adf"],["lemonade","#fff3b0"],["red bull","#7fd8ff"],["swig energy","#7fd8ff"],["energy","#7fd8ff"],["monster","#3be08a"],["alani","#ff9adf"],["espresso","#3a2418"],["cold brew","#3a2418"],["coffee","#5a3a22"],["hot chocolate","#6b3a2a"],["chocolate","#6b3a2a"],["milk","#fff6e8"],["half & half","#ffffff"],["heavy cream","#ffffff"],["cream","#fff6e8"],["cold foam","#fff6e8"],["whipped","#ffffff"],["dole whip","#ffe066"],["soft serve","#fff6e8"],["twist","#ffe066"],["protein","#f0f0f0"],["coconut","#f7f2e6"],["vanilla","#ffd166"],["blue raspberry","#4aa8ff"],["raspberry","#d66f8a"],["cherry","#c21a8f"],["peach","#ffb37a"],["mango","#ffb000"],["pineapple","#ffe066"],["strawberr","#ff6b6b"],["lime","#9be36b"],["lemon","#fff3b0"],["orange","#ff9e5e"],["caramel","#c47a3a"],["butterscotch","#de9a6e"],["chamoy","#c4177a"],["tajin","#ff7a45"],["tajín","#ff7a45"],["grenadine","#c21a8f"],["pumpkin","#ff7a45"],["cinnamon","#a0522d"],["peppermint","#3be08a"],["guava","#ff7a9a"],["grapefruit","#ff8c69"],["pomegranate","#b0004e"],["cranberry","#b0004e"],["passion","#ffb000"],["watermelon","#ff5e7a"],["green apple","#7ee36b"],["apple","#d94a4a"],["cotton candy","#ff9adf"],["blackberry","#5c2a72"],["grape","#8a3ffc"],["hot honey","#ffb000"],["honey","#ffb000"],["sour","#c8f05a"],["pearls","#2af5e4"],["boba","#2af5e4"],["marshmallow","#ffffff"],["cupcake","#ff9adf"],["banana","#ffe066"],["sprinkles","#ff3cac"],["gummy","#3be08a"],["candy","#ff3cac"],["salt","#d8ecff"],["ice","#d8ecff"],["water","#cfefff"]];
+const ING=[["diet dr pepper","#5a2a1a"],["dr pepper","#7a3b26"],["black cherry","#5c0a2a"],["diet coke","#2a1a12"],["coke","#3a2418"],["coca","#3a2418"],["pepsi","#1d3b7a"],["sprite zero","#a8d86b"],["sprite","#b9e86b"],["mountain dew","#c8f05a"],["mtn dew","#c8f05a"],["root beer","#5a2e14"],["cream soda","#e8c88a"],["big red","#e03a3a"],["fanta","#ff9e5e"],["orange soda","#ff9e5e"],["squirt","#d7f0a0"],["fresca","#d8ecff"],["ginger ale","#f3e3a0"],["tonic","#d8ecff"],["sparkling water","#cfefff"],["coconut water","#e8fff8"],["strawberry lemonade","#ff9adf"],["lemonade","#fff3b0"],["red bull","#7fd8ff"],["swig energy","#7fd8ff"],["energy","#7fd8ff"],["monster","#3be08a"],["alani","#ff9adf"],["espresso","#3a2418"],["cold brew","#3a2418"],["coffee","#5a3a22"],["hot chocolate","#6b3a2a"],["chocolate","#6b3a2a"],["milk","#fff6e8"],["half & half","#ffffff"],["heavy cream","#ffffff"],["cream","#fff6e8"],["cold foam","#fff6e8"],["whipped","#ffffff"],["pineapple soft serve","#ffe066"],["dole whip","#ffe066"],["soft serve","#fff6e8"],["twist","#ffe066"],["protein","#f0f0f0"],["coconut","#f7f2e6"],["vanilla","#ffd166"],["blue raspberry","#4aa8ff"],["raspberry","#d66f8a"],["cherry","#c21a8f"],["peach","#ffb37a"],["mango","#ffb000"],["pineapple","#ffe066"],["strawberr","#ff6b6b"],["lime","#9be36b"],["lemon","#fff3b0"],["orange","#ff9e5e"],["caramel","#c47a3a"],["butterscotch","#de9a6e"],["chamoy","#c4177a"],["tajin","#ff7a45"],["tajín","#ff7a45"],["grenadine","#c21a8f"],["pumpkin","#ff7a45"],["cinnamon","#a0522d"],["peppermint","#3be08a"],["guava","#ff7a9a"],["grapefruit","#ff8c69"],["pomegranate","#b0004e"],["cranberry","#b0004e"],["passion","#ffb000"],["watermelon","#ff5e7a"],["green apple","#7ee36b"],["apple","#d94a4a"],["cotton candy","#ff9adf"],["blackberry","#5c2a72"],["grape","#8a3ffc"],["hot honey","#ffb000"],["honey","#ffb000"],["sour","#c8f05a"],["pearls","#2af5e4"],["boba","#2af5e4"],["marshmallow","#ffffff"],["cupcake","#ff9adf"],["banana","#ffe066"],["sprinkles","#ff3cac"],["gummy","#3be08a"],["candy","#ff3cac"],["salt","#d8ecff"],["ice","#d8ecff"],["water","#cfefff"]];
 const ingColor=x=>{const n=norm(x);for(const [k,v] of ING)if(n.includes(norm(k)))return v;return"";};
 const dot=x=>{const c=ingColor(x);return c?`<i class="dot" style="color:${c}"></i>`:'';};
 const ingList=arr=>`<span class="ingl">${arr.map(x=>dot(x)+esc(x)).join('<span class="sep">·</span>')}</span>`;
@@ -634,15 +642,17 @@ let RECIPES={},queue={waiting:[],ready:[],madeToday:0,now:Date.now()},sel=null,s
 const SET={size:new Set(),base:new Set(),flavor:new Set(),puree:new Set(),cream:new Set(),style:new Set(),extra:new Set(),topper:new Set(),cap:new Set(),boost:new Set(),serve:new Set(),top:new Set(),temp:new Set(),milk:new Set()};
 const EXTRA_BASES=["Coca-Cola","Coke","Diet Coke","Pepsi","Dr Pepper","Diet Dr Pepper","Sprite","Sprite Zero","Mountain Dew","Diet Mtn Dew","Root Beer","Cream Soda","Fanta Orange","Big Red","Squirt","Fresca","Red Bull","Sugar-Free Red Bull","Alani Nu","Monster","Lemonade","Sparkling Water"];
 function loadGroups(a){for(const g of (a.groups||[])){const k=g.key;if(!SET[k])SET[k]=new Set();for(const it of g.items)SET[k].add(norm(it.name));}for(const b of EXTRA_BASES)SET.base.add(norm(b));}
-/* A name alone does not say which group it came from: "Dole Whip" and "Vanilla" are soft-serve CAPS on a float but
+/* A name alone does not say which group it came from: "Pineapple soft serve" and "Vanilla" are soft-serve CAPS on a float but
    flavor SYRUPS on a dirty soda. So classify(m,cat) reads the mod WITH its drink category: on Floats and Soft Serve the
    cap / boost / serve / topping groups are checked before flavor, and the kiosk's "Make it a float" upsell labels its mod
-   "Float: Dole Whip" so the group travels with it (tests/kiosk/station.js pins every cap choice). */
+   "Float: Pineapple soft serve" so the group travels with it (tests/kiosk/station.js pins every cap choice).
+   Older orders (and the cloud menu until it is redeployed) still say "Dole Whip": CAP_RE accepts both and DW_LEGACY rewrites it for display. */
 const FLOAT_CAT=/\b(floats?|soft serve)\b/;
-const CAP_RE=/^(dole whip|vanilla|twist( .*)?)$/;
+const CAP_RE=/^(pineapple soft serve|dole whip|vanilla|twist( .*)?)$/;
+const DW_LEGACY=s=>typeof s==='string'?s.replace(/\b(pineapple|mango|strawberry) dole whip\b/gi,'$1 Soft Serve').replace(/dole whip/gi,'Pineapple soft serve'):s;
 const UP_FLOAT=/^float:\s*/i;
 const modText=m=>String(m).replace(UP_FLOAT,'');
-const capLabel=m=>{const n=norm(modText(m));return n==='vanilla'?'Vanilla soft serve':n==='dole whip'?'Dole Whip':/^twist/.test(n)?'Twist (Dole Whip + vanilla)':modText(m);};
+const capLabel=m=>{const n=norm(modText(m));return n==='vanilla'?'Vanilla soft serve':(n==='dole whip'||n==='pineapple soft serve')?'Pineapple soft serve':/^twist/.test(n)?'Twist (Pineapple + vanilla)':modText(m);};
 function classify(m,cat){if(UP_FLOAT.test(m))return"cap";const n=norm(m);
  if(FLOAT_CAT.test(norm(cat||''))){if(CAP_RE.test(n))return"cap";for(const k of ["boost","serve","top","cap"])if(SET[k]&&SET[k].has(n))return k;}
  for(const k of ["size","base","flavor","puree","cream","style","extra","topper","cap","boost","serve","top","temp","milk"])if(SET[k]&&SET[k].has(n))return k;
@@ -796,7 +806,7 @@ function findSecretByName(name){
   return (extras.secretMenu||SECRET_FALLBACK).find(d=>norm(d.name)===n||norm(d.id)===n||n.includes(norm(d.name)))||null;
 }
 function decodeOrderClaim(it,order){
-  const hay=[it&&it.name,it&&it.note,...((it&&it.mods)||[]),order&&order.orderNote].filter(Boolean).join(' ');
+  const hay=[it&&it.name,it&&it.note,...((it&&it.mods)||[]),order&&String(order.orderNote||'').replace(ARC_RE,'')].filter(Boolean).join(' ');   // the ARCADE WIN tag has its own badge, not the Secret Menu decode
   const smDirect=findSecretByName(it&&it.name)||findSecretByName(hay);
   const vipM=hay.match(/\b(VIP-[A-Z2-9]{4,8})\b/i);
   let matchedClaim=null;
@@ -957,13 +967,14 @@ function renderBatch(){
 }
 
 const STOCK_GROUPS=[
-  {title:'Ice & Bases',kind:'ingredient',items:['Pebble Ice','Dr Pepper','Diet Dr Pepper','Diet Coke','Coca-Cola','Sprite','Mountain Dew','Root Beer','Cream Soda','Energy Base','Lemonade','Dole Whip','Vanilla Soft Serve']},
+  {title:'Ice & Bases',kind:'ingredient',items:['Pebble Ice','Dr Pepper','Diet Dr Pepper','Diet Coke','Coca-Cola','Sprite','Mountain Dew','Root Beer','Cream Soda','Energy Base','Lemonade','Pineapple Soft Serve','Vanilla Soft Serve']},
   {title:'Creams & Toppers',kind:'ingredient',items:['Coconut Cream','Half & Half','Sweet Cream','Vanilla Cream','Whipped Cream','Cold Foam','Popping Pearls','Freeze-Dried Candy','Maraschino Cherry']},
   {title:'Syrups & Purées',kind:'ingredient',items:['Coconut','Peach','Blue Raspberry','Raspberry','Strawberry Puree','Mango Puree','Pineapple','Vanilla','Passion Fruit','Fresh Lime','Butterscotch','Toasted Marshmallow','Watermelon','Blackberry','Caramel','Chamoy','Tajin']}
 ];
 function is86d(kind,name){
   const list=(extras.stock&&(kind==='ingredient'?extras.stock.ingredients:extras.stock.items))||[];
-  return list.includes(name.toLowerCase());
+  const k=name.toLowerCase();
+  return list.includes(k)||(k==='pineapple soft serve'&&list.includes('dole whip'));   // an 86 set before the rename still counts
 }
 function renderStockDrawer(){
   const body=$('#stockBody');if(!body)return;
@@ -984,8 +995,8 @@ async function toggleStock86(kind,name){
   const key=name.toLowerCase();
   const arrKey=kind==='ingredient'?'ingredients':'items';
   const cur=new Set((extras.stock&&extras.stock[arrKey])||[]);
-  const nextOut=!cur.has(key);
-  if(nextOut)cur.add(key);else cur.delete(key);
+  const nextOut=!(cur.has(key)||(key==='pineapple soft serve'&&cur.has('dole whip')));
+  if(nextOut)cur.add(key);else{cur.delete(key);if(key==='pineapple soft serve')cur.delete('dole whip');}
   extras.stock={...(extras.stock||{items:[],ingredients:[]}),[arrKey]:[...cur].sort(),updatedAt:Date.now()};
   updateV2Badges();renderStockDrawer();
   const msg=$('#stockSyncMsg');if(msg)msg.textContent='Syncing '+name+'…';
@@ -1006,7 +1017,7 @@ function renderClaimsDrawer(){
     html+=`<div class="s86-sec"><h4>Active 4-Char Arcade Claims</h4>`+active.map(cl=>{
       const sm=secrets.find(d=>d.id===cl.drinkId)||findSecretByName(cl.drinkName);
       const steps=sm?buildSecretSteps(sm):[];
-      return`<div class="claim-card"><div class="claim-card-h"><span class="claim-code">${esc(cl.code)}</span><b>${esc(cl.drinkName||'Free Upgrade')} (${esc(cl.who||'TB')})</b><button type="button" class="secret-redeem" data-redeem="${esc(cl.code)}">Redeem</button></div><small style="color:var(--sun)">${esc(cl.reward||'')}</small>${steps.length?renderPumpPour(steps,{l:'M',s:'24 oz'}):`<div class="note">${esc(cl.build||'')}</div>`}</div>`;
+      return`<div class="claim-card"><div class="claim-card-h"><span class="claim-code">${esc(cl.code)}</span><b>${cl.prize&&cl.prize.label?esc(cl.prize.label)+' · ':''}${esc(cl.drinkName||'Free Upgrade')} (${esc(cl.who||'TB')})</b><button type="button" class="secret-redeem" data-redeem="${esc(cl.code)}">Redeem</button></div><small style="color:var(--sun)">${esc(cl.reward||'')}</small>${steps.length?renderPumpPour(steps,{l:'M',s:'24 oz'}):`<div class="note">${esc(cl.build||'')}</div>`}</div>`;
     }).join('')+`</div>`;
   }
   html+=`<div class="s86-sec"><h4>All Arcade Secret Menu Recipes</h4>`+secrets.map(sm=>`<div class="claim-card"><div class="claim-card-h"><b>★ ${esc(sm.name)}</b><span class="chip">${sm.minScore}+ pts</span></div>${renderPumpPour(buildSecretSteps(sm),{l:'M',s:'24 oz'})}</div>`).join('')+`</div>`;
@@ -1065,6 +1076,7 @@ async function bumpTicket(o){
   if(ok){
     delete checks[o.id];
     lastBumped=[{id:o.id,ticket:o.ticket,customer:o.customer||o.source},...lastBumped.filter(x=>x.id!==o.id)].slice(0,10);
+    arcEnqueue(o);               // an arcade win on this ticket is marked used on the Worker (retried if the relay is offline)
     updatePinnedUndo();
   }
   return ok;
@@ -1078,6 +1090,59 @@ const money=c=>'$'+(c/100).toFixed(2);
 /* big hand-off badge: PAID, or COLLECT $x (what to charge at the window) */
 const payBadge=(o,long)=>o.badge&&o.badge.kind?'<b class="paybadge '+String(o.badge.kind).toLowerCase().replace(/[^a-z]/g,'')+'">'+esc(long&&o.badge.long?o.badge.long:o.badge.text)+'</b>'
   :(o.paid?'<b class="paybadge paid">PAID</b>':'<b class="paybadge collect">COLLECT '+money(cents(o))+'</b>');   // badge comes from the server's ticket gate (TBK: titles); legacy orders keep paid/collect
+/* ---- ARCADE WIN badge. The kiosk server adds ' · ARCADE <prizeId> <CODE>' to the Clover order note (a Worker-issued claim code); the page reads it
+   from orderNote, so the badge works against an older station server and the cloud station too. Redeem (mark the claim used, with this ticket
+   number) goes through the existing /api/kitchen/redeem relay when the ticket is bumped, or when crew tap the badge. It is idempotent
+   ('used' counts as done), queued in this browser and retried while the relay is offline. The badge never touches a price or total. ---- */
+const ARC_RE=/\s·\sARCADE\s([a-z_]{3,24})\s([A-Z2-9]{4})\s*$/;
+const ARC_LABELS={size_upgrade:'Free Size Upgrade',soft_serve_topper:'Free Pineapple Soft Serve or Vanilla Soft Serve Topper',neon_charm:'Free 3D-Printed Neon Straw Charm',topper_or_sticker:'Free Freeze-Dried Topper or UV-DTF Sticker',free_drink_jackpot:'FREE DRINK JACKPOT'};
+function arcadePrize(o){
+  const m=ARC_RE.exec(String((o&&o.orderNote)||''));if(!m)return null;
+  return{id:m[1],code:m[2],label:ARC_LABELS[m[1]]||'Arcade prize'};
+}
+let ARC_DONE={},ARC_Q={};try{ARC_DONE=JSON.parse(localStorage.getItem('tb-arc-done')||'{}')||{};ARC_Q=JSON.parse(localStorage.getItem('tb-arc-q')||'{}')||{};}catch(e){ARC_DONE={};ARC_Q={};}
+function arcSave(){try{const k=Object.keys(ARC_DONE);if(k.length>200)k.sort((a,b)=>ARC_DONE[a]-ARC_DONE[b]).slice(0,k.length-200).forEach(c=>delete ARC_DONE[c]);localStorage.setItem('tb-arc-done',JSON.stringify(ARC_DONE));localStorage.setItem('tb-arc-q',JSON.stringify(ARC_Q));}catch(e){}}
+function arcParts(p,head){
+  if(ARC_DONE[p.code])return{cls:'done',html:'✓ ARCADE WIN REDEEMED · '+esc(p.code)};
+  const q=ARC_Q[p.code];
+  const hint=head?'<small>'+(q?(extrasSupported?'redeeming… will retry':'this station cannot redeem yet, see build notes'):(extrasSupported?'tap to redeem when handed over':'hand it over; redeem needs the new station server'))+'</small>':'';
+  return{cls:q?'retry':'',html:'ARCADE WIN: '+esc(p.label)+' · '+esc(p.code)+hint};
+}
+function arcBadge(o,head){
+  const p=arcadePrize(o);if(!p)return'';
+  const a=arcParts(p,head===true);
+  if(head==='tile')return`<span class="pb"><b class="arcbadge ${a.cls}" data-arc="${esc(p.code)}" data-label="${esc(p.label)}">${a.html}</b></span>`;   // its own row, so the PAID/COLLECT tile markup stays as reviewed
+  return head?`<button type="button" class="arcbadge head ${a.cls}" data-arc="${esc(p.code)}" data-label="${esc(p.label)}" data-arc-tap="${esc(o.id)}">${a.html}</button>`
+    :`<b class="arcbadge ${a.cls}" data-arc="${esc(p.code)}" data-label="${esc(p.label)}">${a.html}</b>`;
+}
+function arcRefresh(){
+  document.querySelectorAll('.arcbadge[data-arc]').forEach(el=>{
+    const code=el.dataset.arc;const lab=el.dataset.label||'Arcade prize';
+    const a=arcParts({code,label:lab},el.classList.contains('head'));
+    el.className='arcbadge'+(el.classList.contains('head')?' head':'')+(a.cls?' '+a.cls:'');el.innerHTML=a.html;
+  });
+}
+let arcBusy=false;
+async function arcRedeem(code,ticket){
+  const r=await fetch('/api/kitchen/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,order:String(ticket||'')})});
+  const d=await r.json().catch(()=>null);
+  if(d&&(d.ok||d.status==='used'||d.status==='unknown')){ARC_DONE[code]=Date.now();delete ARC_Q[code];arcSave();return true;}
+  return false;                 // relay offline, old server (404 page), 5xx: keep it queued
+}
+async function arcFlush(){
+  if(arcBusy||!extrasSupported)return;arcBusy=true;
+  try{for(const code of Object.keys(ARC_Q)){const q=ARC_Q[code];if(q.next&&Date.now()<q.next)continue;
+    let ok=false;try{ok=await arcRedeem(code,q.ticket);}catch(e){}
+    if(!ok&&ARC_Q[code]){ARC_Q[code].next=Date.now()+15000;arcSave();}}}
+  finally{arcBusy=false;arcRefresh();}
+}
+function arcEnqueue(o){const p=arcadePrize(o);if(!p||ARC_DONE[p.code]||ARC_Q[p.code])return;ARC_Q[p.code]={ticket:o.ticket,next:0};arcSave();arcRefresh();arcFlush();}
+function arcSweep(){for(const o of(queue.ready||[]))arcEnqueue(o);if(Object.keys(ARC_Q).length)arcFlush();}   // bumped here, on another screen, or before this page reloaded
+async function arcTap(btn){
+  const o=queue.waiting.find(x=>x.id===btn.dataset.arcTap);const p=arcadePrize(o);if(!p||ARC_DONE[p.code])return;
+  if(!extrasSupported){return;}
+  ARC_Q[p.code]=ARC_Q[p.code]||{ticket:o.ticket,next:0};ARC_Q[p.code].next=0;arcSave();arcRefresh();await arcFlush();
+}
 let TRAIN=false,SAYNAMES=false;try{TRAIN=localStorage.getItem('tb-train')==='1';SAYNAMES=localStorage.getItem('tb-say-names')==='1';}catch(e){}
 function setTrain(v){TRAIN=v;document.body.classList.toggle('training',v);$('#trainBtn').setAttribute('aria-pressed',v);$('#trainBtn').textContent=v?'Training on':'Training off';try{localStorage.setItem('tb-train',v?'1':'0');}catch(e){}}
 const summary=o=>o.items.map(x=>(x.qty>1?x.qty+'× ':'')+x.name).join(', ');
@@ -1086,7 +1151,7 @@ function renderQueue(){const w=queue.waiting;const th=ageThresholds();
  const oldest=w.length?Math.max(...w.map(o=>queue.now-o.created)):0;const so=$('#stOldest');so.querySelector('b').textContent=w.length?age(w[0].created):'–';so.classList.toggle('late',oldest>th.late);
  $('#qlist').innerHTML=w.length?w.map(o=>{const c=catColor(o.items[0]&&o.items[0].category);const band=ageBand(o);return`<button class="tk${o.id===sel?' on':''}${!seen.has(o.id)?' new':''}${band?' '+band:''}" data-id="${esc(o.id)}">
    ${band==='late'?`<b class="lateb">${RUSH_AGE?'RUSH 2m+':'LATE'}</b>`:''}<span class="code">${esc(o.ticket)}</span><span class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||o.source)}</span><span class="age">${age(o.created)}</span>
-   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span><span class="pb">${payBadge(o)}</span>${tagPickupHTML(o,false)}</button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
+   <span class="sub">${c?`<i style="background:${c}"></i>`:''}${esc(summary(o))}</span><span class="pb">${payBadge(o)}</span>${arcBadge(o,"tile")}${tagPickupHTML(o,false)}</button>`;}).join(''):`<div class="qempty">No tickets waiting<small>New orders show up here on their own</small></div>`;
  $('#qlist').querySelectorAll('.tk').forEach(b=>b.onclick=()=>{sel=b.dataset.id;seen.add(sel);renderQueue();renderTicket();});
  let newlyLate=false;for(const o of w)if(queue.now-o.created>th.late&&!lateSeen.has(o.id)){lateSeen.add(o.id);newlyLate=true;}
  if(newlyLate)lateDing();
@@ -1106,7 +1171,7 @@ function nextPane(nx){
   const aka=it.mods.find(m=>/^AKA /.test(m));const ms=it.mods.filter(m=>m!==aka);const p=planForItem({...it,mods:ms},nx);const cb=cupBadge(p.cup);
   const parts=p.ingredients.length?p.ingredients:p.steps.map(s=>s[0]).filter(x=>!/^(lid|ice|pour \+ lid|dome lid|spoon|hand off)/i.test(x)).slice(0,5);
   return`<div class="nxi"><span class="sb">${esc(cb.l)}</span><div><b>${esc(it.name)}</b>${it.qty>1?` ×${it.qty}`:''}<small>${esc(parts.map(modText).join(' · '))}</small></div></div>`;}).join('');
- return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><div class="nxhead"><b class="nxcode">${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)}</span>${payBadge(nx)}${tagPickupHTML(nx,false)}</div>${items}<button class="nxgo" data-id="${esc(nx.id)}">Start this one now</button></aside>`;}
+ return`<aside class="nextpane" aria-label="Next ticket"><div class="nxtag">NEXT</div><div class="nxhead"><b class="nxcode">${esc(nx.ticket)}</b><span>${esc(nx.customer||nx.source)}</span>${payBadge(nx)}${arcBadge(nx)}${tagPickupHTML(nx,false)}</div>${items}<button class="nxgo" data-id="${esc(nx.id)}">Start this one now</button></aside>`;}
 function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#make');
  if(!o){const t=queue.today||{};const fmt=s=>s?(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'–';const hr=t.busiestHour==null?'–':((t.busiestHour%12)||12)+(t.busiestHour<12?' am':' pm');
   m.innerHTML=`<div class="nowpane"><div class="mhead"><div class="who">Nothing to make<small>New tickets show up here on their own</small></div></div><div class="prep"></div><div class="strip"></div><div class="items"><div class="blank">All caught up
@@ -1115,7 +1180,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
  const ck=checks[o.id]||(checks[o.id]={});
  const idx=queue.waiting.indexOf(o);const nx=queue.waiting[idx+1];
  const band=ageBand(o);
- m.innerHTML=`<div class="nowpane"><div class="mhead ${band}"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${tagPickupHTML(o,true)}${payBadge(o,true)}<b class="lateb mlate">${RUSH_AGE?'RUSH 2m+':'LATE'}</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">✓ Bump / Done</button></div>
+ m.innerHTML=`<div class="nowpane"><div class="mhead ${band}"><div class="nowtag">NOW</div><div class="code">${esc(o.ticket)}</div><div class="who">${o.source==='Online'?'<b class="onl">ONLINE</b>':''}${esc(o.customer||'Walk-up')}<small>${esc(o.source)} · waiting ${age(o.created)}</small></div>${tagPickupHTML(o,true)}${payBadge(o,true)}${arcBadge(o,true)}<b class="lateb mlate">${RUSH_AGE?'RUSH 2m+':'LATE'}</b><div class="spacer"></div><div class="prog" id="prog"></div><button class="big" id="doneBtn">✓ Bump / Done</button></div>
   <div class="prep" id="prep"></div>
   <div class="strip" id="strip">${o.items.length>1?o.items.map((it,ix)=>stripItem(it,ix)).join(''):''}</div>
   <div class="items">${o.items.map((it,ix)=>it.kind==='grab'?grabCard(it,ix,ck):drinkCard(it,ix,ck,o)).join('')}</div>
@@ -1130,6 +1195,7 @@ function renderTicket(){const o=queue.waiting.find(x=>x.id===sel);const m=$('#ma
  m.querySelectorAll('.sitem').forEach(b=>b.onclick=()=>{const c=its.querySelector('.card[data-k="'+b.dataset.k+'"]');if(c)its.scrollTo({top:c.offsetTop-its.offsetTop-8,behavior:'smooth'});});$('#moreBelow').onclick=()=>its.scrollBy({top:its.clientHeight*.8,behavior:'smooth'});
  m.querySelectorAll('.card.grab').forEach(c=>c.onclick=()=>{const k=c.dataset.k;ck[k]=!ck[k];c.classList.toggle('ok',!!ck[k]);progress(o,ck);});
  m.querySelectorAll('ol').forEach(ol=>wireSteps(ol,ol.dataset.k,ck,()=>progress(o,ck)));
+ m.querySelectorAll('[data-arc-tap]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();arcTap(b);});
  m.querySelectorAll('[data-redeem-inline]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();redeemClaimCode(b.dataset.redeemInline,b);});
  if(TAP_BUMP){
   m.querySelectorAll('.card:not(.grab) .chead').forEach(ch=>ch.onclick=()=>{
@@ -1278,6 +1344,7 @@ async function post(p,id,meta){let st=0;try{const payload=Object.assign({id},met
 const KEY_MSG='Need the access key. Open the station from the link with ?k= on the end.';
 const NET_MSG='Make Station server not reachable. Is the kiosk PC on and on the same Wi-Fi?';
 async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store'});st=r.status;if(!r.ok)throw new Error(r.status);queue=await r.json();
+  for(const o of (queue.waiting||[]).concat(queue.ready||[])){for(const it of (o.items||[])){it.name=DW_LEGACY(it.name);if(it.note)it.note=DW_LEGACY(it.note);if(Array.isArray(it.mods))it.mods=it.mods.map(DW_LEGACY);}}   // orders placed before the rename
   $('#bar').hidden=!queue.error;if(queue.error)$('#bar').textContent='Clover is not answering. Showing the last tickets received.';
   if(queue.pageVer){if(!window.__pv)window.__pv=queue.pageVer;else if(window.__pv!==queue.pageVer){const busy=Object.values(checks).some(c=>Object.values(c).some(Boolean));if(!busy){location.reload();return;}}}
   const ids=new Set(queue.waiting.map(o=>o.id));let fresh=false;
@@ -1286,7 +1353,8 @@ async function poll(){let st=0;try{const r=await fetch('/queue',{cache:'no-store
   freshOnes.forEach(o=>announced.add(o.id));
   if(fresh){hideSaver();ding();setTimeout(()=>announce(freshOnes),400);if(!$('#tickets').classList.contains('on'))setMode('tickets');}
   if(!sel||!ids.has(sel)){sel=queue.waiting.length?queue.waiting[0].id:null;if(sel)seen.add(sel);renderQueue();renderTicket();}
-  else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}}
+  else{renderQueue();if(!$('#make').querySelector('.mhead .code'))renderTicket();}
+  arcSweep();}
  catch(e){$('#bar').hidden=false;$('#bar').textContent=st===401?KEY_MSG:st?'Station server error ('+st+'). Showing the last tickets received.':NET_MSG;}}
 /* ---- full screen ---- */
 $('#fsBtn').onclick=()=>{try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}catch(e){}};

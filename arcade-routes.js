@@ -12,6 +12,12 @@
    If the Worker is unreachable, KIOSK_KEY is unset, the daily cap is hit, or no play token is old enough yet: the arcade still plays and
    the answer is "thanks for playing" with NO code. Nothing here ever invents a code.
 
+   A win that came with a Worker code also becomes the kiosk's ONE "pending prize" (code, prize id, label, issuedAt), kept in memory and in
+   .tb/arcade-pending.json, for 15 minutes or until it is used or declined. The ordering page reads it (GET /api/arcade/pending) and shows a
+   banner. When the order is placed the page sends only the new ORDER ID (/api/arcade/pending/attach); THIS server adds its own pending
+   prize to that Clover order's note (" · ARCADE <id> <CODE>"), the same way " · MAZE UPSIZE" rides there. No price, total, discount or
+   line item is touched, and the browser never supplies a prize id, label or code.
+
    KIOSK_KEY stays on this PC (kiosk-config.env). The browser never sees it. Zero npm dependencies. */
 "use strict";
 const fs = require("fs");
@@ -72,7 +78,10 @@ const safeEq = (a, b) => {
   return crypto.timingSafeEqual(h(a), h(b));
 };
 
-/* opts: { tbDir, apiBase, kioskKey, stationKey, fetchImpl, now, rng, log }  (everything injectable for tests) */
+/* opts: { tbDir, apiBase, kioskKey, stationKey, fetchImpl, now, rng, log, clover: { get(path), post(path, body) } }  (everything injectable for tests) */
+const PENDING_TTL_MS = 15 * 60000;          // a win waits this long for an order, then it is just a code in the customer's hand
+const ATTACH_WINDOW_MS = 15 * 60000;       // the order a prize is attached to must have been created this recently
+const ORDER_ID_RE = /^[A-Za-z0-9]{6,20}$/;
 function createArcade(opts) {
   const o = opts || {};
   const tbDir = o.tbDir;
@@ -83,6 +92,7 @@ function createArcade(opts) {
   const now = o.now || Date.now;
   const rng = o.rng || Math.random;
   const log = o.log || (() => {});
+  const clover = o.clover && typeof o.clover.get === "function" && typeof o.clover.post === "function" ? o.clover : null;
   const cfgFile = tbDir ? path.join(tbDir, "arcade-config.json") : null;
 
   const prizesOn = () => !!(KIOSK_KEY && API && doFetch);
@@ -183,7 +193,7 @@ function createArcade(opts) {
     if (now() < blockedUntil) return null;
     const token = takeToken();
     if (!token) { log("arcade: no play token old enough yet, no code for this win"); refill(); return null; }
-    const r = await workerJson("POST", "/kitchen/claim", { score: SCORE_FOR[prize.id] || SCORE_DEFAULT, who: "TB", token }, { "X-Kiosk-Key": KIOSK_KEY });
+    const r = await workerJson("POST", "/kitchen/claim", { score: SCORE_FOR[prize.id] || SCORE_DEFAULT, who: "TB", token, prize: { id: prize.id, label: prize.label } }, { "X-Kiosk-Key": KIOSK_KEY });
     refill();
     const d = r.data;
     if (r.status === 200 && d && d.ok === true && typeof d.code === "string" && /^[A-Z2-9]{4}$/.test(d.code)) {
@@ -197,20 +207,84 @@ function createArcade(opts) {
     return null;
   }
 
+
+  // ---------- the pending prize (one per kiosk) ----------
+  const pendingFile = tbDir ? path.join(tbDir, "arcade-pending.json") : null;
+  const cleanPending = v => {
+    if (!v || typeof v !== "object") return null;
+    if (typeof v.code !== "string" || !/^[A-Z2-9]{4}$/.test(v.code)) return null;
+    const p = PRIZES.find(x => x.id === v.prizeId && x.isPrize);
+    if (!p || !Number.isFinite(+v.issuedAt)) return null;
+    return { code: v.code, prizeId: p.id, label: p.label, issuedAt: +v.issuedAt, expiresAt: +v.issuedAt + PENDING_TTL_MS };
+  };
+  function savePending(v) {
+    if (!pendingFile) return;
+    try {
+      fs.mkdirSync(tbDir, { recursive: true });
+      if (!v) { try { fs.unlinkSync(pendingFile); } catch {} return; }
+      const tmp = pendingFile + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(v)); fs.renameSync(tmp, pendingFile);
+    } catch (e) { log("arcade: could not save the pending prize (" + e.message + ")"); }
+  }
+  let pending = null, lastAttached = null, attaching = false;
+  if (pendingFile) { try { pending = cleanPending(JSON.parse(fs.readFileSync(pendingFile, "utf8"))); } catch { pending = null; } if (pending && now() >= pending.expiresAt) { pending = null; savePending(null); } }
+
+  /* The pending prize, or null. An expired one is dropped here. */
+  function getPending() {
+    if (pending && now() >= pending.expiresAt) { pending = null; savePending(null); }
+    return pending ? { ...pending } : null;
+  }
+  function setPending(prize, code) {
+    const v = cleanPending({ code, prizeId: prize.id, issuedAt: now() });
+    if (!v) return null;
+    pending = v; savePending(v);
+    return { ...v };
+  }
+  function dismissPending() { const had = !!getPending(); pending = null; savePending(null); return { ok: true, dismissed: had }; }
+
+  /* The ordering page placed an order and sent its ORDER ID (nothing else is read). The prize attached is this server's own pending one.
+     The order must be a kiosk order (its note says so) created a moment ago; its note gets " · ARCADE <id> <CODE>" appended and nothing else
+     about the order changes (no price, discount, line item, title or state). Idempotent for the same order. Returns { status, body }. */
+  async function attachToOrder(orderId) {
+    const id = typeof orderId === "string" ? orderId.trim() : "";
+    if (!ORDER_ID_RE.test(id)) return { status: 400, body: { ok: false, error: "bad order id" } };
+    if (lastAttached && lastAttached.orderId === id) return { status: 200, body: { ok: true, already: true, code: lastAttached.code, label: lastAttached.label } };
+    const p = getPending();
+    if (!p) return { status: 200, body: { ok: false, error: "no-pending" } };
+    if (!clover) return { status: 200, body: { ok: false, error: "clover-unavailable" } };
+    if (attaching) return { status: 200, body: { ok: false, error: "busy" } };
+    attaching = true;
+    try {
+      let cur = null;
+      try { cur = await clover.get("/orders/" + encodeURIComponent(id)); } catch { cur = null; }
+      if (!cur || typeof cur !== "object") return { status: 200, body: { ok: false, error: "order-unreadable" } };
+      const note = typeof cur.note === "string" ? cur.note : "";
+      const age = now() - Number(cur.createdTime);
+      if (!/Kiosk order/.test(note) || !Number.isFinite(age) || Math.abs(age) > ATTACH_WINDOW_MS) return { status: 200, body: { ok: false, error: "not-a-fresh-kiosk-order" } };
+      if (!/ · ARCADE /.test(note)) {
+        try { await clover.post("/orders/" + encodeURIComponent(id), { note: note + " · ARCADE " + p.prizeId + " " + p.code }); }
+        catch (e) { log("arcade: could not write the prize onto the order (" + e.message + ")"); return { status: 200, body: { ok: false, error: "order-write-failed" } }; }
+      }
+      lastAttached = { orderId: id, code: p.code, label: p.label };
+      pending = null; savePending(null);
+      return { status: 200, body: { ok: true, code: p.code, label: p.label } };
+    } finally { attaching = false; }
+  }
+
   /* One spin. The prize is decided here. Returns what the page may show:
        { ok, prizeId, win:false, thanks:false }            a normal drink reveal
        { ok, prizeId, win:false, thanks:true }             a prize was rolled but there is no code to hand out: "thanks for playing"
-       { ok, prizeId, win:true, code, ticket, mega }       a real code from the Worker */
+       { ok, prizeId, label, win:true, code, ticket, mega }  a real code from the Worker (also held as the pending prize) */
   async function spin() {
     lastSeen = now();
     const prize = rollPrize(getConfig().odds, rng);
     if (!prize.isPrize) return { ok: true, prizeId: prize.id, win: false, thanks: false };
     const c = await claim(prize);
     if (!c) return { ok: true, prizeId: "standard", win: false, thanks: true };
-    return { ok: true, prizeId: prize.id, win: true, mega: prize.id === "free_drink_jackpot", trigger: prize.trigger, code: c.code, ticket: c.ticket };
+    setPending(prize, c.code);                              // only a Worker-issued code ever becomes a pending prize
+    return { ok: true, prizeId: prize.id, label: prize.label, win: true, mega: prize.id === "free_drink_jackpot", trigger: prize.trigger, code: c.code, ticket: c.ticket, pendingUntil: pending ? pending.expiresAt : null };
   }
 
-  return { getConfig, saveConfig, spin, refill, touch, refillIfActive, prizesOn, validateOdds, _state: () => ({ tokens: tokens.length, blockedUntil }) };
+  return { getConfig, saveConfig, spin, getPending, dismissPending, attachToOrder, refill, touch, refillIfActive, prizesOn, validateOdds, _state: () => ({ tokens: tokens.length, blockedUntil }) };
 }
 
-module.exports = { PRIZES, PRIZE_IDS, MAX_FREE_DRINK_PCT, defaultOdds, validateOdds, rollPrize, createArcade };
+module.exports = { PENDING_TTL_MS, PRIZES, PRIZE_IDS, MAX_FREE_DRINK_PCT, defaultOdds, validateOdds, rollPrize, createArcade };

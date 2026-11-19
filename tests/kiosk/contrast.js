@@ -24,6 +24,12 @@ const PAIRS = [
   ["station: ink on a SUB chip", "#08011c", "#ffd166", 7],
   ["station: ink on a NO chip", "#08011c", "#ff6b6b", 4.5],
   ["station: white on the lavender chip", "#ffffff", "#4a3480", 4.5],
+  ["station: ink on the ARCADE WIN badge", "#08011c", "#7cf2ff", 7],
+  ["station: ink on the ARCADE WIN badge while the redeem retries", "#08011c", "#ffd166", 7],
+  ["station: cyan on the redeemed ARCADE WIN badge", "#7cf2ff", "#2a1a55", 7],
+  ["order screen: ink on the arcade win banner", "#08011c", "#FFD166", 7],
+  ["order screen: gold code on its ink chip", "#FFD166", "#08011c", 7],
+  ["arcade page: ink on the Order now button (orange end)", "#08011c", "#FF8A3D", 7],
 ];
 for (const [name, fg, bg, min] of PAIRS) { const r = ratio(fg, bg); assert.ok(r >= min, `${name}: ${r.toFixed(2)}:1 < ${min}:1`); }
 // documented, deliberately NOT adopted: the literal asks from the review would FAIL on the dark theme
