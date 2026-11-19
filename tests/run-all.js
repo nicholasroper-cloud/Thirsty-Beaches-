@@ -7,9 +7,9 @@ const jobs = [
   ["node", ["tests/kiosk/unit.js"]], ["node", ["tests/kiosk/html-syntax.js"]], ["node", ["tests/kiosk/station.js"]], ["node", ["tests/kiosk/page.js"]],
   ["node", ["tests/kiosk/seq.js"]], ["node", ["tests/kiosk/greeter.js"]], ["node", ["tests/kiosk/asis.js"]], ["node", ["tests/kiosk/consent.js"]], ["node", ["tests/kiosk/contrast.js"]], ["node", ["tests/kiosk/servers.js"]],
   ["node", ["tests/kiosk/catalog.js"]], ["node", ["tests/kiosk/gate.js"]], ["node", ["tools/catalog-map.js", "--check"]], ["node", ["tests/kiosk/pay-journal.js"]], ["node", ["tests/kiosk/pay-state.js"]], ["node", ["tests/kiosk/pay-server.js"]], ["node", ["tests/kiosk/pay-e2e.js"]],
-  ["node", ["tests/boardwalk-arcade.test.mjs"]],
+  ["node", ["tests/boardwalk-arcade.test.mjs"]], ["node", ["tests/kiosk/arcade-e2e.js"]],
   ["node", ["tools/sync-recipe-defaults.js", "--check"]], ["node", ["tools/publish-manifest.js", "--check"]],
-  ...["aka", "punch", "relay", "report-cors", "station"].map(n => ["node", ["tests/cloud/" + n + ".test.mjs"]]),
+  ...["aka", "punch", "relay", "report-cors", "station", "redeem-relay"].map(n => ["node", ["tests/cloud/" + n + ".test.mjs"]]),
 ];
 let bad = 0;
 for (const [cmd, args] of jobs) {

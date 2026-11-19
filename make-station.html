@@ -992,6 +992,7 @@ async function toggleStock86(kind,name){
   try{
     const r=await fetch('/api/stock/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,name,out:nextOut})});
     const d=await r.json().catch(()=>null);
+    if(r.status===404||r.status===405){setExtrasSupported(false);if(msg)msg.textContent='This station is out of date: 86 was not saved. Update the station server.';return;}
     if(r.ok&&d&&d.stock){extras.stock=d.stock;updateV2Badges();renderStockDrawer();}
     if(msg)msg.textContent=(d&&d.synced)?'✓ Synced live to 47" Kiosk, Order Ahead & Web Menu':'✓ Saved on station (syncs when tb-where secret is set)';
   }catch(e){if(msg)msg.textContent='Saved locally — offline';}
@@ -1022,15 +1023,29 @@ async function redeemClaimCode(code,btn){
       await pollExtras();
       return d;
     }
-    if(btn){btn.disabled=false;btn.textContent=d.status==='used'?'Already Used':'Retry';}
+    if(btn){btn.disabled=false;btn.textContent=d.status==='used'?'Already Used':d.status==='verify-at-sdt'?'Verify at SDT order':d.status==='bad-signature'?'Bad pass signature':'Retry';if(d.message)btn.title=d.message;}
+    if(d&&d.status==='verify-at-sdt'&&d.message)alert(d.message);
     return d;
   }catch(e){if(btn){btn.disabled=false;btn.textContent='Offline';}return null;}
 }
+/* An OLDER station server (or cloud Worker) has no /api/kitchen/extras or /api/stock/toggle: they answer 404 (or a web page). Then the
+   Claims and 86 Stock buttons are hidden and we ask again only every 5 minutes, so a half-updated station never shows a tab that cannot work.
+   Update steps: build-notes.md (restart Run-MakeStation.bat after the update lands). */
+let extrasSupported=true,extrasProbeAt=0;
+function setExtrasSupported(ok){
+  extrasSupported=ok;extrasProbeAt=Date.now();
+  ['claimsBtn','stock86Btn'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.display=ok?'':'none';});
+  if(!ok){const m=document.getElementById('stockDrawer');if(m)m.hidden=true;const c=document.getElementById('claimsDrawer');if(c)c.hidden=true;}
+}
 async function pollExtras(){
+  if(!extrasSupported&&Date.now()-extrasProbeAt<300000)return;
   try{
     const r=await fetch('/api/kitchen/extras',{cache:'no-store'});
+    if(r.status===404||r.status===405){setExtrasSupported(false);return;}
     if(!r.ok)return;
-    const d=await r.json();
+    const d=await r.json().catch(()=>undefined);
+    if(d===undefined){setExtrasSupported(false);return;}   // 200 but not JSON: a catch-all page, not this API
+    if(!extrasSupported)setExtrasSupported(true);
     if(d){
       const prevClaims=(extras.claims||[]).map(c=>c.code).join(',');
       extras={secretMenu:(d.secretMenu&&d.secretMenu.length)?d.secretMenu:SECRET_FALLBACK,claims:d.claims||[],drops:d.drops||[],stock:d.stock||extras.stock,pickups:d.pickups||[]};
@@ -1214,7 +1229,7 @@ $('#claimLookupForm').onsubmit=async e=>{
   out.innerHTML=`<div class="claim-card"><div class="claim-card-h"><span class="claim-code">${esc(t.code)}</span><b>${esc(t.drinkName)}</b><button type="button" class="secret-redeem" id="lookupRedeemBtn">Redeem Now</button></div><small style="color:var(--sun)">${esc(t.reward||'')}</small>${sm?renderPumpPour(buildSecretSteps(sm),{l:'M',s:'24 oz'}):`<div class="note">${esc(t.build||'')}</div>`}</div>`;
   $('#lookupRedeemBtn').onclick=()=>redeemClaimCode(t.code,$('#lookupRedeemBtn'));
  }else{
-  out.innerHTML=`<div class="note" style="border-color:#ff6b6b">Code ${esc(code)}: ${esc((res&&(res.status||res.error))||'not found or offline')}</div>`;
+  out.innerHTML=`<div class="note" style="border-color:#ff6b6b">Code ${esc(code)}: ${esc((res&&(res.message||res.status||res.error))||'not found or offline')}</div>`;
  }
 };
 $('#pinnedUndo').onclick=async()=>{
