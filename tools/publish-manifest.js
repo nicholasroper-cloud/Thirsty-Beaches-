@@ -32,10 +32,11 @@ const DEFAULT_BASE = "https://raw.githubusercontent.com/nicholasroper-cloud/Thir
 const SOURCE = { "clover-menu-server.next.js": "clover-menu-server.js" };
 /* always shipped; in this order, after the existing entries */
 const KIOSK_FILES = [
-  "kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "catalog-map.json", "tools/pay-resolve.js", "PAY-RUNBOOK.txt", "addons.json", "package.json", "package-lock.json",
+  "kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "arcade-routes.js", "catalog-map.json", "tools/pay-resolve.js", "PAY-RUNBOOK.txt", "addons.json", "package.json", "package-lock.json",
   "clover-menu-server.js", "clover-menu-server.next.js",
   "Run-Kiosk.bat", "Stop-Kiosk.bat", "Debug-Kiosk.bat", "Fix-And-Run.bat", "Install-AutoStart.bat", "Remove-AutoStart.bat",
   "assets/cup-80s-shell.webp", "assets/cup-80s-cream.png", "assets/cup-80s-liquid.png", "assets/logo-480.webp",
+  "kiosk/boardwalk-slots.html", "kiosk/boardwalk-slots.css", "kiosk/boardwalk-slots.js", "kiosk/audio-bank.js", "kiosk/arcade-menu.json", "kiosk/audio/README.txt",   // the /arcade page (a separate URL, not linked from the ordering screen)
   "READ-ME-FIRST.txt", "remote-update-SETUP.txt",
   "kiosk-lockdown/Setup-Appliance.ps1", "kiosk-lockdown/Uninstall-Appliance.ps1", "kiosk-lockdown/READ-ME-APPLIANCE.txt",
 ];
