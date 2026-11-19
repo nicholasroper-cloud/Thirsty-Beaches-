@@ -216,7 +216,13 @@
       }
       fxParticles = alive;
       if (fxParticles.length) fxRaf = requestAnimationFrame(runFxLoop);
-      else { ctx.clearRect(0, 0, w, h); fxRaf = 0; }
+      else {
+        ctx.clearRect(0, 0, w, h);
+        fxRaf = 0;
+        // Free the full-screen bitmap while idle (the kiosk runs for hours); the next loop run re-sizes it before drawing.
+        fxCanvas.width = 0;
+        fxCanvas.height = 0;
+      }
     }
 
     function launchBurst(mode) {
@@ -318,7 +324,11 @@
       session.ended = true;
       lastTouch = Date.now();                // the thanks screen always gets its full hands-off window (endedReturnSeconds) to be read
       spinBtn.hidden = true;
-      if (leverBtn) leverBtn.disabled = true;
+      if (leverBtn) {
+        leverBtn.disabled = true;
+        const mount = $('leverMount');
+        if (mount) mount.hidden = true;     // no dead lever beside "Thanks for playing"
+      }
       if (endEl) endEl.hidden = false;
       if (idleWarnEl) idleWarnEl.hidden = true;
       try { audio.stopAll(); } catch {}      // the music and any voice line stop with the game

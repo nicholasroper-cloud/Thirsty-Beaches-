@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=4">
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=5">
 </head>
 <body>
 <div class="backdrop" aria-hidden="true">
@@ -155,12 +155,12 @@
         </div>
 
         <!-- Illuminated Belly Glass Payout Legend -->
-        <div class="paytable" aria-label="Boardwalk Prize Payouts">
-          <span class="ptag ptag--jackpot">&#9733; 1% FREE DRINK JACKPOT</span>
-          <span class="ptag"><b>3%</b> Freeze-Dried / Sticker</span>
-          <span class="ptag"><b>4%</b> 3D Neon Charm</span>
-          <span class="ptag"><b>5%</b> Soft Serve Topper</span>
-          <span class="ptag"><b>6%</b> Free Size Upgrade</span>
+        <div class="paytable" aria-label="Boardwalk Prizes">
+          <span class="ptag ptag--jackpot">&#9733; FREE DRINK JACKPOT</span>
+          <span class="ptag">Freeze-Dried / Sticker</span>
+          <span class="ptag">3D Neon Charm</span>
+          <span class="ptag">Soft Serve Topper</span>
+          <span class="ptag">Free Size Upgrade</span>
         </div>
 
         <!-- Chrome Ticket & Payout Tray -->
@@ -183,7 +183,7 @@
     </section>
 
     <!-- Mechanical Right-Side Chrome Pull-Lever -->
-    <div class="lever-mount">
+    <div class="lever-mount" id="leverMount">
       <div class="lever-hub" aria-hidden="true"></div>
       <button type="button" class="lever-btn" id="leverBtn" aria-label="Pull slot machine lever to spin">
         <span class="lever-shaft" aria-hidden="true"></span>
@@ -272,6 +272,6 @@
 </dialog>
 
 <script src="/kiosk/audio-bank.js?v=4" defer></script>
-<script src="/kiosk/boardwalk-slots.js?v=5" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=6" defer></script>
 </body>
 </html>

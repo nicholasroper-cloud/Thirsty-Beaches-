@@ -61,6 +61,29 @@ test('the arcade page has no camera, no vibe scan, no client-side prize or code 
   assert.equal(slots.rollWeightedPrize, undefined);
 });
 
+test('arcade page polish: public paytable shows no odds, lever is touch-safe, reduced motion stops the loops, idle canvas and ended lever are released', () => {
+  const html = read('kiosk/boardwalk-slots.html'), css = read('kiosk/boardwalk-slots.css'), js = read('kiosk/boardwalk-slots.js');
+  // staff can change the real odds, so the public paytable never prints percentages
+  const paytable = html.slice(html.indexOf('class="paytable"'), html.indexOf('</div>', html.indexOf('class="paytable"')));
+  assert.match(paytable, /FREE DRINK JACKPOT/);
+  assert.doesNotMatch(paytable, /\d\s*%/, 'no odds percentages in the public paytable');
+  // a finger drag on the lever must not become a page pan (pointercancel would abort the pull)
+  assert.match(css, /\.lever-btn\s*\{[^}]*touch-action:\s*none/);
+  // reduced motion switches off every looping animation
+  const rm = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(rm.length > 50, 'reduced-motion block present');
+  for (const sel of ['.backdrop__palms', '.crown__decal', '.bulb', '.led-ticker__track', '.reel.is-spinning .reel__drum']) assert.ok(rm.includes(sel), 'reduced motion covers ' + sel);
+  assert.match(rm, /animation:\s*none/);
+  const looping = [...css.matchAll(/animation:\s*([A-Za-z]+)[^;]*infinite/g)].map((m) => m[1]).sort();
+  assert.deepEqual(looping, ['bulbChase', 'drumBlur', 'ledScroll', 'neonDecalPulse', 'palmSway']);
+  // the idle particle canvas gives its bitmap back; the next burst re-sizes it in runFxLoop
+  assert.match(js, /fxCanvas\.width = 0;\s*fxCanvas\.height = 0;/);
+  assert.match(js, /fxCanvas\.width !== Math\.round\(w \* dpr\)/);
+  // a finished visit removes the lever instead of leaving a dead one beside "Thanks for playing"
+  assert.match(js, /\$\('leverMount'\)[\s\S]{0,80}mount\.hidden = true/);
+  assert.match(css, /\.lever-mount\[hidden\]\s*\{\s*display:\s*none/);
+});
+
 /* ---------------- the existing bundle checks ---------------- */
 test('dual-persona audio bank & prize odds invariants hold', () => {
   assert.deepEqual(Object.keys(audioBank.PERSONAS).sort(), ['neon86', 'shredder']);
@@ -364,7 +387,7 @@ test('REAL kiosk server: /arcade is served without a camera, the config is staff
 
   // the page: served, camera and microphone denied by header, nothing links to it from the ordering screen
   const page = await request(port, 'GET', '/arcade');
-  assert.equal(page.status, 200); assert.match(page.body, /1986 BOARDWALK DRINK SLOTS/);
+  assert.equal(page.status, 200); assert.match(page.body, /MIAMI BEACH DRINK SLOTS/);
   assert.match(String(page.headers['permissions-policy']), /camera=\(\)/);
   assert.doesNotMatch(page.body, /getUserMedia|Scan My Vibe|Presence Cam|Dole/i);
   assert.equal((await request(port, 'GET', '/kiosk/boardwalk-slots.js')).status, 200);
