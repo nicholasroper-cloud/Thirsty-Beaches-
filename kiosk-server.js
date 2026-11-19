@@ -337,6 +337,14 @@ async function prizeCheck(code, redeem) {
   } catch (e) { return { ok: false, status: "offline" }; }
 }
 
+/* ---- Boardwalk arcade (arcade-routes.js): the prize is rolled and the code is issued HERE, by the tb-where Worker, never in the browser.
+   KIOSK_KEY and STATION_KEY stay in this process; no code without a Worker-issued claim; the staff config needs STATION_KEY. ---- */
+const arcade = require("./arcade-routes").createArcade({
+  tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
+  log: m => console.log(m),
+});
+const arcadeSpinLimiter = lib.makeRateLimiter(20, 60000, undefined);   // 20 spins a minute on this one kiosk
+
 /* ---- customer name on a public screen: moderated at the one server-side choke point (moderation.js), beach-name fallback ---- */
 const NAME_FIRST = ["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral","Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Lady"];
 const NAME_LAST  = ["Riptide","Sandcastle","Seabreeze","Sunchaser","Wavemaker","Beachcomber","Driftwood","Pufferfish","Starfish","Sandbar","Shoreline","Coconut","Seahorse","Castaway","Sailor","Dune","Marlin","Barnacle"];
@@ -768,7 +776,7 @@ const versionTag = () => (appState.screenEpoch ? `${CURRENT_VERSION}.${appState.
    A restart (code update, pay setting change, remote restart command) only happens when no
    order/payment/AI request is in flight and nothing customer-facing has happened for IDLE_MS.
    The supervisor brings the server back in ~1-2 s; the page itself is not reloaded. */
-const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink"]);
+const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin"]);
 const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) || 120000);
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
@@ -1171,48 +1179,50 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ---- 80s Boardwalk Arcade Slot Machine & Dual-Persona Audio Bank ----
+  // NOT linked from the ordering screen (a separate URL for a second screen, see build-notes.md). Served without camera or microphone permission.
   if (req.method === "GET" && (pathname === "/arcade" || pathname === "/arcade/")) {
-    return serveFile(res, path.join(__dirname, "kiosk", "boardwalk-slots.html"));
+    const page = path.join(__dirname, "kiosk", "boardwalk-slots.html");
+    arcade.touch().catch(() => {});                        // have play tokens ready (the Worker wants them 45 s old) before the first win
+    return fs.readFile(page, (err, data) => {
+      if (err) return send(res, 404, "Not found");
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": lib.CSP, "Referrer-Policy": "no-referrer", "Permissions-Policy": "camera=(), microphone=(), geolocation=()" });
+      res.end(data);
+    });
   }
   if (req.method === "GET" && pathname.startsWith("/kiosk/")) {
     const rel = pathname.slice("/kiosk/".length).replace(/^\/+/, "");
+    if (rel.includes("\0") || rel.includes("\\")) return send(res, 400, "bad request");
     const safeRoot = path.resolve(__dirname, "kiosk");
     const target = path.resolve(safeRoot, rel);
     if (!target.startsWith(safeRoot + path.sep) || rel.includes("..")) return send(res, 403, "Forbidden");
-    if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) return send(res, 404, "Not found");
+    let isFile = false;
+    try { isFile = fs.statSync(target).isFile(); } catch {}
+    if (!isFile) return send(res, 404, "Not found");
     const ext = path.extname(target).toLowerCase();
     const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".txt": "text/plain; charset=utf-8" }[ext] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-cache" });
-    return fs.createReadStream(target).pipe(res);
+    // A locked or vanished file (Windows: an update swapping it, antivirus) must answer an error, never throw out of the pipe and end the server.
+    const rs = fs.createReadStream(target);
+    rs.once("error", () => { if (!res.headersSent) send(res, 503, "busy, try again"); else res.destroy(); });
+    rs.once("open", () => { res.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff" }); rs.pipe(res); });
+    res.on("close", () => rs.destroy());
+    return;
   }
   if (req.method === "GET" && pathname === "/api/arcade-config") {
-    const cfgPath = path.join(TB_DIR, "arcade-config.json");
-    let saved = null;
-    try { saved = JSON.parse(fs.readFileSync(cfgPath, "utf8")); } catch {}
-    return sendJSON(res, 200, { ok: true, config: saved });
+    return sendJSON(res, 200, { ok: true, config: arcade.getConfig(), prizes: arcade.prizesOn() });
   }
   if (req.method === "POST" && pathname === "/api/arcade-config") {
-    try {
-      const body = JSON.parse((await readBody(req)) || "{}");
-      if (Array.isArray(body.odds)) {
-        const sum = body.odds.reduce((s, o) => s + (Number(o && o.pct) || 0), 0);
-        if (Math.round(sum) !== 100) return sendJSON(res, 400, { ok: false, error: "Prize odds must sum to 100%" });
-      }
-      fs.mkdirSync(TB_DIR, { recursive: true });
-      const clean = {
-        personaMode: ["shredder", "neon86", "auto"].includes(body.personaMode) ? body.personaMode : "auto",
-        volume: Math.max(0, Math.min(1, Number(body.volume ?? 0.75))),
-        muted: Boolean(body.muted),
-        pgMode: body.pgMode !== false,
-        winterEnabled: body.winterEnabled !== false,
-        odds: Array.isArray(body.odds) ? body.odds.slice(0, 12) : undefined,
-        updatedAt: Date.now(),
-      };
-      fs.writeFileSync(path.join(TB_DIR, "arcade-config.json"), JSON.stringify(clean, null, 2));
-      return sendJSON(res, 200, { ok: true, config: clean });
-    } catch {
-      return sendJSON(res, 400, { ok: false, error: "Invalid arcade config JSON" });
-    }
+    // Staff only: X-Key must equal STATION_KEY (the same staff key the make station uses). Anything else is refused and counted.
+    let body = null; try { body = JSON.parse((await readBody(req)) || "{}"); } catch {}
+    const key = Array.isArray(req.headers["x-key"]) ? "" : String(req.headers["x-key"] || "");
+    const out = arcade.saveConfig(key, body);
+    return sendJSON(res, out.status, out.body);
+  }
+  if (req.method === "POST" && pathname === "/api/arcade/spin") {
+    if (!arcadeSpinLimiter.take()) return sendJSON(res, 429, { ok: false, thanks: true });
+    await readBody(req);
+    try { return sendJSON(res, 200, await arcade.spin()); }
+    catch (e) { console.error("arcade spin error:", e.message); return sendJSON(res, 200, { ok: true, prizeId: "standard", win: false, thanks: true }); }
   }
 
   send(res, 404, "Not found");
@@ -1226,6 +1236,8 @@ server.on("error", e => {
   throw e;
 });
 server.listen(PORT, "127.0.0.1", () => console.log(`Thirsty Beaches kiosk running -> http://localhost:${PORT}  (localhost-only)${SUPERVISED ? " · supervised" : ""}`));
+// Arcade prize codes need a Worker play token that is ~45 s old: keep a few warm, but only while the arcade page is actually in use (and only with KIOSK_KEY set; capped per hour inside arcade-routes.js).
+setInterval(() => arcade.refillIfActive().catch(() => {}), 5 * 60000).unref();
 
 // ---- Tap-to-pay: lazy-load flex-pay.js and connect to the Flex ----
 // flex-pay.js is always required (cheap — it does nothing until init() is called).
