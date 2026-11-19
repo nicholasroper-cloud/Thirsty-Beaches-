@@ -24,7 +24,7 @@ const names = p => p.steps.map(s => s[0]);
 const hasFizzPour = p => p.steps.some(s => /keep the fizz/i.test(s[1]));   // the flavor-syrup pour the bug produced
 
 /* ---- finding 3: one test ticket per cap choice ---- */
-for (const cap of ["Dole Whip", "Vanilla", "Twist (both)"]) {
+for (const cap of ["Pineapple soft serve", "Dole Whip", "Vanilla", "Twist (both)"]) {   // "Dole Whip" = an order placed before the rename
   t("Build Your Own Float + cap " + cap, () => {
     const mods = ["Regular", "Root beer", cap, "Protein scoop", "Popping boba"];
     assert.strictEqual(api.classify(cap, "Floats"), "cap");
@@ -40,7 +40,7 @@ for (const cap of ["Dole Whip", "Vanilla", "Twist (both)"]) {
     assert.strictEqual(p.cup, "Regular");
   });
 }
-for (const cap of ["Dole Whip", "Vanilla", "Twist (Dole Whip + Vanilla)"]) {
+for (const cap of ["Pineapple soft serve", "Dole Whip", "Vanilla", "Twist (Pineapple + Vanilla)", "Twist (Dole Whip + Vanilla)"]) {
   t("Soft Serve Float On + flavor " + cap, () => {
     assert.strictEqual(api.classify(cap, "Soft Serve"), "cap");
     const p = api.plan("Float On", ["Regular", "Float (in juice/soda)", cap], "Soft Serve");
@@ -49,12 +49,22 @@ for (const cap of ["Dole Whip", "Vanilla", "Twist (Dole Whip + Vanilla)"]) {
     assert.strictEqual(p.steps.length, RECIPES["Float On"].how.length + 1, "serve choice rides along as one extra step");
   });
 }
-t("Sandy Bottom with a Vanilla cap shows a SUB for Dole Whip", () => {
+t("Sandy Bottom with a Vanilla cap shows a SUB for Pineapple soft serve", () => {
   const p = api.plan("Sandy Bottom", ["Regular", "Dr Pepper", "Vanilla"], "Floats");
   const s = p.steps.find(x => x[0] === "Vanilla soft serve");
-  assert.ok(s && s[3] === "sub:Dole Whip", JSON.stringify(p.steps));
-  const same = api.plan("Sandy Bottom", ["Regular", "Dr Pepper", "Dole Whip"], "Floats");
-  assert.ok(same.steps.find(x => x[0] === "Dole Whip" && !x[3]));
+  assert.ok(s && s[3] === "sub:Pineapple soft serve", JSON.stringify(p.steps));
+  for (const cap of ["Pineapple soft serve", "Dole Whip"]) {      // the old spelling on an older order must not look like a substitution
+    const same = api.plan("Sandy Bottom", ["Regular", "Dr Pepper", cap], "Floats");
+    assert.ok(same.steps.find(x => x[0] === "Pineapple soft serve" && !x[3]), cap + ": " + JSON.stringify(same.steps));
+  }
+});
+t("no crew-visible Dole Whip text is left in the station page, recipes or add-on names", () => {
+  const html = fs.readFileSync(path.join(ROOT, "make-station.html"), "utf8");
+  const shown = html.split("\n").filter(l => /Dole Whip/.test(l) && !/Older orders/.test(l));   // lowercase "dole whip" lives only in the legacy matchers (CAP_RE, DW_LEGACY, 86 alias), never on screen
+  assert.deepStrictEqual(shown, [], "unexpected Dole Whip text: " + shown.join(" | ").slice(0, 300));
+  assert.ok(!/dole whip/i.test(fs.readFileSync(path.join(ROOT, "recipes.json"), "utf8")), "recipes.json");
+  const names = JSON.stringify(JSON.parse(fs.readFileSync(path.join(ROOT, "addons.json"), "utf8")).groups.flatMap(g => g.items.map(i => i.name)));
+  assert.ok(!/dole/i.test(names), "addons.json display names");
 });
 t("the same words on a dirty soda stay flavor syrups", () => {
   assert.strictEqual(api.classify("Vanilla", "Dirty Sodas"), "flavor");
@@ -65,7 +75,8 @@ t("the same words on a dirty soda stay flavor syrups", () => {
   assert.strictEqual(api.classify("Vanilla Sweet Cream", "Floats"), "cream");
 });
 t("kiosk float upsell on a dirty soda adds a float cap step, not a syrup", () => {
-  assert.strictEqual(api.classify("Float: Dole Whip", "Dirty Sodas"), "cap");
+  assert.strictEqual(api.classify("Float: Pineapple soft serve", "Dirty Sodas"), "cap");
+  assert.strictEqual(api.classify("Float: Dole Whip", "Dirty Sodas"), "cap", "an older order");
   assert.strictEqual(api.classify("Float: Vanilla", "Dirty Sodas"), "cap");
   const p = api.plan("Thirst Trap", ["Medium 24oz", "Dr Pepper", "Float: Vanilla"], "Dirty Sodas");
   const s = p.steps.find(x => x[0] === "Vanilla soft serve");

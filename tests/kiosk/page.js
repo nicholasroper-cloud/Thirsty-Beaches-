@@ -40,7 +40,7 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
   let sel = A.defaultSel("dirtysodas", item("dirtysodas", "thirst-trap"));
   eq([sel.size, sel.base], ["Medium 24oz", "Dr Pepper"], "Thirst Trap: Medium + the recipe's own base");
   eq(A.defaultSel("dirtysodas", item("dirtysodas", "nice-coconuts")).base, "Coca-Cola", "recipe says Coke, the menu says Coca-Cola");
-  eq(A.defaultSel("floats", item("floats", "beached-whale")).cap, "Dole Whip", "Sandy Bottom: Dole Whip cap");
+  eq(A.defaultSel("floats", item("floats", "beached-whale")).cap, "Pineapple soft serve", "Sandy Bottom: Pineapple soft serve cap");
   sel = A.defaultSel("dirtysodas", item("dirtysodas", "pour-decisions"));
   eq([sel.size, sel.base], ["Medium 24oz", null], "Pour Decisions: size only, base stays Required");
   sel = A.defaultSel("floats", item("floats", "byo-float"));
@@ -59,7 +59,7 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
   let line = trap();
   let offers = A.buildUpsellOffers(line);
   eq(offers.map(o => o.id), ["float", "topper", "size"], "a plain dirty soda gets all three offers");
-  eq(offers[0].chips.map(c => c.label), ["Dole Whip", "Vanilla"], "float offer carries its two cap chips");
+  eq(offers[0].chips.map(c => c.label), ["Pineapple soft serve", "Vanilla"], "float offer carries its two cap chips");
   eq(offers.find(o => o.id === "topper").price, 0.5, "topper at its MENU price (Whipped cream)");
   eq([offers.find(o => o.id === "size").name, offers.find(o => o.id === "size").price], ["Size up to Large 32oz", 0.7], "size up = the NEXT real size, priced as the difference");
 
@@ -72,7 +72,7 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
   }
   // already a float -> only the float offer disappears; topper and size up stay
   for (const [cat, id] of [["floats", "beached-whale"], ["floats", "byo-float"]]) {
-    const s3 = A.defaultSel(cat, item(cat, id)); if (!s3.base) s3.base = "Root beer"; if (!s3.cap) s3.cap = "Dole Whip";
+    const s3 = A.defaultSel(cat, item(cat, id)); if (!s3.base) s3.base = "Root beer"; if (!s3.cap) s3.cap = "Pineapple soft serve";
     const o3 = A.buildUpsellOffers(lineOf(cat, id, s3)).map(o => o.id);
     ok(!o3.includes("float") && o3.includes("topper") && o3.includes("size"), `${id}: no float offer, but topper + size up: ${o3}`);
   }
@@ -92,13 +92,13 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
   tapOffer(line, "float", "Vanilla");
   eq(line.mods[line.mods.length - 1], "Float: Vanilla", "float cap is the last add-on and names its group");
   eq(line.unit, +(base0 + 0.7 + 0.5 + 1.5).toFixed(2), "all three picked: size + whipped cream + float, all at menu prices");
-  tapOffer(line, "float", "Dole Whip");
-  eq(line.sel._float, "Dole Whip", "the other chip switches the cap");
-  tapOffer(line, "float", "Dole Whip"); tapOffer(line, "size"); tapOffer(line, "topper");
+  tapOffer(line, "float", "Pineapple soft serve");
+  eq(line.sel._float, "Pineapple soft serve", "the other chip switches the cap");
+  tapOffer(line, "float", "Pineapple soft serve"); tapOffer(line, "size"); tapOffer(line, "topper");
   eq([line.unit, line.mods.join("|")], [base0, trap().mods.join("|")], "tapping each again returns the line exactly to where it was");
 
   // Edit keeps the upsell: a customer edit rebuilds from `sel`, which carries it
-  line = trap(); tapOffer(line, "float", "Dole Whip"); tapOffer(line, "topper");
+  line = trap(); tapOffer(line, "float", "Pineapple soft serve"); tapOffer(line, "topper");
   const edited = lineOf("dirtysodas", "thirst-trap", JSON.parse(JSON.stringify(line.sel)));
   eq([edited.unit, edited.mods], [line.unit, line.mods], "Edit -> Add rebuilds the identical line (upsell and price kept)");
   line.sel.size = "Small 16oz";
@@ -119,9 +119,9 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
     const s4 = A.defaultSel(cat, item(cat, id));
     for (const o of MENU[cat].options) if (o.required && !o.multi && !s4[o.key]) s4[o.key] = o.choices[0].name;
     const l0 = lineOf(cat, id, s4); cases.push(l0);
-    for (const seq of [["size"], ["topper"], ["float", "Dole Whip"], ["size", "topper", "float:Vanilla"]]) {
+    for (const seq of [["size"], ["topper"], ["float", "Pineapple soft serve"], ["size", "topper", "float:Vanilla"]]) {
       const l1 = lineOf(cat, id, JSON.parse(JSON.stringify(s4)));
-      for (const step of seq) { const [sid, arg] = step.split(":"); const o = A.buildUpsellOffers(l1).find(x => x.id === sid); if (o) tapOffer(l1, sid, arg || (sid === "float" ? "Dole Whip" : undefined)); }
+      for (const step of seq) { const [sid, arg] = step.split(":"); const o = A.buildUpsellOffers(l1).find(x => x.id === sid); if (o) tapOffer(l1, sid, arg || (sid === "float" ? "Pineapple soft serve" : undefined)); }
       cases.push(l1);
     }
   }
@@ -150,5 +150,10 @@ const between = (a, b) => { const i = html.indexOf(a), j = html.indexOf(b, i); a
   const srv = fs.readFileSync(path.join(ROOT, "kiosk-server.js"), "utf8");
   const list = (src, name) => JSON.parse(src.match(new RegExp("(?:const " + name + "\\s*=\\s*)(\\[[^\\]]*\\])"))[1]);
   eq(list(html, "BEACH_FIRST"), list(srv, "NAME_FIRST"), "beach first names match the server's"); eq(list(html, "BEACH_LAST"), list(srv, "NAME_LAST"), "beach last names match the server's");
+  // customer-visible wording: "pineapple soft serve", never the brand name (identifiers such as the dolewhip category key stay; they are Clover/catalog keys)
+  ok(!/Dole Whip/.test(html), "no 'Dole Whip' text on the kiosk page");
+  for (const f of ["recipes.json", "addons.json"]) { const j = fs.readFileSync(path.join(ROOT, f), "utf8"); ok(!/"name": "[^"]*Dole/.test(j) && !/"(?:[^"]*\s)?Dole Whip[^"]*",?\s*\n\s*"(?:Pull|Swirl)/.test(j), f + " shows no Dole Whip"); }
+  const MAPJ = JSON.parse(fs.readFileSync(path.join(ROOT, "catalog-map.json"), "utf8"));
+  ok(!JSON.stringify(MAPJ).match(/Dole Whip/), "catalog-map keys were renamed together with the page (the ids did not move)");
   console.log("page: " + n + " checks passed");
 })().catch(e => { console.error(e); process.exit(1); });

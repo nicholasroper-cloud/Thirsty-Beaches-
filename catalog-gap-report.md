@@ -68,12 +68,12 @@ A modifier id is per Clover modifier, not per key: the same Clover modifier (for
 - items (4 of 4 unmapped): `the-spaceman` The Spaceman ($7.50); `midnight-tide` Midnight Tide ($6.95); `the-undertow` The Undertow ($8.50); `loose-lips` Loose Lips ($6.50)
   - option `size` (2 of 2 unmapped): Regular (0.00); Large (1.50)
   - option `base` (9 of 9 unmapped): Pineapple soda (0.00); Orange soda (0.00); Root beer (0.00); Cream soda (0.00); Dr Pepper (0.00); Coconut-lime soda (0.00); Blue raspberry lemonade (0.00); Strawberry lemonade (0.00); Cherry limeade (0.00)
-  - option `cap` (3 of 3 unmapped): Dole Whip (0.00); Vanilla (0.00); Twist (both) (0.00)
+  - option `cap` (3 of 3 unmapped): Pineapple soft serve (0.00); Vanilla (0.00); Twist (both) (0.00)
   - option `boost` (7 of 7 unmapped): Protein scoop (1.50); Popping boba (0.75); Chamoy drizzle (0.75); Tajín rim (0.50); Fresh fruit (0.99); Toasted coconut (0.75); Freeze-dried candy (0.75)
   - option `topper` (5 of 5 unmapped): Whipped cream (0.50); Sweet cream cold foam (0.75); Vanilla cold foam (0.99); Salted caramel cold foam (0.99); Freeze-dried candy (0.75)
 
 ## floats (attach prompt)
 
-- `Float: Dole Whip` ($1.50)
+- `Float: Pineapple soft serve` ($1.50)
 - `Float: Vanilla` ($1.50)
 

@@ -103,7 +103,7 @@
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "kioskCents": 0,
        "clover": "B5EJSZ6WC6PZR"
       },
@@ -1939,7 +1939,7 @@
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "kioskCents": 0,
        "clover": "X83KRST702V7A"
       },
@@ -1949,7 +1949,7 @@
        "clover": "CCZBRY5BR1PJ8"
       },
       {
-       "name": "Twist (Dole Whip + Vanilla)",
+       "name": "Twist (Pineapple + Vanilla)",
        "kioskCents": 0,
        "clover": "46BPC4VJG9G3M"
       }
@@ -2509,7 +2509,7 @@
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "kioskCents": 0,
        "clover": null
       },
@@ -2602,7 +2602,7 @@
  },
  "floats": [
   {
-   "mod": "Float: Dole Whip",
+   "mod": "Float: Pineapple soft serve",
    "kioskCents": 150,
    "clover": null
   },

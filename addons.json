@@ -90,7 +90,7 @@
    "items": [
     {
      "id": "cap:Dole Whip",
-     "name": "Dole Whip"
+     "name": "Pineapple soft serve"
     },
     {
      "id": "cap:Vanilla",
@@ -404,11 +404,11 @@
    "items": [
     {
      "id": "flavor:Dole Whip",
-     "name": "Dole Whip"
+     "name": "Pineapple soft serve"
     },
     {
      "id": "flavor:Twist (Dole Whip + Vanilla)",
-     "name": "Twist (Dole Whip + Vanilla)"
+     "name": "Twist (Pineapple + Vanilla)"
     }
    ]
   },

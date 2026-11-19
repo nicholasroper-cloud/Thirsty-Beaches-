@@ -92,7 +92,7 @@ export const KIOSK_MENU = {
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "d": 0
       },
       {
@@ -1714,7 +1714,7 @@ export const KIOSK_MENU = {
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "d": 0
       },
       {
@@ -1722,7 +1722,7 @@ export const KIOSK_MENU = {
        "d": 0
       },
       {
-       "name": "Twist (Dole Whip + Vanilla)",
+       "name": "Twist (Pineapple + Vanilla)",
        "d": 0
       }
      ]
@@ -2222,7 +2222,7 @@ export const KIOSK_MENU = {
      "multi": false,
      "choices": [
       {
-       "name": "Dole Whip",
+       "name": "Pineapple soft serve",
        "d": 0
       },
       {
@@ -2300,7 +2300,7 @@ export const KIOSK_MENU = {
  },
  "upsells": [
   {
-   "mod": "Float: Dole Whip",
+   "mod": "Float: Pineapple soft serve",
    "price": 150
   },
   {

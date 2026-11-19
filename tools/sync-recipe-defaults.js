@@ -16,8 +16,8 @@ const END = "/* RECIPE_DEFAULTS:END */";
 const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 /* recipes.json spells ingredients one way, the kiosk menu another */
 const ALIAS = { coke: "Coca-Cola", dietcoke: "Diet Coke", mountaindew: "Mountain Dew", dietmountaindew: "Diet Mtn Dew", orangesoda: "Fanta Orange", lemonade: "Classic Lemonade" };
-/* floats have no ingredient list in recipes.json: their soft-serve cap comes from the build card ("Dole Whip over your soda", "Vanilla soft serve on top") */
-const FLOAT_DEFAULTS = { "beached-whale": { cap: "Dole Whip" }, "swole-patrol": { cap: "Vanilla" }, "riptide-float": { cap: "Vanilla" }, "cold-front": { base: "Dr Pepper" } };
+/* floats have no ingredient list in recipes.json: their soft-serve cap comes from the build card ("Pineapple soft serve over your soda", "Vanilla soft serve on top") */
+const FLOAT_DEFAULTS = { "beached-whale": { cap: "Pineapple soft serve" }, "swole-patrol": { cap: "Vanilla" }, "riptide-float": { cap: "Vanilla" }, "cold-front": { base: "Dr Pepper" } };
 const BYO = new Set(["pour-decisions", "byo-float"]);
 
 function loadMenu(html) {
