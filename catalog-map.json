@@ -7,27 +7,27 @@
     "beached-whale": {
      "name": "Sandy Bottom",
      "kioskCents": 650,
-     "clover": null
+     "clover": "DES85MFNAE1XC"
     },
     "swole-patrol": {
      "name": "Thicc & Thirsty",
      "kioskCents": 750,
-     "clover": null
+     "clover": "WSNK1H805D5XW"
     },
     "cold-front": {
      "name": "Cold Shoulder",
      "kioskCents": 650,
-     "clover": null
+     "clover": "BHYRA90QY4ZKM"
     },
     "riptide-float": {
      "name": "Riptide",
      "kioskCents": 650,
-     "clover": null
+     "clover": "KSVPHX6ZQBFNJ"
     },
     "byo-float": {
      "name": "Build Your Own Float",
      "kioskCents": 595,
-     "clover": null
+     "clover": "WM2NY97PVS1CP"
     }
    },
    "options": [
@@ -105,17 +105,17 @@
       {
        "name": "Dole Whip",
        "kioskCents": 0,
-       "clover": null
+       "clover": "B5EJSZ6WC6PZR"
       },
       {
        "name": "Vanilla",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9W44G6GE4RW56"
       },
       {
        "name": "Twist (both)",
        "kioskCents": 0,
-       "clover": null
+       "clover": "0N358WM7C9KWT"
       }
      ]
     },
@@ -156,7 +156,7 @@
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     },
@@ -167,27 +167,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -198,107 +198,107 @@
     "thirst-trap": {
      "name": "Thirst Trap",
      "kioskCents": 349,
-     "clover": null
+     "clover": "WVP9RVK8CA3AM"
     },
     "dirty-secret": {
      "name": "Dirty Little Secret",
      "kioskCents": 349,
-     "clover": null
+     "clover": "8JWEG5QCZ5TRJ"
     },
     "nice-coconuts": {
      "name": "Nice Coconuts",
      "kioskCents": 349,
-     "clover": null
+     "clover": "B19DBHNR1B5ZW"
     },
     "razzle": {
      "name": "Razzle My Berries",
      "kioskCents": 349,
-     "clover": null
+     "clover": "T5KANVKENZHER"
     },
     "sweet-cheeks": {
      "name": "Sweet Cheeks",
      "kioskCents": 349,
-     "clover": null
+     "clover": "TGV9X42PKESH8"
     },
     "upside-down": {
      "name": "Upside-Down & Dirty",
      "kioskCents": 349,
-     "clover": null
+     "clover": "0H3EFW0K1J1DY"
     },
     "tropic-hot": {
      "name": "Tropic Like It's Hot",
      "kioskCents": 349,
-     "clover": null
+     "clover": "VZK9DHRFBR3RY"
     },
     "sunset-rocks": {
      "name": "Sunset on the Rocks",
      "kioskCents": 349,
-     "clover": null
+     "clover": "H3VCQV7KR8768"
     },
     "pour-decisions": {
      "name": "Pour Decisions",
      "kioskCents": 349,
-     "clover": null
+     "clover": "3BDEVG9N7Z478"
     },
     "butter-me-up": {
      "name": "Butter Me Up",
      "kioskCents": 349,
-     "clover": null
+     "clover": "AYFV3XPAR486T"
     },
     "cake-walk": {
      "name": "Cake Walk",
      "kioskCents": 349,
-     "clover": null
+     "clover": "45RXJJKGQ24Z8"
     },
     "cherry-on-top": {
      "name": "Cherry on Top",
      "kioskCents": 349,
-     "clover": null
+     "clover": "2EM43VGB5JFFE"
     },
     "cran-do-attitude": {
      "name": "Cran-Do Attitude",
      "kioskCents": 349,
-     "clover": null
+     "clover": "KCSFJSQMPAD32"
     },
     "dew-or-die": {
      "name": "Dew or Die",
      "kioskCents": 349,
-     "clover": null
+     "clover": "NVJ1EMTK0MA1J"
     },
     "fling-on-the-beach": {
      "name": "Fling on the Beach",
      "kioskCents": 349,
-     "clover": null
+     "clover": "AEKFN7GA0SMS4"
     },
     "fruit-loop-lagoon": {
      "name": "Fruit Loop Lagoon",
      "kioskCents": 349,
-     "clover": null
+     "clover": "FJEDK9WC8TKAW"
     },
     "guava-lava": {
      "name": "Guava Lava",
      "kioskCents": 349,
-     "clover": null
+     "clover": "6S0V6XJRJGBPY"
     },
     "hula-hottie": {
      "name": "Hula Hottie",
      "kioskCents": 349,
-     "clover": null
+     "clover": "DM2RS7HHN48QA"
     },
     "just-beachy": {
      "name": "Just Beachy",
      "kioskCents": 349,
-     "clover": null
+     "clover": "GMWJK2ARHRH5M"
     },
     "no-regrets": {
      "name": "No Regrets",
      "kioskCents": 349,
-     "clover": null
+     "clover": "NY5R14JZYP9AJ"
     },
     "one-in-a-melon": {
      "name": "One in a Melon",
      "kioskCents": 349,
-     "clover": null
+     "clover": "2YGQQGJW9V6DC"
     },
     "peach-please": {
      "name": "Peach Please",
@@ -308,22 +308,22 @@
     "pink-bikini": {
      "name": "Pink Bikini",
      "kioskCents": 349,
-     "clover": null
+     "clover": "B7N4ZBR13T2YM"
     },
     "salt-life": {
      "name": "Salt Life",
      "kioskCents": 349,
-     "clover": null
+     "clover": "1W0X57C5HV2PE"
     },
     "shark-bait": {
      "name": "Shark Bait",
      "kioskCents": 349,
-     "clover": null
+     "clover": "5PPNDEPDFREMA"
     },
     "tan-lines": {
      "name": "Tan Lines",
      "kioskCents": 349,
-     "clover": null
+     "clover": "WA5S9TFJ5DQ0J"
     }
    },
    "options": [
@@ -334,17 +334,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -355,72 +355,72 @@
       {
        "name": "Coca-Cola",
        "kioskCents": 0,
-       "clover": null
+       "clover": "69YAR1Q17QX9R"
       },
       {
        "name": "Diet Coke",
        "kioskCents": 0,
-       "clover": null
+       "clover": "C8Y0ZGMEZPD6A"
       },
       {
        "name": "Pepsi",
        "kioskCents": 0,
-       "clover": null
+       "clover": "YKB4131DK758P"
       },
       {
        "name": "Dr Pepper",
        "kioskCents": 0,
-       "clover": null
+       "clover": "C62FR52YZCQPP"
       },
       {
        "name": "Diet Dr Pepper",
        "kioskCents": 0,
-       "clover": null
+       "clover": "CKGBY27FVY8KG"
       },
       {
        "name": "Sprite",
        "kioskCents": 0,
-       "clover": null
+       "clover": "0NXBVJVAM57EY"
       },
       {
        "name": "Sprite Zero",
        "kioskCents": 0,
-       "clover": null
+       "clover": "89J80AHBP8S9R"
       },
       {
        "name": "Mountain Dew",
        "kioskCents": 0,
-       "clover": null
+       "clover": "7T0V1ZA1KE5HG"
       },
       {
        "name": "Diet Mtn Dew",
        "kioskCents": 0,
-       "clover": null
+       "clover": "DSK6SH1E7QJYY"
       },
       {
        "name": "Root Beer",
        "kioskCents": 0,
-       "clover": null
+       "clover": "G3DA0Q6N2XMGT"
       },
       {
        "name": "Cream Soda",
        "kioskCents": 0,
-       "clover": null
+       "clover": "HZJ4B17WT8BKP"
       },
       {
        "name": "Fanta Orange",
        "kioskCents": 0,
-       "clover": null
+       "clover": "GN2GEEA7F09ST"
       },
       {
        "name": "Big Red",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RHYKPHSDCK7MP"
       },
       {
        "name": "Squirt",
        "kioskCents": 0,
-       "clover": null
+       "clover": "FQMSSVFNWYXJ2"
       }
      ]
     },
@@ -431,42 +431,42 @@
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "60VASK06XA5C0"
       },
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6GQMCDYD5JTTE"
       },
       {
        "name": "Cherry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "K9EPSA1PH374M"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "ZMA9XA7YYKFXR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "9HVG9RXYQKG76"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6E9YKTNQ3M70E"
       },
       {
        "name": "Lime",
        "kioskCents": 50,
-       "clover": null
+       "clover": "WFN6RG7FH59ZR"
       },
       {
        "name": "Blue Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "0NXKRMQTVBB82"
       }
      ]
     },
@@ -477,27 +477,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -508,17 +508,17 @@
       {
        "name": "None",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RFAFMEVGS43FP"
       },
       {
        "name": "Vanilla Sweet Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HNBZ85TNSEJ5M"
       },
       {
        "name": "Coconut Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "4V04X25NJJCQC"
       }
      ]
     },
@@ -545,17 +545,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     },
@@ -566,27 +566,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -597,97 +597,97 @@
     "apple-of-my-thighs": {
      "name": "Apple of My Thighs",
      "kioskCents": 399,
-     "clover": null
+     "clover": "38CNRXDY434D8"
     },
     "boo-tea-call": {
      "name": "Boo-tea Call",
      "kioskCents": 399,
-     "clover": null
+     "clover": "SGF1Z4RK8S78Y"
     },
     "cider-beaches": {
      "name": "Cider Beaches",
      "kioskCents": 399,
-     "clover": null
+     "clover": "FSPBDGPDXW6FP"
     },
     "crush-on-you": {
      "name": "Crush On You",
      "kioskCents": 399,
-     "clover": null
+     "clover": "G3X9NYBE77S14"
     },
     "fall-back-relax": {
      "name": "Fall Back & Relax",
      "kioskCents": 399,
-     "clover": null
+     "clover": "8XPV67H8K7TEM"
     },
     "frosty-the-snowcone": {
      "name": "Frosty the Snowcone",
      "kioskCents": 399,
-     "clover": null
+     "clover": "TKTPBS0K88CVC"
     },
     "ghosted": {
      "name": "Ghosted",
      "kioskCents": 399,
-     "clover": null
+     "clover": "XGZATNJM5RE26"
     },
     "gourd-vibes-only": {
      "name": "Gourd Vibes Only",
      "kioskCents": 399,
-     "clover": null
+     "clover": "KDYTEG01QS9YR"
     },
     "harvest-moon": {
      "name": "Harvest Moon",
      "kioskCents": 399,
-     "clover": null
+     "clover": "2JK5QFXGXXSAJ"
     },
     "hayride-hottie": {
      "name": "Hayride Hottie",
      "kioskCents": 399,
-     "clover": null
+     "clover": "6GHPAY7HN9JKA"
     },
     "jingle-juice": {
      "name": "Jingle Juice",
      "kioskCents": 399,
-     "clover": null
+     "clover": "M6DVN339K8KAA"
     },
     "love-potion-no-9": {
      "name": "Love Potion No. 9",
      "kioskCents": 399,
-     "clover": null
+     "clover": "8GCZCM8SYXPVT"
     },
     "naughty-nice": {
      "name": "Naughty & Nice",
      "kioskCents": 399,
-     "clover": null
+     "clover": "6P67FG1RZXFKJ"
     },
     "pumpkin-spice-everything-dirty": {
      "name": "Pumpkin Spice & Everything Dirty",
      "kioskCents": 399,
-     "clover": null
+     "clover": "ST63WFZA1KM1W"
     },
     "sleigh-all-day": {
      "name": "Sleigh All Day",
      "kioskCents": 399,
-     "clover": null
+     "clover": "MZ88FC0AEPEFC"
     },
     "spice-spice-beachy": {
      "name": "Spice Spice Beachy",
      "kioskCents": 399,
-     "clover": null
+     "clover": "7WVNFGJXDZHXP"
     },
     "sweater-weather": {
      "name": "Sweater Weather",
      "kioskCents": 399,
-     "clover": null
+     "clover": "14CAZTKFQ959M"
     },
     "the-graveyard-shift": {
      "name": "The Graveyard Shift",
      "kioskCents": 399,
-     "clover": null
+     "clover": "C01TATQZ3GYCR"
     },
     "witch-better-have-my-candy": {
      "name": "Witch Better Have My Candy",
      "kioskCents": 399,
-     "clover": null
+     "clover": "H9DB4BVSGV5SC"
     }
    },
    "options": [
@@ -698,17 +698,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -719,72 +719,72 @@
       {
        "name": "Coca-Cola",
        "kioskCents": 0,
-       "clover": null
+       "clover": "69YAR1Q17QX9R"
       },
       {
        "name": "Diet Coke",
        "kioskCents": 0,
-       "clover": null
+       "clover": "C8Y0ZGMEZPD6A"
       },
       {
        "name": "Pepsi",
        "kioskCents": 0,
-       "clover": null
+       "clover": "YKB4131DK758P"
       },
       {
        "name": "Dr Pepper",
        "kioskCents": 0,
-       "clover": null
+       "clover": "C62FR52YZCQPP"
       },
       {
        "name": "Diet Dr Pepper",
        "kioskCents": 0,
-       "clover": null
+       "clover": "CKGBY27FVY8KG"
       },
       {
        "name": "Sprite",
        "kioskCents": 0,
-       "clover": null
+       "clover": "0NXBVJVAM57EY"
       },
       {
        "name": "Sprite Zero",
        "kioskCents": 0,
-       "clover": null
+       "clover": "89J80AHBP8S9R"
       },
       {
        "name": "Mountain Dew",
        "kioskCents": 0,
-       "clover": null
+       "clover": "7T0V1ZA1KE5HG"
       },
       {
        "name": "Diet Mtn Dew",
        "kioskCents": 0,
-       "clover": null
+       "clover": "DSK6SH1E7QJYY"
       },
       {
        "name": "Root Beer",
        "kioskCents": 0,
-       "clover": null
+       "clover": "G3DA0Q6N2XMGT"
       },
       {
        "name": "Cream Soda",
        "kioskCents": 0,
-       "clover": null
+       "clover": "HZJ4B17WT8BKP"
       },
       {
        "name": "Fanta Orange",
        "kioskCents": 0,
-       "clover": null
+       "clover": "GN2GEEA7F09ST"
       },
       {
        "name": "Big Red",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RHYKPHSDCK7MP"
       },
       {
        "name": "Squirt",
        "kioskCents": 0,
-       "clover": null
+       "clover": "FQMSSVFNWYXJ2"
       }
      ]
     },
@@ -795,42 +795,42 @@
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "60VASK06XA5C0"
       },
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6GQMCDYD5JTTE"
       },
       {
        "name": "Cherry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "K9EPSA1PH374M"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "ZMA9XA7YYKFXR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "9HVG9RXYQKG76"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6E9YKTNQ3M70E"
       },
       {
        "name": "Lime",
        "kioskCents": 50,
-       "clover": null
+       "clover": "WFN6RG7FH59ZR"
       },
       {
        "name": "Blue Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "0NXKRMQTVBB82"
       }
      ]
     },
@@ -841,27 +841,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -872,17 +872,17 @@
       {
        "name": "None",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RFAFMEVGS43FP"
       },
       {
        "name": "Vanilla Sweet Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HNBZ85TNSEJ5M"
       },
       {
        "name": "Coconut Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "4V04X25NJJCQC"
       }
      ]
     },
@@ -909,17 +909,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     },
@@ -930,27 +930,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -961,37 +961,37 @@
     "berry-breezy": {
      "name": "Berry Breezy",
      "kioskCents": 349,
-     "clover": null
+     "clover": "E6F0WAGX0V7PG"
     },
     "cannonball": {
      "name": "Cannonball",
      "kioskCents": 349,
-     "clover": null
+     "clover": "GXAD9TDSCW76Y"
     },
     "flamingle": {
      "name": "Flamingle",
      "kioskCents": 349,
-     "clover": null
+     "clover": "F5EFVG7FSBMD2"
     },
     "mango-tango": {
      "name": "Mango Tango",
      "kioskCents": 349,
-     "clover": null
+     "clover": "SBKCG5C381NV2"
     },
     "rash-guard": {
      "name": "Rash Guard",
      "kioskCents": 349,
-     "clover": null
+     "clover": "ZP2RSRDR49VR6"
     },
     "spa-day": {
      "name": "Spa Day",
      "kioskCents": 349,
-     "clover": null
+     "clover": "P2XYG94BRF5KG"
     },
     "unsinkable": {
      "name": "Unsinkable",
      "kioskCents": 349,
-     "clover": null
+     "clover": "NH3CB4A2AFPAT"
     }
    },
    "options": [
@@ -1002,17 +1002,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -1023,42 +1023,42 @@
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "60VASK06XA5C0"
       },
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6GQMCDYD5JTTE"
       },
       {
        "name": "Cherry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "K9EPSA1PH374M"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "ZMA9XA7YYKFXR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "9HVG9RXYQKG76"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6E9YKTNQ3M70E"
       },
       {
        "name": "Lime",
        "kioskCents": 50,
-       "clover": null
+       "clover": "WFN6RG7FH59ZR"
       },
       {
        "name": "Blue Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "0NXKRMQTVBB82"
       }
      ]
     },
@@ -1069,27 +1069,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -1100,17 +1100,17 @@
       {
        "name": "None",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RFAFMEVGS43FP"
       },
       {
        "name": "Vanilla Sweet Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HNBZ85TNSEJ5M"
       },
       {
        "name": "Coconut Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "4V04X25NJJCQC"
       }
      ]
     },
@@ -1137,17 +1137,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     },
@@ -1158,27 +1158,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -1189,57 +1189,57 @@
     "golden-hour": {
      "name": "Golden Hour",
      "kioskCents": 399,
-     "clover": null
+     "clover": "Z13XVBVB319KG"
     },
     "lazy-river": {
      "name": "Lazy River",
      "kioskCents": 399,
-     "clover": null
+     "clover": "76G0CSBJSM7TG"
     },
     "castaway": {
      "name": "Castaway",
      "kioskCents": 399,
-     "clover": null
+     "clover": "0FS88Q0NTBZ7C"
     },
     "beach-sting": {
      "name": "Beach Sting",
      "kioskCents": 449,
-     "clover": null
+     "clover": "895FTAZZ9XT2Y"
     },
     "riptide": {
      "name": "Wipeout",
      "kioskCents": 399,
-     "clover": null
+     "clover": "3SMZZH4JSFT6P"
     },
     "sunburn": {
      "name": "Sunburn",
      "kioskCents": 399,
-     "clover": null
+     "clover": "HF2VR8FGB82MM"
     },
     "pearl-diver": {
      "name": "Pearl Diver",
      "kioskCents": 449,
-     "clover": null
+     "clover": "K82MXTGZWZ3SC"
     },
     "beach-buzz": {
      "name": "Beach Buzz",
      "kioskCents": 495,
-     "clover": null
+     "clover": "53P8KJMEPBPCW"
     },
     "spicy-senorita": {
      "name": "Spicy Señorita",
      "kioskCents": 695,
-     "clover": null
+     "clover": "VF8K1M7FB6JVP"
     },
     "the-blue-one": {
      "name": "Feelin' Frisky",
      "kioskCents": 449,
-     "clover": null
+     "clover": "S3E88HPHMYMKP"
     },
     "low-tide": {
      "name": "Low Tide",
      "kioskCents": 495,
-     "clover": null
+     "clover": "7DEHYHSZ5FHVW"
     }
    },
    "options": [
@@ -1271,17 +1271,17 @@
       {
        "name": "None",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RFAFMEVGS43FP"
       },
       {
        "name": "Vanilla Sweet Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HNBZ85TNSEJ5M"
       },
       {
        "name": "Coconut Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "4V04X25NJJCQC"
       }
      ]
     },
@@ -1308,17 +1308,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     },
@@ -1329,27 +1329,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -1360,52 +1360,52 @@
     "adios": {
      "name": "Adios, Beaches",
      "kioskCents": 499,
-     "clover": null
+     "clover": "TMD5C8W30AAZJ"
     },
     "wired": {
      "name": "Wired & Tired",
      "kioskCents": 499,
-     "clover": null
+     "clover": "QGASV8EAWAXKW"
     },
     "wet-wild": {
      "name": "Wet & Wild",
      "kioskCents": 499,
-     "clover": null
+     "clover": "E28CWKBJMHJ8Y"
     },
     "rise-grind": {
      "name": "Rise & Grind",
      "kioskCents": 499,
-     "clover": null
+     "clover": "9T7VKADQNR25G"
     },
     "skinny": {
      "name": "Skinny Dippin'",
      "kioskCents": 499,
-     "clover": null
+     "clover": "GDFSZF4YEYK14"
     },
     "cloud-surfer": {
      "name": "Cloud Surfer",
      "kioskCents": 499,
-     "clover": null
+     "clover": "Z5ERA6K2P5VC0"
     },
     "lemon-drop-kick": {
      "name": "Lemon Drop Kick",
      "kioskCents": 499,
-     "clover": null
+     "clover": "FCNX592CF9R7R"
     },
     "passion-pit": {
      "name": "Passion Pit",
      "kioskCents": 499,
-     "clover": null
+     "clover": "07GJJEB0B2EM2"
     },
     "peach-out": {
      "name": "Peach Out",
      "kioskCents": 499,
-     "clover": null
+     "clover": "6T2VD3BMADE38"
     },
     "pina-collider": {
      "name": "Piña Collider",
      "kioskCents": 499,
-     "clover": null
+     "clover": "1X15VTYZ95CDW"
     }
    },
    "options": [
@@ -1416,17 +1416,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -1437,22 +1437,22 @@
       {
        "name": "Red Bull",
        "kioskCents": 0,
-       "clover": null
+       "clover": "8B7594Q5RGKYM"
       },
       {
        "name": "Sugar-Free Red Bull",
        "kioskCents": 0,
-       "clover": null
+       "clover": "VX5TP1WJ66K94"
       },
       {
        "name": "Alani Nu",
        "kioskCents": 0,
-       "clover": null
+       "clover": "848TF28K7QTZR"
       },
       {
        "name": "Monster",
        "kioskCents": 0,
-       "clover": null
+       "clover": "Q7R7Z1K6C9VZY"
       }
      ]
     },
@@ -1463,42 +1463,42 @@
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "60VASK06XA5C0"
       },
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6GQMCDYD5JTTE"
       },
       {
        "name": "Cherry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "K9EPSA1PH374M"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "ZMA9XA7YYKFXR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "9HVG9RXYQKG76"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6E9YKTNQ3M70E"
       },
       {
        "name": "Lime",
        "kioskCents": 50,
-       "clover": null
+       "clover": "WFN6RG7FH59ZR"
       },
       {
        "name": "Blue Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "0NXKRMQTVBB82"
       }
      ]
     },
@@ -1509,27 +1509,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -1556,17 +1556,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     }
@@ -1577,27 +1577,27 @@
     "main-squeeze": {
      "name": "Main Squeeze",
      "kioskCents": 399,
-     "clover": null
+     "clover": "GNT289RK09VTC"
     },
     "pucker": {
      "name": "Kiss & Tell",
      "kioskCents": 399,
-     "clover": null
+     "clover": "GH0DN781276XR"
     },
     "life-beaches": {
      "name": "When Life Gives You Beaches",
      "kioskCents": 399,
-     "clover": null
+     "clover": "K68JN5QB86B04"
     },
     "easy-squeezy": {
      "name": "Easy, Tiger",
      "kioskCents": 399,
-     "clover": null
+     "clover": "Z0PWYZW0CSGVW"
     },
     "pink-flamingo": {
      "name": "Pink Flamingo",
      "kioskCents": 349,
-     "clover": null
+     "clover": "270JBH651VSBE"
     }
    },
    "options": [
@@ -1608,17 +1608,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -1629,27 +1629,27 @@
       {
        "name": "Classic Lemonade",
        "kioskCents": 0,
-       "clover": null
+       "clover": "82V1N7YEEWX68"
       },
       {
        "name": "Pink Lemonade",
        "kioskCents": 0,
-       "clover": null
+       "clover": "5JV3NF4J6FDX2"
       },
       {
        "name": "Strawberry Lemonade",
        "kioskCents": 0,
-       "clover": null
+       "clover": "Y9F1XK0SWJ3MA"
       },
       {
        "name": "Limeade",
        "kioskCents": 0,
-       "clover": null
+       "clover": "7PBY8XS7QTHJY"
       },
       {
        "name": "Cherry Limeade",
        "kioskCents": 0,
-       "clover": null
+       "clover": "0QPKRM2QEYA32"
       },
       {
        "name": "Arnold Palmer (½ tea)",
@@ -1665,27 +1665,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -1712,17 +1712,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     },
@@ -1733,27 +1733,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -1764,17 +1764,17 @@
     "dolce": {
      "name": "La Dolce Beach",
      "kioskCents": 349,
-     "clover": null
+     "clover": "Q28GNVT34HFSE"
     },
     "fizzy": {
      "name": "Fizzy Business",
      "kioskCents": 349,
-     "clover": null
+     "clover": "F9GJYCHPE3G8E"
     },
     "feelin-blue": {
      "name": "Feelin' Blue",
      "kioskCents": 349,
-     "clover": null
+     "clover": "47S4TDRF1TFMA"
     }
    },
    "options": [
@@ -1785,17 +1785,17 @@
       {
        "name": "Small 16oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "9HRJQK3Y12XCG"
       },
       {
        "name": "Medium 24oz",
        "kioskCents": 80,
-       "clover": null
+       "clover": "JPAGYF3N3M9XY"
       },
       {
        "name": "Large 32oz",
        "kioskCents": 150,
-       "clover": null
+       "clover": "6XDY6NRWARR3P"
       }
      ]
     },
@@ -1806,42 +1806,42 @@
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "60VASK06XA5C0"
       },
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6GQMCDYD5JTTE"
       },
       {
        "name": "Cherry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "K9EPSA1PH374M"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "ZMA9XA7YYKFXR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "9HVG9RXYQKG76"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "6E9YKTNQ3M70E"
       },
       {
        "name": "Lime",
        "kioskCents": 50,
-       "clover": null
+       "clover": "WFN6RG7FH59ZR"
       },
       {
        "name": "Blue Raspberry",
        "kioskCents": 50,
-       "clover": null
+       "clover": "0NXKRMQTVBB82"
       }
      ]
     },
@@ -1852,17 +1852,17 @@
       {
        "name": "None",
        "kioskCents": 0,
-       "clover": null
+       "clover": "RFAFMEVGS43FP"
       },
       {
        "name": "Vanilla Sweet Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HNBZ85TNSEJ5M"
       },
       {
        "name": "Coconut Cream",
        "kioskCents": 60,
-       "clover": null
+       "clover": "4V04X25NJJCQC"
       }
      ]
     },
@@ -1889,17 +1889,17 @@
       {
        "name": "Fresh lime",
        "kioskCents": 25,
-       "clover": null
+       "clover": "PD9SMJZ4HY7DG"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "C7F8JHTZ50D8W"
       },
       {
        "name": "Extra pump",
        "kioskCents": 40,
-       "clover": null
+       "clover": "FM579K9P1QT3C"
       }
      ]
     }
@@ -1910,27 +1910,27 @@
     "pineapple-express": {
      "name": "Pineapple Express",
      "kioskCents": 550,
-     "clover": null
+     "clover": "SAKTFP38X7AYR"
     },
     "vanilla-vibes": {
      "name": "Vanilla Vibes",
      "kioskCents": 500,
-     "clover": null
+     "clover": "CCJKZ9G8AYPHY"
     },
     "swirl-power": {
      "name": "Swirl Power",
      "kioskCents": 550,
-     "clover": null
+     "clover": "W9ZQ4RDWKND4W"
     },
     "float-on": {
      "name": "Float On",
      "kioskCents": 600,
-     "clover": null
+     "clover": "EMT64MPZSBQTA"
     },
     "whip-it": {
      "name": "Whip It Good",
      "kioskCents": 650,
-     "clover": null
+     "clover": "PHCNARPVMVWP8"
     }
    },
    "options": [
@@ -1941,17 +1941,17 @@
       {
        "name": "Dole Whip",
        "kioskCents": 0,
-       "clover": null
+       "clover": "X83KRST702V7A"
       },
       {
        "name": "Vanilla",
        "kioskCents": 0,
-       "clover": null
+       "clover": "CCZBRY5BR1PJ8"
       },
       {
        "name": "Twist (Dole Whip + Vanilla)",
        "kioskCents": 0,
-       "clover": null
+       "clover": "46BPC4VJG9G3M"
       }
      ]
     },
@@ -1962,17 +1962,17 @@
       {
        "name": "Cup",
        "kioskCents": 0,
-       "clover": null
+       "clover": "BB4DBWDWVQSZJ"
       },
       {
        "name": "Waffle cone",
        "kioskCents": 75,
-       "clover": null
+       "clover": "Y1WKBR5AQP30R"
       },
       {
        "name": "Float (in juice/soda)",
        "kioskCents": 150,
-       "clover": null
+       "clover": "D4Q4BDBJZ01CC"
       }
      ]
     },
@@ -1983,12 +1983,12 @@
       {
        "name": "Regular",
        "kioskCents": 0,
-       "clover": null
+       "clover": "NR6DC8A09NCGC"
       },
       {
        "name": "Large",
        "kioskCents": 125,
-       "clover": null
+       "clover": "211XVQANJEX96"
       }
      ]
     },
@@ -1999,32 +1999,32 @@
       {
        "name": "Toasted coconut",
        "kioskCents": 75,
-       "clover": null
+       "clover": "T7J4HEYYBVZF8"
       },
       {
        "name": "Pineapple chunks",
        "kioskCents": 75,
-       "clover": null
+       "clover": "44EWVM27R0RSR"
       },
       {
        "name": "Rainbow sprinkles",
        "kioskCents": 50,
-       "clover": null
+       "clover": "BDVBS2D09ANKW"
       },
       {
        "name": "Tajín",
        "kioskCents": 50,
-       "clover": null
+       "clover": "AX7FKDFT0BS9R"
       },
       {
        "name": "Popping boba",
        "kioskCents": 75,
-       "clover": null
+       "clover": "6P1YYX9M755M0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "27R1Y169SEHJ4"
       }
      ]
     }
@@ -2035,62 +2035,62 @@
     "cloud-nine": {
      "name": "Cloud Nine",
      "kioskCents": 525,
-     "clover": null
+     "clover": "NYD05V5NETCA0"
     },
     "salted-caramel-cloud": {
      "name": "Salted Caramel Cloud",
      "kioskCents": 550,
-     "clover": null
+     "clover": "PVEG1ER2ZT7MP"
     },
     "beach-smores": {
      "name": "Beach S'mores",
      "kioskCents": 450,
-     "clover": null
+     "clover": "RACPC3NZDFYW8"
     },
     "espresso-yourself": {
      "name": "Espresso Yourself",
      "kioskCents": 325,
-     "clover": null
+     "clover": "50FKV8C5K046M"
     },
     "basic-beach": {
      "name": "Basic Beach",
      "kioskCents": 425,
-     "clover": null
+     "clover": "Z0X3DQYZP84A8"
     },
     "cappa": {
      "name": "Cappa-Cabana",
      "kioskCents": 475,
-     "clover": null
+     "clover": "XA3N8BRB88RBC"
     },
     "but-first": {
      "name": "But First, Caffeine",
      "kioskCents": 525,
-     "clover": null
+     "clover": "0Z0DAQVPG04S2"
     },
     "beach-bothered": {
      "name": "Beach & Bothered",
      "kioskCents": 550,
-     "clover": null
+     "clover": "BNDTKQK60DYC6"
     },
     "coco-mocha": {
      "name": "Coco Loco Mocha",
      "kioskCents": 550,
-     "clover": null
+     "clover": "GXGMJETTEWSRJ"
     },
     "wake-shake": {
      "name": "Wake & Shake",
      "kioskCents": 525,
-     "clover": null
+     "clover": "M6HPWZ8244430"
     },
     "hot-mess": {
      "name": "Hot Mess",
      "kioskCents": 395,
-     "clover": null
+     "clover": "WCHFRTPXN1AJJ"
     },
     "beach-drip": {
      "name": "Beach Drip",
      "kioskCents": 295,
-     "clover": null
+     "clover": "17B44WJ94EZD8"
     }
    },
    "options": [
@@ -2101,17 +2101,17 @@
       {
        "name": "12oz",
        "kioskCents": 0,
-       "clover": null
+       "clover": "CY1E0H0DFDXWR"
       },
       {
        "name": "16oz",
        "kioskCents": 60,
-       "clover": null
+       "clover": "HEQ5Z6BEFT53A"
       },
       {
        "name": "20oz",
        "kioskCents": 110,
-       "clover": null
+       "clover": "V2A92GT1C69VP"
       }
      ]
     },
@@ -2122,12 +2122,12 @@
       {
        "name": "Hot",
        "kioskCents": 0,
-       "clover": null
+       "clover": "0K051TRQ7JNFR"
       },
       {
        "name": "Iced",
        "kioskCents": 0,
-       "clover": null
+       "clover": "D828CHJTMYFB0"
       }
      ]
     },
@@ -2138,22 +2138,22 @@
       {
        "name": "Whole",
        "kioskCents": 0,
-       "clover": null
+       "clover": "HDR2X416FBE5A"
       },
       {
        "name": "2%",
        "kioskCents": 0,
-       "clover": null
+       "clover": "QA31N30MDRQHA"
       },
       {
        "name": "Oat",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0PQNK4QG5YQ5A"
       },
       {
        "name": "Almond",
        "kioskCents": 75,
-       "clover": null
+       "clover": "H4ABT2JDYAPEJ"
       }
      ]
     },
@@ -2164,27 +2164,27 @@
       {
        "name": "Vanilla",
        "kioskCents": 50,
-       "clover": null
+       "clover": "KY8743X31ZTNP"
       },
       {
        "name": "Coconut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "VHT2EX3A2AHTR"
       },
       {
        "name": "Caramel",
        "kioskCents": 50,
-       "clover": null
+       "clover": "1JNYTKBHJWT5C"
       },
       {
        "name": "Hazelnut",
        "kioskCents": 50,
-       "clover": null
+       "clover": "8XNA3KRR0QZ4Y"
       },
       {
        "name": "Peach",
        "kioskCents": 50,
-       "clover": null
+       "clover": "4NQ9WMCD1YV8M"
       }
      ]
     },
@@ -2195,12 +2195,12 @@
       {
        "name": "Extra shot",
        "kioskCents": 100,
-       "clover": null
+       "clover": "ZBX4Z3QE1H3NC"
       },
       {
        "name": "Decaf",
        "kioskCents": 0,
-       "clover": null
+       "clover": "SQ2E0AF4RSG20"
       }
      ]
     },
@@ -2227,27 +2227,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -2258,42 +2258,42 @@
     "lil-squirt": {
      "name": "Lil' Squirt",
      "kioskCents": 299,
-     "clover": null
+     "clover": "7BQM56FKSR74M"
     },
     "shore-temple": {
      "name": "Shore Temple",
      "kioskCents": 299,
-     "clover": null
+     "clover": "4MH526M21W6RT"
     },
     "sandcastle-shake": {
      "name": "Sandcastle Shake",
      "kioskCents": 450,
-     "clover": null
+     "clover": "Y6YXGGX8NAMZM"
     },
     "beach-ball": {
      "name": "Beach Ball",
      "kioskCents": 349,
-     "clover": null
+     "clover": "SJN6M2B6K6R0A"
     },
     "mermaid-splash": {
      "name": "Mermaid Splash",
      "kioskCents": 349,
-     "clover": null
+     "clover": "YZH44ST6K1VEG"
     },
     "cotton-candy-cloud": {
      "name": "Cotton Candy Cloud",
      "kioskCents": 349,
-     "clover": null
+     "clover": "7EKKSFFYP8GG8"
     },
     "lil-root-beer-float": {
      "name": "Lil' Root Beer Float",
      "kioskCents": 399,
-     "clover": null
+     "clover": "22NP9AZVG4BVE"
     },
     "sharky": {
      "name": "Sharky",
      "kioskCents": 299,
-     "clover": null
+     "clover": "GCSWBWP370TNW"
     }
    },
    "options": [
@@ -2304,12 +2304,12 @@
       {
        "name": "Small",
        "kioskCents": 0,
-       "clover": null
+       "clover": "C6DY9SR01NVVG"
       },
       {
        "name": "Large",
        "kioskCents": 80,
-       "clover": null
+       "clover": "QCMHHWM2M04V4"
       }
      ]
     },
@@ -2320,27 +2320,27 @@
       {
        "name": "Strawberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "XR340PWSTF3XY"
       },
       {
        "name": "Mango",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9QJ2NGKW6AEX0"
       },
       {
        "name": "Pineapple",
        "kioskCents": 99,
-       "clover": null
+       "clover": "AR5AQ3GXG5WS8"
       },
       {
        "name": "Peach",
        "kioskCents": 99,
-       "clover": null
+       "clover": "KVPJMSYBJVXHR"
       },
       {
        "name": "Raspberry",
        "kioskCents": 99,
-       "clover": null
+       "clover": "HJ23MVP0YS3E4"
       }
      ]
     },
@@ -2367,27 +2367,27 @@
       {
        "name": "Whipped cream",
        "kioskCents": 50,
-       "clover": null
+       "clover": "QJVSZH56N47M4"
       },
       {
        "name": "Sweet cream cold foam",
        "kioskCents": 75,
-       "clover": null
+       "clover": "0E0QDSJR5XK9T"
       },
       {
        "name": "Vanilla cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "PSP3S8BZK8XZC"
       },
       {
        "name": "Salted caramel cold foam",
        "kioskCents": 99,
-       "clover": null
+       "clover": "9D0AWFEW1EQD0"
       },
       {
        "name": "Freeze-dried candy",
        "kioskCents": 75,
-       "clover": null
+       "clover": "TPK1DH5RMS984"
       }
      ]
     }
@@ -2398,17 +2398,17 @@
     "fd-candy-sm": {
      "name": "Small Bag",
      "kioskCents": 399,
-     "clover": null
+     "clover": "VAZ9KENJTB582"
     },
     "fd-candy-md": {
      "name": "Medium Bag",
      "kioskCents": 599,
-     "clover": null
+     "clover": "Q8G688WGX3GY6"
     },
     "fd-candy-lg": {
      "name": "Large Bag",
      "kioskCents": 999,
-     "clover": null
+     "clover": "QZBRRYJQBKWJ2"
     }
    },
    "options": []
