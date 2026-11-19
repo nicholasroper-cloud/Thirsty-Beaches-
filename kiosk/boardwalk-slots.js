@@ -157,6 +157,95 @@
     const r2Prev = $('reel2Prev'), r2Next = $('reel2Next'), r2Icon = $('reel2Icon');
     const r3Prev = $('reel3Prev'), r3Next = $('reel3Next'), r3Icon = $('reel3Icon');
     const leverBtn = $('leverBtn');
+    const fxCanvas = $('fxCanvas');
+
+    /* ---------- Celebration Particle Burst Engine (Neon Coins, Stars & Soda Fizz) ---------- */
+    let fxParticles = [];
+    let fxRaf = 0;
+    function runFxLoop() {
+      if (!fxCanvas) return;
+      const ctx = fxCanvas.getContext('2d');
+      if (!ctx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth, h = window.innerHeight;
+      if (fxCanvas.width !== Math.round(w * dpr) || fxCanvas.height !== Math.round(h * dpr)) {
+        fxCanvas.width = Math.round(w * dpr);
+        fxCanvas.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const alive = [];
+      for (const p of fxParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.g;
+        p.vx *= 0.99;
+        p.rot += p.vr;
+        p.life -= p.decay;
+        if (p.life <= 0 || p.y > h + 40) continue;
+        alive.push(p);
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        if (p.kind === 'coin') {
+          const sx = Math.cos(p.rot * 2.2);
+          ctx.scale(Math.max(0.22, Math.abs(sx)), 1);
+          ctx.beginPath();
+          ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFD166';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#FF7A45';
+          ctx.stroke();
+        } else if (p.kind === 'star') {
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+            const x = Math.cos(a) * p.r, y = Math.sin(a) * p.r;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.r, -p.r * 0.55, p.r * 2, p.r * 1.1);
+        }
+        ctx.restore();
+      }
+      fxParticles = alive;
+      if (fxParticles.length) fxRaf = requestAnimationFrame(runFxLoop);
+      else { ctx.clearRect(0, 0, w, h); fxRaf = 0; }
+    }
+
+    function launchBurst(mode) {
+      if (!fxCanvas || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      const w = window.innerWidth, h = window.innerHeight;
+      const cx = w * 0.5, cy = h * 0.42;
+      const count = mode === 'mega' ? 130 : mode === 'win' ? 68 : 22;
+      const colors = ['#FF3CAC', '#2AF5E4', '#FFD166', '#FF7A45', '#FFF4FA'];
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+        const spd = (mode === 'fizz' ? 2.5 : 4.5) + Math.random() * (mode === 'mega' ? 11 : mode === 'win' ? 8 : 4);
+        const kind = mode === 'fizz' ? 'star' : (i % 3 === 0 ? 'coin' : i % 3 === 1 ? 'star' : 'confetti');
+        fxParticles.push({
+          x: cx + (Math.random() - 0.5) * (mode === 'fizz' ? 260 : 120),
+          y: cy + (Math.random() - 0.5) * 40,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - (mode === 'fizz' ? 3 : 5.5),
+          g: mode === 'fizz' ? 0.14 : 0.24,
+          r: kind === 'coin' ? 7 + Math.random() * 4 : 5 + Math.random() * 5,
+          rot: Math.random() * Math.PI * 2,
+          vr: (Math.random() - 0.5) * 0.24,
+          life: 1,
+          decay: mode === 'mega' ? 0.011 : mode === 'win' ? 0.014 : 0.025,
+          color: colors[i % colors.length],
+          kind,
+        });
+      }
+      if (!fxRaf) fxRaf = requestAnimationFrame(runFxLoop);
+    }
 
     // Retro 1980s Neon Beach Slot Machine SVG Sprite icon switcher (zero innerHTML)
     const setIcon = (useEl, key) => { if (useEl) useEl.setAttribute('href', '#ico-' + key); };
@@ -363,6 +452,7 @@
           claimCodeEl.textContent = outcome.code;
           claimPill.hidden = false;
           audio.playArcadeFanfare(outcome.mega === true);
+          launchBurst(outcome.mega === true ? 'mega' : 'win');
           document.body.classList.remove('is-flash');
           void document.body.offsetWidth;
           document.body.classList.add('is-flash');
@@ -372,6 +462,7 @@
           if (winActions) { winTwo.textContent = 'Using the other screen? Your prize is waiting on the order screen.'; winActions.hidden = false; watchPending(outcome.code); }
           audio.playTrigger(typeof outcome.trigger === 'string' ? outcome.trigger : 'prize_win');
         } else if (outcome.thanks === true) {
+          launchBurst('fizz');
           r3Val.textContent = 'THANKS FOR PLAYING';
           setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'ORDER AT THE WINDOW';
@@ -379,6 +470,7 @@
           resultDesc.textContent = `Thanks for playing! ${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
           audio.playTrigger('drink_reveal');
         } else {
+          launchBurst('fizz');
           r3Val.textContent = 'STANDARD CUSTOM DRINK';
           setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'SHOW AT WINDOW TO ORDER';
@@ -394,7 +486,40 @@
       }, 85);
     }
     spinBtn.addEventListener('click', triggerSpin);
-    if (leverBtn) leverBtn.addEventListener('click', triggerSpin);
+    if (leverBtn) {
+      let dragStartY = null, dragTriggered = false;
+      leverBtn.addEventListener('pointerdown', (e) => {
+        if (spinning || session.ended) return;
+        dragStartY = e.clientY;
+        dragTriggered = false;
+        leverBtn.classList.add('is-dragging');
+        if (leverBtn.setPointerCapture) { try { leverBtn.setPointerCapture(e.pointerId); } catch {} }
+      });
+      leverBtn.addEventListener('pointermove', (e) => {
+        if (dragStartY === null) return;
+        const dy = Math.max(0, Math.min(72, e.clientY - dragStartY));
+        leverBtn.style.transform = `rotate(${(dy / 72) * 54}deg) translateY(${(dy / 72) * 18}px)`;
+        if (dy >= 28 && !dragTriggered) {
+          dragTriggered = true;
+          dragStartY = null;
+          leverBtn.classList.remove('is-dragging');
+          leverBtn.style.transform = '';
+          triggerSpin();
+        }
+      });
+      const endDrag = () => {
+        if (dragStartY === null) return;
+        dragStartY = null;
+        leverBtn.classList.remove('is-dragging');
+        leverBtn.style.transform = '';
+      };
+      leverBtn.addEventListener('pointerup', endDrag);
+      leverBtn.addEventListener('pointercancel', endDrag);
+      leverBtn.addEventListener('click', () => {
+        if (dragTriggered) { dragTriggered = false; return; }
+        triggerSpin();
+      });
+    }
 
     /* While a win is on screen, follow the kiosk's pending prize: once it is on an order, declined or past its 15 minutes, say so
        (the code itself still works at the window). Read-only: this page never sends a prize anywhere. */

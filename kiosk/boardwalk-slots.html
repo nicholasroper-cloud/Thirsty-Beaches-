@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=3">
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=4">
 </head>
 <body>
 <div class="backdrop" aria-hidden="true">
@@ -24,6 +24,9 @@
     <path d="M1028 248 Q1110 202 1178 252 M1028 248 Q1085 162 1146 176 M1028 248 Q972 172 908 216 M1028 248 Q968 238 926 300 M1028 248 Q1046 148 1078 128" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
   </svg>
 </div>
+
+<!-- Celebration Neon Coins & Stars Particle Canvas -->
+<canvas id="fxCanvas" class="fx-burst" aria-hidden="true"></canvas>
 
 <!-- Retro 1980s Beach Slot Machine SVG Symbol Sprite (zero innerHTML in JS) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -49,7 +52,7 @@
     <section class="machine" aria-label="1986 Beach Boardwalk Slot Machine">
       <div class="machine__body">
 
-        <!-- Illuminated Arch Marquee with Chasing Arcade Bulbs -->
+        <!-- Illuminated Arch Marquee with Chasing Arcade Bulbs & Neon Beach Decals -->
         <header class="crown">
           <div class="bulbs" aria-hidden="true">
             <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
@@ -57,8 +60,23 @@
             <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
             <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
           </div>
+          <!-- Neon Flamingo (Left) & Neon Surfboard (Right) Cabinet Decals -->
+          <svg class="crown__decal crown__decal--l" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M36 58V40M36 46l-8 4M36 40c-9 0-15-6-13-13 2-6 10-7 16-3 3-6 2-14-3-16-4-2-9 1-9 5 0 2 2 3 4 3" fill="none" stroke="#FF3CAC" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M27 12l-5 2" stroke="#FFD166" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <svg class="crown__decal crown__decal--r" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M44 8C29 14 17 30 14 54c14-3 30-15 36-30 2-6 1-12-6-16z" fill="none" stroke="#2AF5E4" stroke-width="3.2" stroke-linejoin="round"/>
+            <path d="M18 50L44 14M25 32l12 6" stroke="#FFD166" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
           <span class="crown__kicker">&#9733; THIRSTY BEACHES &middot; EST. 1986 &middot; FREE PLAY &#9733;</span>
           <h1 class="crown__title">MIAMI BEACH DRINK SLOTS</h1>
+          <div class="led-ticker" aria-hidden="true">
+            <div class="led-ticker__track">
+              <span>&#9733; INSERT 0&cent; FREE PLAY &#9733; WIN 3D NEON CHARMS &middot; PINEAPPLE SOFT SERVE TOPPERS &middot; FREE SIZE UPGRADES &middot; FREE DRINK JACKPOT &#9733; PULL THE CHROME LEVER &#9733;&nbsp;</span>
+              <span>&#9733; INSERT 0&cent; FREE PLAY &#9733; WIN 3D NEON CHARMS &middot; PINEAPPLE SOFT SERVE TOPPERS &middot; FREE SIZE UPGRADES &middot; FREE DRINK JACKPOT &#9733; PULL THE CHROME LEVER &#9733;&nbsp;</span>
+            </div>
+          </div>
           <p class="crown__sub" id="bezelStatus">SPIN 3 NEON REELS &middot; INSTANT DRINKS, CHARMS &amp; FREE DRINK JACKPOT</p>
           <div class="persona-switch" role="group" aria-label="Voice Persona Mode">
             <button type="button" class="pbtn" data-persona="shredder">Surfer Mode</button>
@@ -253,7 +271,7 @@
   </div>
 </dialog>
 
-<script src="/kiosk/audio-bank.js?v=3" defer></script>
-<script src="/kiosk/boardwalk-slots.js?v=4" defer></script>
+<script src="/kiosk/audio-bank.js?v=4" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=5" defer></script>
 </body>
 </html>
