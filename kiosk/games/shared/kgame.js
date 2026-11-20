@@ -168,7 +168,11 @@
         return { ok: true, win: false, thanks: true };
       }).catch(function () { return { ok: true, win: false, thanks: true }; });
     }).then(function (result) {
-      if (ended || leaving) return;
+      if (leaving) return;
+      if (ended) {      // time ran out while the finish was in flight: a plain thanks is not shown, but a WIN (a real code) never vanishes
+        if (result.win === true && root.TBPrize) root.TBPrize.show({ result: result, mode: 'game', ended: true });
+        return;
+      }
       setTimeout(function () {
         if (ended || leaving) return;
         if (gen !== runGen && result.win !== true) return;      // already playing again: a plain thanks is not worth interrupting; a WIN is always shown

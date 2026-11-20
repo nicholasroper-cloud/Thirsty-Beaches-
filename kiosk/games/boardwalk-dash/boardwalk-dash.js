@@ -815,6 +815,7 @@
   const hideOverlay = () => { overlay.hidden = true; };
 
   function newGame() {
+    sid = null;                                            // a fresh run never inherits a tracked finger
     g = createGame({ seed: fixedSeed != null ? fixedSeed : undefined });
     particles = []; popups = []; shake = 0;
     lastWaveWet = false;
@@ -913,6 +914,8 @@
   };
   canvas.addEventListener('pointerup', swipeEnd);
   canvas.addEventListener('pointercancel', swipeEnd);
+  canvas.addEventListener('lostpointercapture', swipeEnd);       // a lost capture ends the swipe like the other games (swipeEnd only hops on a real pointerup)
+  window.addEventListener('blur', function () { sid = null; });  // a stuck pointer never survives a lost focus
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   document.querySelectorAll('#bdPad button').forEach(function (b) {

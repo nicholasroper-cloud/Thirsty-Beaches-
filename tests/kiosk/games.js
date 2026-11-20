@@ -617,6 +617,34 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       } finally { k2.stop(); }
     });
 
+    await section("D1b. a win that arrives AFTER the visit's time ran out is still shown (above Time's up), with no way to start another game; touchdebug overlay", async () => {
+      const k5 = await stageKiosk({ session: { gameMaxSeconds: 30, endedReturnSeconds: 60 } });
+      try {
+        await installMock(c, { win: true, code: "K7QD" });
+        await c.goto(url(k5, "/arcade/games/cup-catch"));
+        // hold the finish reply, end the visit, then let the win through
+        await c.eval("(function(){var f=window.fetch.bind(window);window.fetch=function(u,o){if(/game\\/finish/.test(u)){return new Promise(function(res){window.__release=function(){f(u,o).then(res)}})}return f(u,o)}})()");
+        await c.eval("TBK.runStart('cup-catch')"); await sleep(400);
+        await c.eval("TBK.runEnd();0");
+        await c.eval("window.__skew=31");
+        await waitFor(async () => c.eval("!!document.getElementById('kgEnded')"), 4000, "Time's up panel while the finish is in flight");
+        await c.eval("window.__release()");
+        await waitFor(async () => c.eval("!!document.getElementById('kpCode')"), 4000, "the win is shown after the visit ended");
+        eq(await c.eval("document.getElementById('kpCode').textContent"), "K7QD", "the real code is on screen");
+        ok(await c.eval("document.getElementById('kpPanel').classList.contains('kp-over-ended')"), "above the Time's up panel");
+        eq(await c.eval("[].map.call(document.querySelectorAll('#kpPanel .kp-nav .kp-btn'),function(b){return b.textContent.trim()})"), ["ORDER DRINKS"], "only ORDER DRINKS: nothing starts another game");
+        if (out) await c.shot("portrait-win-after-timeup.png");
+        // the touch-size overlay is opt-in on the picker and only prints sizes
+        await c.goto(url(k5, "/arcade/games") + "?touchdebug=1");
+        ok(await c.eval("document.body.textContent.indexOf('touchdebug')>=0"), "?touchdebug=1 shows the overlay");
+        await c.tap(540, 60); await sleep(150);
+        ok(/contact \d+ x \d+ px/.test(await c.eval("document.body.textContent")), "and prints the contact size");
+        await c.goto(url(k5, "/arcade/games")); ok(await c.eval("document.body.textContent.indexOf('touchdebug')<0"), "off without the flag");
+        { const dash = require("fs").readFileSync(require("path").join(__dirname, "../../kiosk/games/boardwalk-dash/boardwalk-dash.js"), "utf8");
+          ok(/canvas\.addEventListener\('lostpointercapture', swipeEnd\)/.test(dash) && /addEventListener\('blur', function \(\) \{ sid = null; \}\)/.test(dash) && /function newGame\(\) \{\s*sid = null;/.test(dash), "Boardwalk Dash releases its tracked finger on lost capture, blur and a new game like the other four"); }
+      } finally { k5.stop(); }
+    });
+
     await section("D2. 'Still playing?' then the hands-off return (calls dismiss first); a touch keeps the visit", async () => {
       const k3 = await stageKiosk({ session: { idleSeconds: 15, idleWarnSeconds: 5, gameMaxSeconds: 900 } });
       try {

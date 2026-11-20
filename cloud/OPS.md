@@ -274,7 +274,7 @@ consent, it never joins a text or email list, it sends no message, and it is sep
 |---|---|---|
 | `PRIZE_PHONE_KEY` | Secret | At least 32 characters. Create with `openssl rand -hex 32`, set with `npx wrangler secret put PRIZE_PHONE_KEY`. Never put it in the repo, `wrangler.toml` or a page. Losing or changing it orphans saved links (they just stop being found; prizes still work by code). |
 | `PRIZE_LINK_PER_HOUR` | Optional var | Lookups + saves allowed per caller per hour (default 60). Best effort: KV has no atomic counter. |
-| KV `STATE` `pz:<hash>` and `pzc:<code>` | KV | The prize (code, prize id, label, expiry) under an HMAC-SHA256 of the number, and the code -> hash index for delete. TTL ends with the claim (tb-where sets 24 h today). The number itself and the hash are never stored in a value, logged or returned. |
+| KV `STATE` `pz:<hash>` and `pzc:<code>` | KV | The prize (code, prize id, label, expiry) under an HMAC-SHA256 of the number, and the code -> hash index for delete. TTL ends with the claim (tb-where sets 24 h today). The raw number is never stored, logged or returned. The hash is the KV key and is also stored as the value of the `pzc:<code>` index (needed to delete the link when the prize is used); it is never logged or returned. |
 
 Endpoints (all POST, JSON, `X-Key: <STATION_KEY>`; with no `PRIZE_PHONE_KEY` they answer 503 `prize-link-off`, so deploying the code alone changes nothing):
 - `/api/prize-link/save` `{phone, code}`: the claim is re-checked at tb-where (`/kitchen/claims/redeem` with `checkOnly`), so the prize id, label and expiry come from tb-where, not from the caller. One unredeemed prize per number (`already-have`); a code can be saved to one number only.

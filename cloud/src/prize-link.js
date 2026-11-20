@@ -11,7 +11,7 @@
 
    What is stored (KV STATE): pz:<HMAC> = {code, prizeId, label, expiresAt, at} and the reverse index pzc:<code> = <HMAC>, both with a TTL
    that ends when the claim does. <HMAC> = HMAC-SHA256(PRIZE_PHONE_KEY, "tb-prize-phone|+1" + 10 digits (E.164)). The raw number is never stored, logged
-   or returned, and neither is the hash. PRIZE_PHONE_KEY is a Worker secret (>= 32 chars); without it the feature is off (503 prize-link-off).
+   or returned; the hash is never returned or logged either (it is the KV key, and the pzc index stores it so a used prize can be deleted). PRIZE_PHONE_KEY is a Worker secret (>= 32 chars); without it the feature is off (503 prize-link-off).
    The prize itself (id, label, expiry, still unredeemed) is always re-read from tb-where (/kitchen/claims/redeem with checkOnly), never taken
    from the caller. One unredeemed prize per number; a new win never replaces a saved one ("already-have"). */
 import { whereOrigin, whereHeaders, fetchJsonTimeout } from "./kitchen-sync.js";

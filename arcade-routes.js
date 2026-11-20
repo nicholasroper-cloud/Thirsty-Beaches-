@@ -48,9 +48,10 @@ const PRIZES = [
 const PRIZE_IDS = PRIZES.map(p => p.id);
 /* The five games the kiosk serves (kiosk/games/<id>/). A session can only be opened for one of these; the id is used for the log and nothing else. */
 const GAME_IDS = ["thirsty-blaster", "thirsty-tower", "cup-catch", "boardwalk-dash", "soft-serve-stacker"];
-/* Server-side visit settings, read from kiosk/arcade-session.json on every use (the page reads the same file for its own limits). A missing or
+/* visitGapSeconds: an open arcade page pings every 20 s, so a visit is over once nothing (ping, game or spin) has been heard for this long; keep it a little over 20 so the next customer never inherits a used-up roll count.
+   Server-side visit settings, read from kiosk/arcade-session.json on every use (the page reads the same file for its own limits). A missing or
    bad file or value falls back to these, never to "no limit". Only `useOnSameVisit: false` (literally) turns the win-rides-this-order path off. */
-const SESSION_DEFAULTS = { maxPrizeRolls: 4, useOnSameVisit: true, gameMinSeconds: 20, visitGapSeconds: 120 };
+const SESSION_DEFAULTS = { maxPrizeRolls: 4, useOnSameVisit: true, gameMinSeconds: 20, visitGapSeconds: 40 };
 function sessionSettings(raw) {
   const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v) : d);
@@ -58,10 +59,13 @@ function sessionSettings(raw) {
     maxPrizeRolls: num(src.maxPrizeRolls, 1, 20, SESSION_DEFAULTS.maxPrizeRolls),
     useOnSameVisit: src.useOnSameVisit !== false,
     gameMinSeconds: num(src.gameMinSeconds, 5, 300, SESSION_DEFAULTS.gameMinSeconds),
-    visitGapSeconds: num(src.visitGapSeconds, 30, 900, SESSION_DEFAULTS.visitGapSeconds),
+    visitGapSeconds: num(src.visitGapSeconds, 25, 900, SESSION_DEFAULTS.visitGapSeconds),
   };
 }
 const CODE_RE = /^[A-Z2-9]{4}$/;
+/* Plain names for every place outside the slot machine's own page (game results, the rules panel, the order-screen banner and cart line). The slot page keeps its own label. */
+const PLAIN_LABEL = { free_drink_jackpot: "Free Drink" };
+const GAME_LABEL = PLAIN_LABEL;
 /* US phone, as the page types it: 10 digits (a leading 1 is dropped), area code and exchange start 2-9. Returns the 10 digits or "". */
 function normPhone(v) {
   let d = String(v == null ? "" : v).replace(/\D/g, "");
@@ -71,7 +75,9 @@ function normPhone(v) {
 /* A small sliding-window counter: take() is true while fewer than `max` takes happened in the last `ms`. */
 function makeLimit(max, ms, nowFn) {
   let hits = [];
-  return { take() { const t = nowFn(); hits = hits.filter(x => t - x < ms); if (hits.length >= max) return false; hits.push(t); return true; } };
+  const prune = () => { const t = nowFn(); hits = hits.filter(x => t - x < ms); return t; };
+  return { take() { const t = prune(); if (hits.length >= max) return false; hits.push(t); return true; },
+    full() { prune(); return hits.length >= max; }, add() { const t = prune(); hits.push(t); } };
 }
 const MAX_FREE_DRINK_PCT = 2;      // hard ceiling on the free-drink odds, whatever the staff drawer says
 const PERSONAS = ["shredder", "neon86", "auto"];
@@ -191,6 +197,7 @@ function createArcade(opts) {
 
   // ---------- play tokens (the Worker needs one per claim, at least minMs old) ----------
   const TOKEN_TARGET = 3, TOKEN_MAX_AGE_MS = 5 * 3600e3, MINTS_PER_HOUR = 12;
+  const CAP_REPROBE_MS = 30 * 60e3;
   let tokens = [], mintTimes = [], blockedUntil = 0, capUntil = 0, refilling = null, lastSeen = 0;
 
   async function workerJson(method, p, body, extraHeaders) {
@@ -223,7 +230,7 @@ function createArcade(opts) {
     return refilling;
   }
   /* The page was opened or a spin happened: remember it, and keep tokens warm for the next few hours only (no mints on a kiosk nobody plays on). */
-  function touch() { lastSeen = now(); return refill(); }
+  function touch() { lastSeen = now(); probeWallet().catch(() => {}); return refill(); }
   function refillIfActive() { return lastSeen && now() - lastSeen < 6 * 3600e3 ? refill() : Promise.resolve(); }
   function takeToken() {
     const t = now();
@@ -248,7 +255,9 @@ function createArcade(opts) {
       return { code: d.code, ticket: { reward: s(tk.reward, 80), drinkName: s(tk.drinkName, 60), build: s(tk.build, 200), expiresAt: Number.isFinite(+tk.expiresAt) ? +tk.expiresAt : null } };
     }
     const err = d && d.error;
-    if (err === "sold-out" || err === "daily-limit") { const e = new Date(now()); e.setHours(24, 0, 0, 0); capUntil = e.getTime(); }   // the daily cap is hit: no more asking until local midnight, and the pages say so BEFORE play
+    /* tb-where: "sold-out" = the GLOBAL daily mint count (shared with the website, PRIZE_DAILY_CAP, day = America/Denver) is used up, it is not one prize's stock; "daily-limit" = this network's own daily allowance
+       (kiosk 40 a day) or a key problem. Either way no code can be issued right now: say so before play, and ask again in 30 minutes (the owner may have raised the cap, the day may have turned). */
+    if (err === "sold-out" || err === "daily-limit") capUntil = now() + CAP_REPROBE_MS;
     else if (r.status === 429) blockedUntil = now() + 10 * 60000;   // slowed down: stop asking for a while
     log("arcade: claim refused (" + r.status + (err ? " " + err : "") + ")");
     return null;
@@ -264,7 +273,7 @@ function createArcade(opts) {
     if (!p || !Number.isFinite(+v.issuedAt)) return null;
     const cap = +v.issuedAt + PENDING_TTL_MS;
     const until = Number.isFinite(+v.expiresAt) && +v.expiresAt > +v.issuedAt ? Math.min(+v.expiresAt, cap) : cap;   // never longer than 15 min, shorter if the claim itself ends sooner
-    return { code: v.code, prizeId: p.id, label: p.label, issuedAt: +v.issuedAt, expiresAt: until };
+    return { code: v.code, prizeId: p.id, label: PLAIN_LABEL[p.id] || p.label, issuedAt: +v.issuedAt, expiresAt: until };
   };
   function savePending(v) {
     if (!pendingFile) return;
@@ -374,7 +383,6 @@ function createArcade(opts) {
     return { prize, code: c.code, ticket: c.ticket, expiresAt: exp, orderNow: orderNow && !!pending };
   }
   /* The slot machine keeps its own look and label. A finished GAME gets a plain result: the prize's plain name (no "jackpot"), no mega flag, no sound trigger. */
-  const GAME_LABEL = { free_drink_jackpot: "Free Drink" };
   const winBody = (r, plain) => ({ ok: true, prizeId: r.prize.id, label: plain ? (GAME_LABEL[r.prize.id] || r.prize.label) : r.prize.label, win: true, ...(plain ? {} : { mega: r.prize.id === "free_drink_jackpot", trigger: r.prize.trigger }),
     code: r.code, ticket: r.ticket, expiresAt: r.expiresAt, orderNow: r.orderNow, pendingUntil: r.orderNow && pending ? pending.expiresAt : null, saveable: walletUsable() });
 
@@ -439,9 +447,33 @@ function createArcade(opts) {
   }
 
   // ---------- phone number and code lookups (the station Worker holds the phone link; tb-where holds the codes) ----------
-  const walletSaveLimit = makeLimit(10, 10 * 60e3, now), lookupLimit = makeLimit(Math.max(1, Math.min(60, parseInt(o.lookupsPer10Min, 10) || 8)), 10 * 60e3, now), lookupDayLimit = makeLimit(60, 24 * 3600e3, now);
-  let walletOffUntil = 0;
-  const walletUsable = () => !!(STATION_API && STATION_KEY && doFetch) && now() >= walletOffUntil;
+  const walletSaveLimit = makeLimit(10, 10 * 60e3, now), lookupFails = makeLimit(Math.max(1, Math.min(60, parseInt(o.lookupsPer10Min, 10) || 20)), 10 * 60e3, now), lookupDayLimit = makeLimit(60, 24 * 3600e3, now);
+  /* Only MISSES count toward the 10-minute brake (a customer who typed it wrong a few times is not locked out; number guessing is all misses), the daily cap counts every lookup. */
+  const lookupGate = () => !lookupFails.full() && lookupDayLimit.take();
+  /* Is the station's prize-link route really there? "on" only after the station answered like the real thing (JSON from the route, not its static-file 404): until then, and whenever it
+     says off / 404 / 405 / non-JSON, nothing is OFFERED (saveable false) and no number is ever sent. Re-probed every 10 minutes; a probe sends no number (an invalid phone, refused before any storage). */
+  let walletState = "unknown", walletOffUntil = 0, walletProbeAt = 0, walletProbing = null;
+  const WALLET_RECHECK_MS = 10 * 60e3;
+  const walletConfigured = () => !!(STATION_API && STATION_KEY && doFetch);
+  const walletUsable = () => walletConfigured() && walletState === "on" && now() >= walletOffUntil;
+  function classify(r) {            // -> "on" | "off" | "unknown" (unknown = could not reach it: say unavailable, try again soon)
+    if (r.status === 0) return "unknown";
+    if (r.status === 404 || r.status === 405 || !r.data || typeof r.data !== "object") return "off";                   // route not deployed yet (falls through to static files) or not our JSON
+    if (r.status === 503 && r.data.error === "prize-link-off") return "off";
+    return r.status === 401 || r.status === 403 || r.status >= 500 ? "unknown" : "on";
+  }
+  function probeWallet() {
+    if (!walletConfigured()) return Promise.resolve();
+    const age = now() - walletProbeAt;
+    if (walletState === "unknown" ? age < 60e3 : age < WALLET_RECHECK_MS) return Promise.resolve();   // unknown: try again each minute; known: every 10 minutes
+    if (walletProbing) return walletProbing;
+    walletProbing = (async () => {
+      const r = await stationJson("/api/prize-link/lookup", { phone: "0" });
+      walletState = classify(r); walletProbeAt = now();
+      if (walletState === "off") walletOffUntil = now() + 10 * 60e3;
+    })().finally(() => { walletProbing = null; });
+    return walletProbing;
+  }
   async function stationJson(p, body) {
     const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 5000);
     try {
@@ -454,7 +486,8 @@ function createArcade(opts) {
   const slow = () => ({ status: 429, body: { ok: false, error: "slow-down" } });
   const off = () => ({ status: 200, body: { ok: false, error: "off" } });
   const gone = () => ({ status: 200, body: { ok: false, error: "unavailable" } });
-  function noteOff(r) { if (r.status === 503 && r.data && r.data.error === "prize-link-off") { walletOffUntil = now() + 10 * 60e3; return true; } return false; }
+  /* An answer that says the link is not there at all (503 off, 404/405, or not JSON): treat the feature as off for 10 minutes. */
+  function noteOff(r) { if (classify(r) === "off") { walletState = "off"; walletProbeAt = now(); walletOffUntil = now() + 10 * 60e3; return true; } return false; }
 
   /* Keep a win on a phone number. {phone, code}: code must be a win THIS server issued in the last 6 hours (so the page cannot save an arbitrary
      claim). The number goes to the station Worker only; it is never logged, stored or echoed here (only its last two digits come back for the screen). */
@@ -463,8 +496,9 @@ function createArcade(opts) {
     if (!ph) return { status: 400, body: { ok: false, error: "bad-phone" } };
     const c = typeof code === "string" ? code.toUpperCase() : "";
     const w = CODE_RE.test(c) ? recent.get(c) : null;
-    if (!w || now() - w.at > RECENT_KEEP_MS || now() >= w.expiresAt) return { status: 200, body: { ok: false, error: "unknown-code" } };
-    if (!walletUsable()) return off();
+    if (!w || now() - w.at > RECENT_KEEP_MS || now() >= w.expiresAt || isAttached(c)) return { status: 200, body: { ok: false, error: "unknown-code" } };   // an attached code is spoken for
+    await probeWallet();
+    if (!walletUsable()) return walletConfigured() && walletState === "unknown" ? gone() : off();
     if (!walletSaveLimit.take()) return slow();
     const r = await stationJson("/api/prize-link/save", { phone: ph, code: c });
     const d = r.data;
@@ -492,17 +526,18 @@ function createArcade(opts) {
   async function walletLookup(phone) {
     const ph = normPhone(phone);
     if (!ph) return { status: 400, body: { ok: false, error: "bad-phone" } };
-    if (!walletUsable()) return off();
-    if (!lookupLimit.take() || !lookupDayLimit.take()) return slow();
+    await probeWallet();
+    if (!walletUsable()) return walletConfigured() && walletState === "unknown" ? gone() : off();
+    if (!lookupGate()) return slow();
     const r = await stationJson("/api/prize-link/lookup", { phone: ph });
     const d = r.data;
     if (noteOff(r)) return off();
     if (r.status === 429) return slow();
-    if (r.status === 200 && d && d.ok === true && d.found === false) return { status: 200, body: { ok: true, found: false } };
+    if (r.status === 200 && d && d.ok === true && d.found === false) { lookupFails.add(); return { status: 200, body: { ok: true, found: false } }; }
     if (r.status === 200 && d && d.ok === true && d.found === true) {
       const a = adopt(d.prizeId, d.code, d.expiresAt);
-      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: a.prize.label, expiresAt: a.exp } };
-      return { status: 200, body: { ok: true, found: false } };       // used, expired or malformed: indistinguishable from "nothing there"
+      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: PLAIN_LABEL[a.prize.id] || a.prize.label, expiresAt: a.exp } };
+      lookupFails.add(); return { status: 200, body: { ok: true, found: false } };       // used, expired or malformed: indistinguishable from "nothing there"
     }
     return gone();
   }
@@ -511,19 +546,20 @@ function createArcade(opts) {
     const c = String(code == null ? "" : code).toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!CODE_RE.test(c)) return { status: 200, body: { ok: true, found: false, status: "unknown" } };
     if (!prizesOn()) return off();
-    if (!lookupLimit.take() || !lookupDayLimit.take()) return slow();
-    if (isAttached(c)) return { status: 200, body: { ok: true, found: false, status: "used" } };
+    if (!lookupGate()) return slow();
+    if (isAttached(c)) { lookupFails.add(); return { status: 200, body: { ok: true, found: false, status: "used" } }; }
     const r = await workerJson("POST", "/kitchen/claims/redeem", { code: c, checkOnly: true, by: "kiosk" }, { "X-Kiosk-Key": KIOSK_KEY });
     const d = r.data;
     if (r.status === 200 && d && d.ok === true && d.status === "valid") {
       const tk = d.ticket && typeof d.ticket === "object" ? d.ticket : {};
       const a = adopt(tk.prize && typeof tk.prize === "object" ? tk.prize.id : "", c, tk.expiresAt);
-      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: a.prize.label, expiresAt: a.exp } };
+      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: PLAIN_LABEL[a.prize.id] || a.prize.label, expiresAt: a.exp } };
+      lookupFails.add();
       if (a && a.used) return { status: 200, body: { ok: true, found: false, status: "used" } };
       return { status: 200, body: { ok: true, found: false, status: "unknown" } };   // not an arcade prize, or past its expiry
     }
-    if (d && d.status === "used") return { status: 200, body: { ok: true, found: false, status: "used" } };
-    if (r.status === 404 || (d && d.status === "unknown")) return { status: 200, body: { ok: true, found: false, status: "unknown" } };
+    if (d && d.status === "used") { lookupFails.add(); return { status: 200, body: { ok: true, found: false, status: "used" } }; }
+    if (r.status === 404 || (d && d.status === "unknown")) { lookupFails.add(); return { status: 200, body: { ok: true, found: false, status: "unknown" } }; }
     return gone();
   }
 

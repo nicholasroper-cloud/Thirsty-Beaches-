@@ -60,3 +60,6 @@
 .kr-ph { color: #160430; background: #FFD166; border-radius: .3em; padding: 0 .3em; font-family: "DM Mono", monospace; font-weight: 700; }
 .kr-close { min-height: calc(var(--kp-u) * 11); width: 100%; }
 @media (orientation: landscape) { .kr-modal { --kp-u: min(1vw, .5625vh, 6px); } .kr-card { max-height: 96vh; } }
+
+/* a win that arrived after the visit's time ran out is shown above the "Time's up" panel (z 200) */
+.kp-modal.kp-over-ended { z-index: 250; }

@@ -10,7 +10,7 @@
   "maxPrizeRolls": 4,
   "useOnSameVisit": true,
   "gameMinSeconds": 20,
-  "visitGapSeconds": 120,
-  "_serverKeys": "maxPrizeRolls = prize rolls (slot spins + finished games) per visit, shared; useOnSameVisit = a win becomes this kiosk's pending prize and the order-screen banner (false: the customer only gets the code / phone link for next time); gameMinSeconds = a game must have run this long on the server clock before its finish can roll; visitGapSeconds = quiet time that ends a visit.",
+  "visitGapSeconds": 40,
+  "_serverKeys": "maxPrizeRolls = prize rolls (slot spins + finished games) per visit, shared; useOnSameVisit = a win becomes this kiosk's pending prize and the order-screen banner (false: the customer only gets the code / phone link for next time); gameMinSeconds = a game must have run this long on the server clock before its finish can roll; visitGapSeconds = quiet time that ends a visit (an open arcade page pings every 20 s, so keep it a little over 20; 25 to 900).",
   "_gameKeys": "gameMaxSeconds = the time cap for one visit to the games picker and the five games together (counts from the first game page, shared across games; 30 to 900 seconds). The slot machine has its own maxSpins/maxSeconds above."
 }

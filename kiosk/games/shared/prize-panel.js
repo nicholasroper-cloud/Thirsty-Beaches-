@@ -89,7 +89,7 @@
     const code = win ? String(r.code) : '';
     const when = win ? whenText(r.expiresAt) : '';
     const orderNow = win && r.orderNow === true;
-    const modal = el = mk('div', 'kp-modal'); modal.id = 'kpPanel'; modal.setAttribute('role', 'dialog');
+    const modal = el = mk('div', 'kp-modal' + (o.ended ? ' kp-over-ended' : '')); modal.id = 'kpPanel'; modal.setAttribute('role', 'dialog');
     const card = mk('div', 'kp-card'); modal.appendChild(card);
     const body = mk('div', 'kp-body'); card.appendChild(body);
     const nav = mk('div', 'kp-nav'); card.appendChild(nav);
@@ -102,6 +102,8 @@
         if (orderNow) nav.appendChild(link('kp-btn--go kp-order', WORDING.orderNowBtn, '/#menu'));
         nav.appendChild(btn('kp-again', WORDING.spinAgain, hide));
         nav.appendChild(link('kp-games', WORDING.moreGames, '/arcade/games'));
+      } else if (o.ended) {      // the visit's time ran out while the game was finishing: the prize is still shown, but nothing starts another game
+        nav.appendChild(link('kp-btn--go kp-order', WORDING.order, '/#menu', function () { if (root.TBK) root.TBK.clearVisit(); }));
       } else {
         nav.appendChild(btn('kp-btn--go kp-again', WORDING.again, function () { hide(); if (typeof o.onAgain === 'function') o.onAgain(); }));
         nav.appendChild(link('kp-games', WORDING.allGames, '/arcade/games'));

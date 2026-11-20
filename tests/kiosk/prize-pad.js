@@ -308,6 +308,18 @@ async function launchChrome() {
     ok((await chrome.rect("#arcSkip")).h >= 64, "the skip button on the cart line is a real touch target");
     await chrome.tap("#arcSkip"); await waitFor(() => chrome.rect("#arcAsk"), 3000, "ask button returns after No thanks");
     ok(world.dismissed >= 1 && !world.pending, "skip used the existing dismiss and cleared the pending prize");
+    { const toast = await chrome.eval("document.getElementById('toast').textContent"); ok(/Prize set aside/.test(toast) && !/K7QD|code/i.test(toast), "a prize found by lookup is set aside without printing a code the customer never saw: " + toast); }
+    { // a win from THIS visit (not looked up) still tells the window its code
+      setPending(); await chrome.eval("awPoll()"); await waitFor(() => chrome.eval("!document.getElementById('arcadeWin').hidden"), 4000, "banner for a win from this visit");
+      await chrome.eval("arcadeDecline()"); await waitFor(() => chrome.eval("/Prize set aside/.test(document.getElementById('toast').textContent)"), 3000, "decline toast");
+      ok(new RegExp(PRIZE.code).test(await chrome.eval("document.getElementById('toast').textContent")), "a win from this visit keeps the code in the toast"); }
+    { // F8: a late lookup reply after the pad was closed never pops the cart open again
+      await fresh(); await open(); setPending();
+      await chrome.eval("closeSheet()");
+      ok(!(await chrome.eval("document.getElementById('overlay').classList.contains('show')")), "the sheet is closed");
+      await chrome.eval("pzFound({expiresAt: Date.now()+3600e3})"); await sleep(400);
+      ok(!(await chrome.eval("document.getElementById('overlay').classList.contains('show')")), "a late 'found' reply does not reopen the cart over whatever the customer is doing");
+      ok(!!world.pending, "the prize itself is still pending"); }
 
     for (const [code, re, name] of [[{ ok: true, found: false, status: "unknown" }, /isn't valid.*mistyped.*expired/, "unknown/expired"], [{ ok: true, found: false, status: "used" }, /already been used/, "used"], [{ ok: false, error: "slow-down" }, /Too many tries/, "slow-down"], [{ ok: false, error: "unavailable" }, /Can't check prizes right now/, "unavailable"]]) {
       await fresh(); world.code = code; await open(); await chrome.tap(".pz-switch"); await waitFor(() => chrome.rect(".krow.pzalpha"), 3000, "code pad"); await tapCode("ABCD"); await chrome.tap("#pzGo");

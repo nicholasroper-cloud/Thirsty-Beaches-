@@ -115,7 +115,84 @@ const clover = http.createServer((rq, rs) => {
   });
 });
 
+
+/* ---------------- unit: station probing, lookup brake, cap re-probe, plain labels, visit gap (injected clock and fetch) ---------------- */
+async function unitTests() {
+  const mk = (over = {}) => {
+    let t = 1_000_000; const clock = () => t; const calls = []; const claimsDb = new Map(); let minted = 0, workerSays = "ok";
+    const R = (status, obj, raw) => ({ status, json: async () => { if (raw !== undefined) throw new Error("not json"); return obj; } });
+    const state = { station: over.station || (() => R(200, { ok: false, error: "bad-phone" })), found: null };
+    const fetchImpl = async (url, opts) => {
+      const body = opts && opts.body ? JSON.parse(opts.body) : {}; calls.push({ url, body });
+      if (url.startsWith("http://station.test")) return state.station(url, body);
+      if (url.endsWith("/scores/token")) return R(200, { token: "t" + calls.length, minMs: 100 });
+      if (url.endsWith("/kitchen/claim")) {
+        if (workerSays !== "ok") return R(429, { error: workerSays });
+        const code = "TQ" + String.fromCharCode(65 + (minted % 20)) + (2 + (minted++ % 7)); claimsDb.set(code, { prizeId: body.prize.id, exp: clock() + 24 * 3600e3 });
+        return R(200, { ok: true, code, ticket: { expiresAt: clock() + 24 * 3600e3 } });
+      }
+      if (url.endsWith("/kitchen/claims/redeem")) { const c = claimsDb.get(body.code); return c ? R(200, { ok: true, status: "valid", ticket: { prize: { id: c.prizeId }, expiresAt: c.exp } }) : R(404, { ok: false, status: "unknown" }); }
+      return R(404, {});
+    };
+    const rng = () => 0.995;   // the free-drink prize at the default table (the last 1%)
+    const a = arc.createArcade({ apiBase: "http://worker.test", kioskKey: "k".repeat(30), stationKey: "s", stationApi: "http://station.test", fetchImpl, now: clock, rng, log: () => {}, settings: over.settings || { maxPrizeRolls: 20 }, tbDir: fs.mkdtempSync(path.join(os.tmpdir(), "tb-unit-")) });
+    return { a, calls, claimsDb, state, tick: ms => { t += ms; }, setWorker: v => { workerSays = v; } };
+  };
+  const phones = calls => calls.filter(c => c.url.startsWith("http://station.test")).map(c => JSON.stringify(c.body));
+  const winOne = async w => { await w.a.refill(); w.tick(60_000); return w.a.spin(); };
+
+  // M1: the station route does not exist yet (static-file 404, 405, a non-JSON 200): nothing offered, no number sent
+  for (const [label, fn] of [["text 404", () => ({ status: 404, json: async () => { throw new Error("html"); } })], ["405", () => ({ status: 405, json: async () => ({}) })], ["non-JSON 200", () => ({ status: 200, json: async () => { throw new Error("html"); } })],
+    ["503 off", () => ({ status: 503, json: async () => ({ ok: false, error: "prize-link-off" }) })]]) {
+    const w = mk({ station: fn });
+    const win = await winOne(w); ok(win.win === true, label + ": a win");
+    eq(win.saveable, false, label + ": 'Save to phone' is not offered when the station cannot store it");
+    eq((await w.a.walletSave("8015550142", win.code)).body.error, "off", label + ": save says off");
+    eq((await w.a.walletLookup("8015550142")).body.error, "off", label + ": lookup says off");
+    ok(phones(w.calls).every(b => !b.includes("8015550142")), label + ": the number was never sent to a station that cannot keep it");
+    const n = phones(w.calls).length; await w.a.walletLookup("8015550142"); eq(phones(w.calls).length, n, label + ": backed off, no new station calls for 10 minutes");
+    w.tick(11 * 60_000); w.state.station = () => ({ status: 400, json: async () => ({ ok: false, error: "bad-phone" }) });
+    w.a.touch(); await new Promise(r => setTimeout(r, 30));   // a page load probes the station again
+    const win2 = await winOne(w); ok(win2.win === true && win2.saveable === true, label + ": offered again once the station answers like the real route");
+  }
+  { // unreachable: not offered, says unavailable (not off), retried
+    const w = mk({ station: () => { throw new Error("net"); } });
+    const win = await winOne(w); eq(win.saveable, false, "unreachable station: not offered"); eq((await w.a.walletLookup("8015550142")).body.error, "unavailable", "unreachable: unavailable, not off");
+  }
+  // F2: successes never lock the customer out, misses do (about 15 here), the daily cap still counts everything
+  {
+    const w = mk({ station: (u, b) => (b.phone === "0" ? { status: 400, json: async () => ({ ok: false, error: "bad-phone" }) } : { status: 200, json: async () => ({ ok: true, found: false }) }) });
+    w.a = arc.createArcade({ ...{}, apiBase: "http://worker.test", kioskKey: "k".repeat(30), stationKey: "s", stationApi: "http://station.test", fetchImpl: async (u, o) => { w.calls.push(1); if (u.includes("/api/prize-link/")) { const b = JSON.parse(o.body); return b.phone === "0" ? { status: 400, json: async () => ({ ok: false, error: "bad-phone" }) } : { status: 200, json: async () => ({ ok: true, found: false }) }; } return { status: 404, json: async () => ({ status: "unknown" }) }; }, now: () => 1_000_000 + w.calls.length * 1000, rng: () => 0, log: () => {}, settings: { maxPrizeRolls: 20 }, lookupsPer10Min: 20 });
+    let slowAt = 0; for (let i = 1; i <= 30; i++) { const r = await w.a.walletLookup("80155501" + String(10 + i)); if (r.status === 429) { slowAt = i; break; } }
+    ok(slowAt >= 20 && slowAt <= 22, "a customer gets about 20 typos in 10 minutes before the brake: " + slowAt);
+  }
+  // F3: a refused claim (global daily cap) is remembered 30 minutes, not until midnight, and is the whole-day Worker cap (not one prize's stock)
+  {
+    const w = mk(); w.setWorker("sold-out");
+    const r1 = await winOne(w); eq([r1.win, r1.thanks], [false, true], "cap: thanks");
+    eq(w.a.status().capped, true, "capped is known"); w.tick(29 * 60_000); eq(w.a.status().capped, true, "still capped at 29 minutes");
+    w.tick(2 * 60_000); eq(w.a.status().capped, false, "re-probe after about 30 minutes"); w.setWorker("ok"); await w.a.refill(); w.tick(60_000);
+    const r2 = await w.a.spin(); ok(r2.win === true, "and a win is possible again once the Worker has room: " + JSON.stringify(r2).slice(0, 80));
+  }
+  // F4: the order screen's pending prize carries the plain name; the slot machine's own answer keeps its label
+  {
+    const w = mk(); const win = await winOne(w);
+    eq(win.label, "FREE DRINK JACKPOT!", "slot answer unchanged"); eq(w.a.getPending().label, "Free Drink", "order screen banner/cart line use the plain name");
+    const a2 = w.a; a2.dismissPending(); w.claimsDb.set("LOOK", { prizeId: "free_drink_jackpot", exp: 1_000_000 + 3600e3 });
+    const c = await a2.codeLookup("LOOK"); eq(c.body.label, "Free Drink", "a code found on the pad reads plain too");
+  }
+  // F5: a new customer never inherits a used-up roll count (visit ends 40 s after the last ping)
+  {
+    const w = mk({ settings: { maxPrizeRolls: 1 } }); await w.a.refill(); w.tick(60_000);
+    const first = await w.a.spin(); ok(first.win === true, "first roll"); const capped = await w.a.spin(); eq(capped.win, false, "second roll in the same visit is capped");
+    w.tick(30_000); w.a.touchVisit(); w.tick(30_000); const still = await w.a.spin(); eq(still.win, false, "an open page (pinging every 20 s) is the same visit");
+    w.tick(41_000); w.setWorker("ok"); await w.a.refill(); w.tick(60_000); const fresh = await w.a.spin(); eq(fresh.win, true, "40 s after the last ping the next customer has a fresh count");
+  }
+  eq(arc.SESSION_DEFAULTS.visitGapSeconds, 40, "gap default is just over the 20 s ping");
+}
+
 (async () => {
+  await unitTests();
   const keepAlive = setInterval(() => {}, 1000);
   const [workerPort, stationPort, cloverPort, port] = [await freePort(), await freePort(), await freePort(), await freePort()];
   await new Promise(r => worker.listen(workerPort, "127.0.0.1", r));
@@ -130,7 +207,7 @@ const clover = http.createServer((rq, rs) => {
   setSession({ maxPrizeRolls: 20, useOnSameVisit: true, gameMinSeconds: 5, visitGapSeconds: 120 });
   const child = cp.spawn(process.execPath, ["kiosk-server.js"], { cwd: dir, stdio: ["ignore", "pipe", "pipe"], env: {
     PATH: process.env.PATH, CLOVER_API_TOKEN: "t", CLOVER_MERCHANT_ID: "M", CLOVER_BASE_URL: "http://127.0.0.1:" + cloverPort, PORT: String(port), KIOSK_HEARTBEAT_URL: "off",
-    PRIZE_API: "http://127.0.0.1:" + workerPort, STATION_API: "http://127.0.0.1:" + stationPort, KIOSK_KEY, STATION_KEY: STAFF, PRIZE_LOOKUPS_PER_10MIN: "20", TB_CATALOG_MS: "60000" } });
+    PRIZE_API: "http://127.0.0.1:" + workerPort, STATION_API: "http://127.0.0.1:" + stationPort, KIOSK_KEY, STATION_KEY: STAFF, PRIZE_LOOKUPS_PER_10MIN: "15", TB_CATALOG_MS: "60000" } });
   let out = ""; child.stdout.on("data", d => out += d); child.stderr.on("data", d => out += d);
   const cleanup = () => { try { child.kill(); } catch {} worker.close(); station.close(); clover.close(); clearInterval(keepAlive); };
   try {
@@ -210,8 +287,7 @@ const clover = http.createServer((rq, rs) => {
     await P("/api/arcade/pending/dismiss");                                   // the customer walked off; the code lives on
     eq((await P("/api/arcade/wallet/save", { phone: "555", code: w3.code })).json.error, "bad-phone", "bad number refused before anything is sent");
     eq((await P("/api/arcade/wallet/save", { phone: PHONE, code: "ABCD" })).json.error, "unknown-code", "a code this server did not issue cannot be saved");
-    eq((await P("/api/arcade/wallet/save", { phone: PHONE, code: win.code })).json.ok, true, "an issued code can be saved (the page names it, the server checks it)");   // win.code was attached already but is still a code this server issued
-    links.clear();
+    eq((await P("/api/arcade/wallet/save", { phone: PHONE, code: win.code })).json.error, "unknown-code", "a code already attached to an order is spoken for and cannot be saved to a number");
     const saved = (await P("/api/arcade/wallet/save", { phone: PHONE, code: w3.code })).json;
     ok(saved.ok === true && saved.saved === true && saved.last2 === "42", "saved; only the last two digits come back: " + JSON.stringify(saved));
     ok(!JSON.stringify(saved).includes(PHONE) && !JSON.stringify(saved).includes("801555"), "no number in the response");
@@ -290,7 +366,7 @@ const clover = http.createServer((rq, rs) => {
 
     // ---- lookup rate limit (per kiosk) ----
     const respond = [];
-    for (let i = 0; i < 12; i++) respond.push((await P("/api/arcade/code", { code: "Q" + "ABCDEFGHJK"[i] + "XX" })).status);
+    for (let i = 0; i < 26; i++) respond.push((await P("/api/arcade/code", { code: "Q" + "ABCDEFGHJKMNPQRSTUVWXYZ23"[i] + "XX" })).status);   // MISSES count toward the brake (successes do not)
     ok(respond.includes(429), "code/phone lookups are rate limited on this kiosk: " + respond.join(","));
     eq((await P("/api/arcade/wallet/lookup", { phone: PHONE2 })).status, 429, "the same limit covers phone lookups");
 
@@ -311,7 +387,7 @@ const clover = http.createServer((rq, rs) => {
     eq((await request(port, "POST", "/api/arcade-config", { odds: allWin }, { "X-Key": STAFF })).json.config.version, cfg1.version, "saving the same odds again does not bump the version");
     const sP = (await P("/api/arcade/game/start", { game: "thirsty-tower" })).json; await sleep(5300); const wP = (await P("/api/arcade/game/finish", { sid: sP.sid })).json; await P("/api/arcade/pending/dismiss");
     ok(wP.win === true, "a win under the new period"); ok(/arcade: win \S+ via (game|slot) period=Dec 2026 b odds-v=\d+/.test(out), "the win log line carries the period and odds version"); ok(!new RegExp("arcade: win .*" + win.code).test(out), "and never the code");
-    ok(wB.label !== undefined && !/jackpot/i.test(JSON.stringify([win, w3, w4, wB])), "no game result ever carries the word jackpot, a mega flag or a sound trigger"); ok(![win, w3, w4, wB].some(w => "mega" in w || "trigger" in w), "game wins have no mega/trigger fields");
+    ok([win, w3, w4, wB].every(w => typeof w.label === "string" && !/jackpot/i.test(w.label)), "no game result ever shows the word jackpot (the internal prize id is not display text)"); ok(![win, w3, w4, wB].some(w => "mega" in w || "trigger" in w), "game wins have no mega/trigger fields");
     const rl = (await request(port, "GET", "/api/arcade/rules")).json.rules;
     eq(rl.freeDrinkOneIn, 100 / arc.MAX_FREE_DRINK_PCT, "free-drink ceiling stated is MAX_FREE_DRINK_PCT"); ok(!rl.prizes.map(p => p.label + " " + p.note).join(" ").match(/jackpot/i), "rules prize list shows plain names");
     eq(rl.mostGamesDoNotWin, false, "all-win odds: the page may NOT say most games do not win (computed from the live table)");

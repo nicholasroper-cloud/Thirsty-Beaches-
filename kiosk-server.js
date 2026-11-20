@@ -345,7 +345,7 @@ try {
   arcade = require("./arcade-routes").createArcade({
     tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
     stationApi: process.env.STATION_API || "https://station.thirstybeaches.com",      // the cloud station Worker holds the prize-to-phone link (prize lookup only, no marketing list)
-    lookupsPer10Min: parseInt(process.env.PRIZE_LOOKUPS_PER_10MIN || "", 10) || 8,    // phone/code lookups allowed per 10 minutes on this kiosk (a customer needs 1 or 2; the default blocks number guessing)
+    lookupsPer10Min: parseInt(process.env.PRIZE_LOOKUPS_PER_10MIN || "", 10) || 20,   // phone/code lookups that MISS, allowed per 10 minutes on this kiosk (typos are fine; number guessing is all misses); a daily cap of 60 covers every lookup
     sessionFile: path.join(__dirname, "kiosk", "arcade-session.json"),
     rulesFile: path.join(__dirname, "kiosk", "arcade-rules.json"),                    // sponsor, dates, prize life for the rules panel (placeholders until the owner fills them)                // visit settings the server enforces (maxPrizeRolls, useOnSameVisit, gameMinSeconds)
     clover: { get: cloverGet, post: cloverPost },          // only used to append the prize tag to a kiosk order's note (see attachToOrder)

@@ -3685,6 +3685,7 @@ async function pzFound(res){
   await awPoll();
   if(!_awPending){ _pzFound = null; return false; }
   arcRowRefresh();
+  if(!$("#overlay").classList.contains("pzpad")) return true;     // the pad was closed while we waited (a late reply): the prize is pending, but never pop the cart back open
   $("#overlay").classList.remove("pzpad"); pzReset();
   openCart();
   return true;
@@ -4481,10 +4482,11 @@ async function awPoll(){
   }catch(e){ /* the server is restarting or offline: keep what is on screen */ }
 }
 async function arcadeDecline(){
-  const code = _awPending && _awPending.code;
+  const code = _awPending && _awPending.code, byLookup = !!_pzFound;   // read before the render below clears _pzFound
   _awPending = null; awRender();                              // gone from the screen at once; the server clears its copy right after
   try{ await fetch("/api/arcade/pending/dismiss",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}); }catch(e){}
-  if(code) showToast("Prize set aside. The window can still use code " + code + ".");
+  if(code && !byLookup) showToast("Prize set aside. The window can still use code " + code + ".");      // only a win from this visit: a prize found by phone is never shown as a code the customer did not see
+  else if(code) showToast("Prize set aside.");
 }
 function awNote(r){
   const n = $("#arcadeNote"); if(!n) return;
