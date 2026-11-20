@@ -117,7 +117,7 @@ test('dual-persona audio bank & prize odds invariants hold', () => {
   assert.deepEqual(Object.keys(audioBank.PERSONAS).sort(), ['neon86', 'shredder']);
   assert.equal(audioBank.createAudioBank().getState().pgMode, true);
   assert.equal(slots.DEFAULT_ODDS.reduce((s, o) => s + o.pct, 0), 100);
-  assert.deepEqual(slots.DEFAULT_ODDS.map((o) => o.pct), [81, 6, 5, 4, 3, 1]);
+  assert.deepEqual(slots.DEFAULT_ODDS.map((o) => o.pct), [90, 3, 3, 2, 1.5, 0.5]);
   assert.equal(slots.BARKER_COOLDOWN_MS, 45000);
 });
 
@@ -132,21 +132,21 @@ const odds = (over = {}) => arc.PRIZES.map((p) => ({ id: p.id, pct: over[p.id] !
 
 test('odds validation: known ids only, numbers 0..100, sum 100, free drink capped', () => {
   assert.equal(arc.validateOdds(odds()).ok, true);
-  assert.equal(arc.validateOdds(odds({ free_drink_jackpot: 2, standard: 80 })).ok, true);
+  assert.equal(arc.validateOdds(odds({ free_drink_jackpot: 2, standard: 88.5 })).ok, true);
   const bad = [
     ['unknown id', odds().map((o, i) => (i === 1 ? { ...o, id: 'free_everything' } : o))],
     ['duplicate id', odds().map((o, i) => (i === 2 ? { ...o, id: 'size_upgrade' } : o))],
     ['missing prize', odds().slice(0, 5)],
     ['extra prize', [...odds(), { id: 'standard', pct: 0 }]],
-    ['string pct', odds().map((o, i) => (i === 0 ? { ...o, pct: '81' } : o))],
+    ['string pct', odds().map((o, i) => (i === 0 ? { ...o, pct: '90' } : o))],
     ['NaN', odds({ standard: NaN })],
     ['Infinity', odds({ standard: Infinity })],
     ['negative', odds({ standard: 91, size_upgrade: -4 })],
     ['over 100', odds({ standard: 101, size_upgrade: 0, soft_serve_topper: 0, neon_charm: 0, topper_or_sticker: 0, free_drink_jackpot: -1 })],
-    ['sum 99', odds({ standard: 80 })],
-    ['sum 101', odds({ standard: 82 })],
-    ['free drink 3', odds({ free_drink_jackpot: 3, standard: 79 })],
-    ['free drink 50', odds({ free_drink_jackpot: 50, standard: 32 })],
+    ['sum 99', odds({ standard: 89 })],
+    ['sum 101', odds({ standard: 91 })],
+    ['free drink 3', odds({ free_drink_jackpot: 3, standard: 87.5 })],
+    ['free drink 50', odds({ free_drink_jackpot: 50, standard: 40.5 })],
     ['not a list', { standard: 100 }],
     ['null entry', [null, ...odds().slice(1)]],
   ];
@@ -184,8 +184,8 @@ test('POST /api/arcade-config logic: unauthenticated refused, wrong key refused 
 test('config: bad odds refused with the key, partial saves keep the odds, free-drink cap, a corrupt file falls back to defaults', () => {
   const { dir, a } = tmpArcade();
   const K = 'staff-secret-key';
-  assert.equal(a.saveConfig(K, { odds: odds({ free_drink_jackpot: 5, standard: 77 }) }).status, 400);
-  assert.equal(a.saveConfig(K, { odds: odds({ standard: 90 }) }).status, 400);
+  assert.equal(a.saveConfig(K, { odds: odds({ free_drink_jackpot: 5, standard: 85.5 }) }).status, 400);
+  assert.equal(a.saveConfig(K, { odds: odds({ standard: 95 }) }).status, 400);
   assert.equal(a.saveConfig(K, { odds: [{ id: 'standard', pct: 100 }] }).status, 400);
   assert.equal(a.saveConfig(K, { volume: 7 }).status, 400);
   assert.equal(a.saveConfig(K, { personaMode: 'free-prizes' }).status, 400);
@@ -204,7 +204,7 @@ test('config: bad odds refused with the key, partial saves keep the odds, free-d
   assert.equal(a.saveConfig(K, { check: true }).status, 200);
   assert.equal(fs.readFileSync(path.join(dir, 'arcade-config.json'), 'utf8'), before);
   // a hand-edited file with a 60% jackpot is ignored
-  const evil = JSON.parse(before); evil.odds = odds({ free_drink_jackpot: 60, standard: 22 });
+  const evil = JSON.parse(before); evil.odds = odds({ free_drink_jackpot: 60, standard: 30.5 });
   fs.writeFileSync(path.join(dir, 'arcade-config.json'), JSON.stringify(evil));
   assert.deepEqual(a.getConfig().odds, arc.defaultOdds());
 });

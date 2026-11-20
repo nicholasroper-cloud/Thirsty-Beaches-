@@ -11,7 +11,7 @@
     title: 'Prize Game Rules',
     free: 'Free to play. No purchase needed to play or win.',
     unavailable: 'The full rules could not be loaded right now. Ask at the window.',
-    check: function (most) { return 'Each game ends with a random prize check' + (most ? "; most games don't win." : '.'); },
+    check: function (most) { return 'One random prize chance per visit, shared by the slot machine and the games' + (most ? "; most visits don't win." : '.'); },
     freeDrink: function (n) { return 'Free drink: no more than 1 in ' + n + ' games.'; },
     prizes: 'Prizes: ',
     sticker: 'Any prize can be swapped for a sticker, no purchase.',

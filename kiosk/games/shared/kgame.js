@@ -168,6 +168,13 @@
         return { ok: true, win: false, thanks: true };
       }).catch(function () { return { ok: true, win: false, thanks: true }; });
     }).then(function (result) {
+      // a plain thanks tells the player plainly when the visit's one prize chance is spent (the server counts it; this only reads the count)
+      if (result.win === true) return result;
+      return root.fetch('/api/arcade/status', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        if (j && j.ok === true && typeof j.rollsLeft === 'number' && j.rollsLeft <= 0) result.chanceUsed = true;
+        return result;
+      }, function () { return result; });
+    }).then(function (result) {
       if (leaving) return;
       if (ended) {      // time ran out while the finish was in flight: a plain thanks is not shown, but a WIN (a real code) never vanishes
         if (result.win === true && root.TBPrize) root.TBPrize.show({ result: result, mode: 'game', ended: true });
@@ -183,7 +190,8 @@
   function onAgain(fn) { againFn = fn; }
 
   /* ---------- 5. before play: "prizes are done today", the rules button ---------- */
-  const PRIZE_LINE = 'Finish a game for a chance at a prize.', CAPPED_LINE = 'Prizes are done for today. Play for fun.';
+  const PRIZE_LINE = 'One prize chance per visit. Finish a game to use it.', CAPPED_LINE = 'Prizes are done for today. Play for fun.';
+  const USED_LINE = 'That was your prize chance this visit. Keep playing for fun.';   // one prize chance per visit, shared by the slot machine and the games
   function wirePrizeLines() {
     Array.prototype.forEach.call(doc.querySelectorAll('[data-kg-rules]'), function (b) {
       b.addEventListener('click', function () { if (root.TBRules) root.TBRules.open(); });
@@ -193,11 +201,12 @@
     // until the server answers nothing is promised; if it cannot be reached (or prizes are off) nothing is promised either
     try {
       root.fetch('/api/arcade/status', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-        const capped = !!(j && j.ok === true && j.capped === true), on = !!(j && j.ok === true && j.prizes === true);
+        const capped = !!(j && j.ok === true && j.capped === true), on = !!(j && j.ok === true && j.prizes === true), used = !!(j && j.ok === true && typeof j.rollsLeft === 'number' && j.rollsLeft <= 0);
         Array.prototype.forEach.call(lines, function (p) {
           const onlyCapped = p.getAttribute('data-kg-prizeline') === 'capped';
           p.classList.toggle('is-capped', capped);
           if (capped) { p.textContent = CAPPED_LINE; p.hidden = false; }
+          else if (used && on) { p.textContent = USED_LINE; p.classList.add('is-capped'); p.hidden = false; }
           else if (on && !onlyCapped) { p.textContent = PRIZE_LINE; p.hidden = false; }
           else { p.textContent = ''; p.hidden = true; }
         });

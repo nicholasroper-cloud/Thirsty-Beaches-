@@ -873,3 +873,6 @@ dialog.staff-dlg::backdrop { background: rgba(4,0,12,0.78); }
   .led-ticker__track > span:nth-child(n+2) { display: none; }
   body.is-flash::after { opacity: 0; }
 }
+
+/* one prize chance per visit, already used: the awards list is shown as not available (the text above it says so) */
+body[data-chance="used"] .paytable__rows, body[data-chance="used"] .paytable__foot { opacity: 0.35; }

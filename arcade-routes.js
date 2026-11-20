@@ -38,20 +38,23 @@ const crypto = require("crypto");
 /* The prize table. The ids are the only ids the staff config may name; labels, "isPrize" and the audio trigger are fixed here, so a
    config file (or a POST) can never inject text or a new prize. tests/boardwalk-arcade.test.mjs pins kiosk/boardwalk-slots.js to this table. */
 const PRIZES = [
-  { id: "standard",           label: "Standard Custom Drink",                         pct: 81, isPrize: false, trigger: "drink_reveal" },
-  { id: "size_upgrade",       label: "Free Size Upgrade",                             pct: 6,  isPrize: true,  trigger: "prize_win" },
-  { id: "soft_serve_topper",  label: "Free Pineapple Soft Serve or Vanilla Soft Serve Topper",   pct: 5,  isPrize: true,  trigger: "prize_win" },
-  { id: "neon_charm",         label: "Free 3D-Printed Neon Straw Charm",              pct: 4,  isPrize: true,  trigger: "arcade_charm_win" },
-  { id: "topper_or_sticker",  label: "Free Freeze-Dried Topper or UV-DTF Sticker",    pct: 3,  isPrize: true,  trigger: "prize_win" },
-  { id: "free_drink_jackpot", label: "FREE DRINK JACKPOT!",                           pct: 1,  isPrize: true,  trigger: "mega_jackpot" },
+  { id: "standard",           label: "Standard Custom Drink",                         pct: 90,  isPrize: false, trigger: "drink_reveal" },
+  { id: "size_upgrade",       label: "Free Size Upgrade",                             pct: 3,   isPrize: true,  trigger: "prize_win" },
+  { id: "soft_serve_topper",  label: "Free Pineapple Soft Serve or Vanilla Soft Serve Topper",   pct: 3,   isPrize: true,  trigger: "prize_win" },
+  { id: "neon_charm",         label: "Free 3D-Printed Neon Straw Charm",              pct: 2,   isPrize: true,  trigger: "arcade_charm_win" },
+  { id: "topper_or_sticker",  label: "Free Freeze-Dried Topper or UV-DTF Sticker",    pct: 1.5, isPrize: true,  trigger: "prize_win" },
+  { id: "free_drink_jackpot", label: "FREE DRINK JACKPOT!",                           pct: 0.5, isPrize: true,  trigger: "mega_jackpot" },
 ];
+/* Which default table a saved staff config was made against. 1 = the original 81/6/5/4/3/1; 2 = v45: one prize chance per visit at 90/3/3/2/1.5/0.5 (a visit wins about 1 time in 10).
+   A saved file from an older table does NOT keep overriding a newer default forever: see migrateOdds(). Bump this whenever the shipped default table changes on purpose. */
+const ODDS_DEFAULTS_VERSION = 2;
 const PRIZE_IDS = PRIZES.map(p => p.id);
 /* The five games the kiosk serves (kiosk/games/<id>/). A session can only be opened for one of these; the id is used for the log and nothing else. */
 const GAME_IDS = ["thirsty-blaster", "thirsty-tower", "cup-catch", "boardwalk-dash", "soft-serve-stacker"];
 /* visitGapSeconds: an open arcade page pings every 20 s, so a visit is over once nothing (ping, game or spin) has been heard for this long; keep it a little over 20 so the next customer never inherits a used-up roll count.
    Server-side visit settings, read from kiosk/arcade-session.json on every use (the page reads the same file for its own limits). A missing or
    bad file or value falls back to these, never to "no limit". Only `useOnSameVisit: false` (literally) turns the win-rides-this-order path off. */
-const SESSION_DEFAULTS = { maxPrizeRolls: 4, useOnSameVisit: true, gameMinSeconds: 20, visitGapSeconds: 40 };
+const SESSION_DEFAULTS = { maxPrizeRolls: 1, useOnSameVisit: true, gameMinSeconds: 20, visitGapSeconds: 40 };
 function sessionSettings(raw) {
   const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v) : d);
@@ -146,23 +149,42 @@ function createArcade(opts) {
 
   // ---------- config ----------
   /* period = the promotion period these odds belong to (a short label the staff set), version = counts every odds/period change; both go on every win log line so a period's odds are traceable. */
-  function defaults() { return { personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: defaultOdds(), period: "", version: 1, updatedAt: null }; }
+  function defaults() { return { personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: defaultOdds(), oddsDefaultsVersion: ODDS_DEFAULTS_VERSION, period: "", version: 1, updatedAt: null }; }
   const cleanPeriod = v => (typeof v === "string" ? v.replace(/[^A-Za-z0-9 .,:\/_-]/g, "").trim().slice(0, 40) : "");
   function readSaved() { try { return JSON.parse(fs.readFileSync(cfgFile, "utf8")); } catch { return null; } }
   function cleanSaved(s) {
     const d = defaults();
     if (!s || typeof s !== "object") return d;
     const v = validateOdds(s.odds);
+    const stale = !(Number.isInteger(s.oddsDefaultsVersion) && s.oddsDefaultsVersion >= ODDS_DEFAULTS_VERSION);   // saved against an older default table: the newer shipped defaults win (migrateOdds writes and logs it once)
     return {
+      oddsDefaultsVersion: ODDS_DEFAULTS_VERSION,
       personaMode: PERSONAS.includes(s.personaMode) ? s.personaMode : d.personaMode,
       volume: typeof s.volume === "number" && s.volume >= 0 && s.volume <= 1 ? s.volume : d.volume,
       muted: s.muted === true, pgMode: s.pgMode !== false, winterEnabled: s.winterEnabled !== false,
-      odds: v.ok ? v.odds : d.odds,                       // a hand-edited or corrupt file falls back to the defaults, never to its own numbers
+      odds: v.ok && !stale ? v.odds : d.odds,             // a hand-edited or corrupt file falls back to the defaults, never to its own numbers
       period: cleanPeriod(s.period), version: Number.isInteger(s.version) && s.version >= 1 && s.version < 1e6 ? s.version : 1,
       updatedAt: typeof s.updatedAt === "number" ? s.updatedAt : null,
     };
   }
   const getConfig = () => cleanSaved(cfgFile ? readSaved() : null);
+  /* Once, at start: a saved staff file made against an older default table (no oddsDefaultsVersion, or older than this build's) has its odds REPLACED by the new defaults, the old table is kept in
+     the file as `previousOdds` and written to the log, the odds `version` is bumped, and the file is stamped so the staff drawer can change the odds afterwards and they stay changed.
+     Nothing is discarded silently. Audio/persona settings in the file are untouched. If the file cannot be written, cleanSaved() still serves the new defaults. */
+  function migrateOdds() {
+    if (!cfgFile) return;
+    const saved = readSaved();
+    if (!saved || typeof saved !== "object" || (Number.isInteger(saved.oddsDefaultsVersion) && saved.oddsDefaultsVersion >= ODDS_DEFAULTS_VERSION)) return;
+    const v = validateOdds(saved.odds);
+    if (!v.ok) return;                                                    // no usable saved odds: the defaults already apply, nothing to replace
+    const same = JSON.stringify(v.odds.map(x => [x.id, x.pct])) === JSON.stringify(defaultOdds().map(x => [x.id, x.pct]));
+    const table = list => list.map(x => x.id + " " + x.pct).join(", ");
+    if (!same) log("arcade: saved staff odds (" + table(v.odds) + ", period=" + (cleanPeriod(saved.period) || "-") + ") replaced ONCE by the v" + ODDS_DEFAULTS_VERSION + " defaults (" + table(defaultOdds()) + "); change them in the staff drawer if you want something else, they will stay");
+    const next = { ...saved, odds: defaultOdds(), oddsDefaultsVersion: ODDS_DEFAULTS_VERSION, previousOdds: same ? undefined : v.odds, version: (Number.isInteger(saved.version) && saved.version >= 1 ? saved.version : 1) + (same ? 0 : 1), updatedAt: now() };
+    try { const tmp = cfgFile + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(next, null, 2)); fs.renameSync(tmp, cfgFile); }
+    catch (e) { log("arcade: could not stamp the staff config (" + e.message + "); the new default odds still apply"); }
+  }
+  migrateOdds();
 
   /* Staff-only write. key = what the caller sent in X-Key. Fails CLOSED: with STATION_KEY unset nobody can write.
      Partial updates are fine: odds are touched only when `odds` is in the body. Returns { status, body }. */
@@ -241,11 +263,13 @@ function createArcade(opts) {
   }
 
   /* Ask the Worker for a real code. Returns { code, ticket } or null (and says why in the log, never to the page). */
+  let claimWhy = "";
   async function claim(prize) {
+    claimWhy = "";
     if (!prizesOn()) return null;
     if (now() < Math.max(blockedUntil, capUntil)) return null;
     const token = takeToken();
-    if (!token) { log("arcade: no play token old enough yet, no code for this win"); refill(); return null; }
+    if (!token) { log("arcade: no play token old enough yet, no code for this win"); claimWhy = "no-token"; refill(); return null; }
     const r = await workerJson("POST", "/kitchen/claim", { score: SCORE_FOR[prize.id] || SCORE_DEFAULT, who: "TB", token, prize: { id: prize.id, label: prize.label } }, { "X-Kiosk-Key": KIOSK_KEY });
     refill();
     const d = r.data;
@@ -373,7 +397,12 @@ function createArcade(opts) {
     const prize = rollPrize(getConfig().odds, rng);
     if (!prize.isPrize) return { prize, plain: true };
     const c = await claim(prize);
-    if (!c) return { prize, noCode: true };
+    if (!c) {
+      /* A prize was rolled but the Worker's play token was not old enough yet (the first ~47 s after the arcade page first opened): the visit's one chance is NOT used up by that, or the page
+         would say "that was your prize chance" about a roll that could never pay. Any other refusal (cap, Worker down) does use it. */
+      if (claimWhy === "no-token") visit.rolls = Math.max(0, visit.rolls - 1);
+      return { prize, noCode: true };
+    }
     const exp = c.ticket && Number.isFinite(+c.ticket.expiresAt) ? +c.ticket.expiresAt : now() + 24 * 3600e3;
     rememberWin(c.code, prize, exp);
     const cfg = getConfig();
@@ -427,7 +456,13 @@ function createArcade(opts) {
 
   // ---------- status and rules (what the pages may say BEFORE play) ----------
   /* prizes: this kiosk can hand out codes at all; capped: the Worker's daily cap is known to be used up today (say so before play). */
-  function status() { const cfg = getConfig(); return { ok: true, prizes: prizesOn(), capped: now() < capUntil, period: cfg.period, version: cfg.version }; }
+  /* rollsLeft: prize chances left in THIS visit (slot spins and finished games share them). A visit whose last page pinged more than visitGapSeconds ago is over, so it counts as fresh. */
+  function rollsLeft() {
+    const st = settings();
+    const used = visit.lastAt && now() - visit.lastAt <= st.visitGapSeconds * 1000 ? visit.rolls : 0;
+    return Math.max(0, st.maxPrizeRolls - used);
+  }
+  function status() { const cfg = getConfig(); return { ok: true, prizes: prizesOn(), capped: now() < capUntil, rollsLeft: rollsLeft(), period: cfg.period, version: cfg.version }; }
   const RULES_DEFAULTS = { sponsorName: "", sponsorAddress: "", promoStart: "", promoEnd: "", prizeLifeText: "24 hours", stickerSwap: true, onePerPersonPerDay: true, limitedPrizesDaily: true, rulesUrl: "", privacyUrl: "" };
   const PRIZE_NOTES = { size_upgrade: "used on a drink you order", soft_serve_topper: "used on a drink you order", topper_or_sticker: "topper used on a drink you order, or a sticker", neon_charm: "", free_drink_jackpot: "no purchase needed" };
   /* The rules panel's facts. Text the staff own comes from kiosk/arcade-rules.json (empty = a visible placeholder, never an invented name, address or date). Odds are stated ONLY

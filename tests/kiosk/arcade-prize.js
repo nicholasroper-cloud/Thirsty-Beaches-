@@ -46,7 +46,8 @@ async function unit() {
     });
     const a = createArcade({
       tbDir: dir, apiBase: "https://worker.test", kioskKey: over.noKey ? "" : KIOSK_KEY, stationKey: STAFF, fetchImpl: worker, now: () => t,
-      rng: over.rng || (() => 0.85),          // 0.85 of 100 -> size_upgrade (standard is 0..81, size_upgrade 81..87)
+      settings: over.settings || { maxPrizeRolls: 20 },   // these unit tests roll many times in one 'visit'; the one-roll default has its own tests in arcade-prize-pipeline.js
+      rng: over.rng || (() => 0.92),          // 0.92 of 100 -> size_upgrade (standard is 0..90, size_upgrade 90..93)
       clover: over.clover || { get: async p => { const m = /^\/orders\/(.+)$/.exec(p); return m ? orders[decodeURIComponent(m[1])] || null : null; }, post: async (p, b) => { cloverPosts.push({ p, b }); const m = /^\/orders\/(.+)$/.exec(p); if (m && orders[m[1]] && "note" in b) orders[m[1]].note = b.note; return {}; } },
     });
     return { a, calls, cloverPosts, dir, orders };
@@ -85,7 +86,7 @@ async function unit() {
     fs.writeFileSync(path.join(d, "arcade-pending.json"), JSON.stringify({ code: "K7QD", prizeId: "size_upgrade", label: "FREE CAR", issuedAt: t })); eq(mk({ dir: d }).a.getPending().label, "Free Size Upgrade", "the label always comes from the fixed table");
   }
   // 7. one at a time per kiosk: a newer win replaces the older
-  { const m = mk({ rng: (() => { const v = [0.85, 0.995]; let i = 0; return () => v[i++ % 2]; })() }); await warm(m.a); await m.a.spin(); t += 3000; await m.a.refill(); t += 3000; await m.a.spin();
+  { const m = mk({ rng: (() => { const v = [0.92, 0.995]; let i = 0; return () => v[i++ % 2]; })() }); await warm(m.a); await m.a.spin(); t += 3000; await m.a.refill(); t += 3000; await m.a.spin();
     const q = m.a.getPending(); eq(q.prizeId, "free_drink_jackpot", "the newest win is the one pending"); eq(m.calls.length, 2); }
   // 8. decline clears (memory and file)
   { const m = mk(); await warm(m.a); await m.a.spin(); ok(m.a.getPending()); eq(m.a.dismissPending(), { ok: true, dismissed: true }); eq(m.a.getPending(), null); ok(!fs.existsSync(path.join(m.dir, "arcade-pending.json")));

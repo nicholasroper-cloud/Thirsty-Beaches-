@@ -506,7 +506,7 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       await c.tapEl("#kgRules");
       await waitFor(async () => c.eval("document.getElementById('krPanel') && /Promotion period/.test(document.getElementById('krPanel').innerText)"), 4000, "the full rules");
       const t = await c.eval("document.getElementById('krPanel').innerText");
-      for (const part of ["Prize Game Rules", "Free to play. No purchase needed to play or win.", "Each game ends with a random prize check; most games don't win.", "Free drink: no more than 1 in 50 games.", "Free Size Upgrade (used on a drink you order)", "Free Drink (no purchase needed)",
+      for (const part of ["Prize Game Rules", "Free to play. No purchase needed to play or win.", "One random prize chance per visit, shared by the slot machine and the games; most visits don't win.", "Free drink: no more than 1 in 50 games.", "Free Size Upgrade (used on a drink you order)", "Free Drink (no purchase needed)",
         "Any prize can be swapped for a sticker, no purchase.", "Limited prizes each day; when they're gone, games are just for fun.", "One prize per person per day.", "Prizes expire 24 hours after winning. No cash value.", "Promotion period:", "Sponsor:", "St. George, UT", "Full rules and privacy:"]) ok(t.includes(part), "rules say: " + part);
       eq(await c.eval("[].map.call(document.querySelectorAll('#krPanel .kr-ph'),function(e){return e.textContent.split(':')[0]})"), ["[PROMOTION START", "[PROMOTION END", "[SPONSOR NAME", "[SPONSOR ADDRESS", "[RULES AND PRIVACY WEB ADDRESS"], "every unknown fact is a visible placeholder, none invented");
       ok(!/jackpot|anonymous|%|odds/i.test(t), "no jackpot, no percentages, no 'odds'");
@@ -522,14 +522,14 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       await waitFor(async () => c.eval("document.getElementById('krPanel') && /Test Sponsor LLC/.test(document.getElementById('krPanel').innerText)"), 4000, "filled rules");
       const t2 = await c.eval("document.getElementById('krPanel').innerText");
       ok(/Dec 1, 2026 to Dec 31, 2026/.test(t2) && /Test Sponsor LLC, 1 Test St, St. George, UT/.test(t2) && /example\.test\/rules/.test(t2), "owner facts shown");
-      ok(!/most games don't win/.test(t2) && !/swapped for a sticker/.test(t2) && !/One prize per person/.test(t2) && !/Limited prizes/.test(t2), "sentences the server did not switch on are not said");
+      ok(!/most visits don't win/.test(t2) && !/swapped for a sticker/.test(t2) && !/One prize per person/.test(t2) && !/Limited prizes/.test(t2), "sentences the server did not switch on are not said");
       eq(await c.eval("document.querySelectorAll('#krPanel .kr-ph').length"), 0, "no placeholders left");
       // the rules cannot be fetched: only the safe lines, no prize list, no odds
       await installMock(c, { rules: null });
       await c.goto(url(kiosk, "/arcade/games")); await c.tapEl("#kgRules");
       await waitFor(async () => c.eval("document.getElementById('krPanel') && /could not be loaded/.test(document.getElementById('krPanel').innerText)"), 4000, "fallback text");
       const t3 = await c.eval("document.getElementById('krPanel').innerText");
-      ok(/Free to play. No purchase needed to play or win./.test(t3) && !/Prizes:|1 in|random prize check|expire/.test(t3), "fallback: only the safe lines");
+      ok(/Free to play. No purchase needed to play or win./.test(t3) && !/Prizes:|1 in|prize chance|expire/.test(t3), "fallback: only the safe lines");
       // capped: the banner BEFORE play (picker + each start screen), and no 'chance at a prize' line
       await installMock(c, { status: { ok: true, prizes: true, capped: true, period: "", version: 1 } });
       await c.goto(url(kiosk, "/arcade/games"));
@@ -539,14 +539,14 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       for (const g of Object.keys(GAMES)) {
         await c.goto(url(kiosk, "/arcade/games/" + g));
         await waitFor(async () => /Prizes are done for today/.test(await c.eval("document.querySelector('[data-kg-prizeline]').textContent")), 4000, g + " capped line");
-        ok(!/chance at a prize/.test(await c.eval("document.body.innerText")), g + ": no 'chance at a prize' while capped");
+        ok(!/prize chance per visit/i.test(await c.eval("document.body.innerText")), g + ": no 'chance at a prize' while capped");
         if (g === "soft-serve-stacker" && out) await c.shot("portrait-capped-banner.png");
       }
       // not capped: the chance line; prizes off: nothing promised; every start screen has a big RULES button that opens the panel
       await installMock(c);
       for (const g of Object.keys(GAMES)) {
         await c.goto(url(kiosk, "/arcade/games/" + g));
-        await waitFor(async () => /chance at a prize/.test(await c.eval("document.querySelector('[data-kg-prizeline]').textContent")), 4000, g + " chance line");
+        await waitFor(async () => /One prize chance per visit/.test(await c.eval("document.querySelector('[data-kg-prizeline]').textContent")), 4000, g + " chance line");
         const rb = await c.rect("[data-kg-rules]"); ok(rb && rb.h >= 64 && rb.y > VH * 0.3 && rb.y + rb.h < VH, g + ": RULES button is big and in the lower area (y " + Math.round(rb.y) + ", h " + Math.round(rb.h) + ")");
         await c.tapEl("[data-kg-rules]");
         await waitFor(async () => c.eval("!!document.getElementById('krPanel')"), 3000, g + " rules open"); await c.tapEl("#krClose");
@@ -569,6 +569,39 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       ok(/Prize Game Rules/.test(await c.eval("document.getElementById('krPanel').innerText")), "the panel");
       if (out) await c.shot("portrait-slots-rules.png");
       await c.tapEl("#krClose");
+    });
+
+    /* ======================= C5b. one prize chance per visit, said plainly ======================= */
+    await section("C5b. the one prize chance per visit: told before play, and plainly once it is used (slot page and games)", async () => {
+      const NOTICE = "That was your prize chance this visit. Keep playing for fun.";
+      const st = left => ({ ok: true, prizes: true, capped: false, rollsLeft: left, period: "", version: 1 });
+      await installMock(c, { status: st(1) });
+      await c.goto(kiosk.base + "/arcade");
+      await waitFor(async () => /ONE PRIZE CHANCE PER VISIT/.test(await c.eval("document.getElementById('bezelStatus').textContent")), 4000, "slot page says one chance per visit before play");
+      eq(await c.eval("document.body.dataset.chance"), "open", "open");
+      await installMock(c, { status: st(0) });
+      await c.goto(kiosk.base + "/arcade");
+      await waitFor(async () => (await c.eval("document.getElementById('bezelStatus').textContent")) === NOTICE, 4000, "slot page says the chance is used");
+      ok(!/FREE DRINK JACKPOT/i.test(await c.eval("document.querySelector('.led-ticker').textContent")), "and the ticker no longer advertises prizes");
+      eq(await c.eval("document.body.dataset.chance"), "used", "used");
+      { const t = await c.eval("document.body.textContent"); ok(!/SPIN TO WIN/.test(await c.eval("document.getElementById('reel3Val').textContent")) && /not this visit/.test(await c.eval("document.querySelector('.paytable__h').textContent")) && !/chance at a boardwalk prize/.test(await c.eval("document.getElementById('barkerMsg').textContent")), "once the chance is used the cabinet no longer says SPIN TO WIN, the awards read 'not this visit' and the barker stops promising a prize"); }
+      if (out) await c.shot("portrait-slots-chance-used.png");
+      for (const g of ["soft-serve-stacker", "cup-catch"]) {
+        await installMock(c, { status: st(0) });
+        await c.goto(url(kiosk, "/arcade/games/" + g));
+        await waitFor(async () => (await c.eval("document.querySelector('[data-kg-prizeline]').textContent")) === NOTICE, 4000, g + " start card says the chance is used");
+      }
+      // after a finished game with the chance spent, the plain thanks says it too (status read after the finish)
+      const g = "soft-serve-stacker"; await installMock(c, { status: st(0) });
+      await c.goto(url(kiosk, "/arcade/games/" + g)); await c.tapEl(GAMES[g].start); await driveToOver(c, g);
+      await waitFor(async () => c.eval("!!document.getElementById('kpPanel')"), 6000, "thanks panel");
+      ok((await c.eval("document.getElementById('kpPanel').innerText")).includes(NOTICE), "the thanks panel says it was the visit's one chance");
+      ok(!/code/i.test(await c.eval("document.getElementById('kpPanel').innerText")), "no code, no tease");
+      if (out) await c.shot("portrait-thanks-chance-used.png");
+      // chance still open: the start line says one chance per visit
+      await installMock(c, { status: st(1) });
+      await c.goto(url(kiosk, "/arcade/games/" + g));
+      await waitFor(async () => /One prize chance per visit/.test(await c.eval("document.querySelector('[data-kg-prizeline]').textContent")), 4000, "start card says one chance per visit");
     });
 
     /* ======================= C6. the shipped files say none of the banned things ======================= */

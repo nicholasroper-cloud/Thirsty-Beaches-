@@ -1,5 +1,5 @@
 {
-  "version": 44,
+  "version": 45,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -255,27 +255,27 @@
     },
     {
       "path": "arcade-routes.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/arcade-routes.js?v=02fead52a898",
-      "sha256": "02fead52a8986231a9fbb1491e9e19a5f4c5eea750662a3f6d9f64ff15380fa5",
-      "size": 42186
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/arcade-routes.js?v=bf77bc556484",
+      "sha256": "bf77bc5564841ead13e98666de41716fedd8681c114f12a81688f59d6f33dca9",
+      "size": 45786
     },
     {
       "path": "kiosk/boardwalk-slots.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=a09594d03cf2",
-      "sha256": "a09594d03cf2bf3b4c67c49149e2eb19b9af6b9fe787d3ff13ec362022893da0",
-      "size": 21818
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=17090d46ce47",
+      "sha256": "17090d46ce47ef58d29b925f8ad54d2fed76f873714df37766b7220761a0f6c0",
+      "size": 21822
     },
     {
       "path": "kiosk/boardwalk-slots.css",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=6cdc6820d60a",
-      "sha256": "6cdc6820d60a5e95b680f2fefaf93e717ffd8d6daf9539bc105ce1909c602c90",
-      "size": 41345
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=9208d07cfb11",
+      "sha256": "9208d07cfb11d9828b9090d3bcea8f5235f88f6606ea5828a17f1de5969b9d42",
+      "size": 41566
     },
     {
       "path": "kiosk/boardwalk-slots.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=86a87b365ba2",
-      "sha256": "86a87b365ba22609144792a554a8474019102985bcafab7b7061b8e85c7cc5b8",
-      "size": 40948
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=9ca7007ed790",
+      "sha256": "9ca7007ed790675fa31fe84a7f58105889722879713df5439802d512b1a61b8f",
+      "size": 43609
     },
     {
       "path": "kiosk/audio-bank.js",
@@ -297,9 +297,9 @@
     },
     {
       "path": "kiosk/arcade-session.json",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/arcade-session.json?v=798f2c84299d",
-      "sha256": "798f2c84299d9d93ccd640f3d0e7ffc9ad3dc43c92d15ea749211e6afb9c5f77",
-      "size": 1311
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/arcade-session.json?v=0f99e5f8e3f6",
+      "sha256": "0f99e5f8e3f6423374dbdea58dbe2f2bd6bb193f94026f31589e725e3573c052",
+      "size": 1420
     },
     {
       "path": "kiosk/arcade-rules.json",
@@ -411,9 +411,9 @@
     },
     {
       "path": "kiosk/games/shared/kgame.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/kgame.js?v=e0dc79dd548d",
-      "sha256": "e0dc79dd548d494af2f3f836bd97e9773a20b9bb492a6c7442e2bc6fec309eae",
-      "size": 14707
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/kgame.js?v=bfe13b2792f6",
+      "sha256": "bfe13b2792f6da50953b7a533052ac287785aac35dc64896dcfb512982d28595",
+      "size": 15616
     },
     {
       "path": "kiosk/games/shared/prize-panel.css",
@@ -423,15 +423,15 @@
     },
     {
       "path": "kiosk/games/shared/prize-panel.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/prize-panel.js?v=2671d6285ba9",
-      "sha256": "2671d6285ba94c2c691450687dd84475ead12ef1a3fff8346afd33d5d328c952",
-      "size": 14165
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/prize-panel.js?v=c1689c95209c",
+      "sha256": "c1689c95209ce7d01f7001e6ccc25e3c16e9f0e138323e5c4db7f3410f90640e",
+      "size": 14340
     },
     {
       "path": "kiosk/games/shared/rules-panel.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/rules-panel.js?v=44a9cea3f616",
-      "sha256": "44a9cea3f616be6480f8a120a76dd903f5ceaf0c850a7f625ffcabff1b6eaf87",
-      "size": 5850
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/shared/rules-panel.js?v=219ec7751fa1",
+      "sha256": "219ec7751fa188f4517e9d6e47bb731c0ed4fc36e7a68c89e783b54b6df20378",
+      "size": 5886
     },
     {
       "path": "kiosk/games/soft-serve-stacker/index.html",

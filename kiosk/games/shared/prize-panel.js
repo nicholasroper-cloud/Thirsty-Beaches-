@@ -12,6 +12,7 @@
      No message of any kind is ever sent to a prize number. Prize lookup only: no marketing consent, no list. */
   const WORDING = {
     thanksTitle: 'Thanks for playing!',
+    chanceUsed: 'That was your prize chance this visit. Keep playing for fun.',
     winTitle: 'You won a prize!',
     codeHelp: 'Take a photo or write it down.',
     orderNowBtn: 'ORDER NOW AND USE IT',
@@ -210,7 +211,7 @@
     }
 
     if (win) drawWin('');
-    else { body.appendChild(mk('h2', 'kp-title', WORDING.thanksTitle)); navRow(); }
+    else { body.appendChild(mk('h2', 'kp-title', WORDING.thanksTitle)); if (r.chanceUsed === true) body.appendChild(mk('p', 'kp-line kp-chance', WORDING.chanceUsed)); navRow(); }
     doc.body.appendChild(modal);
     return modal;
   }

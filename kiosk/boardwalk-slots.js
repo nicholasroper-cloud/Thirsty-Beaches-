@@ -11,12 +11,12 @@
   const MAX_FREE_DRINK_PCT = 2;   // mirrors arcade-routes.js; the server is the one that enforces it
 
   const DEFAULT_ODDS = [
-    { id: 'standard', label: 'Standard Custom Drink', pct: 81, isPrize: false, trigger: 'drink_reveal' },
-    { id: 'size_upgrade', label: 'Free Size Upgrade', pct: 6, isPrize: true, trigger: 'prize_win' },
-    { id: 'soft_serve_topper', label: 'Free Pineapple Soft Serve or Vanilla Soft Serve Topper', pct: 5, isPrize: true, trigger: 'prize_win' },
-    { id: 'neon_charm', label: 'Free 3D-Printed Neon Straw Charm', pct: 4, isPrize: true, trigger: 'arcade_charm_win' },
-    { id: 'topper_or_sticker', label: 'Free Freeze-Dried Topper or UV-DTF Sticker', pct: 3, isPrize: true, trigger: 'prize_win' },
-    { id: 'free_drink_jackpot', label: 'FREE DRINK JACKPOT!', pct: 1, isPrize: true, trigger: 'mega_jackpot' },
+    { id: 'standard', label: 'Standard Custom Drink', pct: 90, isPrize: false, trigger: 'drink_reveal' },
+    { id: 'size_upgrade', label: 'Free Size Upgrade', pct: 3, isPrize: true, trigger: 'prize_win' },
+    { id: 'soft_serve_topper', label: 'Free Pineapple Soft Serve or Vanilla Soft Serve Topper', pct: 3, isPrize: true, trigger: 'prize_win' },
+    { id: 'neon_charm', label: 'Free 3D-Printed Neon Straw Charm', pct: 2, isPrize: true, trigger: 'arcade_charm_win' },
+    { id: 'topper_or_sticker', label: 'Free Freeze-Dried Topper or UV-DTF Sticker', pct: 1.5, isPrize: true, trigger: 'prize_win' },
+    { id: 'free_drink_jackpot', label: 'FREE DRINK JACKPOT!', pct: 0.5, isPrize: true, trigger: 'mega_jackpot' },
   ];
 
   /* Every string that reaches innerHTML goes through this first. */
@@ -29,7 +29,7 @@
     return (Array.isArray(odds) ? odds : []).map((o, idx) => {
       const pct = Number.isFinite(Number(o && o.pct)) ? Number(o.pct) : 0;
       return '<label class="odds-item"><span>' + esc(o && o.label) + '</span><span><input type="number" min="0" max="' +
-        (o && o.id === 'free_drink_jackpot' ? MAX_FREE_DRINK_PCT : 100) + '" step="1" data-odd-idx="' + idx + '" value="' + pct + '"> %</span></label>';
+        (o && o.id === 'free_drink_jackpot' ? MAX_FREE_DRINK_PCT : 100) + '" step="0.5" data-odd-idx="' + idx + '" value="' + pct + '"> %</span></label>';
     }).join('');
   }
 
@@ -387,6 +387,33 @@
     ['pointerdown', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, touched, { passive: true, capture: true }));
     renderSession();
 
+    /* One prize chance per visit (slot spins and finished games share it; the server decides, GET /api/arcade/status says how many are left). Once it is used the page says so plainly and
+       the later spins are not presented as prize spins. Nothing here changes what the server rolls. */
+    const CHANCE_USED = 'That was your prize chance this visit. Keep playing for fun.';
+    const bezelEl = $('bezelStatus'), tickerEls = Array.from(document.querySelectorAll('.led-ticker__track span'));
+    const tickerBase = tickerEls.map((e) => e.textContent);
+    let chanceUsed = false;
+    function applyChance(used) {
+      chanceUsed = used;
+      if (bezelEl) bezelEl.textContent = used ? CHANCE_USED : 'PULL THE LEVER OR PRESS SPIN \u00B7 ONE PRIZE CHANCE PER VISIT';
+      tickerEls.forEach((e, i) => { if (used) e.textContent = '\u2605 FREE PLAY \u2605 KEEP PLAYING FOR FUN \u00B7 PULL THE CHROME LEVER \u2605\u00A0'; else e.textContent = tickerBase[i]; });
+      document.body.dataset.chance = used ? 'used' : 'open';
+      // the rest of the cabinet must not keep presenting spins as prize spins once the chance is spent (only text still in its first, untouched state is swapped)
+      const swap = (el, from, to) => { if (el && used && el.textContent === from) el.textContent = to; };
+      swap($('reel3Val'), 'SPIN TO WIN!', 'KEEP PLAYING'); swap($('reel3Sub'), 'Charms \u00B7 Toppers \u00B7 Jackpot', 'Just for fun');
+      swap(resultDesc, 'Pull the chrome handle or press SPIN for a custom dirty soda, pineapple soft serve float, craft coffee, or a boardwalk prize.', 'Pull the chrome handle or press SPIN for a custom dirty soda, pineapple soft serve float or craft coffee. Just for fun.');
+      const barker = $('barkerMsg'); if (barker && used && /chance at a boardwalk prize/.test(barker.textContent)) { barker.textContent = ''; const bb = document.createElement('b'); bb.textContent = 'Voice Barker:'; barker.append(bb, ' Pull the lever for a custom drink. Just for fun.'); }
+      const pt = document.querySelector('.paytable__h'); if (pt) pt.textContent = used ? 'Awards (not this visit)' : 'Awards';
+    }
+    async function refreshChance() {
+      try {
+        const r = await fetch('/api/arcade/status', { cache: 'no-store' });
+        const d = r.ok ? await r.json() : null;
+        if (d && d.ok === true && typeof d.rollsLeft === 'number') applyChance(d.rollsLeft <= 0);
+      } catch (e) { /* offline: nothing is claimed either way */ }
+    }
+    refreshChance();
+
     const rulesBtn = $('rulesBtn');
     if (rulesBtn) rulesBtn.addEventListener('click', () => { if (window.TBRules) window.TBRules.open(); });   // the Prize Game Rules panel (shared with the games)
     // Kiosk idle restarts wait for customer activity; an arcade page that is open is customer activity, for as long as it stays open (it is bounded by the idle return).
@@ -524,6 +551,7 @@
         }
         spinning = false;
         spinBtn.disabled = false;
+        refreshChance().then(() => { if (chanceUsed && !(outcome && outcome.win === true) && !session.ended) resultDesc.textContent += ' ' + CHANCE_USED; });
         syncPersonaUI();
         lastTouch = Date.now();
         if (limits.enabled && (session.spins >= limits.maxSpins || session.endAfterSpin || Date.now() - session.startedAt >= limits.maxSeconds * 1000)) endSession();
@@ -734,7 +762,7 @@
     $('resetOddsBtn').addEventListener('click', () => {
       cfg.odds = DEFAULT_ODDS.map((o) => ({ ...o }));
       renderStaffControls();
-      staffSaveMsg.textContent = 'Defaults restored (81/6/5/4/3/1). Click Save Odds to apply.';
+      staffSaveMsg.textContent = 'Defaults restored (90/3/3/2/1.5/0.5). Click Save Odds to apply.';
       staffSaveMsg.style.color = '#2AF5E4';
     });
     // Audio defaults only: persona, volume, mute. This button never sends the odds.

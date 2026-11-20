@@ -188,6 +188,57 @@ async function unitTests() {
     w.tick(30_000); w.a.touchVisit(); w.tick(30_000); const still = await w.a.spin(); eq(still.win, false, "an open page (pinging every 20 s) is the same visit");
     w.tick(41_000); w.setWorker("ok"); await w.a.refill(); w.tick(60_000); const fresh = await w.a.spin(); eq(fresh.win, true, "40 s after the last ping the next customer has a fresh count");
   }
+
+  // v45: ONE prize chance per visit (slots + games share it), at odds that make a visit win about 1 time in 10
+  {
+    const shipped = JSON.parse(fs.readFileSync(path.join(ROOT, "kiosk", "arcade-session.json"), "utf8"));
+    eq(shipped.maxPrizeRolls, 1, "the shipped arcade-session.json allows ONE prize roll per visit"); eq(arc.sessionSettings(shipped).maxPrizeRolls, 1, "and the server reads it as 1"); eq(arc.SESSION_DEFAULTS.maxPrizeRolls, 1, "a bad or missing file also means 1, never more");
+    const sum = list => Math.round(list.reduce((t, o) => t + o.pct, 0) * 100) / 100;
+    eq(sum(arc.PRIZES), 100, "the default table sums to 100"); eq(sum(arc.PRIZES.filter(p => p.isPrize)), 10, "prizes are 10% of rolls: about 1 visit in 10 wins");
+    eq(arc.PRIZES.find(p => p.id === "free_drink_jackpot").pct, 0.5, "free drink 0.5%, under the 2% ceiling"); eq(arc.validateOdds(arc.defaultOdds()).ok, true, "the defaults pass the staff validator");
+    const w = mk({ settings: {} });   // no overrides: the built-in defaults, so ONE roll per visit
+    await w.a.refill(); w.tick(60_000); eq(w.a.status().rollsLeft, 1, "a fresh visit has its one prize chance");
+    const first = await w.a.spin(); eq(first.win, true, "the one chance is rolled"); eq(w.a.status().rollsLeft, 0, "and is then spent (the pages say so)");
+    const claims = () => w.calls.filter(c => c.url.endsWith("/kitchen/claim")).length; const c1 = claims();
+    const second = await w.a.spin(); eq([second.win, second.thanks, second.code], [false, false, undefined], "a second slot spin in the visit: no prize, no code");
+    const sid = w.a.gameStart("cup-catch").body.sid; w.tick(25_000); const g = await w.a.gameFinish(sid);
+    eq(g.body, { ok: true, win: false, thanks: true }, "a game finished after the chance was used: plain thanks, no prize, no code"); eq(claims(), c1, "and neither made a Worker call");
+    w.a.touchVisit(); w.tick(30_000); w.a.touchVisit(); eq(w.a.status().rollsLeft, 0, "still the same visit while the page keeps pinging");
+    w.tick(41_000); eq(w.a.status().rollsLeft, 1, "a new visit (no ping for 40 s) gets a fresh chance"); await w.a.refill(); w.tick(60_000);
+    eq((await w.a.spin()).win, true, "and can win");
+  }
+  { // a roll that comes up a prize while no play token is old enough yet does not use up the visit's one chance
+    const w = mk({ settings: {} }); w.a.touch(); await new Promise(r => setTimeout(r, 20));
+    const early = await w.a.spin(); eq([early.win, early.thanks], [false, true], "no token old enough: thanks, no code"); eq(w.a.status().rollsLeft, 1, "and the chance is NOT used up (the page must not say it was)");
+    w.tick(60_000); const later = await w.a.spin(); eq(later.win, true, "the next spin of the same visit can still win"); eq(w.a.status().rollsLeft, 0, "and then it is used");
+    const w2 = mk({ settings: {} }); w2.setWorker("sold-out"); await w2.a.refill(); w2.tick(60_000); await w2.a.spin(); eq(w2.a.status().rollsLeft, 0, "a Worker refusal (daily cap) does use the chance: it was a real roll");
+  }
+  // v45 item 3: a saved staff config made against the OLD table does not override the new defaults forever
+  {
+    const old = [["standard", 81], ["size_upgrade", 6], ["soft_serve_topper", 5], ["neon_charm", 4], ["topper_or_sticker", 3], ["free_drink_jackpot", 1]].map(([id, pct]) => ({ id, pct }));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-mig-")); const file = path.join(dir, "arcade-config.json"); const logs = [];
+    const mkA = () => arc.createArcade({ tbDir: dir, apiBase: "http://w", kioskKey: "", stationKey: "s", fetchImpl: async () => { throw new Error("x"); }, log: m => logs.push(m), settings: {} });
+    fs.writeFileSync(file, JSON.stringify({ personaMode: "neon86", volume: 0.4, muted: true, odds: old, period: "Nov 2026", version: 4, updatedAt: 1 }));
+    const a = mkA();
+    eq(a.getConfig().odds.map(o => o.pct), [90, 3, 3, 2, 1.5, 0.5], "the new defaults take effect over a saved old-table file");
+    const f = JSON.parse(fs.readFileSync(file, "utf8"));
+    eq([f.oddsDefaultsVersion, f.version, f.volume, f.personaMode, f.muted, f.period], [2, 5, 0.4, "neon86", true, "Nov 2026"], "stamped and versioned; audio/persona/period untouched");
+    eq(f.previousOdds.map(o => o.pct), [81, 6, 5, 4, 3, 1], "the replaced table is kept in the file");
+    ok(logs.some(l => /replaced ONCE/.test(l) && /standard 81/.test(l) && /standard 90/.test(l)), "and logged with both tables: " + logs.join(" | ")); eq(logs.filter(l => /replaced ONCE/.test(l)).length, 1, "logged once");
+    // staff can change them afterwards and the change STAYS across restarts
+    eq(a.saveConfig("s", { odds: arc.defaultOdds().map(o => ({ id: o.id, pct: o.id === "standard" ? 80 : o.id === "size_upgrade" ? 13 : o.pct })) }).status, 200, "staff saves their own table");
+    const b = mkA(); eq(b.getConfig().odds.find(o => o.id === "size_upgrade").pct, 13, "a staff change made AFTER the migration is kept on restart"); eq(logs.filter(l => /replaced ONCE/.test(l)).length, 1, "no second replacement");
+    // a file made by the old code with a deliberate staff table is replaced too, but never silently
+    const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), "tb-mig2-")); const logs2 = [];
+    fs.writeFileSync(path.join(dir2, "arcade-config.json"), JSON.stringify({ odds: [["standard", 70], ["size_upgrade", 12], ["soft_serve_topper", 8], ["neon_charm", 5], ["topper_or_sticker", 3], ["free_drink_jackpot", 2]].map(([id, pct]) => ({ id, pct })) }));
+    const c2 = arc.createArcade({ tbDir: dir2, apiBase: "http://w", kioskKey: "", stationKey: "s", fetchImpl: async () => {}, log: m => logs2.push(m), settings: {} });
+    eq(c2.getConfig().odds[0].pct, 90, "a deliberate old staff table is replaced"); ok(logs2.some(l => /standard 70/.test(l) && /replaced ONCE/.test(l)), "with a log line naming what was replaced");
+    // no file / a file already on the current table: nothing happens, nothing logged
+    const logs3 = []; arc.createArcade({ tbDir: fs.mkdtempSync(path.join(os.tmpdir(), "tb-mig3-")), apiBase: "http://w", kioskKey: "", stationKey: "s", fetchImpl: async () => {}, log: m => logs3.push(m), settings: {} }); eq(logs3, [], "no saved file: nothing to replace, no log");
+    // even if the stamp cannot be written the new defaults still apply
+    const dir4 = fs.mkdtempSync(path.join(os.tmpdir(), "tb-mig4-")); fs.writeFileSync(path.join(dir4, "arcade-config.json"), JSON.stringify({ odds: old })); fs.chmodSync(dir4, 0o500);
+    try { const c4 = arc.createArcade({ tbDir: dir4, apiBase: "http://w", kioskKey: "", stationKey: "s", fetchImpl: async () => {}, log: () => {}, settings: {} }); eq(c4.getConfig().odds[0].pct, 90, "unwritable file: the new defaults still apply"); } finally { fs.chmodSync(dir4, 0o700); }
+  }
   eq(arc.SESSION_DEFAULTS.visitGapSeconds, 40, "gap default is just over the 20 s ping");
 }
 
