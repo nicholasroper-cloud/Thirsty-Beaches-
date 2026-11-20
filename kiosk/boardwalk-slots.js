@@ -153,9 +153,6 @@
     const r1 = $('reel1'), r1Val = $('reel1Val'), r1Sub = $('reel1Sub');
     const r2 = $('reel2'), r2Val = $('reel2Val'), r2Sub = $('reel2Sub');
     const r3 = $('reel3'), r3Val = $('reel3Val'), r3Sub = $('reel3Sub');
-    const r1Prev = $('reel1Prev'), r1Next = $('reel1Next'), r1Icon = $('reel1Icon');
-    const r2Prev = $('reel2Prev'), r2Next = $('reel2Next'), r2Icon = $('reel2Icon');
-    const r3Prev = $('reel3Prev'), r3Next = $('reel3Next'), r3Icon = $('reel3Icon');
     const leverBtn = $('leverBtn');
     const fxCanvas = $('fxCanvas');
 
@@ -253,14 +250,52 @@
       if (!fxRaf) fxRaf = requestAnimationFrame(runFxLoop);
     }
 
-    // Retro 1980s Neon Beach Slot Machine SVG Sprite icon switcher (zero innerHTML)
-    const setIcon = (useEl, key) => { if (useEl) useEl.setAttribute('href', '#ico-' + key); };
+    /* ---------- Reel drums: real strips of SVG symbols that scroll and stop (built with createElementNS, zero innerHTML) ----------
+       Spinning and stopping are CSS transform animations (drumBlur, drumStop in the stylesheet), so nothing runs while the machine is idle.
+       Under reduced motion the CSS turns both off: the reel dims while it spins and swaps straight to its result. */
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const REEL_ICONS = ['soda', 'energy', 'coffee', 'hot', 'freeze', 'palm', 'pineapple', 'charm', 'jackpot', 'prize'];
+    const reducedMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    function reelCell(key) {
+      const cell = document.createElement('span');
+      cell.className = 'reel__cell';
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 48 48');
+      const use = document.createElementNS(SVG_NS, 'use');
+      use.setAttribute('href', '#ico-' + (REEL_ICONS.includes(key) ? key : 'soda'));
+      svg.appendChild(use);
+      cell.appendChild(svg);
+      return cell;
+    }
+    const pickIcon = (list, not) => { const l = list.filter((k) => k !== not); return l[Math.floor(Math.random() * l.length)]; };
+    /* spinPool: what blurs past while it turns; sidePool: what may rest just above and below the payline (never a prize symbol, so a
+       stopped reel never shows a near-miss). The payline symbol itself is always passed in by the caller. */
+    function makeReel(el, spinPool, sidePool, line) {
+      const drum = el ? el.querySelector('.reel__drum') : null;
+      const fill = (keys) => { if (drum) drum.replaceChildren(...keys.map(reelCell)); };
+      let shown = line.slice();
+      return {
+        spin() {   // the lap starts with the symbols on show, so the reel turns from where it stopped (12 cells = a 9-row lap + 3 to wrap)
+          const lap = shown.slice();
+          for (let i = 3; i < 9; i++) lap.push(pickIcon(spinPool, lap[i - 1]));
+          fill(lap.concat(lap.slice(0, 3)));
+          el.classList.remove('is-stopping', 'is-win');
+          el.classList.add('is-spinning');
+        },
+        stop(mid) {   // [spare, above, PAYLINE, below, 4 run-in rows]: drumStop scrolls the run-in down and settles the payline row in the middle
+          const above = pickIcon(sidePool, mid), below = pickIcon(sidePool, mid);
+          shown = [above, mid, below];
+          fill([pickIcon(sidePool, above), above, mid, below, pickIcon(spinPool), pickIcon(spinPool), pickIcon(spinPool), pickIcon(spinPool)]);
+          el.classList.remove('is-spinning');
+          el.classList.add('is-stopping');
+        },
+      };
+    }
     const iconForBase = (id) => ({ 'dirty-soda': 'soda', 'energy-mixer': 'energy', 'coffee-espresso': 'coffee', 'hot-seasonal': 'hot', 'blended-freeze': 'freeze' }[id] || 'soda');
     const iconForFlavor = (txt) => (/pineapple|mango|swirl/i.test(txt) ? 'pineapple' : /peppermint|cocoa|caramel/i.test(txt) ? 'hot' : 'palm');
-    const iconForPrize = (p) => (!p || !p.isPrize ? 'soda' : p.id === 'free_drink_jackpot' ? 'jackpot' : p.id === 'neon_charm' ? 'charm' : 'prize');
-    setIcon(r1Icon, 'soda');
-    setIcon(r2Icon, 'palm');
-    setIcon(r3Icon, 'jackpot');
+    const reel1 = makeReel(r1, ['soda', 'energy', 'coffee', 'freeze', 'hot', 'palm', 'pineapple'], ['soda', 'energy', 'coffee', 'freeze', 'hot', 'palm', 'pineapple'], ['coffee', 'soda', 'energy']);
+    const reel2 = makeReel(r2, ['palm', 'pineapple', 'soda', 'freeze', 'charm', 'coffee'], ['palm', 'pineapple', 'soda', 'freeze', 'coffee'], ['pineapple', 'palm', 'freeze']);
+    const reel3 = makeReel(r3, ['prize', 'charm', 'jackpot', 'soda', 'palm', 'pineapple'], ['soda', 'palm', 'pineapple', 'coffee', 'freeze'], ['pineapple', 'jackpot', 'soda']);
     const resultBox = $('resultBox');
     const resultTitle = $('resultTitle');
     const resultDesc = $('resultDesc');
@@ -386,7 +421,7 @@
       spinBtn.disabled = true;
       if (leverBtn) {
         leverBtn.classList.add('is-pulled');
-        setTimeout(() => leverBtn.classList.remove('is-pulled'), 340);
+        setTimeout(() => leverBtn.classList.remove('is-pulled'), 380);
       }
       audio.startSynthwaveIdle();
       audio.recordSpinForAutoRotate();
@@ -394,7 +429,12 @@
       claimPill.hidden = true;
       if (winActions) winActions.hidden = true;
       resultBox.classList.remove('is-prize');
-      [r1, r2, r3].forEach((el) => { el.classList.remove('is-win', 'is-locked'); el.classList.add('is-spinning'); });
+      document.body.classList.remove('is-win');
+      reel1.spin(); reel2.spin(); reel3.spin();
+      [r1Val, r2Val, r3Val].forEach((el) => { el.textContent = '\u2022 \u2022 \u2022'; });
+      [r1Sub, r2Sub, r3Sub].forEach((el) => { el.textContent = ''; });
+      resultTitle.textContent = 'Reels spinning\u2026';
+      resultDesc.textContent = 'Good luck on the 1986 boardwalk!';
 
       audio.playTrigger('slot_spin');
       const availBases = slotBases.filter((b) => cfg.winterEnabled || !b.winterOnly);
@@ -407,55 +447,35 @@
       let outcome = null;
       askServerForSpin().then((d) => { outcome = d; });
 
-      // Animated staggered reel stops with mechanical clicks; reel 3 keeps turning until the server has answered
+      /* The reels stop left to right with mechanical clicks. Reels 1 and 2 are the drink build; reel 3 is the bonus reel and keeps turning
+         until the server has answered, then lands on exactly what the server said (a prize symbol only for a Worker-issued code). */
       let tick = 0;
       const ticker = setInterval(() => {
         tick++;
         audio.playReelClick();
-        if (tick < 10) {
-          const b = availBases[tick % availBases.length];
-          r1Val.textContent = b.label.toUpperCase();
-          setIcon(r1Icon, iconForBase(b.id));
-          if (r1Prev) r1Prev.textContent = availBases[(tick + availBases.length - 1) % availBases.length].label.toUpperCase();
-          if (r1Next) r1Next.textContent = availBases[(tick + 1) % availBases.length].label.toUpperCase();
-        } else if (tick === 10) {
-          r1.classList.remove('is-spinning'); r1.classList.add('is-locked');
+        if (tick === 10) {
+          reel1.stop(iconForBase(finalBase.id));
           r1Val.textContent = finalBase.label.toUpperCase();
-          setIcon(r1Icon, iconForBase(finalBase.id));
-          if (r1Prev) r1Prev.textContent = availBases[(finalBaseIdx + availBases.length - 1) % availBases.length].label.toUpperCase();
-          if (r1Next) r1Next.textContent = availBases[(finalBaseIdx + 1) % availBases.length].label.toUpperCase();
           r1Sub.textContent = finalExample;
         }
-        if (tick < 16) {
-          const fl = slotFlavors[tick % slotFlavors.length];
-          r2Val.textContent = fl.toUpperCase();
-          setIcon(r2Icon, iconForFlavor(fl));
-          if (r2Prev) r2Prev.textContent = slotFlavors[(tick + slotFlavors.length - 1) % slotFlavors.length].toUpperCase();
-          if (r2Next) r2Next.textContent = slotFlavors[(tick + 1) % slotFlavors.length].toUpperCase();
-        } else if (tick === 16) {
-          r2.classList.remove('is-spinning'); r2.classList.add('is-locked');
+        if (tick === 16) {
+          reel2.stop(iconForFlavor(finalFlavor));
           r2Val.textContent = finalFlavor.toUpperCase();
-          setIcon(r2Icon, iconForFlavor(finalFlavor));
-          if (r2Prev) r2Prev.textContent = slotFlavors[(finalFlavorIdx + slotFlavors.length - 1) % slotFlavors.length].toUpperCase();
-          if (r2Next) r2Next.textContent = slotFlavors[(finalFlavorIdx + 1) % slotFlavors.length].toUpperCase();
           r2Sub.textContent = '+$1.50 Freeze-Dried Topper Ready';
         }
-        if (tick < 22 || !outcome) {
-          const pr = cfg.odds[tick % cfg.odds.length];
-          r3Val.textContent = String(pr.label || '').toUpperCase();
-          setIcon(r3Icon, iconForPrize(pr));
-          if (r3Prev) r3Prev.textContent = String(cfg.odds[(tick + cfg.odds.length - 1) % cfg.odds.length].label || '').toUpperCase();
-          if (r3Next) r3Next.textContent = String(cfg.odds[(tick + 1) % cfg.odds.length].label || '').toUpperCase();
-          return;
-        }
+        if (tick < 22 || !outcome) return;
         clearInterval(ticker);
-        r3.classList.remove('is-spinning'); r3.classList.add('is-locked');
+        const serverWin = outcome.win === true && /^[A-Z2-9]{4}$/.test(String(outcome.code));
+        reel3.stop(serverWin ? (outcome.mega === true ? 'jackpot' : 'prize') : 'soda');
+        setTimeout(land, reducedMotion() ? 120 : 620);   // the result shows once reel 3 has settled on the payline
+      }, 85);
+
+      function land() {
         audio.playSodaFizz();
         if (outcome.win === true && /^[A-Z2-9]{4}$/.test(String(outcome.code))) {
           const t = outcome.ticket || {};
           const reward = String(outcome.label || t.reward || 'Boardwalk Prize');     // the prize itself (the server's fixed label)
           r3Val.textContent = reward.toUpperCase();
-          setIcon(r3Icon, outcome.mega === true ? 'jackpot' : 'prize');
           r3Sub.textContent = 'CODE ' + outcome.code;
           r3.classList.add('is-win');
           resultBox.classList.add('is-prize');
@@ -463,6 +483,7 @@
           claimPill.hidden = false;
           audio.playArcadeFanfare(outcome.mega === true);
           launchBurst(outcome.mega === true ? 'mega' : 'win');
+          document.body.classList.add('is-win');      // the bulbs chase fast and the payline lights gold until the next spin
           document.body.classList.remove('is-flash');
           void document.body.offsetWidth;
           document.body.classList.add('is-flash');
@@ -474,7 +495,6 @@
         } else if (outcome.thanks === true) {
           launchBurst('fizz');
           r3Val.textContent = 'THANKS FOR PLAYING';
-          setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'ORDER AT THE WINDOW';
           resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
           resultDesc.textContent = `Thanks for playing! ${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
@@ -482,7 +502,6 @@
         } else {
           launchBurst('fizz');
           r3Val.textContent = 'STANDARD CUSTOM DRINK';
-          setIcon(r3Icon, 'soda');
           r3Sub.textContent = 'SHOW AT WINDOW TO ORDER';
           resultTitle.textContent = `YOUR 1986 POUR: ${finalExample}`;
           resultDesc.textContent = `${finalBase.label} with ${finalFlavor}. Add a +$1.50 Freeze-Dried Topper or $4 3D-Printed Neon Charm at the window!`;
@@ -493,7 +512,7 @@
         syncPersonaUI();
         lastTouch = Date.now();
         if (limits.enabled && (session.spins >= limits.maxSpins || session.endAfterSpin || Date.now() - session.startedAt >= limits.maxSeconds * 1000)) endSession();
-      }, 85);
+      }
     }
     spinBtn.addEventListener('click', triggerSpin);
     if (leverBtn) {
@@ -508,12 +527,12 @@
       leverBtn.addEventListener('pointermove', (e) => {
         if (dragStartY === null) return;
         const dy = Math.max(0, Math.min(72, e.clientY - dragStartY));
-        leverBtn.style.transform = `rotate(${(dy / 72) * 54}deg) translateY(${(dy / 72) * 18}px)`;
+        leverBtn.style.setProperty('--pull', String(dy / 72));   // the arm follows the finger down
         if (dy >= 28 && !dragTriggered) {
           dragTriggered = true;
           dragStartY = null;
           leverBtn.classList.remove('is-dragging');
-          leverBtn.style.transform = '';
+          leverBtn.style.removeProperty('--pull');
           triggerSpin();
         }
       });
@@ -521,7 +540,7 @@
         if (dragStartY === null) return;
         dragStartY = null;
         leverBtn.classList.remove('is-dragging');
-        leverBtn.style.transform = '';
+        leverBtn.style.removeProperty('--pull');
       };
       leverBtn.addEventListener('pointerup', endDrag);
       leverBtn.addEventListener('pointercancel', endDrag);

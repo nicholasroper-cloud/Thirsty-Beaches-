@@ -84,6 +84,34 @@ test('arcade page polish: public paytable shows no odds, lever is touch-safe, re
   assert.match(css, /\.lever-mount\[hidden\]\s*\{\s*display:\s*none/);
 });
 
+test('slot reels are real scrolling strips: transform-only keyframes, reduced motion stops them, reel 3 lands only on the server answer', () => {
+  const html = read('kiosk/boardwalk-slots.html'), css = read('kiosk/boardwalk-slots.css'), js = read('kiosk/boardwalk-slots.js');
+  // three drums of SVG symbols from the fixed sprite, behind one window with one payline
+  assert.equal((html.match(/class="reel__drum"/g) || []).length, 3);
+  assert.equal((html.match(/class="payline"/g) || []).length, 1);
+  for (const id of [...html.matchAll(/<use href="#(ico-[a-z]+)"/g)].map((m) => m[1])) assert.match(html, new RegExp('<symbol id="' + id + '"'), id + ' is in the sprite');
+  // the strips are built with createElementNS + textContent, never markup strings
+  assert.match(js, /createElementNS\(SVG_NS, 'use'\)/);
+  assert.match(js, /drum\.replaceChildren\(/);
+  // the spin and the stop animate transform only (no layout properties)
+  for (const name of ['drumBlur', 'drumStop']) {
+    const body = new RegExp('@keyframes ' + name + '\\s*\\{([\\s\\S]*?)\\n\\}').exec(css);
+    assert.ok(body, name + ' keyframes exist');
+    const props = [...body[1].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+    assert.ok(props.length && props.every((p) => p === 'transform' || p === 'animation-timing-function'), name + ' animates transform only: ' + props);
+  }
+  assert.match(css, /\.reel\.is-spinning \.reel__drum\s*\{[^}]*animation:\s*drumBlur/);
+  assert.match(css, /\.reel\.is-stopping \.reel__drum\s*\{[^}]*animation:\s*drumStop/);
+  const rm = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(rm.includes('.reel.is-stopping .reel__drum'), 'reduced motion: no scrolling stop either');
+  // reel 3 stops exactly once, after the server answered, on a prize symbol only for a Worker-issued code
+  assert.equal((js.match(/reel3\.stop\(/g) || []).length, 1);
+  assert.ok(js.indexOf('reel3.stop(') > js.indexOf('if (tick < 22 || !outcome) return;'), 'reel 3 waits for the server');
+  assert.match(js, /const serverWin = outcome\.win === true && \/\^\[A-Z2-9\]\{4\}\$\/\.test\(String\(outcome\.code\)\);\s*reel3\.stop\(serverWin \?/);
+  // no animation loop while idle: the only requestAnimationFrame is the particle burst, which stops itself
+  assert.equal((js.match(/requestAnimationFrame\(/g) || []).length, 2);
+});
+
 /* ---------------- the existing bundle checks ---------------- */
 test('dual-persona audio bank & prize odds invariants hold', () => {
   assert.deepEqual(Object.keys(audioBank.PERSONAS).sort(), ['neon86', 'shredder']);
