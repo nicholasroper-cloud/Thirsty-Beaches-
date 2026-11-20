@@ -1,0 +1,25 @@
+/* Cup Catch on the kiosk: portrait 47-inch touchscreen layout (shell: ../shared/kgame.css). */
+:root { --kg-w: 360; --kg-h: 560; }
+body.kg { overflow: hidden; height: 100%; }
+body.kg .kg-surface { display: contents; }
+body.kg .hud { width: min(92vw, 46rem); margin: 0; grid-template-columns: repeat(4, 1fr); padding: .4rem .8rem; border-radius: 1rem; }
+body.kg .hud__label { font-size: .75rem; }
+body.kg .hud__val { font-size: 1.35rem; }
+body.kg .heart { width: 1.3rem; height: 1.15rem; }
+body.kg .kg-board { background: #1B0538; }
+body.kg .board__canvas { cursor: default; }
+body.kg .overlay { align-items: flex-end; padding: 6% 6% 8%; background: linear-gradient(180deg, rgba(7,1,20,.3), rgba(7,1,20,.86) 50%); }
+body.kg .overlay__card { max-width: none; width: 100%; padding: 1.2rem 1.3rem 1.4rem; border-radius: 1.4rem; }
+body.kg .overlay__title { font-size: 2.7rem; margin-bottom: .6rem; }
+body.kg .overlay__tips { font-size: 1.12rem; margin-bottom: 1rem; }
+body.kg .overlay__tips li { gap: .8rem; margin-bottom: .6rem; }
+body.kg .tip { flex: 0 0 2rem; height: 2rem; font-size: 1.2rem; }
+body.kg .overlay__score { font-size: 1.5rem; }
+body.kg .overlay__score strong { font-size: 2.3rem; }
+body.kg .overlay__best, body.kg .overlay__meta { font-size: 1.05rem; }
+body.kg .btn { min-height: 64px; font-size: 1.1rem; border-radius: 1.4rem; touch-action: manipulation; }
+body.kg .btn--big { min-height: 5.2rem; width: 100%; font-size: 1.9rem; }
+body.kg .kg-ctl { gap: 1.3vw; }
+body.kg .kg-ctl .btn { flex: 0 0 22%; height: 100%; padding: 0 .4rem; border-radius: 1.4rem; }
+body.kg .kg-slide { flex: 1 1 0; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 1.4rem; border: .2rem dashed rgba(42,245,228,.5); background: rgba(42,245,228,.07);
+  font-family: "Bungee", sans-serif; font-size: 1.15rem; letter-spacing: .06em; line-height: 1.2; text-transform: uppercase; color: rgba(255,244,250,.9); pointer-events: auto; }

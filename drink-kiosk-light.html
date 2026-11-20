@@ -261,6 +261,25 @@
   .prizebox{letter-spacing:.18em;font-size:1.6em;font-weight:800;text-align:center}
   .prizebox i{opacity:.35;font-style:normal}
   .prizemsg{min-height:1.4em;text-align:center;color:#FF8A2B;font-weight:700;margin:6px 0 10px}
+  /* ---- arcade prize lookup (phone or 4-letter code), cart row + pad sheet ---- */
+  .arcrow{flex-wrap:wrap}
+  .arcrow .arc-ask{font-weight:800;font-size:16px;}
+  .arcrow .prize-ok{line-height:1.3;flex:1 1 100%;color:#8FF7FF}
+  .arcrow .arc-skip{min-height:64px;padding:0 22px;font-size:18px;border-radius:14px}
+  #overlay.pzpad{align-items:flex-end}
+  #overlay.pzpad .sheet{border-radius:28px 28px 0 0;border-bottom:none;max-height:96vh}
+  .pz-fine{margin:0 28px 8px;font-size:14px;line-height:1.4;color:var(--ink-soft);text-align:center}
+  .pz-code .namebox{letter-spacing:.3em}
+  .krow.pzalpha{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:760px;margin:0 auto 8px}
+  .krow.pzalpha .kkey{max-width:none;min-height:64px;padding:0;font-size:26px;font-weight:800}
+  .pz-switch{display:block;width:calc(100% - 56px);margin:6px 28px 4px;min-height:64px;border-radius:18px;border:2px solid rgba(255,124,196,.6);
+    background:rgba(255,60,172,.10);color:#FF7CC4;font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:18px;cursor:pointer}
+  .pz-choices{display:flex;gap:14px;margin:6px 28px 6px}
+  .pz-choices>button{flex:1 1 0;width:0;min-width:0;box-sizing:border-box;padding:0 12px;min-height:64px;border-radius:18px;font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:18px;line-height:1.15;cursor:pointer}
+  .pz-choices>.pz-switch{display:block;width:auto;margin:0}
+  .pz-months{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 28px 10px}
+  .pz-months button{min-height:64px;border-radius:16px;border:2px solid rgba(255,255,255,.28);background:rgba(255,255,255,.07);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:20px;cursor:pointer}
+  .pz-months button.on{background:var(--pink,#ff3cac);border-color:#fff;color:#fff}
   .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px;margin:0 auto}
   .kblank{visibility:hidden}
   .upsizenote{margin:12px auto 0;max-width:520px;padding:10px 16px;border-radius:14px;background:rgba(52,215,255,.15);color:#34D7FF;font-weight:800}
@@ -513,6 +532,23 @@
   .krow.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:440px;margin:0 auto 8px;}
   .krow.numpad .kkey{max-width:none;min-height:76px;padding:0;font-size:30px;font-weight:800;}
   @media (orientation:portrait){ .krow.numpad{max-width:620px;gap:16px;} .krow.numpad .kkey{min-height:104px;font-size:42px;border-radius:18px;} }
+  @media (orientation:portrait){
+    #overlay.pzpad .sheet{max-width:1000px}
+    .arcrow{padding:18px 26px;gap:16px;border-radius:22px}
+    .arcrow .arc-ask{font-size:30px;padding:14px 0}
+    .arcrow .prize-ok{font-size:26px}
+    .arcrow .arc-skip{min-height:84px;font-size:28px;padding:0 34px;border-radius:20px}
+    .pz-fine{font-size:22px;margin:0 40px 14px}
+    .pz-switch{min-height:96px;font-size:30px;border-radius:24px;width:calc(100% - 80px);margin:10px 40px 8px}
+    .pz-choices{gap:18px;margin:10px 40px 8px}
+    .pz-choices>button{min-height:104px;font-size:30px;border-radius:24px}
+    .pz-months{gap:12px;margin:0 40px 12px}
+    .pz-months button{min-height:84px;font-size:30px;border-radius:20px}
+    .krow.pzalpha{gap:12px;max-width:940px}
+    .krow.pzalpha .kkey{min-height:96px;font-size:38px;border-radius:18px}
+    #overlay.pzpad .namebox{min-height:88px;font-size:46px}
+    #overlay.pzpad .prizemsg{font-size:26px;min-height:2.6em}
+  }
   #confirm .orderfor{font-family:"Bungee",system-ui,sans-serif;font-weight:900;font-size:clamp(24px,3.6vw,32px);color:var(--ink);margin:6px 0 0;}
   /* ---- "Pay at the window" animated banner ---- */
   #confirm .paywindow{position:relative;z-index:3;display:inline-flex;align-items:center;gap:14px;margin:18px 0 2px;padding:16px 30px;border-radius:999px;
@@ -3270,7 +3306,7 @@ function editCartLine(i){
   renderSheet();
   $("#overlay").classList.add("show");
 }
-function closeSheet(){ $("#overlay").classList.remove("show"); editing=null; }
+function closeSheet(){ $("#overlay").classList.remove("show","pzpad"); editing=null; if($("#pzBox")) $("#sheet").innerHTML=""; pzReset(); }   // a closed prize pad leaves no typed number in the DOM
 
 /* ---- cart ---- */
 function updateCartBtn(){
@@ -3356,6 +3392,7 @@ async function applyCatalog(){
   }catch(e){ /* menu prices stay as they are */ }
 }
 function openCart(){
+  $("#overlay").classList.remove("pzpad"); pzReset();
   awPoll();                                               // pick up an arcade win that was just made on the other screen
   if(!cart.length) return;
   if(_payEnabled && !window.TB_PHONE && !quoteUsable()) _quotePending = true;
@@ -3384,6 +3421,7 @@ function openCart(){
       <div class="prizerow" id="prizeRow">${_prizeCode
         ? `<span class="prize-ok">🎮 Free upsize unlocked · ${_prizeCode}</span><button class="linkbtn" onclick="clearPrize()">Remove</button>`
         : `<button class="linkbtn prizebtn" onclick="askPrize()">🎮 Have a Thirsty Maze code?</button>`}</div>
+      <div class="prizerow arcrow" id="arcPrizeRow">${arcRowHTML()}</div>
       <!-- With a server quote (ADR section 4) this shows Clover's own subtotal, discount, tax and "Total with tax"; without one (legacy path,
            catalog not mapped) it is the one plain Total the window charges, with no tax line, exactly as before. -->
       <div class="totals" id="cartTotals">${totalsHTML()}</div>
@@ -3469,6 +3507,213 @@ async function checkPrize(){
   if(r.ok){ _prizeCode = code; _quote = null; openCart(); return; }
   const why = r.status==="used" ? "That code has already been used." : r.status==="offline" ? "Can't reach the prize server — show the code at the window instead." : "That code isn't valid today.";
   renderPrizePad(why);
+}
+/* ---- Arcade prize lookup: "Have an arcade prize?" on the cart (phone number or the 4-letter code) ----
+   The number is a LOOKUP KEY for this one purpose. It is typed into memory only (never localStorage/cookies, never logged, never in the cart or order
+   payloads), sent once to the kiosk server (POST /api/arcade/wallet/lookup), and cleared the moment the answer comes back or the sheet closes.
+   A found prize becomes the kiosk's ONE pending prize on the server: the existing banner (#arcadeWin / awPoll) shows it and the existing attach after the
+   order writes the tag to the Clover note. This is NOT marketing consent: it never touches the tide-list code, /subscribe or the consent text. */
+/* ===== PRIZE LOOKUP WORDING (legal review pending, owner will send edits) =====
+   keepText MUST match what the prize system really does: today the tb-where claim (and so the saved link) lives about 24 hours (kiosk/arcade-rules.json "prizeLifeText").
+   Change both together, and only after the Worker's claim life is actually lengthened (memo wording says 30 days; that is not true in this build). */
+const PZW = {
+  keepText:   "in 24 hours",
+  saveExplainer: () => "Save this prize to a phone number? We use it only to find your prize next time. No calls, texts, or lists. Deleted when used or " + PZW.keepText + ".",   // the memo wording; the arcade win screen shows it
+  lookupNote:    () => "We use your number only to find your prize for this order. No calls, texts, or lists. Deleted when used or " + PZW.keepText + ".",
+  ask:        "Have an arcade prize? Tap here",
+  ageTitle:   "To save to a phone number, enter your birth month and year.",
+  ageYear:    "Year",
+  ageGo:      "Continue",
+  ageBad:     "Please check the year.",
+  months:     ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  phoneTitle: "Find my arcade prize",
+  phoneIntro: "Type the phone number you saved your prize to.",
+  phoneBtn:   "Find my prize",
+  codeGo:     "Use my code",
+  toCode:     "Use my code instead",
+  codeTitle:  "Use my prize code",
+  codeIntro:  "Type the 4-letter code from your win screen.",
+  codeNote:   "A code works once. It can be used until the time shown when you won.",
+  toPhone:    "Use my phone number instead",
+  back:       "Back",
+  skip:       "Don't use it",
+  checking:   "Checking…",
+  foundLine:  (label, until) => "Prize found: " + label + (until ? " (good until " + until + ")" : "") + ". It's added to this order automatically. Nothing to show.",
+  haveLine:   label => "Arcade prize: " + label + ". It's added to this order automatically. Nothing to show.",
+  phoneNone:  "No prize found on that number.",
+  codeUnknown:"That code isn't valid. It may be mistyped, or it may have expired.",
+  codeUsed:   "That code has already been used.",
+  slow:       "Too many tries. Please wait a few minutes, or show your code at the window.",
+  down:       "Can't check prizes right now. Your order still works, and you can show your code at the window.",
+  phoneOff:   "Phone lookup isn't available right now. You can use your 4-letter code instead.",
+  badPhone:   "Please enter all 10 digits.",
+  notAdded:   "We found it but couldn't add it to this order. Please show your code at the window.",
+};
+/* ===== end of prize lookup wording ===== */
+const PZ_ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";     // the Worker's real claim alphabet (worker-tb-where CLAIM_ALPHA): no I, L, O, 0, 1
+let _pzDigits = "", _pzCode = "", _pzBusy = false, _pzFound = null;   // _pzFound: { until } while a looked-up prize is pending, for the cart line
+function pzReset(){ _pzDigits = ""; _pzCode = ""; _pzBusy = false; _pzMonth = 0; _pzYear = ""; }
+let _pzMonth = 0, _pzYear = "", _pzNoPhone = false;   // age screen answers: held ONLY while that screen is open, wiped the moment a decision is made or the sheet closes
+/* The phone path is closed for the rest of this visit (until resetAll) when the neutral birth month/year check says under 13: a bare flag, NO age, birth date or number is kept.
+   Arcade pages set the same sessionStorage flag, so the order screen honours it too. */
+function pzPhoneOff(){ if(_pzNoPhone) return true; try{ return sessionStorage.getItem("tbPhonePathOff") === "1"; }catch(e){ return false; } }
+function pzClosePhone(){ _pzNoPhone = true; try{ sessionStorage.setItem("tbPhonePathOff","1"); }catch(e){} }
+function pzOpenPhone(){ pzReset(); if(pzPhoneOff()) return renderCodePad(); renderAgeCheck(); }
+function renderAgeCheck(msg){
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  const kb = `<div class="krow numpad">`+keys.map(k=>k===""?`<span class="kkey kblank"></span>`:`<button class="kkey" aria-label="${k==="⌫"?"delete":k}" onclick="pzYearKey('${k}')">${k}</button>`).join("")+`</div>`;
+  const months = PZW.months.map((m,i)=>`<button type="button" data-m="${i+1}" class="${_pzMonth===i+1?"on":""}" aria-pressed="${_pzMonth===i+1}" onclick="pzPickMonth(${i+1})">${m}</button>`).join("");
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div><h3>${escK(PZW.ageTitle)}</h3></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="pz-months" id="pzMonths">${months}</div>
+    <div class="namebox prizebox" id="pzBox" aria-label="${escK(PZW.ageYear)}">${_pzYear.padEnd(4,"_").replace(/_/g,"<i>_</i>")}</div>
+    <div class="prizemsg" id="pzMsg">${msg?escK(msg):""}</div>
+    <div class="keyboard">${kb}</div>
+    <div class="sheet-ft">
+      <button class="linkbtn" onclick="openCart()">${escK(PZW.back)}</button>
+      <button class="btn-primary" id="pzGo" onclick="pzAgeDecide()">${escK(PZW.ageGo)}</button>
+    </div>`;
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", !_pzMonth || _pzYear.length < 4);
+}
+function pzPickMonth(m){ _pzMonth = m; renderAgeCheck(); }
+function pzYearKey(k){
+  if(k==="⌫") _pzYear = _pzYear.slice(0,-1);
+  else if(/^[0-9]$/.test(k) && _pzYear.length < 4) _pzYear += k;
+  const b = $("#pzBox"); if(b) b.innerHTML = _pzYear.padEnd(4,"_").replace(/_/g,"<i>_</i>");
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", !_pzMonth || _pzYear.length < 4);
+}
+function pzAgeDecide(){
+  if(!_pzMonth || _pzYear.length < 4) return;
+  const y = parseInt(_pzYear,10), m = _pzMonth, now = new Date(), ny = now.getFullYear(), nm = now.getMonth()+1;
+  const months = (ny - y) * 12 + (nm - m);
+  const bad = !(y >= 1900 && y <= ny) || months < 0;
+  const under = !bad && months <= 156;                       // 13 years, conservative inside the birth month
+  _pzMonth = 0; _pzYear = "";                                 // the answers are gone before anything else happens
+  if(bad){ renderAgeCheck(PZW.ageBad); return; }
+  if(under){ pzClosePhone(); renderCodePad(); return; }     // straight to the code screen: nothing stored, nothing said about age
+  renderPhonePad();
+}
+function pzUntil(ms){
+  const n = Number(ms); if(!Number.isFinite(n) || n <= Date.now()) return "";
+  try{ return new Date(n).toLocaleString([], { weekday:"short", hour:"numeric", minute:"2-digit" }); }catch(e){ return ""; }
+}
+function arcRowHTML(){
+  if(_awPending){
+    const label = String(_awPending.label || "prize").replace(/[!.\s]+$/,"");
+    return `<span class="prize-ok" id="arcFound">🎟️ ${escK(_pzFound ? PZW.foundLine(label, _pzFound.until) : PZW.haveLine(label))}</span><button class="linkbtn arc-skip" id="arcSkip" onclick="arcadeDecline()">${escK(PZW.skip)}</button>`;
+  }
+  return `<button class="linkbtn prizebtn arc-ask" id="arcAsk" onclick="askArcPrize()">🎟️ ${escK(PZW.ask)}</button>`;
+}
+function arcRowRefresh(){
+  if(!_awPending) _pzFound = null;
+  const r = $("#arcPrizeRow"); if(r) r.innerHTML = arcRowHTML();
+}
+function askArcPrize(){ pzOpenPhone(); $("#overlay").classList.add("pzpad","show"); }
+function fmtPzPhone(d){ const a = d.padEnd(10,"_"); return `(${a.slice(0,3)}) ${a.slice(3,6)}-${a.slice(6,10)}`.replace(/_/g,"<i>_</i>"); }
+function renderPhonePad(msg){
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  const kb = `<div class="krow numpad">`+keys.map(k=>k===""?`<span class="kkey kblank"></span>`:`<button class="kkey" aria-label="${k==="⌫"?"delete":k}" onclick="pzPhoneKey('${k}')">${k}</button>`).join("")+`</div>`;
+  $("#sheet").innerHTML = `
+    <div class="sheet-hd">
+      <div><h3>${escK(PZW.phoneTitle)}</h3><p>${escK(PZW.phoneIntro)}</p></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="namebox prizebox" id="pzBox" aria-live="polite">${fmtPzPhone(_pzDigits)}</div>
+    <div class="prizemsg" id="pzMsg">${msg?escK(msg):""}</div>
+    <div class="keyboard">${kb}</div>
+    <p class="pz-fine" id="pzFine">${escK(PZW.lookupNote())}</p>
+    <div class="pz-choices">
+      <button type="button" class="btn-primary" id="pzGo" onclick="pzSubmitPhone()">${escK(PZW.phoneBtn)}</button>
+      <button type="button" class="pz-switch" id="pzAlt" onclick="pzShowCode()">${escK(PZW.toCode)}</button>
+    </div>
+    <div class="sheet-ft"><button class="linkbtn" onclick="openCart()">${escK(PZW.back)}</button></div>`;
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", _pzDigits.length < 10);
+}
+function pzPhoneKey(k){
+  if(_pzBusy) return;
+  if(k==="⌫") _pzDigits = _pzDigits.slice(0,-1);
+  else if(/^[0-9]$/.test(k) && _pzDigits.length < 10) _pzDigits += k;
+  const b = $("#pzBox"); if(b) b.innerHTML = fmtPzPhone(_pzDigits);
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", _pzDigits.length < 10);
+  const m = $("#pzMsg"); if(m) m.textContent = "";
+}
+function pzShowCode(){ pzReset(); renderCodePad(); }
+function pzShowPhone(){ pzOpenPhone(); }
+function renderCodePad(msg){
+  const rows = ["ABCDEFGH","JKMNPQRS","TUVWXYZ2","3456789"];
+  const kb = `<div class="krow pzalpha">`+rows.map((r,i)=>[...r].map(c=>`<button class="kkey" onclick="pzCodeKey('${c}')">${c}</button>`).join("")+(i===3?`<button class="kkey kwide" style="grid-column:span 1;font-size:24px" aria-label="delete" onclick="pzCodeKey('⌫')">⌫</button>`:"")).join("")+`</div>`;
+  const shown = (_pzCode.padEnd(4,"_")).replace(/_/g,"<i>_</i>");
+  $("#sheet").innerHTML = `
+    <div class="pz-code">
+    <div class="sheet-hd">
+      <div><h3>${escK(PZW.codeTitle)}</h3><p>${escK(PZW.codeIntro)}</p></div>
+      <button class="close" aria-label="Close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="namebox prizebox" id="pzBox" aria-live="polite">${shown}</div>
+    <div class="prizemsg" id="pzMsg">${msg?escK(msg):""}</div>
+    <div class="keyboard">${kb}</div>
+    <p class="pz-fine">${escK(PZW.codeNote)}</p>
+    <div class="pz-choices">
+      <button type="button" class="btn-primary" id="pzGo" onclick="pzSubmitCode()">${escK(PZW.codeGo)}</button>
+      ${pzPhoneOff() ? "" : `<button type="button" class="pz-switch" id="pzAlt" onclick="pzShowPhone()">${escK(PZW.toPhone)}</button>`}
+    </div>
+    <div class="sheet-ft"><button class="linkbtn" onclick="openCart()">${escK(PZW.back)}</button></div></div>`;
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", _pzCode.length < 4);
+}
+function pzCodeKey(k){
+  if(_pzBusy) return;
+  if(k==="⌫") _pzCode = _pzCode.slice(0,-1);
+  else if(PZ_ALPHA.includes(k) && _pzCode.length < 4) _pzCode += k;
+  const b = $("#pzBox"); if(b) b.innerHTML = (_pzCode.padEnd(4,"_")).replace(/_/g,"<i>_</i>");
+  const g = $("#pzGo"); if(g) g.classList.toggle("disabled", _pzCode.length < 4);
+  const m = $("#pzMsg"); if(m) m.textContent = "";
+}
+async function pzPost(url, body){
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 9000);
+  try{
+    const r = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
+    return await r.json();
+  }catch(e){ return { ok:false, error:"unavailable" }; }
+  finally{ clearTimeout(t); }
+}
+/* found: the server has made it the pending prize; pick it up now so the banner and the cart line show it, then back to the cart */
+async function pzFound(res){
+  _pzFound = { until: pzUntil(res && res.expiresAt) };
+  await awPoll();
+  if(!_awPending){ _pzFound = null; return false; }
+  arcRowRefresh();
+  $("#overlay").classList.remove("pzpad"); pzReset();
+  openCart();
+  return true;
+}
+function pzFail(isPhone, why){ pzReset(); (isPhone ? renderPhonePad : renderCodePad)(why); }
+async function pzSubmitPhone(){
+  if(_pzBusy) return;
+  if(_pzDigits.length < 10){ const m=$("#pzMsg"); if(m) m.textContent = PZW.badPhone; return; }
+  _pzBusy = true;
+  const pb=$("#pzGo"); if(pb){ pb.textContent = PZW.checking; pb.classList.add("disabled"); }
+  let res;
+  { const phone = _pzDigits; _pzDigits = ""; res = await pzPost("/api/arcade/wallet/lookup", { phone }); }   // the number lives in this one local only
+  _pzBusy = false;
+  if(res && res.ok && res.found){ if(await pzFound(res)) return; return pzFail(true, PZW.notAdded); }
+  if(res && res.ok) return pzFail(true, PZW.phoneNone);
+  const e = res && res.error;
+  pzFail(true, e==="slow-down" ? PZW.slow : e==="bad-phone" ? PZW.badPhone : e==="off" ? PZW.phoneOff : PZW.down);
+}
+async function pzSubmitCode(){
+  if(_pzBusy || _pzCode.length < 4) return;
+  _pzBusy = true;
+  const pb=$("#pzGo"); if(pb){ pb.textContent = PZW.checking; pb.classList.add("disabled"); }
+  let res;
+  { const code = _pzCode; _pzCode = ""; res = await pzPost("/api/arcade/code", { code }); }
+  _pzBusy = false;
+  if(res && res.ok && res.found){ if(await pzFound(res)) return; return pzFail(false, PZW.notAdded); }
+  if(res && res.ok) return pzFail(false, res.status==="used" ? PZW.codeUsed : PZW.codeUnknown);
+  const e = res && res.error;
+  pzFail(false, e==="slow-down" ? PZW.slow : PZW.down);
 }
 /* ---- Beach-name generator: a random, kid-clean beach alter-ego ---- */
 const BEACH_FIRST=["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral",
@@ -4002,6 +4247,7 @@ async function punchQr(ref){
 function resetAll(){
   clearTimeout(idleTimer); clearTimeout(idleWarnTimer); clearTimeout(_confirmTimer); clearTimeout(_wfTimer);
   _undoCart = null; _sendFails = 0; ageReset(); awNote(null); _awAttach = null;
+  pzReset(); _pzFound = null; _pzNoPhone = false; try{ sessionStorage.removeItem("tbPhonePathOff"); }catch(e){}   // arcade-prize lookup pad: no typed number or code survives a reset; the phone path opens again for the next customer
   { const iw=$("#idleWarn"); if(iw) iw.hidden=true; const wf=$("#windowFallback"); if(wf) wf.hidden=true; }
   cart=[]; updateCartBtn();
   closeUpsell();                                          // clear any dangling upsell prompt
@@ -4216,6 +4462,7 @@ function goArcade(){
    sends a prize id, label or code, so nothing here can forge one. */
 let _awPending = null, _awAttach = null;
 function awRender(){
+  try{ arcRowRefresh(); }catch(e){}
   const el = $("#arcadeWin"); if(!el) return;
   if(!_awPending){ el.hidden = true; return; }
   const label = String(_awPending.label || "Arcade prize").replace(/[!.\s]+$/,"");

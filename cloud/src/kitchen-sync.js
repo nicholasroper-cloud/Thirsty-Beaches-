@@ -15,12 +15,12 @@ const FALLBACK_SECRET_MENU = [
 
 const cache = { extras: null, extrasAt: 0, pickups: [], pickupsAt: 0 };
 
-function whereOrigin(env) {
+export function whereOrigin(env) {
   const raw = String((env && (env.TB_WHERE_ORIGIN || env.WHERE_URL)) || DEFAULT_WHERE_ORIGIN).trim();
   return raw.replace(/\/where\/?$/i, "").replace(/\/+$/, "");
 }
 
-function whereHeaders(env, hasBody = false) {
+export function whereHeaders(env, hasBody = false) {
   const h = { accept: "application/json" };
   if (hasBody) h["content-type"] = "application/json";
   const secret = String((env && env.TB_SECRET) || "").trim();
@@ -30,7 +30,7 @@ function whereHeaders(env, hasBody = false) {
   return h;
 }
 
-async function fetchJsonTimeout(url, opts = {}, ms = 3500) {
+export async function fetchJsonTimeout(url, opts = {}, ms = 3500) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
   try {

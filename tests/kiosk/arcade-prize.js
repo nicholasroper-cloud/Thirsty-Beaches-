@@ -174,6 +174,8 @@ function stageKiosk() {
   for (const f of ["kiosk-server.js", "kiosk-lib.js", "flex-pay.js", "pay-journal.js", "pay-routes.js", "catalog.js", "quote.js", "moderation.js", "arcade-routes.js", "addons.json", "drink-kiosk.html", "drink-kiosk-light.html"]) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, "catalog-map.json"), JSON.stringify({ version: 1, floats: [], categories: {} }));
   fs.cpSync(path.join(ROOT, "kiosk"), path.join(dir, "kiosk"), { recursive: true });
+  const sf = path.join(dir, "kiosk", "arcade-session.json"); const sess = JSON.parse(fs.readFileSync(sf, "utf8")); sess.maxPrizeRolls = 20; sess.visitGapSeconds = 30;   // these tests roll far more often than one real visit allows (the cap has its own tests in arcade-prize-pipeline.js)
+  fs.writeFileSync(sf, JSON.stringify(sess));
   return dir;
 }
 function stageStation() {

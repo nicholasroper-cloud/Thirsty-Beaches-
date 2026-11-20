@@ -36,10 +36,24 @@ const KIOSK_FILES = [
   "clover-menu-server.js", "clover-menu-server.next.js",
   "Run-Kiosk.bat", "Stop-Kiosk.bat", "Debug-Kiosk.bat", "Fix-And-Run.bat", "Install-AutoStart.bat", "Remove-AutoStart.bat",
   "assets/cup-80s-shell.webp", "assets/cup-80s-cream.png", "assets/cup-80s-liquid.png", "assets/logo-480.webp",
-  "kiosk/boardwalk-slots.html", "kiosk/boardwalk-slots.css", "kiosk/boardwalk-slots.js", "kiosk/audio-bank.js", "kiosk/arcade-menu.json", "kiosk/arcade-session.json", "kiosk/audio/README.txt",   // the /arcade page (linked from the ordering and attract screens since v40; one visit is limited by arcade-session.json)
+  "kiosk/boardwalk-slots.html", "kiosk/boardwalk-slots.css", "kiosk/boardwalk-slots.js", "kiosk/audio-bank.js", "kiosk/arcade-menu.json", "kiosk/arcade-session.json", "kiosk/arcade-rules.json", "kiosk/audio/README.txt",   // the /arcade page (linked from the ordering and attract screens since v40; one visit is limited by arcade-session.json)
   "READ-ME-FIRST.txt", "remote-update-SETUP.txt",
   "kiosk-lockdown/Setup-Appliance.ps1", "kiosk-lockdown/Uninstall-Appliance.ps1", "kiosk-lockdown/READ-ME-APPLIANCE.txt",
 ];
+/* kiosk/games/** (the five arcade games, their picker, shared script/style, fonts) ships as a whole folder: every file under it, in name order. Only the kinds of file the server's
+   /kiosk/ route will serve are taken, so a stray scratch file in the folder can never end up on the kiosk PC. */
+const GAME_EXT = new Set([".html", ".css", ".js", ".json", ".woff2", ".svg", ".png", ".webp", ".txt"]);
+function listDir(rel) {
+  const out = [], dir = path.join(ROOT, ...rel.split("/"));
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    if (e.name.startsWith(".")) continue;
+    const r = rel + "/" + e.name;
+    if (e.isDirectory()) out.push(...listDir(r));
+    else if (e.isFile() && GAME_EXT.has(path.extname(e.name).toLowerCase())) out.push(r);
+  }
+  return out;
+}
 const LAST = ["tb-bootstrap.json", "moderation.js"];
 /* what the switch-over hook (moderation.js) verifies before it starts the new server */
 const BOOTSTRAP_FILES = ["kiosk-server.js", "kiosk-lib.js", "kiosk-supervisor.js", "clover-menu-server.next.js"];
@@ -86,7 +100,7 @@ function build(current) {
   const paths = [];
   const add = p => { if (!paths.includes(p)) paths.push(p); };
   for (const f of (current.files || [])) if (f && f.path && !LAST.includes(f.path)) add(f.path);
-  for (const p of KIOSK_FILES) add(p);
+  for (const p of KIOSK_FILES.concat(listDir("kiosk/games"))) add(p);
   for (const p of paths) if (!relOk(p)) die(`${p}: this path can never be shipped to the kiosk (secrets/state/binary/odd name)`);
 
   // the hook verifies these before switching over; the shim must be the shim

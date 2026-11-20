@@ -344,6 +344,10 @@ let arcade;
 try {
   arcade = require("./arcade-routes").createArcade({
     tbDir: TB_DIR, apiBase: PRIZE_API, kioskKey: KIOSK_KEY, stationKey: (process.env.STATION_KEY || "").trim(),
+    stationApi: process.env.STATION_API || "https://station.thirstybeaches.com",      // the cloud station Worker holds the prize-to-phone link (prize lookup only, no marketing list)
+    lookupsPer10Min: parseInt(process.env.PRIZE_LOOKUPS_PER_10MIN || "", 10) || 8,    // phone/code lookups allowed per 10 minutes on this kiosk (a customer needs 1 or 2; the default blocks number guessing)
+    sessionFile: path.join(__dirname, "kiosk", "arcade-session.json"),
+    rulesFile: path.join(__dirname, "kiosk", "arcade-rules.json"),                    // sponsor, dates, prize life for the rules panel (placeholders until the owner fills them)                // visit settings the server enforces (maxPrizeRolls, useOnSameVisit, gameMinSeconds)
     clover: { get: cloverGet, post: cloverPost },          // only used to append the prize tag to a kiosk order's note (see attachToOrder)
     log: m => console.log(m),
   });
@@ -352,9 +356,19 @@ try {
   const off = { status: 503, body: { ok: false, error: "arcade config unavailable" } };
   arcade = { getConfig: () => ({ personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: [], updatedAt: null }),
     saveConfig: () => off, spin: async () => ({ ok: true, prizeId: "standard", win: false, thanks: true }), touch: async () => {}, refill: async () => {}, refillIfActive: async () => {}, prizesOn: () => false,
-    getPending: () => null, dismissPending: () => ({ ok: true, dismissed: false }), attachToOrder: async () => ({ status: 200, body: { ok: false, error: "no-pending" } }) };
+    getPending: () => null, dismissPending: () => ({ ok: true, dismissed: false }), attachToOrder: async () => ({ status: 200, body: { ok: false, error: "no-pending" } }),
+    status: () => ({ ok: true, prizes: false, capped: false, period: "", version: 1 }), rules: () => ({ ok: false }),
+    gameStart: () => ({ status: 503, body: { ok: false, error: "arcade unavailable" } }), gameFinish: async () => ({ status: 200, body: { ok: true, win: false, thanks: true } }),
+    walletSave: async () => ({ status: 200, body: { ok: false, error: "off" } }), walletLookup: async () => ({ status: 200, body: { ok: false, error: "off" } }),
+    codeLookup: async () => ({ status: 200, body: { ok: false, error: "off" } }), touchVisit: () => {}, walletClear: async () => {} };
 }
 const arcadeSpinLimiter = lib.makeRateLimiter(20, 60000, undefined);   // 20 spins a minute on this one kiosk
+const arcadeGameLimiter = lib.makeRateLimiter(30, 60000, undefined);   // game start/finish, 30 a minute on this one kiosk (a roll is also capped per visit inside arcade-routes.js)
+/* The five games' pages. Only these ids are ever served as /arcade/games/<id>; anything else is a 404. Keep in step with arcade-routes.js GAME_IDS. */
+const GAME_PAGES = new Set(["thirsty-blaster", "thirsty-tower", "cup-catch", "boardwalk-dash", "soft-serve-stacker"]);
+/* Offline, self-contained pages: no external host of any kind may be loaded or contacted by a game page (the browser enforces it). */
+const GAME_CSP = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+async function readJsonObject(req) { try { const b = JSON.parse((await readBody(req)) || "{}"); return b && typeof b === "object" && !Array.isArray(b) ? b : {}; } catch { return {}; } }
 
 /* ---- customer name on a public screen: moderated at the one server-side choke point (moderation.js), beach-name fallback ---- */
 const NAME_FIRST = ["Captain","Sir","Duke","Major","Professor","Salty","Sandy","Sunny","Tidal","Coral","Breezy","Reef","Wavy","Stormy","Golden","Tropic","Splashy","Mango","Lady"];
@@ -787,7 +801,7 @@ const versionTag = () => (appState.screenEpoch ? `${CURRENT_VERSION}.${appState.
    A restart (code update, pay setting change, remote restart command) only happens when no
    order/payment/AI request is in flight and nothing customer-facing has happened for IDLE_MS.
    The supervisor brings the server back in ~1-2 s; the page itself is not reloaded. */
-const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin", "/api/arcade/pending/attach", "/arcade", "/api/arcade/ping"]);   // an open arcade page is customer activity too: no idle restart mid-game (the page pings every 20 s and returns to the ordering screen when hands-off)
+const ACTIVITY_PATHS = new Set(["/order", "/pay", "/pay/status", "/pay/state", "/pay/window", "/pay/abandon", "/quote", "/catalog", "/prize", "/mix", "/vibe", "/designdrink", "/api/arcade/spin", "/api/arcade/pending/attach", "/arcade", "/api/arcade/ping", "/api/arcade/game/start", "/api/arcade/game/finish", "/api/arcade/wallet/save", "/api/arcade/wallet/lookup", "/api/arcade/code"]);   // an open arcade page is customer activity too: no idle restart mid-game (the page pings every 20 s and returns to the ordering screen when hands-off)
 const IDLE_MS = Math.max(1000, parseInt(process.env.TB_IDLE_MS || "120000", 10) || 120000);
 let inFlight = 0, lastActivity = 0, shuttingDown = false, restartWanted = null;
 const isIdle = () => inFlight === 0 && Date.now() - lastActivity >= IDLE_MS;
@@ -1072,7 +1086,7 @@ const server = http.createServer(async (req, res) => {
   if (problem) { console.warn("request refused:", problem); return send(res, 403, "forbidden"); }
 
   // customer activity: holds off idle restarts while an order/payment/AI call is in flight
-  if (ACTIVITY_PATHS.has(pathname)) {
+  if (ACTIVITY_PATHS.has(pathname) || pathname === "/arcade/games" || pathname.startsWith("/arcade/games/")) {
     inFlight++; lastActivity = Date.now();
     let done = false;
     res.on("close", () => { if (!done) { done = true; inFlight--; lastActivity = Date.now(); } });
@@ -1201,6 +1215,19 @@ const server = http.createServer(async (req, res) => {
       res.end(data);
     });
   }
+  // ---- the five arcade games + their picker (kiosk/games/): fixed pages, served offline under a CSP that allows no external host ----
+  if (req.method === "GET" && (pathname === "/arcade/games" || pathname === "/arcade/games/" || /^\/arcade\/games\/[a-z-]{3,32}\/?$/.test(pathname))) {
+    const id = pathname.replace(/^\/arcade\/games\/?/, "").replace(/\/$/, "");
+    if (id && !GAME_PAGES.has(id)) return send(res, 404, "Not found");
+    const page = path.join(__dirname, "kiosk", "games", id ? id : "", "index.html");
+    arcade.touch().catch(() => {});                        // visit alive + play tokens warming (the Worker wants them ~45 s old before a win can get a code)
+    return fs.readFile(page, (err, data) => {
+      if (err) return send(res, 404, "Not found");
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": GAME_CSP, "Referrer-Policy": "no-referrer", "Permissions-Policy": "camera=(), microphone=(), geolocation=()" });
+      res.end(data);
+    });
+  }
   if (req.method === "GET" && pathname.startsWith("/kiosk/")) {
     const rel = pathname.slice("/kiosk/".length).replace(/^\/+/, "");
     if (rel.includes("\0") || rel.includes("\\")) return send(res, 400, "bad request");
@@ -1211,7 +1238,10 @@ const server = http.createServer(async (req, res) => {
     try { isFile = fs.statSync(target).isFile(); } catch {}
     if (!isFile) return send(res, 404, "Not found");
     const ext = path.extname(target).toLowerCase();
-    const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".txt": "text/plain; charset=utf-8" }[ext] || "application/octet-stream";
+    // Extension allowlist: only the kinds of file the arcade ships are ever served from kiosk/; anything else is a 404, even if it exists.
+    const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".txt": "text/plain; charset=utf-8",
+      ".woff2": "font/woff2", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp" }[ext];
+    if (!mime) return send(res, 404, "Not found");
     // A locked or vanished file (Windows: an update swapping it, antivirus) must answer an error, never throw out of the pipe and end the server.
     const rs = fs.createReadStream(target);
     rs.once("error", () => { if (!res.headersSent) send(res, 503, "busy, try again"); else res.destroy(); });
@@ -1220,7 +1250,33 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && pathname === "/api/arcade/ping") {   // the open arcade page's heartbeat: counted as activity above (ACTIVITY_PATHS), nothing else
+    arcade.touchVisit();                                           // an open arcade page keeps the visit (and its shared roll cap) alive
     return sendJSON(res, 200, { ok: true });
+  }
+  if (req.method === "GET" && pathname === "/api/arcade/status") { res.setHeader("Cache-Control", "no-store"); return sendJSON(res, 200, arcade.status()); }   // "prizes are done for today" before play
+  if (req.method === "GET" && pathname === "/api/arcade/rules") { res.setHeader("Cache-Control", "no-store"); return sendJSON(res, 200, arcade.rules()); }
+  // ---- games and prizes. Trust: the page sends ONLY a game id, a session id, a phone number or a typed code. Never a prize id, label, score or a code that grants anything by itself. ----
+  if (req.method === "POST" && pathname === "/api/arcade/game/start") {
+    if (!arcadeGameLimiter.take()) return sendJSON(res, 429, { ok: false, error: "slow-down" });
+    const b = await readJsonObject(req);
+    const out = arcade.gameStart(b.game);                           // only `game` is read, and only from the allowlist
+    if (out.status === 200) arcade.touch().catch(() => {});
+    return sendJSON(res, out.status, out.body);
+  }
+  if (req.method === "POST" && pathname === "/api/arcade/game/finish") {
+    if (!arcadeGameLimiter.take()) return sendJSON(res, 429, { ok: false, error: "slow-down" });
+    const b = await readJsonObject(req);
+    try { const out = await arcade.gameFinish(b.sid); return sendJSON(res, out.status, out.body); }   // only `sid` is read: no score, prize or code can be supplied
+    catch (e) { console.error("arcade game finish error:", e.message); return sendJSON(res, 200, { ok: true, win: false, thanks: true }); }
+  }
+  if (req.method === "POST" && (pathname === "/api/arcade/wallet/save" || pathname === "/api/arcade/wallet/lookup" || pathname === "/api/arcade/code")) {
+    const b = await readJsonObject(req);                           // phone numbers are passed through to the station Worker and never logged here
+    try {
+      const out = pathname === "/api/arcade/wallet/save" ? await arcade.walletSave(b.phone, b.code)
+        : pathname === "/api/arcade/wallet/lookup" ? await arcade.walletLookup(b.phone) : await arcade.codeLookup(b.code);
+      res.setHeader("Cache-Control", "no-store");
+      return sendJSON(res, out.status, out.body);
+    } catch (e) { console.error("arcade prize lookup error:", e && e.name); return sendJSON(res, 200, { ok: false, error: "unavailable" }); }
   }
   if (req.method === "GET" && pathname === "/api/arcade-config") {
     return sendJSON(res, 200, { ok: true, config: arcade.getConfig(), prizes: arcade.prizesOn() });

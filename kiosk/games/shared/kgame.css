@@ -1,0 +1,99 @@
+/* Kiosk shell for the arcade games and their picker. Portrait 1080x1920 (47-inch touchscreen) first; landscape only has to not break.
+   Rows: TOP (display only) / BOARD (as big as the height allows) / CONTROLS (lower part: reachable) / BOTTOM BAR (ALL GAMES + ORDER DRINKS).
+   Everything is vh/vw/clamp(): no fixed 1920. */
+:root {
+  --kg-top: clamp(150px, 14vh, 320px);
+  --kg-ctl: clamp(124px, 14vh, 320px);
+  --kg-bar: clamp(84px, 8vh, 180px);
+  --kg-gap: clamp(6px, 0.8vh, 22px);
+  --kg-w: 2; --kg-h: 3;                       /* the game's logical board ratio, set per page */
+  --kg-bh: calc(100vh - var(--kg-top) - var(--kg-ctl) - var(--kg-bar) - 4 * var(--kg-gap));
+  --kg-pink: #FF3CAC; --kg-teal: #2AF5E4; --kg-gold: #FFD166; --kg-foam: #FFF4FA; --kg-ink: #160430;
+}
+* { box-sizing: border-box; }
+html { font-size: clamp(14px, min(2.6vw, 1.46vh), 40px); -webkit-text-size-adjust: 100%; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none;
+  background: #070114; color: var(--kg-foam); font-family: "Archivo", system-ui, sans-serif;
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+img, svg, canvas { -webkit-user-drag: none; user-drag: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+:focus { outline: none; }
+:focus-visible { outline: 4px solid var(--kg-gold); outline-offset: 3px; }
+
+.kg-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background: radial-gradient(circle at 50% 12%, rgba(255,122,69,.30) 0%, rgba(255,60,172,.22) 28%, transparent 56%), linear-gradient(180deg, #09011D 0%, #24064E 46%, #3A0A5E 58%, #070116 100%); }
+.kg-backdrop::before { content: ""; position: absolute; left: -24%; right: -24%; bottom: -6%; height: 34%; opacity: .45;
+  background-image: linear-gradient(to right, rgba(42,245,228,.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,60,172,.38) 1px, transparent 1px);
+  background-size: 64px 40px; transform: perspective(360px) rotateX(64deg); transform-origin: bottom center; }
+
+.kg-shell { position: fixed; inset: 0; z-index: 1; display: grid; grid-template-rows: var(--kg-top) minmax(0, 1fr) var(--kg-ctl) var(--kg-bar); gap: var(--kg-gap); }
+
+/* ---- top: display only ---- */
+.kg-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; padding: .5rem 2vw 0; min-height: 0; pointer-events: none; }
+.kg-title { margin: 0; font-family: "Bungee", sans-serif; font-weight: 400; line-height: 1.05; font-size: 2.1rem; text-align: center; letter-spacing: .03em;
+  color: #FFE14D; text-shadow: 0 0 20px rgba(255,225,77,.55), 0 3px 0 rgba(143,10,83,.9); }
+.kg-time { display: flex; align-items: center; gap: .7rem; width: min(86vw, 40rem); font-family: "DM Mono", monospace; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(246,241,255,.8); }
+.kg-time b { font-family: "Bungee", sans-serif; font-weight: 400; font-size: 1.05rem; color: var(--kg-teal); min-width: 3.6em; text-align: right; letter-spacing: .04em; }
+.kg-time i { flex: 1; height: .6rem; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; display: block; }
+.kg-time i u { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--kg-teal), #6FA8FF); border-radius: 999px; text-decoration: none; transition: width .9s linear; }
+.kg-time.is-low b { color: #FFB02E; } .kg-time.is-low i u { background: linear-gradient(90deg, #FFB02E, var(--kg-pink)); }
+.kg-time[hidden] { display: none; }
+
+/* ---- board ---- */
+.kg-board-zone { display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 2vw; }
+.kg-board { position: relative; width: min(96vw, calc(var(--kg-bh) * var(--kg-w) / var(--kg-h))); aspect-ratio: var(--kg-w) / var(--kg-h); overflow: hidden; border-radius: 1.1rem;
+  border: .28rem solid rgba(42,245,228,.75); background: #0A0220; touch-action: none;
+  box-shadow: 0 0 0 .22rem rgba(255,60,172,.45), 0 1.2rem 3rem rgba(0,0,0,.8), 0 0 2.4rem rgba(42,245,228,.28); }
+.kg-board canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+/* ---- controls (lower part) ---- */
+.kg-ctl { display: flex; align-items: stretch; justify-content: center; gap: 1.4vw; padding: 0 2vw; min-height: 0; touch-action: none; }
+.kg-ctl > * { min-width: 0; }
+
+/* ---- shared big buttons ---- */
+.kg-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 64px; min-width: 64px; padding: 0 1.2rem; border-radius: 1.4rem; cursor: pointer; text-decoration: none; text-align: center;
+  font-family: "Bungee", sans-serif; font-weight: 400; font-size: 1.15rem; letter-spacing: .05em; text-transform: uppercase; line-height: 1.05; touch-action: manipulation;
+  color: var(--kg-foam); background: linear-gradient(180deg, #34106A 0%, #170433 100%); border: .22rem solid var(--kg-teal);
+  box-shadow: 0 0 1.1rem rgba(42,245,228,.35), inset 0 .15rem .5rem rgba(255,255,255,.14); }
+.kg-btn:active, .kg-btn.is-down { background: linear-gradient(180deg, #6B1FB0 0%, #2B0954 100%); border-color: var(--kg-gold); transform: translateY(2px); }
+.kg-btn[aria-pressed="false"] { border-color: rgba(246,241,255,.4); color: rgba(246,241,255,.75); box-shadow: none; }
+.kg-btn:disabled { opacity: .45; }
+.kg-btn--go { color: var(--kg-ink); border-color: #FFF4FA; background: linear-gradient(180deg, #FFE48F 0%, #FFD166 40%, #FF7A45 75%, #FF3CAC 100%); box-shadow: 0 .3rem 0 #8F0A53, 0 0 1.6rem rgba(255,60,172,.55); }
+
+/* ---- bottom bar: the way back, always on screen ---- */
+.kg-bar { display: flex; gap: 2vw; padding: 0 2vw calc(var(--kg-gap) + 0.4vh); min-height: 0; touch-action: manipulation; }
+.kg-bar a { flex: 1 1 0; min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; text-align: center; cursor: pointer;
+  font-family: "Bungee", sans-serif; font-weight: 400; letter-spacing: .05em; text-transform: uppercase; line-height: 1.05; border-radius: 1.5rem; touch-action: manipulation; }
+.kg-bar .kg-back { flex-grow: 1; font-size: 1.35rem; color: var(--kg-foam); background: linear-gradient(180deg, #34106A, #170433); border: .24rem solid var(--kg-teal); box-shadow: 0 0 1.1rem rgba(42,245,228,.35); }
+.kg-bar .kg-order { flex-grow: 1.7; font-size: 1.9rem; color: #08011c; background: linear-gradient(90deg, var(--kg-teal), #6FA8FF 55%, var(--kg-pink)); border: .24rem solid var(--kg-foam); box-shadow: 0 0 1.8rem rgba(42,245,228,.5), 0 .3rem 0 #0b3a5c; }
+.kg-bar a:active { transform: translateY(3px); }
+
+/* ---- time's up / still playing ---- */
+.kg-modal { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 1.2rem; padding: 3vh 4vw calc(var(--kg-bar) + 4vh); text-align: center;
+  background: rgba(7,1,20,.95); touch-action: none; }
+.kg-modal h2 { margin: 0; font-family: "Bungee", sans-serif; font-weight: 400; font-size: 3rem; line-height: 1.05; color: #FFE14D; text-shadow: 0 0 22px rgba(255,225,77,.55), 0 3px 0 rgba(143,10,83,.9); }
+.kg-modal p { margin: 0; font-size: 1.45rem; font-weight: 600; max-width: 30ch; color: var(--kg-foam); }
+.kg-modal .kg-btn { min-height: 120px; width: min(88vw, 40rem); font-size: 1.9rem; }
+.kg-modal--idle { background: rgba(7,1,20,.78); }
+
+@media (orientation: landscape) {
+  :root { --kg-top: clamp(110px, 15vh, 200px); --kg-ctl: clamp(100px, 16vh, 200px); --kg-bar: clamp(72px, 10vh, 130px); }
+  .kg-title { font-size: 1.7rem; }
+  .kg-modal { padding-bottom: calc(var(--kg-bar) + 2vh); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---- before play: prize line and the RULES button (start overlays, picker bar) ---- */
+.kg-prizeline { margin: .3rem 0 0; font-family: "DM Mono", monospace; font-size: .95rem; font-weight: 600; letter-spacing: .04em; line-height: 1.25; text-align: center; color: #FFD166; max-width: 30ch; }
+.kg-prizeline.is-capped { padding: .35rem .8rem; border-radius: .8rem; border: .16rem solid #FFD166; background: rgba(5,0,16,.85); color: #FFF4FA; font-size: 1.05rem; font-weight: 700; }
+.kg-rules-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 4.2rem; min-width: 12rem; padding: 0 1.4rem; margin-top: .6rem; border-radius: 1.2rem; cursor: pointer; touch-action: manipulation;
+  font-family: "Bungee", sans-serif; font-size: 1.15rem; letter-spacing: .06em; text-transform: uppercase; color: var(--kg-foam); background: linear-gradient(180deg, #34106A 0%, #170433 100%); border: .2rem solid var(--kg-teal);
+  box-shadow: 0 0 1rem rgba(42,245,228,.3); }
+.kg-rules-btn:active { background: linear-gradient(180deg, #6B1FB0 0%, #2B0954 100%); border-color: var(--kg-gold); transform: translateY(2px); }
+.kg-bar .kg-rulesbar { flex: 0.8 1 0; min-height: 64px; border-radius: 1.5rem; cursor: pointer; touch-action: manipulation; font-family: "Bungee", sans-serif; font-weight: 400; font-size: 1.25rem; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--kg-foam); background: linear-gradient(180deg, #34106A, #170433); border: .24rem solid var(--kg-gold); box-shadow: 0 0 1.1rem rgba(255,209,102,.3); }
+.kg-bar .kg-rulesbar:active { transform: translateY(3px); }
+.kg-picker .kg-prizeline { max-width: 40ch; }

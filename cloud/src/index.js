@@ -15,6 +15,7 @@ import { cloverGet, getCatalog } from "./clover.js";
 import { REPORT_CRON, runDailyReport, handleReport } from "./report.js";
 import { MONITOR_CRON, runMonitor, handleMonitor } from "./monitor.js";
 import { splitLine, authFailure, fetchOrders, seqMap, startOfDayMs, loadState, markDone, markPicked, markUndo, ticketGate } from "./ticket.js";
+import { handlePrizeLink, clearPrizeLinkByCode } from "./prize-link.js";
 import { fetchKitchenExtras, redeemKitchenClaim, completeKitchenDrop, readStationStockOverlay, toggleStationStock, fetchPickupTags, matchTagPickup, fireOrderReady } from "./kitchen-sync.js";
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -132,9 +133,21 @@ export default {
       if (!/^application\/json\b/i.test(req.headers.get("content-type") || "")) return json({ error: "json only" }, 415);
       let body = {};
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
-      if (p === "/api/kitchen/redeem") { const r = await redeemKitchenClaim(env, body); return json(r.body, r.status); }
+      if (p === "/api/kitchen/redeem") {
+        const r = await redeemKitchenClaim(env, body);
+        // a real (not check-only) redeem burns the claim: drop any phone link for it, best effort, never delaying or failing the redeem
+        if (body.checkOnly !== true && r.body && r.body.status === "redeemed") {
+          const job = clearPrizeLinkByCode(env, body.code).catch(() => {});
+          if (ctx && ctx.waitUntil) ctx.waitUntil(job);
+        }
+        return json(r.body, r.status);
+      }
       if (p === "/api/kitchen/drop-complete") { const r = await completeKitchenDrop(env, body); return json(r.body, r.status); }
       if (p === "/api/stock/toggle") { const r = await toggleStationStock(env, body); return json(r.body, r.status); }
+    }
+    if (p === "/api/prize-link/save" || p === "/api/prize-link/lookup" || p === "/api/prize-link/clear") {   // kiosk PC -> prize-to-phone link (prize-link.js)
+      const no = await denied(req, env); if (no) return no;
+      return handlePrizeLink(req, env, p);
     }
     if (p === "/queue" || p === "/done" || p === "/undo" || p === "/pickedup") {
       const no = await denied(req, env); if (no) return no;

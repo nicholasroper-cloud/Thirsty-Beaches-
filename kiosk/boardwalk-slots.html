@@ -7,10 +7,9 @@
 <title>1986 Boardwalk Drink Slots | Thirsty Beaches Kiosk</title>
 <meta name="theme-color" content="#070114">
 <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png?v=logo20261018">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;700&family=DM+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=6">
+<link rel="stylesheet" href="/kiosk/games/shared/fonts.css">   <!-- local copies of the same three fonts: the slot machine no longer needs the internet for its type -->
+<link rel="stylesheet" href="/kiosk/boardwalk-slots.css?v=9">
+<link rel="stylesheet" href="/kiosk/games/shared/prize-panel.css?v=2">
 </head>
 <body>
 <div class="backdrop" aria-hidden="true">
@@ -231,6 +230,8 @@
 
 <!-- The way back to the ordering screen: always on screen, never covered, big enough for a child's hand -->
 <nav class="orderdock" aria-label="Back to ordering">
+  <a class="btn-moregames" id="moreGamesBtn" href="/arcade/games">More games</a>
+  <button type="button" class="btn-moregames btn-rules" id="rulesBtn">Rules</button>
   <a class="btn-orderdock" id="orderDrinksBtn" href="/#menu">Order drinks</a>
 </nav>
 
@@ -298,6 +299,8 @@
 </dialog>
 
 <script src="/kiosk/audio-bank.js?v=4" defer></script>
-<script src="/kiosk/boardwalk-slots.js?v=7" defer></script>
+<script src="/kiosk/games/shared/prize-panel.js?v=2" defer></script>
+<script src="/kiosk/games/shared/rules-panel.js?v=1" defer></script>
+<script src="/kiosk/boardwalk-slots.js?v=9" defer></script>
 </body>
 </html>

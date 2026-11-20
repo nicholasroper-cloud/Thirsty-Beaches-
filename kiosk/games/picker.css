@@ -1,0 +1,23 @@
+/* Game picker on the kiosk: big tiles in the lower two thirds of the portrait screen (shell: shared/kgame.css). */
+:root { --kg-top: 30vh; }
+body.kg-picker .kg-shell { grid-template-rows: var(--kg-top) minmax(0, 1fr) var(--kg-bar); }
+body.kg-picker .kg-top { justify-content: flex-end; gap: 1rem; padding-bottom: 1.4rem; }
+body.kg-picker .kg-title { font-size: 3.2rem; }
+body.kg-picker .pk-sub { margin: 0; font-family: "DM Mono", monospace; font-size: 1.3rem; letter-spacing: .12em; text-transform: uppercase; color: #2AF5E4; text-align: center; }
+body.kg-picker .pk-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.8vw; padding: 0 2.4vw; min-height: 0; touch-action: manipulation; }
+body.kg-picker .pk-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .55rem; min-height: 300px; padding: 1rem .8rem; text-decoration: none; text-align: center; cursor: pointer; touch-action: manipulation;
+  border-radius: 2rem; color: #FFF4FA; background: linear-gradient(180deg, #34106A 0%, #170433 100%); border: .26rem solid #2AF5E4; box-shadow: 0 0 1.3rem rgba(42,245,228,.35), inset 0 .2rem .6rem rgba(255,255,255,.14); }
+body.kg-picker .pk-tile:active { background: linear-gradient(180deg, #6B1FB0 0%, #2B0954 100%); border-color: #FFD166; transform: translateY(3px); }
+body.kg-picker .pk-tile--slots { border-color: #FF3CAC; box-shadow: 0 0 1.3rem rgba(255,60,172,.45), inset 0 .2rem .6rem rgba(255,255,255,.14); }
+body.kg-picker .pk-icon { width: 6.2rem; height: 6.2rem; }
+body.kg-picker .pk-icon svg { width: 100%; height: 100%; display: block; }
+body.kg-picker .pk-name { font-family: "Bungee", sans-serif; font-size: 1.55rem; line-height: 1.05; color: #FFE14D; text-shadow: 0 0 .8rem rgba(255,225,77,.45); }
+body.kg-picker .pk-how { font-family: "DM Mono", monospace; font-size: 1.1rem; letter-spacing: .06em; text-transform: uppercase; color: #FFF4FA; }
+body.kg-picker .pk-best { font-family: "DM Mono", monospace; font-size: .95rem; letter-spacing: .08em; color: #2AF5E4; min-height: 1.2em; }
+@media (orientation: landscape) {
+  :root { --kg-top: 22vh; }
+  body.kg-picker .pk-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  body.kg-picker .pk-tile { min-height: 0; }
+  body.kg-picker .pk-icon { width: 4rem; height: 4rem; }
+  body.kg-picker .kg-title { font-size: 2.2rem; }
+}

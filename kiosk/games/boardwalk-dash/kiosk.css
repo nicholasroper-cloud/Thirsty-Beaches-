@@ -1,0 +1,26 @@
+/* Boardwalk Dash on the kiosk: portrait 47-inch touchscreen layout (shell: ../shared/kgame.css). Two control rows: hop pad, then Pause / Sound. */
+:root { --kg-w: 432; --kg-h: 610; --kg-top: clamp(190px, 16.5vh, 340px); --kg-ctl: clamp(230px, 20vh, 420px); }
+body.kg .bd-hud { display: flex; align-items: center; justify-content: space-between; width: min(92vw, 46rem); margin: 0; padding: .4rem 1.1rem; border-radius: 1rem; font-size: 1.05rem; letter-spacing: .08em; }
+body.kg .bd-hud__cell b { font-family: "Bungee", sans-serif; font-weight: 400; font-size: 1.3rem; }
+body.kg .bd-lives { gap: .45rem; }
+body.kg .bd-cup { width: 1rem; height: 1.4rem; }
+body.kg .bd-melt { width: min(92vw, 46rem); margin: 0; gap: .8rem; min-height: 0; }
+body.kg .bd-melt__label { font-size: .8rem; }
+body.kg .bd-melt__bar { height: .8rem; }
+body.kg .bd-buff { font-size: .8rem; padding: .1rem .5rem; }
+body.kg .kg-time { margin-top: -.1rem; }
+body.kg #bdCanvas { cursor: default; }
+body.kg .bd-overlay { justify-content: flex-end; gap: .8rem; padding: 6% 7% 8%; background: linear-gradient(180deg, rgba(8,1,28,.35), rgba(8,1,28,.9) 50%); }
+body.kg .bd-overlay__title { font-size: 3rem; }
+body.kg .bd-overlay__text { max-width: 24em; font-size: 1.18rem; line-height: 1.35; font-weight: 600; }
+body.kg .bd-overlay__best { font-size: 1.05rem; }
+body.kg .bd-btn { min-height: 64px; min-width: 0; font-size: 1.1rem; border-radius: 1.4rem; touch-action: manipulation; }
+body.kg .bd-btn--go { min-height: 5.2rem; min-width: 70%; font-size: 1.9rem; }
+body.kg .kg-ctl { flex-direction: column; gap: 1.2vh; padding-bottom: 0; }
+body.kg .kg-ctlrow { display: flex; gap: 1.3vw; min-height: 0; }
+body.kg .kg-ctlrow--main { flex: 1 1 0; }
+body.kg .kg-ctlrow--small { flex: 0 0 32%; }
+body.kg .bd-pad { flex: 1 1 0; display: flex; gap: 1.3vw; touch-action: none; }
+body.kg .bd-pad__b { flex: 1 1 0; min-width: 0; min-height: 0; border-radius: 1.2rem; font-size: 3rem; touch-action: none; }
+body.kg .bd-pad__b--up { flex-grow: 2.2; }
+body.kg .kg-ctlrow--small .bd-btn { flex: 1 1 0; }

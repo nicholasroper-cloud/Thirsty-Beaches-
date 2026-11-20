@@ -352,6 +352,15 @@
       if (leaving) return;
       leaving = true;
       try { audio.stopAll(); } catch {}
+      if (url === '/') {
+        try { sessionStorage.removeItem('tbPhonePathOff'); } catch {}      // a person who walked away: the next one gets the phone-number choice again
+        // hands-off return: a prize nobody ordered with is not left as a banner for the next customer (the code, and any phone number it was saved to, still keep it)
+        let went = false;
+        const go = () => { if (!went) { went = true; location.replace(url); } };
+        setTimeout(go, 800);
+        try { fetch('/api/arcade/pending/dismiss', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', keepalive: true }).then(go, go); } catch { go(); }
+        return;
+      }
       location.replace(url);
     }
     function endSession() {
@@ -366,6 +375,7 @@
       }
       if (endEl) endEl.hidden = false;
       if (idleWarnEl) idleWarnEl.hidden = true;
+      if (window.TBPrize) window.TBPrize.hide();
       try { audio.stopAll(); } catch {}      // the music and any voice line stop with the game
       renderSession();
       if (endEl && endEl.scrollIntoView) { try { endEl.scrollIntoView({ block: 'nearest' }); } catch {} }
@@ -377,6 +387,8 @@
     ['pointerdown', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, touched, { passive: true, capture: true }));
     renderSession();
 
+    const rulesBtn = $('rulesBtn');
+    if (rulesBtn) rulesBtn.addEventListener('click', () => { if (window.TBRules) window.TBRules.open(); });   // the Prize Game Rules panel (shared with the games)
     // Kiosk idle restarts wait for customer activity; an arcade page that is open is customer activity, for as long as it stays open (it is bounded by the idle return).
     const ping = () => { try { fetch('/api/arcade/ping', { cache: 'no-store' }).catch(() => {}); } catch {} };
     ping();
@@ -415,6 +427,7 @@
     let spinning = false;
     async function triggerSpin() {
       if (spinning || session.ended) return;
+      if (window.TBPrize) window.TBPrize.hide();
       spinning = true;
       session.spins++;
       renderSession();
@@ -489,8 +502,10 @@
           document.body.classList.add('is-flash');
           setTimeout(() => document.body.classList.remove('is-flash'), 2100);
           resultTitle.textContent = (outcome.mega === true ? 'MEGA JACKPOT! ' : 'WINNER! ') + reward;
-          resultDesc.textContent = (t.drinkName ? t.drinkName + '. ' : '') + `Custom Build: ${finalExample} · ${finalFlavor}. Use it on your order, or show claim code ${outcome.code} at the trailer window!`;
-          if (winActions) { winTwo.textContent = 'Using the other screen? Your prize is waiting on the order screen.'; winActions.hidden = false; watchPending(outcome.code); }
+          const attached = outcome.orderNow !== false;   // false: the kiosk is NOT holding it for this visit's order (useOnSameVisit off), so nothing is promised as added
+          resultDesc.textContent = (t.drinkName ? t.drinkName + '. ' : '') + `Custom Build: ${finalExample} · ${finalFlavor}. ` + (attached ? `Use it on your order, or show claim code ${outcome.code} at the trailer window!` : `Use it on your next order: type your phone number or code ${outcome.code} at the order screen.`);
+          if (winActions && attached) { winTwo.textContent = 'Using the other screen? Your prize is waiting on the order screen.'; winActions.hidden = false; watchPending(outcome.code); }
+          if (window.TBPrize) setTimeout(() => { if (!session.ended) window.TBPrize.show({ result: outcome, mode: 'slots' }); }, reducedMotion() ? 200 : 900);   // the save-to-phone panel; the machine's own ticket stays underneath
           audio.playTrigger(typeof outcome.trigger === 'string' ? outcome.trigger : 'prize_win');
         } else if (outcome.thanks === true) {
           launchBurst('fizz');

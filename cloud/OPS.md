@@ -265,3 +265,20 @@ kiosk shows anything. Check it: for a paid order, `https://station.thirstybeache
 The owner app (https://nicholasroper-cloud.github.io) reads `GET /api/report` from the browser. It sends the
 `STATION_KEY` in the `X-Key` header; the Worker allows that origin (and only that one) for this route, with
 `OPTIONS` preflight. `?k=` links keep working. Without the right key it still answers 401.
+
+## Arcade prize saved to a phone number (PRIZE_PHONE_KEY)
+A customer who wins an arcade prize on the kiosk can save it to their phone number so a LATER order finds it. **Prize lookup only.** It is not marketing
+consent, it never joins a text or email list, it sends no message, and it is separate from the kiosk's Tide-list sign-up. Code: `src/prize-link.js`.
+
+| Item | Where | What |
+|---|---|---|
+| `PRIZE_PHONE_KEY` | Secret | At least 32 characters. Create with `openssl rand -hex 32`, set with `npx wrangler secret put PRIZE_PHONE_KEY`. Never put it in the repo, `wrangler.toml` or a page. Losing or changing it orphans saved links (they just stop being found; prizes still work by code). |
+| `PRIZE_LINK_PER_HOUR` | Optional var | Lookups + saves allowed per caller per hour (default 60). Best effort: KV has no atomic counter. |
+| KV `STATE` `pz:<hash>` and `pzc:<code>` | KV | The prize (code, prize id, label, expiry) under an HMAC-SHA256 of the number, and the code -> hash index for delete. TTL ends with the claim (tb-where sets 24 h today). The number itself and the hash are never stored in a value, logged or returned. |
+
+Endpoints (all POST, JSON, `X-Key: <STATION_KEY>`; with no `PRIZE_PHONE_KEY` they answer 503 `prize-link-off`, so deploying the code alone changes nothing):
+- `/api/prize-link/save` `{phone, code}`: the claim is re-checked at tb-where (`/kitchen/claims/redeem` with `checkOnly`), so the prize id, label and expiry come from tb-where, not from the caller. One unredeemed prize per number (`already-have`); a code can be saved to one number only.
+- `/api/prize-link/lookup` `{phone}`: `{found:false}` or `{found:true, code, prizeId, label, expiresAt}`. A used, expired or unknown claim counts as not found and the link is deleted. tb-where unreachable answers `unavailable`, never "found".
+- `/api/prize-link/clear` `{code}`: deletes the link. The kiosk calls it once the prize is on an order; a real redeem through `/api/kitchen/redeem` (bump at the make station) calls it too.
+
+Deploy order: set the secret first (`npx wrangler secret put PRIZE_PHONE_KEY`), then `node build.js && npx wrangler@4 deploy` from an up-to-date clone (a push to main deploys through CI, so the service-day freeze applies). The kiosk side (`STATION_KEY` in `kiosk-config.env`, station URL) is a separate release. Check: `POST /api/prize-link/lookup` with a made-up number answers `{"ok":true,"found":false}`.

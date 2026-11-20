@@ -1,0 +1,4 @@
+Bungee, Archivo and DM Mono are SIL Open Font License 1.1 fonts from Google Fonts (fonts.google.com).
+They are shipped here (latin subset, woff2) so the kiosk's game pages never contact fonts.googleapis.com / fonts.gstatic.com and work offline.
+Bungee: (c) The Bungee Project Authors. Archivo: (c) The Archivo Project Authors. DM Mono: (c) The DM Mono Project Authors.
+License text: https://openfontlicense.org

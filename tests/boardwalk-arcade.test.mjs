@@ -264,7 +264,7 @@ const KEY = 'k'.repeat(30);
 function prizeArcade({ now, worker, kioskKey = KEY, rng = winRng }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-arc-'));
   const logs = [];
-  const a = arc.createArcade({ tbDir: dir, apiBase: 'http://worker.test', kioskKey, stationKey: 's', fetchImpl: worker.fetch, now, rng, log: (m) => logs.push(m) });
+  const a = arc.createArcade({ tbDir: dir, apiBase: 'http://worker.test', kioskKey, stationKey: 's', fetchImpl: worker.fetch, now, rng, log: (m) => logs.push(m), settings: { maxPrizeRolls: 20 } });   // these tests spin far more often than one real visit allows (the shared cap has its own tests in tests/kiosk/arcade-prize-pipeline.js)
   return { a, logs };
 }
 
@@ -339,10 +339,15 @@ test('prizes: the daily cap is respected and a refused claim backs off instead o
   assert.ok(results.slice(2).every((r) => r.win === false && r.thanks === true && r.code === undefined));
   const claimCalls = worker.calls.filter((c) => c === 'POST /kitchen/claim').length;
   assert.equal(claimCalls, 3, 'two wins + one refused; then it stops asking');
-  t += 11 * 60_000;   // backoff over: asks again (and is refused again)
+  t += 11 * 60_000;   // the daily cap is remembered until local midnight (so the pages can say "prizes are done today" BEFORE play): still no new ask
   await a.refill();
   await a.spin();
-  assert.equal(worker.calls.filter((c) => c === 'POST /kitchen/claim').length, 4, 'asks once more after the backoff, is refused again');
+  assert.equal(worker.calls.filter((c) => c === 'POST /kitchen/claim').length, 3, 'a known daily cap is not asked about again the same day');
+  assert.equal(a.status().capped, true, 'and the kiosk reports it so the pages say it before play');
+  t += 26 * 3600_000;   // next day: asks again (and is refused again); the old play tokens have aged out, so fresh ones are minted and left to ripen
+  await a.refill(); t += 50_000;
+  await a.spin();
+  assert.equal(worker.calls.filter((c) => c === 'POST /kitchen/claim').length, 4, 'asks once more the next day, is refused again');
   assert.equal(worker.minted.length, 2);
 });
 
@@ -402,6 +407,8 @@ test('REAL kiosk server: /arcade is served without a camera, the config is staff
   for (const f of ['kiosk-server.js', 'kiosk-lib.js', 'flex-pay.js', 'pay-journal.js', 'pay-routes.js', 'catalog.js', 'quote.js', 'moderation.js', 'arcade-routes.js', 'addons.json', 'drink-kiosk.html', 'drink-kiosk-light.html']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, 'catalog-map.json'), JSON.stringify({ version: 1, floats: [], categories: {} }));
   fs.cpSync(path.join(ROOT, 'kiosk'), path.join(dir, 'kiosk'), { recursive: true });
+  const sess = JSON.parse(fs.readFileSync(path.join(dir, 'kiosk', 'arcade-session.json'), 'utf8')); sess.maxPrizeRolls = 20;   // this test spins more often than one real visit allows
+  fs.writeFileSync(path.join(dir, 'kiosk', 'arcade-session.json'), JSON.stringify(sess));
   fs.writeFileSync(path.join(dir, 'kiosk', 'locked.txt'), 'locked file, long enough to be real');
   fs.chmodSync(path.join(dir, 'kiosk', 'locked.txt'), 0o000);
 

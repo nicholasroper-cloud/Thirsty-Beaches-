@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Cup Catch | Thirsty Beaches Arcade</title>
+<meta name="theme-color" content="#070114">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/kiosk/games/shared/fonts.css">
+<link rel="stylesheet" href="/kiosk/games/shared/kgame.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/shared/prize-panel.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/cup-catch/cup-catch.css?v=1">
+<link rel="stylesheet" href="/kiosk/games/cup-catch/kiosk.css?v=1">
+</head>
+<body class="kg kg-cup" id="cupCatch">
+<div class="kg-backdrop" aria-hidden="true"></div>
+<div class="kg-shell">
+  <div class="kg-surface" id="cupSurface">
+    <header class="kg-top">
+      <h1 class="kg-title">Cup Catch</h1>
+      <div class="hud" id="hud">
+        <div class="hud__cell"><span class="hud__label">Score</span><span class="hud__val" id="hudScore">0</span></div>
+        <div class="hud__cell"><span class="hud__label">Combo</span><span class="hud__val" id="hudCombo">x1</span></div>
+        <div class="hud__cell"><span class="hud__label">Best</span><span class="hud__val" id="hudBest">0</span></div>
+        <div class="hud__cell hud__cell--lives" aria-label="Lives left">
+          <span class="hud__label">Lives</span>
+          <span class="hearts" id="hudLives"><span class="heart"></span><span class="heart"></span><span class="heart"></span></span>
+        </div>
+      </div>
+      <div class="kg-time" id="kgTime"><span>Time left</span><b>2:30</b><i><u></u></i></div>
+    </header>
+    <main class="kg-board-zone">
+      <div class="kg-board" id="board">
+        <canvas id="gameCanvas" class="board__canvas" role="img" aria-label="Cup Catch game board. Drag a finger to slide the cup and catch the ingredients on the order ticket."></canvas>
+        <div class="overlay" id="overlayStart">
+          <div class="overlay__card">
+            <h2 class="overlay__title">Cup Catch</h2>
+            <ul class="overlay__tips">
+              <li><span class="tip tip--good" aria-hidden="true">&#10003;</span> Catch the items on your order ticket. They glow with a green tick.</li>
+              <li><span class="tip tip--bad" aria-hidden="true">&#10005;</span> Dodge sand, flip-flops and feathers. Three spoils dump the drink.</li>
+              <li><span class="tip tip--move" aria-hidden="true">&#8596;</span> Drag a finger anywhere to slide the cup.</li>
+            </ul>
+            <p class="kg-prizeline" data-kg-prizeline hidden></p>
+            <button type="button" class="btn btn--big" id="btnStart">Start</button>
+            <button type="button" class="kg-rules-btn" data-kg-rules>RULES</button>
+          </div>
+        </div>
+        <div class="overlay" id="overlayPause" hidden>
+          <div class="overlay__card">
+            <h2 class="overlay__title">Paused</h2>
+            <button type="button" class="btn btn--big" id="btnResume">Resume</button>
+          </div>
+        </div>
+        <div class="overlay" id="overlayOver" hidden>
+          <div class="overlay__card">
+            <h2 class="overlay__title">Game over</h2>
+            <p class="overlay__score">Score <strong id="overScore">0</strong></p>
+            <p class="overlay__best" id="overBest">Best 0</p>
+            <p class="overlay__meta" id="overMeta">Drinks served 0</p>
+            <button type="button" class="btn btn--big" id="btnAgain">Play again</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <section class="kg-ctl" aria-label="Controls">
+      <button type="button" class="btn" id="btnPause">Pause</button>
+      <div class="kg-slide" aria-hidden="true">&#9664; Drag here to slide the cup &#9654;</div>
+      <button type="button" class="btn" id="btnSound" aria-pressed="true">Sound On</button>
+    </section>
+  </div>
+  <nav class="kg-bar" aria-label="Way back"><a class="kg-back" id="kgBack" href="/arcade/games">ALL GAMES</a><a class="kg-order" id="kgOrder" href="/#menu">ORDER DRINKS</a></nav>
+</div>
+<p class="sr-only" id="liveStatus" role="status" aria-live="polite"></p>
+<script src="/kiosk/games/shared/kgame.js?v=2"></script>
+<script src="/kiosk/games/shared/prize-panel.js?v=2"></script>
+<script src="/kiosk/games/shared/rules-panel.js?v=1"></script>
+<script src="/kiosk/games/cup-catch/cup-catch.js?v=1"></script>
+</body>
+</html>

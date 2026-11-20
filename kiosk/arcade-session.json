@@ -1,9 +1,16 @@
 {
-  "_about": "Boardwalk Arcade on the kiosk screen: one visit is limited so nobody camps while others wait. Edit, publish, done (the page re-reads this on every visit). Prize caps and odds are NOT here: the Worker and arcade-routes.js enforce those.",
+  "_about": "Boardwalk Arcade on the kiosk screen: one visit is limited so nobody camps while others wait. Edit, publish, done (the page re-reads this on every visit). Prize caps and odds are NOT here: the Worker and arcade-routes.js enforce those. A missing or bad file or value falls back to the built-in defaults, never to 'no limit'.",
   "enabled": true,
   "maxSpins": 3,
   "maxSeconds": 90,
   "idleSeconds": 60,
   "idleWarnSeconds": 20,
-  "endedReturnSeconds": 30
+  "endedReturnSeconds": 30,
+  "gameMaxSeconds": 150,
+  "maxPrizeRolls": 4,
+  "useOnSameVisit": true,
+  "gameMinSeconds": 20,
+  "visitGapSeconds": 120,
+  "_serverKeys": "maxPrizeRolls = prize rolls (slot spins + finished games) per visit, shared; useOnSameVisit = a win becomes this kiosk's pending prize and the order-screen banner (false: the customer only gets the code / phone link for next time); gameMinSeconds = a game must have run this long on the server clock before its finish can roll; visitGapSeconds = quiet time that ends a visit.",
+  "_gameKeys": "gameMaxSeconds = the time cap for one visit to the games picker and the five games together (counts from the first game page, shared across games; 30 to 900 seconds). The slot machine has its own maxSpins/maxSeconds above."
 }

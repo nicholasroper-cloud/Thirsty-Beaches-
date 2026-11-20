@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Thirsty Blaster | Thirsty Beaches Arcade</title>
+<meta name="theme-color" content="#070114">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/kiosk/games/shared/fonts.css">
+<link rel="stylesheet" href="/kiosk/games/shared/kgame.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/shared/prize-panel.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/thirsty-blaster/thirsty-blaster.css?v=1">
+<link rel="stylesheet" href="/kiosk/games/thirsty-blaster/kiosk.css?v=1">
+</head>
+<body class="kg kg-blaster">
+<div class="kg-backdrop" aria-hidden="true"></div>
+<div class="kg-shell">
+  <div class="kg-surface" id="tbSurface">
+    <header class="kg-top">
+      <h1 class="kg-title">Thirsty Blaster</h1>
+      <div class="tb-hud" aria-label="Scoreboard">
+        <span class="tb-hud__cell">Score <b id="tbScore">0</b></span>
+        <span class="tb-hud__cell">Wave <b id="tbWave">1</b></span>
+        <span class="tb-hud__cell">Best <b id="tbBest">0</b></span>
+        <span class="tb-lives" id="tbLives" role="img" aria-label="Thirst lives left: 3 of 3"><i class="tb-drop"></i><i class="tb-drop"></i><i class="tb-drop"></i></span>
+      </div>
+      <div class="kg-time" id="kgTime"><span>Time left</span><b>2:30</b><i><u></u></i></div>
+    </header>
+    <main class="kg-board-zone" id="tbZone">
+      <div class="kg-board" id="tbBoard">
+        <canvas id="tbCanvas" width="360" height="540" role="img" aria-label="Thirsty Blaster game board. Empty cups float down on parachutes, beach balls and pool floats. Drag a finger to slide the soda nozzle under them and squirt them full."></canvas>
+        <div class="tb-overlay" id="tbOverlay">
+          <h2 class="tb-overlay__title" id="tbOvTitle">Thirsty Blaster</h2>
+          <p class="tb-overlay__text" id="tbOvText">Squirt the empty cups full.</p>
+          <p class="kg-prizeline" data-kg-prizeline hidden></p>
+          <button type="button" class="tb-btn tb-btn--go" id="tbStart">Start</button>
+          <button type="button" class="kg-rules-btn" data-kg-rules>RULES</button>
+        </div>
+      </div>
+    </main>
+    <section class="kg-ctl" aria-label="Controls">
+      <div class="tb-flavors" role="group" aria-label="Stream flavor">
+        <button type="button" class="tb-flavor tb-flavor--cherry" data-flavor="0" aria-pressed="true"><span class="tb-flavor__dot" aria-hidden="true">C</span>Cherry</button>
+        <button type="button" class="tb-flavor tb-flavor--wave" data-flavor="1" aria-pressed="false"><span class="tb-flavor__dot" aria-hidden="true">B</span>Blue Wave</button>
+        <button type="button" class="tb-flavor tb-flavor--mango" data-flavor="2" aria-pressed="false"><span class="tb-flavor__dot" aria-hidden="true">M</span>Mango</button>
+        <button type="button" class="tb-flavor tb-flavor--grape" data-flavor="3" aria-pressed="false"><span class="tb-flavor__dot" aria-hidden="true">G</span>Grape</button>
+      </div>
+      <button type="button" class="tb-btn tb-ctlbtn" id="tbPause" disabled>Pause</button>
+      <button type="button" class="tb-btn tb-ctlbtn" id="tbSound" aria-pressed="false">Sound Off</button>
+    </section>
+  </div>
+  <nav class="kg-bar" aria-label="Way back"><a class="kg-back" id="kgBack" href="/arcade/games">ALL GAMES</a><a class="kg-order" id="kgOrder" href="/#menu">ORDER DRINKS</a></nav>
+</div>
+<p class="sr-only" id="tbStatus" role="status" aria-live="polite"></p>
+<script src="/kiosk/games/shared/kgame.js?v=2"></script>
+<script src="/kiosk/games/shared/prize-panel.js?v=2"></script>
+<script src="/kiosk/games/shared/rules-panel.js?v=1"></script>
+<script src="/kiosk/games/thirsty-blaster/thirsty-blaster.js?v=2"></script>
+</body>
+</html>

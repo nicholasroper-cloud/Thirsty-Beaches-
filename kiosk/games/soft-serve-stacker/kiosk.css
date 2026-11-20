@@ -1,0 +1,19 @@
+/* Soft Serve Stacker on the kiosk: portrait 47-inch touchscreen layout (shell: ../shared/kgame.css). Tap the board OR the big DROP button. */
+:root { --kg-w: 360; --kg-h: 600; }
+body.kg .hud { display: grid; grid-template-columns: repeat(3, 1fr); width: min(92vw, 46rem); margin: 0; padding: .4rem .8rem; border-radius: 1rem; }
+body.kg .hud dt { font-size: .8rem; }
+body.kg .hud dd { font-size: 1.45rem; }
+body.kg .kg-board { cursor: default; }
+body.kg .board__canvas { cursor: default; }
+body.kg .overlay { align-items: flex-end; justify-content: center; padding: 6% 6% 8%; background: linear-gradient(180deg, rgba(7,1,20,.3), rgba(7,1,20,.86) 50%); }
+body.kg .card { width: 100%; max-width: none; padding: 1.2rem 1.3rem 1.4rem; }
+body.kg .card__kicker { font-size: 1.5rem; }
+body.kg .card__text { font-size: 1.15rem; line-height: 1.35; }
+body.kg .card__rank { font-size: 2.3rem; }
+body.kg .card__stats dt { font-size: .85rem; }
+body.kg .card__stats dd { font-size: 1.5rem; }
+body.kg .btn { min-height: 64px; font-size: 1.1rem; border-radius: 1.4rem; touch-action: manipulation; }
+body.kg .btn--go { min-height: 5.2rem; width: 100%; font-size: 1.9rem; }
+body.kg .kg-ctl { gap: 1.3vw; }
+body.kg .kg-ctl .btn { flex: 0 0 20%; height: 100%; padding: 0 .4rem; border-radius: 1.4rem; }
+body.kg .kg-ctl .kg-drop { flex: 1 1 0; font-size: 3.2rem; letter-spacing: .08em; border-radius: 1.8rem; }

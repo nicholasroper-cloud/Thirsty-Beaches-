@@ -1,0 +1,13 @@
+{
+  "_about": "Facts for the Prize Game Rules panel on the arcade. Leave a value empty and the panel shows a clearly marked placeholder (nothing is invented). Edit, publish, done. prizeLifeText must match what the prize system really enforces (today the Worker keeps a claim 24 hours); change it to '30 days' ONLY after the tb-where claim lifetime is lengthened. stickerSwap, onePerPersonPerDay and limitedPrizesDaily switch those sentences off if the window does not honour them.",
+  "sponsorName": "",
+  "sponsorAddress": "",
+  "promoStart": "",
+  "promoEnd": "",
+  "prizeLifeText": "24 hours",
+  "stickerSwap": true,
+  "onePerPersonPerDay": true,
+  "limitedPrizesDaily": true,
+  "rulesUrl": "",
+  "privacyUrl": ""
+}

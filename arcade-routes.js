@@ -18,6 +18,17 @@
    prize to that Clover order's note (" · ARCADE <id> <CODE>"), the same way " · MAZE UPSIZE" rides there. No price, total, discount or
    line item is touched, and the browser never supplies a prize id, label or code.
 
+   The five arcade GAMES (kiosk/games/*) use the SAME roll: the page may only say "a game finished" (POST /api/arcade/game/finish {sid}); the
+   server opened that session itself (POST /api/arcade/game/start {game}, game from GAME_IDS), checks it ran for a believable minimum time on
+   the SERVER clock, allows one roll per session, and shares one per-visit roll cap with the slots (arcade-session.json maxPrizeRolls). The page
+   never supplies a prize id, label, code or score: a skill game is still a chance roll at the staff odds table, not a reward for a score.
+
+   A win can ride a LATER order two more ways, both ending in the same pending prize + ARCADE note tag + make-station badge:
+     phone number : the customer saves a win to a phone number (POST /api/arcade/wallet/save) and types it on the order screen later
+                    (POST /api/arcade/wallet/lookup). The number is only ever sent to the station Worker (HMAC with a secret kept there, never
+                    stored or logged here); this file keeps no copy of it and logs no digits.
+     claim code   : POST /api/arcade/code checks a 4-character code with the tb-where Worker (check only, burned at redeem as today).
+
    KIOSK_KEY stays on this PC (kiosk-config.env). The browser never sees it. Zero npm dependencies. */
 "use strict";
 const fs = require("fs");
@@ -35,6 +46,33 @@ const PRIZES = [
   { id: "free_drink_jackpot", label: "FREE DRINK JACKPOT!",                           pct: 1,  isPrize: true,  trigger: "mega_jackpot" },
 ];
 const PRIZE_IDS = PRIZES.map(p => p.id);
+/* The five games the kiosk serves (kiosk/games/<id>/). A session can only be opened for one of these; the id is used for the log and nothing else. */
+const GAME_IDS = ["thirsty-blaster", "thirsty-tower", "cup-catch", "boardwalk-dash", "soft-serve-stacker"];
+/* Server-side visit settings, read from kiosk/arcade-session.json on every use (the page reads the same file for its own limits). A missing or
+   bad file or value falls back to these, never to "no limit". Only `useOnSameVisit: false` (literally) turns the win-rides-this-order path off. */
+const SESSION_DEFAULTS = { maxPrizeRolls: 4, useOnSameVisit: true, gameMinSeconds: 20, visitGapSeconds: 120 };
+function sessionSettings(raw) {
+  const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v) : d);
+  return {
+    maxPrizeRolls: num(src.maxPrizeRolls, 1, 20, SESSION_DEFAULTS.maxPrizeRolls),
+    useOnSameVisit: src.useOnSameVisit !== false,
+    gameMinSeconds: num(src.gameMinSeconds, 5, 300, SESSION_DEFAULTS.gameMinSeconds),
+    visitGapSeconds: num(src.visitGapSeconds, 30, 900, SESSION_DEFAULTS.visitGapSeconds),
+  };
+}
+const CODE_RE = /^[A-Z2-9]{4}$/;
+/* US phone, as the page types it: 10 digits (a leading 1 is dropped), area code and exchange start 2-9. Returns the 10 digits or "". */
+function normPhone(v) {
+  let d = String(v == null ? "" : v).replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") d = d.slice(1);
+  return /^[2-9]\d{2}[2-9]\d{6}$/.test(d) ? d : "";
+}
+/* A small sliding-window counter: take() is true while fewer than `max` takes happened in the last `ms`. */
+function makeLimit(max, ms, nowFn) {
+  let hits = [];
+  return { take() { const t = nowFn(); hits = hits.filter(x => t - x < ms); if (hits.length >= max) return false; hits.push(t); return true; } };
+}
 const MAX_FREE_DRINK_PCT = 2;      // hard ceiling on the free-drink odds, whatever the staff drawer says
 const PERSONAS = ["shredder", "neon86", "auto"];
 
@@ -94,11 +132,16 @@ function createArcade(opts) {
   const log = o.log || (() => {});
   const clover = o.clover && typeof o.clover.get === "function" && typeof o.clover.post === "function" ? o.clover : null;
   const cfgFile = tbDir ? path.join(tbDir, "arcade-config.json") : null;
+  const sessionFile = o.sessionFile || null;
+  const rulesFile = o.rulesFile || null;
+  const STATION_API = String(o.stationApi || "").replace(/\/+$/, "");
 
   const prizesOn = () => !!(KIOSK_KEY && API && doFetch);
 
   // ---------- config ----------
-  function defaults() { return { personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: defaultOdds(), updatedAt: null }; }
+  /* period = the promotion period these odds belong to (a short label the staff set), version = counts every odds/period change; both go on every win log line so a period's odds are traceable. */
+  function defaults() { return { personaMode: "auto", volume: 0.75, muted: false, pgMode: true, winterEnabled: true, odds: defaultOdds(), period: "", version: 1, updatedAt: null }; }
+  const cleanPeriod = v => (typeof v === "string" ? v.replace(/[^A-Za-z0-9 .,:\/_-]/g, "").trim().slice(0, 40) : "");
   function readSaved() { try { return JSON.parse(fs.readFileSync(cfgFile, "utf8")); } catch { return null; } }
   function cleanSaved(s) {
     const d = defaults();
@@ -109,6 +152,7 @@ function createArcade(opts) {
       volume: typeof s.volume === "number" && s.volume >= 0 && s.volume <= 1 ? s.volume : d.volume,
       muted: s.muted === true, pgMode: s.pgMode !== false, winterEnabled: s.winterEnabled !== false,
       odds: v.ok ? v.odds : d.odds,                       // a hand-edited or corrupt file falls back to the defaults, never to its own numbers
+      period: cleanPeriod(s.period), version: Number.isInteger(s.version) && s.version >= 1 && s.version < 1e6 ? s.version : 1,
       updatedAt: typeof s.updatedAt === "number" ? s.updatedAt : null,
     };
   }
@@ -135,6 +179,8 @@ function createArcade(opts) {
     if ("personaMode" in body) { if (!PERSONAS.includes(body.personaMode)) return { status: 400, body: { ok: false, error: "bad persona" } }; next.personaMode = body.personaMode; }
     if ("volume" in body) { if (typeof body.volume !== "number" || !(body.volume >= 0 && body.volume <= 1)) return { status: 400, body: { ok: false, error: "volume must be 0 to 1" } }; next.volume = body.volume; }
     for (const k of ["muted", "pgMode", "winterEnabled"]) if (k in body) { if (typeof body[k] !== "boolean") return { status: 400, body: { ok: false, error: k + " must be true or false" } }; next[k] = body[k]; }
+    if ("period" in body) { if (typeof body.period !== "string") return { status: 400, body: { ok: false, error: "period must be text" } }; next.period = cleanPeriod(body.period); }
+    if (("odds" in body && JSON.stringify(next.odds) !== JSON.stringify(cur.odds)) || next.period !== cur.period) next.version = cur.version + 1;   // a real odds or period change is a new version
     next.updatedAt = t;
     try {
       fs.mkdirSync(tbDir, { recursive: true });
@@ -145,7 +191,7 @@ function createArcade(opts) {
 
   // ---------- play tokens (the Worker needs one per claim, at least minMs old) ----------
   const TOKEN_TARGET = 3, TOKEN_MAX_AGE_MS = 5 * 3600e3, MINTS_PER_HOUR = 12;
-  let tokens = [], mintTimes = [], blockedUntil = 0, refilling = null, lastSeen = 0;
+  let tokens = [], mintTimes = [], blockedUntil = 0, capUntil = 0, refilling = null, lastSeen = 0;
 
   async function workerJson(method, p, body, extraHeaders) {
     const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 4000);
@@ -190,7 +236,7 @@ function createArcade(opts) {
   /* Ask the Worker for a real code. Returns { code, ticket } or null (and says why in the log, never to the page). */
   async function claim(prize) {
     if (!prizesOn()) return null;
-    if (now() < blockedUntil) return null;
+    if (now() < Math.max(blockedUntil, capUntil)) return null;
     const token = takeToken();
     if (!token) { log("arcade: no play token old enough yet, no code for this win"); refill(); return null; }
     const r = await workerJson("POST", "/kitchen/claim", { score: SCORE_FOR[prize.id] || SCORE_DEFAULT, who: "TB", token, prize: { id: prize.id, label: prize.label } }, { "X-Kiosk-Key": KIOSK_KEY });
@@ -202,7 +248,8 @@ function createArcade(opts) {
       return { code: d.code, ticket: { reward: s(tk.reward, 80), drinkName: s(tk.drinkName, 60), build: s(tk.build, 200), expiresAt: Number.isFinite(+tk.expiresAt) ? +tk.expiresAt : null } };
     }
     const err = d && d.error;
-    if (r.status === 429 || err === "sold-out" || err === "daily-limit") blockedUntil = now() + 10 * 60000;   // cap hit: stop asking for a while
+    if (err === "sold-out" || err === "daily-limit") { const e = new Date(now()); e.setHours(24, 0, 0, 0); capUntil = e.getTime(); }   // the daily cap is hit: no more asking until local midnight, and the pages say so BEFORE play
+    else if (r.status === 429) blockedUntil = now() + 10 * 60000;   // slowed down: stop asking for a while
     log("arcade: claim refused (" + r.status + (err ? " " + err : "") + ")");
     return null;
   }
@@ -215,7 +262,9 @@ function createArcade(opts) {
     if (typeof v.code !== "string" || !/^[A-Z2-9]{4}$/.test(v.code)) return null;
     const p = PRIZES.find(x => x.id === v.prizeId && x.isPrize);
     if (!p || !Number.isFinite(+v.issuedAt)) return null;
-    return { code: v.code, prizeId: p.id, label: p.label, issuedAt: +v.issuedAt, expiresAt: +v.issuedAt + PENDING_TTL_MS };
+    const cap = +v.issuedAt + PENDING_TTL_MS;
+    const until = Number.isFinite(+v.expiresAt) && +v.expiresAt > +v.issuedAt ? Math.min(+v.expiresAt, cap) : cap;   // never longer than 15 min, shorter if the claim itself ends sooner
+    return { code: v.code, prizeId: p.id, label: p.label, issuedAt: +v.issuedAt, expiresAt: until };
   };
   function savePending(v) {
     if (!pendingFile) return;
@@ -233,8 +282,8 @@ function createArcade(opts) {
     if (pending && now() >= pending.expiresAt) { pending = null; savePending(null); }
     return pending ? { ...pending } : null;
   }
-  function setPending(prize, code) {
-    const v = cleanPending({ code, prizeId: prize.id, issuedAt: now() });
+  function setPending(prize, code, claimExpiresAt) {
+    const v = cleanPending({ code, prizeId: prize.id, issuedAt: now(), expiresAt: claimExpiresAt });
     if (!v) return null;
     pending = v; savePending(v);
     return { ...v };
@@ -266,25 +315,219 @@ function createArcade(opts) {
       }
       lastAttached = { orderId: id, code: p.code, label: p.label };
       pending = null; savePending(null);
+      markAttached(p.code);                                   // this code is spoken for: it cannot ride a second order while the first ticket waits to be bumped
+      walletClear(p.code).catch(() => {});                    // the phone link (if any) is deleted with the use
       return { status: 200, body: { ok: true, code: p.code, label: p.label } };
     } finally { attaching = false; }
   }
 
-  /* One spin. The prize is decided here. Returns what the page may show:
-       { ok, prizeId, win:false, thanks:false }            a normal drink reveal
-       { ok, prizeId, win:false, thanks:true }             a prize was rolled but there is no code to hand out: "thanks for playing"
-       { ok, prizeId, label, win:true, code, ticket, mega }  a real code from the Worker (also held as the pending prize) */
-  async function spin() {
-    lastSeen = now();
-    const prize = rollPrize(getConfig().odds, rng);
-    if (!prize.isPrize) return { ok: true, prizeId: prize.id, win: false, thanks: false };
-    const c = await claim(prize);
-    if (!c) return { ok: true, prizeId: "standard", win: false, thanks: true };
-    setPending(prize, c.code);                              // only a Worker-issued code ever becomes a pending prize
-    return { ok: true, prizeId: prize.id, label: prize.label, win: true, mega: prize.id === "free_drink_jackpot", trigger: prize.trigger, code: c.code, ticket: c.ticket, pendingUntil: pending ? pending.expiresAt : null };
+  // ---------- visit settings, the shared per-visit roll cap, codes already spoken for ----------
+  function settings() {
+    let raw = typeof o.settings === "function" ? o.settings() : o.settings && typeof o.settings === "object" ? o.settings : null;   // tests inject; the kiosk reads the file
+    if (!raw && sessionFile) { try { raw = JSON.parse(fs.readFileSync(sessionFile, "utf8")); } catch { raw = null; } }
+    return sessionSettings(raw);
+  }
+  let visit = { rolls: 0, lastAt: 0 };
+  function touchVisit() {
+    const t = now();
+    if (!visit.lastAt || t - visit.lastAt > settings().visitGapSeconds * 1000) visit = { rolls: 0, lastAt: t };   // nobody around for a while: a new visit
+    visit.lastAt = t;
+  }
+  const attachedFile = tbDir ? path.join(tbDir, "arcade-attached.json") : null;
+  const ATTACHED_KEEP_MS = 72 * 3600e3;
+  let attachedCodes = [];
+  if (attachedFile) { try { const a = JSON.parse(fs.readFileSync(attachedFile, "utf8")); if (Array.isArray(a)) attachedCodes = a.filter(x => x && CODE_RE.test(x.code) && Number.isFinite(+x.at)); } catch {} }
+  function markAttached(code) {
+    const t = now();
+    attachedCodes = attachedCodes.filter(x => t - x.at < ATTACHED_KEEP_MS && x.code !== code).concat({ code, at: t }).slice(-200);
+    if (!attachedFile) return;
+    try { fs.mkdirSync(tbDir, { recursive: true }); const tmp = attachedFile + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(attachedCodes)); fs.renameSync(tmp, attachedFile); } catch {}
+  }
+  const isAttached = code => { const t = now(); return attachedCodes.some(x => x.code === code && t - x.at < ATTACHED_KEEP_MS); };
+
+  /* wins this server issued (code -> what it was). Saving to a phone number may only name one of these: the browser's code is a selector, never a prize. */
+  const recent = new Map();
+  const RECENT_KEEP_MS = 6 * 3600e3;
+  function rememberWin(code, prize, expiresAt) {
+    const t = now();
+    for (const [k, v] of recent) if (t - v.at > RECENT_KEEP_MS) recent.delete(k);
+    recent.set(code, { prizeId: prize.id, label: prize.label, expiresAt: Number.isFinite(+expiresAt) ? +expiresAt : t + 24 * 3600e3, at: t });
+    while (recent.size > 60) recent.delete(recent.keys().next().value);
   }
 
-  return { getConfig, saveConfig, spin, getPending, dismissPending, attachToOrder, refill, touch, refillIfActive, prizesOn, validateOdds, _state: () => ({ tokens: tokens.length, blockedUntil }) };
+  /* One roll, for a slot spin or a finished game. The prize is decided here from the staff odds; a code exists only if the Worker issued it.
+     Returns { capped } (visit cap reached, nothing rolled) | { prize, noCode } | { prize, code, expiresAt, orderNow }. */
+  async function roll(source) {
+    touchVisit();
+    if (visit.rolls >= settings().maxPrizeRolls) return { capped: true };
+    visit.rolls++;
+    const prize = rollPrize(getConfig().odds, rng);
+    if (!prize.isPrize) return { prize, plain: true };
+    const c = await claim(prize);
+    if (!c) return { prize, noCode: true };
+    const exp = c.ticket && Number.isFinite(+c.ticket.expiresAt) ? +c.ticket.expiresAt : now() + 24 * 3600e3;
+    rememberWin(c.code, prize, exp);
+    const cfg = getConfig();
+    log("arcade: win " + prize.id + " via " + source + " period=" + (cfg.period || "-") + " odds-v=" + cfg.version);   // never the code: the period's odds stay traceable
+    const orderNow = settings().useOnSameVisit;
+    if (orderNow) setPending(prize, c.code, exp);          // only a Worker-issued code ever becomes a pending prize
+    return { prize, code: c.code, ticket: c.ticket, expiresAt: exp, orderNow: orderNow && !!pending };
+  }
+  /* The slot machine keeps its own look and label. A finished GAME gets a plain result: the prize's plain name (no "jackpot"), no mega flag, no sound trigger. */
+  const GAME_LABEL = { free_drink_jackpot: "Free Drink" };
+  const winBody = (r, plain) => ({ ok: true, prizeId: r.prize.id, label: plain ? (GAME_LABEL[r.prize.id] || r.prize.label) : r.prize.label, win: true, ...(plain ? {} : { mega: r.prize.id === "free_drink_jackpot", trigger: r.prize.trigger }),
+    code: r.code, ticket: r.ticket, expiresAt: r.expiresAt, orderNow: r.orderNow, pendingUntil: r.orderNow && pending ? pending.expiresAt : null, saveable: walletUsable() });
+
+  /* One slot spin. Returns what the page may show:
+       { ok, prizeId, win:false, thanks:false }            a normal drink reveal
+       { ok, prizeId, win:false, thanks:true }             a prize was rolled but there is no code to hand out: "thanks for playing"
+       { ok, prizeId, label, win:true, code, ticket, mega, expiresAt, orderNow, saveable }  a real code from the Worker */
+  async function spin() {
+    lastSeen = now();
+    const r = await roll("slot");
+    if (r.capped || r.plain) return { ok: true, prizeId: "standard", win: false, thanks: false };   // cap reached looks like an ordinary reveal: no teasing, no code
+    if (r.noCode) return { ok: true, prizeId: "standard", win: false, thanks: true };
+    return winBody(r);
+  }
+
+  // ---------- the five games: open a session, then ONE roll when the game ends ----------
+  const sessions = new Map();
+  const SESSION_KEEP_MS = 30 * 60e3;
+  function gameStart(game) {
+    touchVisit(); lastSeen = now();
+    if (typeof game !== "string" || !GAME_IDS.includes(game)) return { status: 400, body: { ok: false, error: "unknown-game" } };
+    const t = now();
+    for (const [k, v] of sessions) if (t - v.at > SESSION_KEEP_MS) sessions.delete(k);
+    while (sessions.size >= 40) sessions.delete(sessions.keys().next().value);
+    const sid = crypto.randomBytes(12).toString("hex");
+    sessions.set(sid, { game, at: t, done: false });
+    return { status: 200, body: { ok: true, sid, minPlayMs: settings().gameMinSeconds * 1000 } };
+  }
+  /* The page says only "this game finished" ({sid}). Nothing about score, prize or code is read. A session rolls at most once, and not before
+     gameMinSeconds have passed on THIS server's clock; an early or repeated finish is refused/answered with plain thanks, never a prize. */
+  async function gameFinish(sid) {
+    touchVisit(); lastSeen = now();
+    const s = typeof sid === "string" && /^[a-f0-9]{24}$/.test(sid) ? sessions.get(sid) : null;
+    if (!s || now() - s.at > SESSION_KEEP_MS) return { status: 404, body: { ok: false, error: "no-session" } };
+    if (s.done) return { status: 409, body: { ok: false, error: "already-finished" } };
+    s.done = true;                                          // consumed at once, whatever happens next: one roll per game played
+    if (now() - s.at < settings().gameMinSeconds * 1000) { log("arcade: game finish too soon (" + s.game + ")"); return { status: 200, body: { ok: true, win: false, thanks: true } }; }
+    const r = await roll("game");
+    if (r.capped || r.plain || r.noCode) return { status: 200, body: { ok: true, win: false, thanks: true } };
+    return { status: 200, body: winBody(r, true) };
+  }
+
+  // ---------- status and rules (what the pages may say BEFORE play) ----------
+  /* prizes: this kiosk can hand out codes at all; capped: the Worker's daily cap is known to be used up today (say so before play). */
+  function status() { const cfg = getConfig(); return { ok: true, prizes: prizesOn(), capped: now() < capUntil, period: cfg.period, version: cfg.version }; }
+  const RULES_DEFAULTS = { sponsorName: "", sponsorAddress: "", promoStart: "", promoEnd: "", prizeLifeText: "24 hours", stickerSwap: true, onePerPersonPerDay: true, limitedPrizesDaily: true, rulesUrl: "", privacyUrl: "" };
+  const PRIZE_NOTES = { size_upgrade: "used on a drink you order", soft_serve_topper: "used on a drink you order", topper_or_sticker: "topper used on a drink you order, or a sticker", neon_charm: "", free_drink_jackpot: "no purchase needed" };
+  /* The rules panel's facts. Text the staff own comes from kiosk/arcade-rules.json (empty = a visible placeholder, never an invented name, address or date). Odds are stated ONLY
+     as what this server enforces: the free-drink ceiling (MAX_FREE_DRINK_PCT) and, only while the live table really makes it true, "most games do not win". */
+  function rules() {
+    let raw = null; if (rulesFile) { try { raw = JSON.parse(fs.readFileSync(rulesFile, "utf8")); } catch { raw = null; } }
+    const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const txt = (k, n) => (typeof src[k] === "string" ? src[k].replace(/[\u0000-\u001f<>]/g, " ").trim().slice(0, n) : RULES_DEFAULTS[k]);
+    const flag = k => (typeof src[k] === "boolean" ? src[k] : RULES_DEFAULTS[k]);
+    const cfg = getConfig();
+    const std = cfg.odds.find(x => x.id === "standard");
+    const out = { sponsorName: txt("sponsorName", 80), sponsorAddress: txt("sponsorAddress", 160), promoStart: txt("promoStart", 40), promoEnd: txt("promoEnd", 40), prizeLifeText: txt("prizeLifeText", 40) || RULES_DEFAULTS.prizeLifeText,
+      rulesUrl: txt("rulesUrl", 120), privacyUrl: txt("privacyUrl", 120), stickerSwap: flag("stickerSwap"), onePerPersonPerDay: flag("onePerPersonPerDay"), limitedPrizesDaily: flag("limitedPrizesDaily") };
+    const missing = ["sponsorName", "sponsorAddress", "promoStart", "promoEnd"].filter(k => !out[k]);
+    return { ok: true, rules: { ...out, missing, prizes: PRIZES.filter(p => p.isPrize).map(p => ({ id: p.id, label: p.id === "free_drink_jackpot" ? GAME_LABEL.free_drink_jackpot : p.label, note: PRIZE_NOTES[p.id] || "" })),
+      freeDrinkOneIn: Math.floor(100 / MAX_FREE_DRINK_PCT), mostGamesDoNotWin: !!(std && std.pct > 50), period: cfg.period, version: cfg.version } };
+  }
+
+  // ---------- phone number and code lookups (the station Worker holds the phone link; tb-where holds the codes) ----------
+  const walletSaveLimit = makeLimit(10, 10 * 60e3, now), lookupLimit = makeLimit(Math.max(1, Math.min(60, parseInt(o.lookupsPer10Min, 10) || 8)), 10 * 60e3, now), lookupDayLimit = makeLimit(60, 24 * 3600e3, now);
+  let walletOffUntil = 0;
+  const walletUsable = () => !!(STATION_API && STATION_KEY && doFetch) && now() >= walletOffUntil;
+  async function stationJson(p, body) {
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 5000);
+    try {
+      const r = await doFetch(STATION_API + p, { method: "POST", signal: ctl.signal, headers: { Accept: "application/json", "Content-Type": "application/json", "X-Key": STATION_KEY }, body: JSON.stringify(body) });
+      let data = null; try { data = await r.json(); } catch {}
+      return { status: r.status, data };
+    } catch { return { status: 0, data: null }; }
+    finally { clearTimeout(timer); }
+  }
+  const slow = () => ({ status: 429, body: { ok: false, error: "slow-down" } });
+  const off = () => ({ status: 200, body: { ok: false, error: "off" } });
+  const gone = () => ({ status: 200, body: { ok: false, error: "unavailable" } });
+  function noteOff(r) { if (r.status === 503 && r.data && r.data.error === "prize-link-off") { walletOffUntil = now() + 10 * 60e3; return true; } return false; }
+
+  /* Keep a win on a phone number. {phone, code}: code must be a win THIS server issued in the last 6 hours (so the page cannot save an arbitrary
+     claim). The number goes to the station Worker only; it is never logged, stored or echoed here (only its last two digits come back for the screen). */
+  async function walletSave(phone, code) {
+    const ph = normPhone(phone);
+    if (!ph) return { status: 400, body: { ok: false, error: "bad-phone" } };
+    const c = typeof code === "string" ? code.toUpperCase() : "";
+    const w = CODE_RE.test(c) ? recent.get(c) : null;
+    if (!w || now() - w.at > RECENT_KEEP_MS || now() >= w.expiresAt) return { status: 200, body: { ok: false, error: "unknown-code" } };
+    if (!walletUsable()) return off();
+    if (!walletSaveLimit.take()) return slow();
+    const r = await stationJson("/api/prize-link/save", { phone: ph, code: c });
+    const d = r.data;
+    if (noteOff(r)) return off();
+    if (r.status === 200 && d && d.ok === true) return { status: 200, body: { ok: true, saved: true, last2: ph.slice(-2), keptUntil: Number.isFinite(+d.keptUntil) ? +d.keptUntil : w.expiresAt } };
+    if (d && d.error === "already-have") return { status: 200, body: { ok: false, error: "already-have" } };
+    if (r.status === 429) return slow();
+    log("arcade: could not save a win to a phone number (" + r.status + (d && d.error ? " " + d.error : "") + ")");
+    return gone();
+  }
+  async function walletClear(code) {
+    if (!walletUsable() || !CODE_RE.test(String(code))) return;
+    await stationJson("/api/prize-link/clear", { code });
+  }
+  /* A prize found (by phone or code) becomes the kiosk's ONE pending prize, exactly like a win from this visit, so the order screen banner and the
+     attach-after-order flow need nothing new. The label and prize id come from this file's fixed table, never from the Worker's or the page's text. */
+  function adopt(prizeId, code, expiresAt) {
+    const prize = PRIZES.find(p => p.id === prizeId && p.isPrize);
+    const exp = Number(expiresAt);
+    if (!prize || !CODE_RE.test(String(code)) || !(exp > now())) return null;
+    if (isAttached(code)) return { used: true };
+    const p = setPending(prize, code, exp);
+    return p ? { prize, exp } : null;
+  }
+  async function walletLookup(phone) {
+    const ph = normPhone(phone);
+    if (!ph) return { status: 400, body: { ok: false, error: "bad-phone" } };
+    if (!walletUsable()) return off();
+    if (!lookupLimit.take() || !lookupDayLimit.take()) return slow();
+    const r = await stationJson("/api/prize-link/lookup", { phone: ph });
+    const d = r.data;
+    if (noteOff(r)) return off();
+    if (r.status === 429) return slow();
+    if (r.status === 200 && d && d.ok === true && d.found === false) return { status: 200, body: { ok: true, found: false } };
+    if (r.status === 200 && d && d.ok === true && d.found === true) {
+      const a = adopt(d.prizeId, d.code, d.expiresAt);
+      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: a.prize.label, expiresAt: a.exp } };
+      return { status: 200, body: { ok: true, found: false } };       // used, expired or malformed: indistinguishable from "nothing there"
+    }
+    return gone();
+  }
+  /* A 4-character claim code typed on the order screen: checked with tb-where (check only; the claim is burned at redeem as always). */
+  async function codeLookup(code) {
+    const c = String(code == null ? "" : code).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!CODE_RE.test(c)) return { status: 200, body: { ok: true, found: false, status: "unknown" } };
+    if (!prizesOn()) return off();
+    if (!lookupLimit.take() || !lookupDayLimit.take()) return slow();
+    if (isAttached(c)) return { status: 200, body: { ok: true, found: false, status: "used" } };
+    const r = await workerJson("POST", "/kitchen/claims/redeem", { code: c, checkOnly: true, by: "kiosk" }, { "X-Kiosk-Key": KIOSK_KEY });
+    const d = r.data;
+    if (r.status === 200 && d && d.ok === true && d.status === "valid") {
+      const tk = d.ticket && typeof d.ticket === "object" ? d.ticket : {};
+      const a = adopt(tk.prize && typeof tk.prize === "object" ? tk.prize.id : "", c, tk.expiresAt);
+      if (a && a.prize) return { status: 200, body: { ok: true, found: true, label: a.prize.label, expiresAt: a.exp } };
+      if (a && a.used) return { status: 200, body: { ok: true, found: false, status: "used" } };
+      return { status: 200, body: { ok: true, found: false, status: "unknown" } };   // not an arcade prize, or past its expiry
+    }
+    if (d && d.status === "used") return { status: 200, body: { ok: true, found: false, status: "used" } };
+    if (r.status === 404 || (d && d.status === "unknown")) return { status: 200, body: { ok: true, found: false, status: "unknown" } };
+    return gone();
+  }
+
+  return { getConfig, saveConfig, spin, gameStart, gameFinish, walletSave, walletLookup, codeLookup, walletClear, touchVisit, settings, status, rules, getPending, dismissPending, attachToOrder, refill, touch, refillIfActive, prizesOn, validateOdds, _state: () => ({ tokens: tokens.length, blockedUntil }) };
 }
 
-module.exports = { PENDING_TTL_MS, PRIZES, PRIZE_IDS, MAX_FREE_DRINK_PCT, defaultOdds, validateOdds, rollPrize, createArcade };
+module.exports = { PENDING_TTL_MS, GAME_IDS, SESSION_DEFAULTS, sessionSettings, normPhone, PRIZES, PRIZE_IDS, MAX_FREE_DRINK_PCT, defaultOdds, validateOdds, rollPrize, createArcade };

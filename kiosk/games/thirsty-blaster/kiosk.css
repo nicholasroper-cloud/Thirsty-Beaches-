@@ -1,0 +1,19 @@
+/* Thirsty Blaster on the kiosk: portrait 47-inch touchscreen layout (shell: ../shared/kgame.css). */
+:root { --kg-w: 360; --kg-h: 540; }
+body.kg .kg-surface { display: contents; }
+body.kg .kg-board { cursor: default; }
+body.kg #tbCanvas { cursor: default; }
+body.kg .tb-hud { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: min(92vw, 44rem); margin: 0; padding: .45rem 1.1rem; border-radius: 1rem; font-size: 1.05rem; letter-spacing: .08em; }
+body.kg .tb-hud__cell b { font-family: "Bungee", sans-serif; font-weight: 400; font-size: 1.3rem; }
+body.kg .tb-lives { gap: .45rem; }
+body.kg .tb-drop { width: 1.05rem; height: 1.45rem; }
+body.kg .tb-overlay { justify-content: flex-end; gap: .9rem; padding: 6% 7% 9%; background: linear-gradient(180deg, rgba(8,1,28,.35), rgba(8,1,28,.82) 55%); }
+body.kg .tb-overlay__title { font-size: 3.1rem; }
+body.kg .tb-overlay__text { max-width: 24em; font-size: 1.18rem; line-height: 1.35; font-weight: 600; }
+body.kg .tb-btn { min-height: 64px; touch-action: manipulation; font-size: 1.1rem; border-radius: 1.4rem; }
+body.kg .tb-btn--go { min-height: 5.2rem; min-width: 70%; font-size: 1.9rem; }
+body.kg .kg-ctl { gap: 1.2vw; align-items: flex-end; }   /* the strip above the buttons is part of the steering surface */
+body.kg .tb-flavors { display: flex; flex: 4 1 0; gap: 1.2vw; height: 66%; }
+body.kg .tb-flavor { flex: 1 1 0; min-height: 0; min-width: 0; height: 100%; gap: .5rem; border-radius: 1.2rem; font-size: .95rem; touch-action: manipulation; }
+body.kg .tb-flavor__dot { width: 2.6rem; height: 2.6rem; font-size: 1.3rem; }
+body.kg .tb-ctlbtn { flex: 1 1 0; height: 66%; min-width: 0; padding: 0 .4rem; font-size: 1.05rem; line-height: 1.1; white-space: normal; border-radius: 1.2rem; }

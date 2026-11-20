@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Soft Serve Stacker | Thirsty Beaches Arcade</title>
+<meta name="theme-color" content="#070114">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/kiosk/games/shared/fonts.css">
+<link rel="stylesheet" href="/kiosk/games/shared/kgame.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/shared/prize-panel.css?v=2">
+<link rel="stylesheet" href="/kiosk/games/soft-serve-stacker/soft-serve-stacker.css?v=1">
+<link rel="stylesheet" href="/kiosk/games/soft-serve-stacker/kiosk.css?v=1">
+</head>
+<body class="kg kg-stacker">
+<div class="kg-backdrop" aria-hidden="true"></div>
+<div class="kg-shell">
+  <header class="kg-top">
+    <h1 class="kg-title">Soft Serve Stacker</h1>
+    <dl class="hud">
+      <div class="hud__cell"><dt>Scoops</dt><dd id="hudScoops">0</dd></div>
+      <div class="hud__cell"><dt>Score</dt><dd id="hudScore">0</dd></div>
+      <div class="hud__cell"><dt>Best</dt><dd id="hudBest">0</dd></div>
+    </dl>
+    <div class="kg-time" id="kgTime"><span>Time left</span><b>2:30</b><i><u></u></i></div>
+  </header>
+  <main class="kg-board-zone">
+    <div class="kg-board" id="board" role="group" aria-label="Game board. Tap to drop the soft serve.">
+      <canvas id="stage" class="board__canvas" width="360" height="600" role="img" aria-label="A soft serve tower on a cone at a sunset beach. A new swirl slides back and forth across the top."></canvas>
+      <div class="overlay overlay--start" id="overlayStart">
+        <div class="card">
+          <p class="card__kicker">One tap. Stack it high.</p>
+          <p class="card__text">Tap to drop each swirl so it lands on the one below. Perfect drops keep your width. Watch for the sea breeze.</p>
+          <p class="kg-prizeline" data-kg-prizeline hidden></p>
+          <button type="button" class="btn btn--go" id="btnStart">Play</button>
+          <button type="button" class="kg-rules-btn" data-kg-rules>RULES</button>
+        </div>
+      </div>
+      <div class="overlay overlay--over" id="overlayOver" hidden>
+        <div class="card">
+          <p class="card__kicker">Tower toppled</p>
+          <p class="card__rank" id="overRank">Beach Newbie</p>
+          <p class="card__new" id="overNew" hidden>New best!</p>
+          <dl class="card__stats">
+            <div><dt>Scoops</dt><dd id="overScoops">0</dd></div>
+            <div><dt>Score</dt><dd id="overScore">0</dd></div>
+            <div><dt>Best</dt><dd id="overBest">0</dd></div>
+          </dl>
+          <button type="button" class="btn btn--go" id="btnAgain">Play again</button>
+        </div>
+      </div>
+      <div class="overlay overlay--pause" id="overlayPause" hidden>
+        <div class="card">
+          <p class="card__kicker">Paused</p>
+          <button type="button" class="btn btn--go" id="btnResume">Resume</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <section class="kg-ctl" aria-label="Controls">
+    <button type="button" class="btn" id="btnPause">Pause</button>
+    <button type="button" class="btn btn--go kg-drop" id="btnDrop" aria-label="Drop the soft serve">DROP</button>
+    <button type="button" class="btn" id="btnSound" aria-pressed="true">Sound On</button>
+  </section>
+  <nav class="kg-bar" aria-label="Way back"><a class="kg-back" id="kgBack" href="/arcade/games">ALL GAMES</a><a class="kg-order" id="kgOrder" href="/#menu">ORDER DRINKS</a></nav>
+</div>
+<p class="sr-only" id="srStatus" role="status" aria-live="polite"></p>
+<script src="/kiosk/games/shared/kgame.js?v=2"></script>
+<script src="/kiosk/games/shared/prize-panel.js?v=2"></script>
+<script src="/kiosk/games/shared/rules-panel.js?v=1"></script>
+<script src="/kiosk/games/soft-serve-stacker/soft-serve-stacker.js?v=2"></script>
+</body>
+</html>

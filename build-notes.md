@@ -53,3 +53,55 @@ Customer and crew text now says "pineapple soft serve": `drink-kiosk.html` (and 
 - Audio: the kiosk ships no sound files. A missing clip is requested once, then the Web Speech / synthesized fallback is used with no further 404s; the audio bank is optional (if it fails to load the arcade plays silently). `stopAll()` runs when the visit ends and on page hide: music, voice and the AudioContext stop and nothing can start again.
 - Test: `node tests/kiosk/arcade-prize.js` (section D, headless Chrome; `TB_SHOTS=<dir>` writes the screenshots) and `tests/boardwalk-arcade.test.mjs`.
 
+
+## Release v44 notes (2026-11-20): five touch games on the kiosk, prizes that follow the customer to a later order
+
+THIS RELEASE CHANGES ENGINE FILES (`kiosk-server.js`, `arcade-routes.js`): it goes through the supervisor like v39-v43 (sha256, self-test, 60 s trial, automatic rollback). Push it outside service hours.
+
+### The games
+- Picker `http://localhost:8137/arcade/games`; games `/arcade/games/<id>` for `thirsty-blaster`, `thirsty-tower`, `cup-catch`, `boardwalk-dash`, `soft-serve-stacker`. Files live in `kiosk/games/` (shared shell `kiosk/games/shared/`, local fonts `kiosk/games/fonts/`); the manifest tool ships the whole folder. The slot machine stays at `/arcade`; it links to the picker ("More games") and the picker links back.
+- Offline: the game pages are served under a CSP of `default-src 'none'; script-src 'self'; ... connect-src 'self'` (no external host can be loaded or contacted; no inline script), fonts are shipped (OFL), nothing links to the website.
+- Layout is portrait first (47-inch panel, 1080x1920): title/score/time bar at the top (display only), the board as large as the height allows, controls in the lower part, a permanent bottom bar with ALL GAMES and ORDER DRINKS. Landscape stacks the same way and does not overlap the bar.
+- One visit = the picker plus all five games: `gameMaxSeconds` (default 150) counts from the first game page of the visit (kept in sessionStorage, no personal data). At the cap: "Time's up", audio stopped, ORDER DRINKS, return to `/` after `endedReturnSeconds`. Same "Still playing?" warning, hands-off return and 20 s ping as the slots page (`/arcade/games*` and the ping count as customer activity, so the engine never restarts mid-game). On a hands-off or ended return the page first clears the kiosk's pending prize (walk-away rule); ORDER DRINKS does not.
+- Static serving: `/kiosk/*` is root-contained (no `..`, no NUL, no backslash) and now also an extension allowlist (html css js json woff2 svg png webp mp3 wav txt); game pages are served only for the five ids above.
+
+### Prizes from the games, and using a prize on a later order
+Everything uses the SAME pipeline as a slot spin (arcade-routes.js): staff odds table, tb-where Worker code (play token, global daily cap, 2% free-drink ceiling), ONE pending prize for 15 minutes, order-screen banner, ` · ARCADE <prizeId> <CODE>` appended to the Clover order note after the order exists, ARCADE WIN badge on the make-station ticket, redeem on bump. No price, total, discount or line item changes anywhere.
+New endpoints (all on the kiosk server, loopback, same-origin, JSON):
+| Endpoint | The page may send | What the server trusts |
+|---|---|---|
+| `POST /api/arcade/game/start` | `{game}` from the five ids | only the id; opens a session on the server clock |
+| `POST /api/arcade/game/finish` | `{sid}` | only a session this server opened, not finished, older than `gameMinSeconds`; one roll per session; shared per-visit cap `maxPrizeRolls` (slots + games); a per-minute limiter. Score, prize, label, code in the body are never read. Result is a chance roll at the staff odds, never a reward for a score |
+| `POST /api/arcade/wallet/save` | `{phone, code}` | the code only as a SELECTOR: it must be a win this server issued in the last 6 h; the number is passed to the station Worker and never logged or stored here |
+| `POST /api/arcade/wallet/lookup` | `{phone}` | prize id and expiry from the station Worker's answer; the label always from this server's own table; rate limited (8 per 10 min, 60 per day per kiosk) |
+| `POST /api/arcade/code` | `{code}` | the tb-where Worker's check-only answer (prize must be an arcade prize, not expired, not already redeemed); a code already attached to an order here is refused until it is bumped |
+| `GET /api/arcade/status` | nothing | says whether prizes can be issued and whether the Worker's daily cap is known to be used up (the pages say "Prizes are done for today" BEFORE play) |
+| `GET /api/arcade/rules` | nothing | facts for the Prize Game Rules panel (from `kiosk/arcade-rules.json` + the live odds table) |
+- Settings in `kiosk/arcade-session.json` (a missing or bad value falls back to the default, never to "no limit"): `maxPrizeRolls` 4, `useOnSameVisit` true (false = the win is NOT made the pending prize and no banner shows; the customer only gets the code / phone link), `gameMinSeconds` 20, `visitGapSeconds` 120, `gameMaxSeconds` 150.
+- Staff config (`arcade-config.json`, drawer or `POST /api/arcade-config`) now also carries `period` (a short label for the promotion period) and a `version` counter bumped on every real odds/period change; every win logs `arcade: win <prizeId> via game|slot period=<p> odds-v=<n>` (never the code).
+- The daily cap, once the Worker says it is used up, is remembered until local midnight (restart the kiosk to re-probe sooner).
+- Game results are plain: the free-drink prize is called "Free Drink" on a game result and in the rules panel, there is no mega flag or sound trigger. The slot machine is unchanged.
+
+### Phone number lookup (prize only, not marketing)
+- Home: the STATION Worker (`cloud/src/prize-link.js`, KV `STATE`). A kiosk PC file would not survive a PC change and could not serve the phone-order page or the window; tb-where is not in this repo. The kiosk calls it with `X-Key: STATION_KEY`; the Worker re-verifies every claim with tb-where (check only) so the kiosk is not trusted for prize, label or expiry.
+- Stored: only `HMAC-SHA256(PRIZE_PHONE_KEY, "tb-prize-phone|+1" + 10 digits)` as the KV key, with the claim code, prize id and expiry; TTL = the claim's own expiry; deleted when the prize is attached on the kiosk and when the make station redeems. One unredeemed prize per number; a new win never replaces it. Nothing in this store is shared with the tide-list / SMS consent records (those live in tb-where) or the punch card (a stateless token); no message of any kind is sent to a prize number.
+- DEPLOY (not done): `openssl rand -hex 32`, `cd cloud && npx wrangler secret put PRIZE_PHONE_KEY`, then build + deploy the station Worker (CI deploys on push to main: service-day freeze applies). Until then "Save to phone" answers "off" and the code stays the only way.
+- Claim lifetime: tb-where mints a claim with a 24 hour expiry (KV 30 hours). The screens say "24 hours" from `kiosk/arcade-rules.json` `prizeLifeText` and from each win's own `expiresAt`. To make it 30 days change `expiresAt: now + 24 * 3600e3` and `expirationTtl: 60 * 60 * 30` in `worker-tb-where/src/routes/kitchen.js` `mintKitchenCode` (and then `prizeLifeText`).
+
+### Make station on the PC
+`make-station-server.js` is a separate node process (`Run-MakeStation.bat`), not the supervised kiosk server, so the supervisor cannot restart or roll it back; the manifest deliberately has never carried it (`kiosk-lib.js` CONTENT_JS). Shipping it as a plain file would put unreviewed code where the next manual start loads it with no trial and no rollback, and the running process would ignore it anyway. It is unchanged in v44. Until the hand step (copy the file from the repo/USB package, close the "Thirsty Beaches Make Station" window, run `Run-MakeStation.bat`) a game win renders on the ticket exactly like a slot win (the page reads the order note), but bump-to-redeem is unavailable on that station and crew redeem in the Claims drawer or at the cloud station, whose relay already redeems after a Worker deploy of `cloud/src/kitchen-sync.js`.
+
+### Legal pass (memo 2026-11-20, Lady Jaye) built into v44
+- Age check before any phone field (win screen and order screen, phone path only): neutral birth month + year, no defaults, under 13 (<= 156 months) goes to the code, stores nothing, and the phone path is not offered again until the visit/order screen resets (`sessionStorage.tbPhonePathOff = "1"`, a bare flag, shared by the arcade pages and the order page). The code path never asks age. No "ask a grown-up" wording anywhere.
+- Phone prompt wording is the memo's, with ONE change: "in 24 hours" instead of "30 days", because that is what the Worker really enforces (see claim lifetime above). All wording is in marked blocks (`WORDING` in `kiosk/games/shared/prize-panel.js`, `PZW` in `drink-kiosk.html`, rules text in `kiosk/games/shared/rules-panel.js`).
+- No purchase tie: games are reachable from the attract screen and the ordering screen with an empty cart and no order/phone; nothing at or after checkout links to the arcade or prompts play (asserted in tests/kiosk/prize-pad.js).
+- Rules panel (`window.TBRules`, RULES button on the picker, every game start card and the slots dock): built from `/api/arcade/rules`; sponsor, address, dates and URLs come from `kiosk/arcade-rules.json` and show as marked placeholders until filled; odds are stated only as what the server enforces (free-drink ceiling `MAX_FREE_DRINK_PCT` = 1 in 50; "most games do not win" only while the live table makes it true).
+- "Prizes are done for today. Play for fun." appears on the picker and every start card once the Worker's daily cap is known.
+- Game results are plain (no reels/wheel/scratch, no coin sounds, none of "jackpot", "spin to win", "bet"); the free-drink prize reads "Free Drink" on games. The slot machine is unchanged.
+
+### Open owner decisions (not changed in v44)
+- The slot machine's look, reels and "FREE DRINK JACKPOT!" label (legal flags a prize-revealing screen game on the ordering kiosk as the main Utah exposure); whether the arcade stays on the ordering screen at all ("Play & win" strip + attract button); whether `useOnSameVisit` should default to false (switch exists, default true).
+- Sticker-swap fulfilment at the window and the one-prize-per-person-per-day rule beyond the phone link and Worker caps (the rules panel sentences follow the flags in `kiosk/arcade-rules.json`).
+- Fill in `kiosk/arcade-rules.json` (sponsor, address, promotion dates, rules/privacy URL) before the rules panel is final; a privacy page and QR do not exist yet.
+- Odds are fixed per promotion period only by procedure: set `period` in the staff config; the version counter and win log line make a period traceable, nothing locks odds mid-period.
+- Florida (later): total prize value per period under $5,000 is not tracked by any code.
