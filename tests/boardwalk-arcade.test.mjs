@@ -127,6 +127,17 @@ test('the page fallback odds are identical to the server prize table', () => {
   assert.equal(arc.validateOdds(arc.defaultOdds()).ok, true);
 });
 
+
+test('slot reel icons (v48): nine PNGs published, each symbol keeps its vector art as a hidden fallback', () => {
+  const html = read('kiosk/boardwalk-slots.html'); const manifest = JSON.parse(read('update-manifest.json')); const listed = new Set(manifest.files.map((f) => f.path));
+  for (const n of ['soda', 'energy', 'coffee', 'hot', 'freeze', 'palm', 'pineapple', 'charm', 'jackpot']) {
+    assert.ok(fs.existsSync(path.join(ROOT, 'kiosk/assets/slots/ico-' + n + '.png')), 'missing ico-' + n);
+    assert.ok(listed.has('kiosk/assets/slots/ico-' + n + '.png'), 'ico-' + n + '.png is not in the manifest');
+    assert.match(html, new RegExp('<symbol id="ico-' + n + '" viewBox="0 0 48 48"><g class="ico-vec" display="none">[\\s\\S]+?</g><image class="ico-img" href="/kiosk/assets/slots/ico-' + n + '.png"'), 'ico-' + n + ' symbol');
+  }
+  assert.doesNotMatch(html, /https?:\/\/(?!www\.w3\.org)/, 'no external URL in the slots page');
+});
+
 /* ---------------- D: odds validation, config auth, escaping ---------------- */
 const odds = (over = {}) => arc.PRIZES.map((p) => ({ id: p.id, pct: over[p.id] !== undefined ? over[p.id] : p.pct }));
 

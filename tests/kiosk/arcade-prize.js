@@ -17,6 +17,7 @@ const path = require("path");
 const http = require("http");
 const net = require("net");
 const cp = require("child_process");
+const chromeGuard = require("./chrome-guard");
 const assert = require("assert");
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -295,7 +296,7 @@ const CHROME = [process.env.CHROME_BIN, "/Applications/Google Chrome.app/Content
 async function launchChrome() {
   const WebSocket = require("ws");
   const dir = tmp("tb-chrome-");
-  const proc = cp.spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1280,1000", "about:blank"], { stdio: "ignore" });
+  const proc = chromeGuard.spawnChrome(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1280,1000", "about:blank"], { stdio: "ignore" });
   const portFile = path.join(dir, "DevToolsActivePort");
   await waitFor(() => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").split("\n").length >= 2, 20000, "Chrome to start");
   const [port, wsPath] = fs.readFileSync(portFile, "utf8").trim().split("\n");
@@ -343,7 +344,7 @@ async function launchChrome() {
       await send("Fetch.enable", { patterns: [{ urlPattern: "*/kiosk/*" }] }, sessionId);
     },
     async resize(w, h) { await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false }, sessionId); },
-    close() { try { ws.close(); } catch {} proc.kill("SIGKILL"); },
+    close() { try { ws.close(); } catch {} chromeGuard.killGroup(proc); },
   };
   return page;
 }

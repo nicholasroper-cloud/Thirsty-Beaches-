@@ -51,7 +51,7 @@ body.is-flash::after {
 .backdrop {
   position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
   background:
-    radial-gradient(circle at 50% 18%, rgba(255,122,69,0.28) 0%, rgba(255,60,172,0.22) 28%, transparent 56%),
+    url("/kiosk/games/shared/assets/miami-backdrop.webp") center / cover no-repeat,
     linear-gradient(180deg, #09011D 0%, #24064E 46%, #3A0A5E 58%, #070116 100%);
 }
 .backdrop__sun {
@@ -346,8 +346,8 @@ body.is-flash .bulb { animation-duration: 0.25s; }
   display: flex; align-items: center; justify-content: center;
 }
 .reel__cell svg {
-  width: calc(var(--cell) * 0.76); height: calc(var(--cell) * 0.76);
-  filter: drop-shadow(0 3px 2px rgba(22,4,48,0.28));
+  width: calc(var(--cell) * 0.84); height: calc(var(--cell) * 0.84);
+  filter: drop-shadow(0 3px 3px rgba(22,4,48,0.34));
 }
 /* Spinning: the strip scrolls down for real (9 rows a lap) */
 .reel.is-spinning .reel__drum {

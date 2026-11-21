@@ -1,5 +1,5 @@
 {
-  "version": 47,
+  "version": 48,
   "files": [
     {
       "path": "drink-kiosk.html",
@@ -261,21 +261,21 @@
     },
     {
       "path": "kiosk/boardwalk-slots.html",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=17090d46ce47",
-      "sha256": "17090d46ce47ef58d29b925f8ad54d2fed76f873714df37766b7220761a0f6c0",
-      "size": 21822
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.html?v=a37f05c6e226",
+      "sha256": "a37f05c6e22668f0380413551752e19f7152c10b866984677dfab7af7ae30210",
+      "size": 23177
     },
     {
       "path": "kiosk/boardwalk-slots.css",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=9208d07cfb11",
-      "sha256": "9208d07cfb11d9828b9090d3bcea8f5235f88f6606ea5828a17f1de5969b9d42",
-      "size": 41566
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.css?v=0c3bc9293532",
+      "sha256": "0c3bc92935323a9e22b729296984ee57bd8dabdfdeced57e8e51519c0dc4726f",
+      "size": 41540
     },
     {
       "path": "kiosk/boardwalk-slots.js",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=9ca7007ed790",
-      "sha256": "9ca7007ed790675fa31fe84a7f58105889722879713df5439802d512b1a61b8f",
-      "size": 43609
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/boardwalk-slots.js?v=816094f17f64",
+      "sha256": "816094f17f645d7de364ad69bb7567452a414faf39eb11902b44054b86edc457",
+      "size": 44466
     },
     {
       "path": "kiosk/audio-bank.js",
@@ -507,9 +507,9 @@
     },
     {
       "path": "kiosk/games/assets/tile-boardwalk-dash.webp",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/assets/tile-boardwalk-dash.webp?v=683040cc348b",
-      "sha256": "683040cc348b6f5b13b50b9ccb263c583c13379803b02e3ba1ae0b33cd017b8b",
-      "size": 92482
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/assets/tile-boardwalk-dash.webp?v=1483ff18e72b",
+      "sha256": "1483ff18e72bc356e7535633ceb20881a31e968071db2fc09e5c34ca34c2d1f6",
+      "size": 55390
     },
     {
       "path": "kiosk/games/assets/tile-cup-catch.webp",
@@ -519,9 +519,9 @@
     },
     {
       "path": "kiosk/games/assets/tile-slots.webp",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/assets/tile-slots.webp?v=fb4442cf15b5",
-      "sha256": "fb4442cf15b5fc4015bd5cac4f990a2b25cd0a6511b3b8293f05ad7e054ca7b0",
-      "size": 30980
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/assets/tile-slots.webp?v=57813d8b902e",
+      "sha256": "57813d8b902ed10c0b11d07724a2413e6c6ab6004cc58fcaea0bab69fd907966",
+      "size": 87708
     },
     {
       "path": "kiosk/games/assets/tile-soft-serve-stacker.webp",
@@ -555,9 +555,9 @@
     },
     {
       "path": "kiosk/games/boardwalk-dash/assets/trailer.png",
-      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/boardwalk-dash/assets/trailer.png?v=83427f567168",
-      "sha256": "83427f567168eb6703745ff5abf1bf280c6cd6f30676314f80ab0181f3f85c54",
-      "size": 18463
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/boardwalk-dash/assets/trailer.png?v=5e1df4d22b92",
+      "sha256": "5e1df4d22b92ceea7e5aaccf1fa7a7754e7a7e581570b1b81b6637be848c7228",
+      "size": 66485
     },
     {
       "path": "kiosk/games/cup-catch/assets/bg-miami-counter.webp",
@@ -612,6 +612,60 @@
       "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/games/thirsty-tower/assets/crab.png?v=96955934856e",
       "sha256": "96955934856ee79169e0c2e449d9b4048e29e9a3e1422669d34c05de2e9a46ce",
       "size": 188140
+    },
+    {
+      "path": "kiosk/assets/slots/ico-charm.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-charm.png?v=9498bb207176",
+      "sha256": "9498bb20717652987022a7c0d80405373bfe5b69f4e339ede35fbb368bf60621",
+      "size": 18939
+    },
+    {
+      "path": "kiosk/assets/slots/ico-coffee.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-coffee.png?v=9d2e21ebf8b4",
+      "sha256": "9d2e21ebf8b4aeaf28f01a0b0c2fad697b40f07d239e1ae6751b55307a9e5673",
+      "size": 25968
+    },
+    {
+      "path": "kiosk/assets/slots/ico-energy.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-energy.png?v=4a246e180c65",
+      "sha256": "4a246e180c65e1b1241aeb5b3e9fbaec51cb9503ca893e1f831d496e806be88b",
+      "size": 43040
+    },
+    {
+      "path": "kiosk/assets/slots/ico-freeze.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-freeze.png?v=6711bc064410",
+      "sha256": "6711bc064410fb765985858b43f9000eab292c075b41b8401319053c558de8c7",
+      "size": 26311
+    },
+    {
+      "path": "kiosk/assets/slots/ico-hot.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-hot.png?v=89090f54dde7",
+      "sha256": "89090f54dde72321a347dce2b505a4a22afb003d48beedd317614bb5d88c447a",
+      "size": 31275
+    },
+    {
+      "path": "kiosk/assets/slots/ico-jackpot.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-jackpot.png?v=a071889c9109",
+      "sha256": "a071889c9109118f364a1d59884034da86a24379861ac4df74cf87cd8660d910",
+      "size": 37293
+    },
+    {
+      "path": "kiosk/assets/slots/ico-palm.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-palm.png?v=c0ee1ea88199",
+      "sha256": "c0ee1ea881999d1f88b4374a88444a01b1ad484297c3b7744c2df0439f63fd08",
+      "size": 44849
+    },
+    {
+      "path": "kiosk/assets/slots/ico-pineapple.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-pineapple.png?v=e726468fdad7",
+      "sha256": "e726468fdad7c5e029b5f7c89cd125dd4770b5074f5c985b9716be9ed1c2d1fa",
+      "size": 32864
+    },
+    {
+      "path": "kiosk/assets/slots/ico-soda.png",
+      "url": "https://raw.githubusercontent.com/nicholasroper-cloud/Thirsty-Beaches-/main/kiosk/assets/slots/ico-soda.png?v=7624caf8b894",
+      "sha256": "7624caf8b894598650215de4411d80a3cda88be89d546c4f356c032e681b4f75",
+      "size": 30066
     },
     {
       "path": "tb-bootstrap.json",

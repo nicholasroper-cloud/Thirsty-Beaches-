@@ -7,6 +7,7 @@ const path = require("path");
 const http = require("http");
 const net = require("net");
 const cp = require("child_process");
+const chromeGuard = require("./chrome-guard");
 
 const ROOT = path.resolve(__dirname, "../..");
 const CHROME = [process.env.CHROME_BIN, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
@@ -69,7 +70,7 @@ async function stageKiosk(opts = {}) {
 async function launchChrome() {
   const WebSocket = require("ws");
   const dir = tmp("tb-chrome-");
-  const proc = cp.spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1100,2000", "about:blank"], { stdio: "ignore" });
+  const proc = chromeGuard.spawnChrome(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1100,2000", "about:blank"], { stdio: "ignore" });
   const portFile = path.join(dir, "DevToolsActivePort");
   await waitFor(() => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").split("\n").length >= 2, 20000, "Chrome to start");
   const [port, wsPath] = fs.readFileSync(portFile, "utf8").trim().split("\n");
@@ -147,7 +148,7 @@ async function launchChrome() {
     async tap(x, y, hold = 60) { page._inTap = true; await page.touch("touchStart", [{ x, y }]); await sleep(hold); await page.touch("touchEnd", []); page._inTap = false; await sleep(40); },
     async tapEl(sel) { const r = await page.rect(sel); if (!r) throw new Error("no element " + sel); await page.tap(Math.round(r.x + r.w / 2), Math.round(r.y + r.h / 2)); return r; },
     async rect(sel) { return page.eval(`(function(){var e=document.querySelector(${JSON.stringify(sel)});if(!e)return null;var r=e.getBoundingClientRect();return {x:r.left,y:r.top,w:r.width,h:r.height,hidden:getComputedStyle(e).display==='none'||getComputedStyle(e).visibility==='hidden'}})()`); },
-    close() { try { ws.close(); } catch {} proc.kill("SIGKILL"); try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} },
+    close() { try { ws.close(); } catch {} chromeGuard.killGroup(proc); try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} },
   });
   return page;
 }

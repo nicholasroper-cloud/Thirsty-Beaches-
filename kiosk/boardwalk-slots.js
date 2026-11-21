@@ -64,6 +64,18 @@
     const spinBtn = document.getElementById('spinBtn');
     if (!spinBtn) return;
 
+    /* The reel icons are PNGs inside the <symbol>s (kiosk/assets/slots/ico-*.png), with the original vector drawing kept hidden underneath. If a PNG cannot be loaded (a file not yet swapped in by an update,
+       a bad copy) that one symbol falls back to its vector drawing, so a prize reel is never an empty cell. Nothing here touches what the server rolls. */
+    ['soda', 'energy', 'coffee', 'hot', 'freeze', 'palm', 'pineapple', 'charm', 'jackpot'].forEach((n) => {
+      const sym = document.getElementById('ico-' + n);
+      if (!sym) return;
+      const vec = sym.querySelector('.ico-vec'), img = sym.querySelector('.ico-img');
+      if (!vec || !img) return;
+      const probe = new Image();
+      probe.onerror = () => { vec.removeAttribute('display'); img.setAttribute('display', 'none'); };
+      probe.src = img.getAttribute('href');
+    });
+
     /* The audio bank is optional: if it did not load (or throws), the arcade plays silently and the session limit and the way back still work. */
     const SILENT = { getState: () => ({ muted: true, pgMode: true, activePersona: 'shredder' }), toggleMute: () => true, playTrigger: () => Promise.resolve({ text: '' }) };
     let audio = SILENT;

@@ -11,6 +11,7 @@ const os = require("os");
 const path = require("path");
 const http = require("http");
 const cp = require("child_process");
+const chromeGuard = require("./chrome-guard");
 const assert = require("assert");
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -60,7 +61,7 @@ const server = http.createServer((rq, rs) => {
 async function launchChrome() {
   const WebSocket = require("ws");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tb-pad-chrome-"));
-  const proc = cp.spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1280,1000", "about:blank"], { stdio: "ignore" });
+  const proc = chromeGuard.spawnChrome(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--window-size=1280,1000", "about:blank"], { stdio: "ignore" });
   const portFile = path.join(dir, "DevToolsActivePort");
   await waitFor(() => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").split("\n").length >= 2, 20000, "Chrome to start");
   const [port, wsPath] = fs.readFileSync(portFile, "utf8").trim().split("\n");
@@ -108,7 +109,7 @@ async function launchChrome() {
       const { data } = await send("Page.captureScreenshot", { format: "png" }, sessionId);
       fs.mkdirSync(SHOTS, { recursive: true }); fs.writeFileSync(path.join(SHOTS, file), Buffer.from(data, "base64"));
     },
-    close() { try { ws.close(); } catch {} proc.kill("SIGKILL"); },
+    close() { try { ws.close(); } catch {} chromeGuard.killGroup(proc); },
   };
   return page;
 }

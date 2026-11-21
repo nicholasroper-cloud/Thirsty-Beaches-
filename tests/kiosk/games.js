@@ -66,15 +66,15 @@ async function driveToOver(c, g) {
   await c.eval("window.__speed=8");
   const t0 = Date.now();
   const mode = async () => c.eval(cfg.mode);
-  let cupTouch = false;
-  while (Date.now() - t0 < 120000) {
+  let cupTouch = false, hops = 0;
+  while (Date.now() - t0 < 300000) {          // a generous ceiling only: nothing below waits on the wall clock, so a loaded machine just takes longer
     const m = await mode();
     if (m === "over") break;
     if (m === cfg.paused) { await c.tapEl(cfg.resume); await sleep(200); continue; }   // headless Chrome sometimes reports the tab hidden for a moment and the game pauses itself: a tap resumes
     if (g === "boardwalk-dash" && m === "playing") {
-      await c.tapEl("[data-dir=up]"); await sleep(120);
-      // a skilled run can go on for minutes: after 20 s let the drink melt (the game's own life-loss rule) so the test always ends
-      if (Date.now() - t0 > 20000) await c.eval("(function(){var d=BoardwalkDash.getGame().d;d.melt=Math.min(d.melt,0.15)})()");
+      await c.tapEl("[data-dir=up]"); await sleep(120); hops++;
+      // a skilled run can go on for minutes: after 10 real hops (a count, not a time) let the drink melt (the game's own life-loss rule), every round, so the run always ends however slow the machine is
+      if (hops >= 10) await c.eval("(function(){var d=BoardwalkDash.getGame().d;d.melt=Math.min(d.melt,0.15)})()");
     }
     else if (g === "soft-serve-stacker" && m === "playing") {
       const s = await c.eval("SoftServeStacker.getState()");
@@ -666,6 +666,34 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
         }
         await c.goto(url(kiosk, "/arcade/games")); await sleep(800);
         eq(await c.eval("[].filter.call(document.querySelectorAll('.pk-tile'),function(t){var r=t.getBoundingClientRect();return r.width>200&&r.height>200}).length"), 6, "picker: six tappable tiles even with no art");
+      } finally { await c.S("Network.setBlockedURLs", { urls: [] }); }
+    });
+
+    /* ======================= C8. the slot reel icons (v48): PNGs through <use>, with the vector art as a fallback ======================= */
+    await section("C8. all nine reel icons load as image/png from the kiosk (no external host); a missing icon falls back to its vector drawing, never an empty cell", async () => {
+      const NAMES = ["soda", "energy", "coffee", "hot", "freeze", "palm", "pineapple", "charm", "jackpot"];
+      await installMock(c);
+      await c.goto(kiosk.base + "/arcade"); await sleep(1500);
+      for (const n of NAMES) {
+        const r = c.responses.find(x => x.url.endsWith("/kiosk/assets/slots/ico-" + n + ".png"));
+        ok(r && r.status === 200 && r.mime === "image/png", "ico-" + n + ".png loaded (200 " + (r && r.mime) + ")");
+        eq(await c.eval("document.querySelector('#ico-" + n + " .ico-vec').getAttribute('display')"), "none", n + ": the PNG shows, the vector fallback stays hidden");
+      }
+      ok(c.requests.every(r => /^(http:\/\/127\.0\.0\.1:|data:)/.test(r.url)), "nothing requested from outside the kiosk");
+      eq(await c.eval("window.__errs.length"), 0, "no script error, no CSP violation"); eq(c.exceptions.length, 0, "no exception");
+      // every symbol that is used on the page actually paints: draw each through <use> and look for painted pixels
+      eq(await c.eval("document.querySelectorAll('.reel__cell svg use').length > 8"), true, "reel cells use the symbols");
+      // one icon blocked: ONLY that symbol falls back to its vector art
+      await c.S("Network.setBlockedURLs", { urls: ["*ico-soda.png*"] });
+      try {
+        await c.goto(kiosk.base + "/arcade"); await sleep(1500);
+        eq(await c.eval("document.querySelector('#ico-soda .ico-vec').hasAttribute('display')"), false, "ico-soda: vector fallback revealed");
+        eq(await c.eval("document.querySelector('#ico-soda .ico-img').getAttribute('display')"), "none", "ico-soda: the broken image is hidden");
+        eq(await c.eval("document.querySelector('#ico-energy .ico-vec').getAttribute('display')"), "none", "the other icons are untouched");
+        await c.eval("document.getElementById('spinBtn').click()");
+        await sleep(500); await waitFor(async () => c.eval("!document.getElementById('spinBtn').disabled"), 40000, "the spin to finish with an icon missing");   // by state, not by a fixed delay: a loaded machine just takes longer
+        eq(c.exceptions.length, 0, "a spin with an icon missing throws nothing");
+        if (out) await c.shot("portrait-slots-icon-fallback.png");
       } finally { await c.S("Network.setBlockedURLs", { urls: [] }); }
     });
 

@@ -100,7 +100,7 @@ function build(current) {
   const paths = [];
   const add = p => { if (!paths.includes(p)) paths.push(p); };
   for (const f of (current.files || [])) if (f && f.path && !LAST.includes(f.path)) add(f.path);
-  for (const p of KIOSK_FILES.concat(listDir("kiosk/games"))) add(p);
+  for (const p of KIOSK_FILES.concat(listDir("kiosk/games"), listDir("kiosk/assets"))) add(p);
   for (const p of paths) if (!relOk(p)) die(`${p}: this path can never be shipped to the kiosk (secrets/state/binary/odd name)`);
 
   // the hook verifies these before switching over; the shim must be the shim

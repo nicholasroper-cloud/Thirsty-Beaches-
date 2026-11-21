@@ -12,34 +12,26 @@
 <link rel="stylesheet" href="/kiosk/games/shared/prize-panel.css?v=2">
 </head>
 <body>
-<div class="backdrop" aria-hidden="true">
-  <div class="backdrop__sun"></div>
-  <div class="backdrop__ocean"></div>
-  <div class="backdrop__grid"></div>
-  <svg class="backdrop__palms" viewBox="0 0 1200 700" preserveAspectRatio="none">
-    <path d="M84 700 C108 500 135 350 172 248" stroke="#04000A" stroke-width="22" fill="none" stroke-linecap="round"/>
-    <path d="M172 248 Q90 202 22 252 M172 248 Q115 162 54 176 M172 248 Q228 172 292 216 M172 248 Q232 238 274 300 M172 248 Q154 148 122 128" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
-    <path d="M1116 700 C1092 500 1065 350 1028 248" stroke="#04000A" stroke-width="22" fill="none" stroke-linecap="round"/>
-    <path d="M1028 248 Q1110 202 1178 252 M1028 248 Q1085 162 1146 176 M1028 248 Q972 172 908 216 M1028 248 Q968 238 926 300 M1028 248 Q1046 148 1078 128" stroke="#04000A" stroke-width="14" fill="none" stroke-linecap="round"/>
-  </svg>
-</div>
+<div class="backdrop" aria-hidden="true"></div>
 
 <!-- Celebration Neon Coins & Stars Particle Canvas -->
 <canvas id="fxCanvas" class="fx-burst" aria-hidden="true"></canvas>
 
-<!-- Retro 1980s Beach Slot Machine SVG Symbol Sprite (zero innerHTML in JS) -->
+<!-- Retro 1980s Beach Slot Machine Illustrated Symbol Sprites: PNG art, with the original vector art kept hidden underneath as the fallback (zero innerHTML in JS) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="ico-soda" viewBox="0 0 48 48"><path d="M27 5l6 2-3 9h5v4H13v-4h13z" fill="#FF3CAC"/><path d="M15 20h18l-2.5 22H17.5z" fill="#2AF5E4" stroke="#160430" stroke-width="2.5"/><path d="M16 29h16" stroke="#FFD166" stroke-width="3"/><circle cx="22" cy="35" r="2.2" fill="#FFF4FA"/><circle cx="27" cy="33" r="1.8" fill="#FF3CAC"/></symbol>
-    <symbol id="ico-energy" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#160430" stroke="#2AF5E4" stroke-width="2.5"/><path d="M26 7L13 26h9l-2 15 15-20h-9z" fill="#FFD166" stroke="#FF3CAC" stroke-width="2"/></symbol>
-    <symbol id="ico-coffee" viewBox="0 0 48 48"><path d="M12 18h20v15a9 9 0 0 1-9 9h-2a9 9 0 0 1-9-9z" fill="#FF7A45" stroke="#160430" stroke-width="2.5"/><path d="M32 21h5a4 4 0 0 1 0 8h-5" fill="none" stroke="#160430" stroke-width="3"/><path d="M18 13c0-3 3-3 3-6M25 13c0-3 3-3 3-6" fill="none" stroke="#FF3CAC" stroke-width="2.5" stroke-linecap="round"/></symbol>
-    <symbol id="ico-hot" viewBox="0 0 48 48"><rect x="11" y="18" width="22" height="22" rx="5" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M33 22h4a4 4 0 0 1 0 8h-4" fill="none" stroke="#160430" stroke-width="3"/><circle cx="18" cy="17" r="4" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/><circle cx="25" cy="16" r="4.5" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/></symbol>
-    <symbol id="ico-freeze" viewBox="0 0 48 48"><path d="M15 24c0-9 18-9 18 0z" fill="#FFD166" stroke="#160430" stroke-width="2.2"/><path d="M14 24h20l-3 18H17z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M26 7l5 2-3 8" fill="none" stroke="#2AF5E4" stroke-width="3" stroke-linecap="round"/></symbol>
-    <symbol id="ico-palm" viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#FFD166" stroke="#FF3CAC" stroke-width="2.5"/><path d="M22 41c1-9 3-15 5-21" stroke="#160430" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M27 20q-8-5-14 0M27 20q-5-9-11-7M27 20q7-7 13-2M27 20q8 0 11 6" stroke="#0E7490" stroke-width="3" fill="none" stroke-linecap="round"/></symbol>
-    <symbol id="ico-pineapple" viewBox="0 0 48 48"><path d="M24 6l-4 9 4-2 4 2zM17 10l4 7M31 10l-4 7" stroke="#0D9488" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="29" rx="11" ry="13" fill="#FFD166" stroke="#160430" stroke-width="2.5"/><path d="M17 24l14 10M31 24L17 34" stroke="#FF7A45" stroke-width="2"/></symbol>
-    <symbol id="ico-charm" viewBox="0 0 48 48"><path d="M9 17h12l3 4 3-4h12v10a6 6 0 0 1-6 6h-5l-4-5-4 5h-5a6 6 0 0 1-6-6z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><rect x="13" y="21" width="8" height="7" rx="2" fill="#2AF5E4"/><rect x="27" y="21" width="8" height="7" rx="2" fill="#FFD166"/></symbol>
-    <symbol id="ico-jackpot" viewBox="0 0 48 48"><path d="M24 4l5.8 12.2L43 18l-9.6 9.1 2.4 13.4L24 34 12.2 40.5l2.4-13.4L5 18l13.2-1.8z" fill="#FFD166" stroke="#FF1E8E" stroke-width="2.8" stroke-linejoin="round"/><text x="24" y="28" text-anchor="middle" font-family="Bungee,sans-serif" font-size="13" fill="#160430">777</text></symbol>
-    <symbol id="ico-prize" viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#FF3CAC" stroke="#FFD166" stroke-width="3"/><path d="M24 11l3.6 7.8 8.4 1.1-6.2 5.8 1.5 8.3L24 30l-7.3 4 1.5-8.3-6.2-5.8 8.4-1.1z" fill="#FFD166"/></symbol>
+    <linearGradient id="slPrizeBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF6AD5"/><stop offset="55%" stop-color="#FF2E93"/><stop offset="100%" stop-color="#9E0B60"/></linearGradient>
+    <linearGradient id="slPrizeStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFF8BE"/><stop offset="55%" stop-color="#FFD166"/><stop offset="100%" stop-color="#FF8C38"/></linearGradient>
+    <symbol id="ico-soda" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M27 5l6 2-3 9h5v4H13v-4h13z" fill="#FF3CAC"/><path d="M15 20h18l-2.5 22H17.5z" fill="#2AF5E4" stroke="#160430" stroke-width="2.5"/><path d="M16 29h16" stroke="#FFD166" stroke-width="3"/><circle cx="22" cy="35" r="2.2" fill="#FFF4FA"/><circle cx="27" cy="33" r="1.8" fill="#FF3CAC"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-soda.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-energy" viewBox="0 0 48 48"><g class="ico-vec" display="none"><circle cx="24" cy="24" r="20" fill="#160430" stroke="#2AF5E4" stroke-width="2.5"/><path d="M26 7L13 26h9l-2 15 15-20h-9z" fill="#FFD166" stroke="#FF3CAC" stroke-width="2"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-energy.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-coffee" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M12 18h20v15a9 9 0 0 1-9 9h-2a9 9 0 0 1-9-9z" fill="#FF7A45" stroke="#160430" stroke-width="2.5"/><path d="M32 21h5a4 4 0 0 1 0 8h-5" fill="none" stroke="#160430" stroke-width="3"/><path d="M18 13c0-3 3-3 3-6M25 13c0-3 3-3 3-6" fill="none" stroke="#FF3CAC" stroke-width="2.5" stroke-linecap="round"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-coffee.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-hot" viewBox="0 0 48 48"><g class="ico-vec" display="none"><rect x="11" y="18" width="22" height="22" rx="5" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M33 22h4a4 4 0 0 1 0 8h-4" fill="none" stroke="#160430" stroke-width="3"/><circle cx="18" cy="17" r="4" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/><circle cx="25" cy="16" r="4.5" fill="#FFF4FA" stroke="#160430" stroke-width="1.8"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-hot.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-freeze" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M15 24c0-9 18-9 18 0z" fill="#FFD166" stroke="#160430" stroke-width="2.2"/><path d="M14 24h20l-3 18H17z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><path d="M26 7l5 2-3 8" fill="none" stroke="#2AF5E4" stroke-width="3" stroke-linecap="round"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-freeze.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-palm" viewBox="0 0 48 48"><g class="ico-vec" display="none"><circle cx="24" cy="24" r="19" fill="#FFD166" stroke="#FF3CAC" stroke-width="2.5"/><path d="M22 41c1-9 3-15 5-21" stroke="#160430" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M27 20q-8-5-14 0M27 20q-5-9-11-7M27 20q7-7 13-2M27 20q8 0 11 6" stroke="#0E7490" stroke-width="3" fill="none" stroke-linecap="round"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-palm.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-pineapple" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M24 6l-4 9 4-2 4 2zM17 10l4 7M31 10l-4 7" stroke="#0D9488" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="29" rx="11" ry="13" fill="#FFD166" stroke="#160430" stroke-width="2.5"/><path d="M17 24l14 10M31 24L17 34" stroke="#FF7A45" stroke-width="2"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-pineapple.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-charm" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M9 17h12l3 4 3-4h12v10a6 6 0 0 1-6 6h-5l-4-5-4 5h-5a6 6 0 0 1-6-6z" fill="#FF3CAC" stroke="#160430" stroke-width="2.5"/><rect x="13" y="21" width="8" height="7" rx="2" fill="#2AF5E4"/><rect x="27" y="21" width="8" height="7" rx="2" fill="#FFD166"/></g><image class="ico-img" href="/kiosk/assets/slots/ico-charm.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-jackpot" viewBox="0 0 48 48"><g class="ico-vec" display="none"><path d="M24 4l5.8 12.2L43 18l-9.6 9.1 2.4 13.4L24 34 12.2 40.5l2.4-13.4L5 18l13.2-1.8z" fill="#FFD166" stroke="#FF1E8E" stroke-width="2.8" stroke-linejoin="round"/><text x="24" y="28" text-anchor="middle" font-family="Bungee,sans-serif" font-size="13" fill="#160430">777</text></g><image class="ico-img" href="/kiosk/assets/slots/ico-jackpot.png" x="0" y="0" width="48" height="48"/></symbol>
+    <symbol id="ico-prize" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="url(#slPrizeBg)" stroke="#FFD166" stroke-width="2.8"/><circle cx="24" cy="24" r="16.5" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/><path d="M24 9l4.2 8.8 9.6 1.3-7 6.6 1.7 9.5L24 30.6 15.5 35.2l1.7-9.5-7-6.6 9.6-1.3z" fill="url(#slPrizeStar)" stroke="#160430" stroke-width="1.6" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
@@ -87,7 +79,7 @@
       <div class="machine__cab">
         <!-- Cabinet side rails: 1986 sunset stripes with a neon palm -->
         <div class="rail rail--l" aria-hidden="true">
-          <svg class="rail__palm" viewBox="0 0 40 90"><path d="M21 88c0-20 1-38 4-52M25 36q-11-7-20 1M25 36q-6-12-16-11M25 36q9-10 17-4M25 36q11 1 13 10" fill="none" stroke="#2AF5E4" stroke-width="3" stroke-linecap="round"/></svg>
+          <svg class="rail__palm" viewBox="0 0 44 90"><path d="M18 88C19 66 21 48 25 32c1 0 3 .5 3 1.5C25 49 24 67 23 88z" fill="#2AF5E4"/><path d="M26 32C18 24 8 25 3 34c7-4 14-3 22 0zM26 32C18 19 9 16 4 21c7-1 14 3 21 11zM26 32C24 20 18 11 12 11c5 4 9 11 13 21zM26 32C31 21 38 19 42 25c-5-1-10 2-15 8zM26 32C34 27 40 31 42 39c-5-4-10-5-16-5z" fill="#2AF5E4"/></svg>
         </div>
 
         <div class="machine__body">
@@ -200,7 +192,7 @@
         </div>
 
         <div class="rail rail--r" aria-hidden="true">
-          <svg class="rail__palm" viewBox="0 0 40 90"><path d="M19 88c0-20-1-38-4-52M15 36q11-7 20 1M15 36q6-12 16-11M15 36q-9-10-17-4M15 36q-11 1-13 10" fill="none" stroke="#FF3CAC" stroke-width="3" stroke-linecap="round"/></svg>
+          <svg class="rail__palm" viewBox="0 0 44 90"><g transform="translate(44,0) scale(-1,1)"><path d="M18 88C19 66 21 48 25 32c1 0 3 .5 3 1.5C25 49 24 67 23 88z" fill="#FF3CAC"/><path d="M26 32C18 24 8 25 3 34c7-4 14-3 22 0zM26 32C18 19 9 16 4 21c7-1 14 3 21 11zM26 32C24 20 18 11 12 11c5 4 9 11 13 21zM26 32C31 21 38 19 42 25c-5-1-10 2-15 8zM26 32C34 27 40 31 42 39c-5-4-10-5-16-5z" fill="#FF3CAC"/></g></svg>
         </div>
 
         <!-- The side lever, bolted to the cabinet: pivot housing, chrome arm, ball knob -->
