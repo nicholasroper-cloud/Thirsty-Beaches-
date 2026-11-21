@@ -416,7 +416,7 @@
       c.fillStyle = 'rgba(14,2,36,.42)';
       c.fillRect(0, COUNTER_Y + 25, W, H - COUNTER_Y - 25);
       textAt(c, 'THIRSTY BEACHES', W / 2, COUNTER_Y + 41, '17px ' + BUNGEE, '#FFE14D', 'center', 'rgba(255,209,102,.9)');
-      textAt(c, 'DIRTY SODAS  ·  SOFT SERVE  ·  COFFEE', W / 2, COUNTER_Y + 57, '700 9px ' + MONO, '#2AF5E4', 'center', 'rgba(42,245,228,.75)');
+      textAt(c, 'DIRTY SODAS  ·  SOFT SERVE  ·  COFFEE', W / 2, COUNTER_Y + 54, '700 9px ' + MONO, '#2AF5E4', 'center', 'rgba(42,245,228,.75)');
       return;
     }
 
@@ -561,7 +561,7 @@
     }
     // glowing sign badge on counter front
     textAt(c, 'THIRSTY BEACHES', W / 2, COUNTER_Y + 41, '17px ' + BUNGEE, '#FFE14D', 'center', 'rgba(255,209,102,.85)');
-    textAt(c, 'DIRTY SODAS  ·  SOFT SERVE  ·  COFFEE', W / 2, COUNTER_Y + 58, '700 9px ' + MONO, '#2AF5E4', 'center', 'rgba(42,245,228,.6)');
+    textAt(c, 'DIRTY SODAS  ·  SOFT SERVE  ·  COFFEE', W / 2, COUNTER_Y + 54, '700 9px ' + MONO, '#2AF5E4', 'center', 'rgba(42,245,228,.6)');
   }
 
   // ---------- ingredient art (centered at 0,0, radius r) ----------
@@ -577,6 +577,37 @@
     // glossy sheen dot
     c.fillStyle = 'rgba(255,255,255,.6)';
     ell(c, -r * 0.32, r * 0.42, r * 0.16, r * 0.09); c.fill();
+  }
+  /* Vanilla soft serve: waffle cone, three tapering tiers, a curled tip. Fits the same r-sized box as the other icons (tip at -r, cone point at +r). */
+  function softServeCone(c, r) {
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    // waffle cone wedge
+    var cg = c.createLinearGradient(-r * 0.5, 0, r * 0.5, 0);
+    cg.addColorStop(0, '#F2AE4C'); cg.addColorStop(0.5, '#FFD98A'); cg.addColorStop(1, '#C27A2C');
+    c.beginPath(); c.moveTo(-r * 0.46, r * 0.2); c.lineTo(r * 0.46, r * 0.2); c.lineTo(0, r * 1.05); c.closePath();
+    c.fillStyle = cg; c.fill(); c.lineWidth = 1.8; c.strokeStyle = '#7A4315'; c.stroke();
+    c.save(); c.beginPath(); c.moveTo(-r * 0.46, r * 0.2); c.lineTo(r * 0.46, r * 0.2); c.lineTo(0, r * 1.05); c.closePath(); c.clip();
+    c.strokeStyle = 'rgba(122,67,21,.7)'; c.lineWidth = 1.2; c.beginPath();
+    for (var k = -2; k <= 2; k++) { c.moveTo(k * r * 0.3 - r * 0.5, r * 0.15); c.lineTo(k * r * 0.3 + r * 0.5, r * 1.1); c.moveTo(k * r * 0.3 + r * 0.5, r * 0.15); c.lineTo(k * r * 0.3 - r * 0.5, r * 1.1); }
+    c.stroke(); c.restore();
+    // three tiers, widest at the bottom
+    var tiers = [[0.58, 0.04, 0.30], [0.46, -0.24, 0.28], [0.33, -0.48, 0.26]];
+    for (var i = 0; i < tiers.length; i++) {
+      var hw = tiers[i][0] * r, y0 = tiers[i][1] * r, hh = tiers[i][2] * r;
+      var vg = c.createLinearGradient(-hw, 0, hw, 0);
+      vg.addColorStop(0, '#FFFFFF'); vg.addColorStop(0.55, '#FFF6DC'); vg.addColorStop(1, '#E9D6A4');
+      rr(c, -hw, y0, hw * 2, hh, hh * 0.5); c.fillStyle = vg; c.fill();
+      c.lineWidth = 1.6; c.strokeStyle = '#B79B62'; c.stroke();
+      c.strokeStyle = 'rgba(183,155,98,.55)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(-hw * 0.5, y0 + hh * 0.85); c.lineTo(hw * 0.3, y0 + hh * 0.12); c.stroke();
+    }
+    // curled tip
+    c.beginPath(); c.moveTo(-r * 0.24, -r * 0.46);
+    c.bezierCurveTo(-r * 0.2, -r * 0.78, r * 0.04, -r * 0.84, r * 0.2, -r * 1.02);
+    c.bezierCurveTo(r * 0.3, -r * 0.82, r * 0.3, -r * 0.62, r * 0.24, -r * 0.46); c.closePath();
+    var tg = c.createLinearGradient(-r * 0.2, 0, r * 0.3, 0); tg.addColorStop(0, '#FFFFFF'); tg.addColorStop(1, '#EBD9A8');
+    c.fillStyle = tg; c.fill(); c.lineWidth = 1.6; c.strokeStyle = '#B79B62'; c.stroke();
+    c.restore();
   }
   function drawKind(c, kind, r) {
     c.lineJoin = 'round'; c.lineCap = 'round';
@@ -608,7 +639,7 @@
       c.fillStyle = 'rgba(255,255,255,.82)';
       ell(c, -r * 0.3, r * 0.08, r * 0.16, r * 0.32); c.fill();
     } else if (kind === 'cream') {
-      swirl(c, r, '#FFFDF8', '#E58BC0', 'rgba(255,90,170,.48)');
+      softServeCone(c, r);
     } else if (kind === 'pineapple') {
       // soft serve in a crisp waffle cone with pineapple crown
       var cg = c.createLinearGradient(-r * 0.5, 0, r * 0.5, 0);
@@ -740,6 +771,11 @@
     c.beginPath(); c.moveTo(cx + 15, baseY - 8); c.lineTo(cx + 28, baseY - CUP_H - 22); c.lineTo(cx + 40, baseY - CUP_H - 26); c.stroke(); c.setLineDash([]);
 
     // 3D shaded translucent glass body
+    // frosted base: the glass is milky, not clear, so whatever stands behind it (the customer at the counter) never shows through the cup body
+    cupPath(c, cx, baseY, CUP_H, CUP_TOP_W, CUP_BOT_W);
+    var frost = c.createLinearGradient(0, baseY - CUP_H, 0, baseY);
+    frost.addColorStop(0, 'rgb(214,236,250)'); frost.addColorStop(1, 'rgb(168,208,236)');
+    c.fillStyle = frost; c.fill();
     cupPath(c, cx, baseY, CUP_H, CUP_TOP_W, CUP_BOT_W);
     var glass = c.createLinearGradient(cx - CUP_TOP_W / 2, 0, cx + CUP_TOP_W / 2, 0);
     glass.addColorStop(0, 'rgba(255,255,255,.32)');

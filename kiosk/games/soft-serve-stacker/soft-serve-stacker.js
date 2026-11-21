@@ -916,7 +916,7 @@
     grd.addColorStop(0, mixColor('#090122', '#02000A', t));
     grd.addColorStop(0.45, mixColor('#23074E', '#08032A', t));
     grd.addColorStop(1, mixColor('#581174', '#1E0A52', t));
-    if (!(bgSprite() && sy(0) - 512 <= 0)) { ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H); }   // the opaque painted backdrop covers the whole canvas at ground level: no sky fill underneath it
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
 
     // full painted 1986 Miami Beach pier + neon Ferris wheel + Art Deco backdrop anchored to boardwalk!
     const gy = sy(0);

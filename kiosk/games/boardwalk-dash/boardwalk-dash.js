@@ -1214,14 +1214,14 @@
     if (ART.trailer && ART.trailer.complete && ART.trailer.naturalWidth > 0) {
       const tw = 114, th = 79;
       const ge = glowSprite(ART.trailer, 'trailer', tw, th, 'rgba(255,60,172,0.45)', 10, 0, scale);   // the glow is baked once, not re-blurred every frame
-      if (ge) stampGlow(ctx, ge, x + (w - tw) / 2, y + T - th + 6, tw, th);
-      else ctx.drawImage(ART.trailer, x + (w - tw) / 2, y + T - th + 6, tw, th);
+      if (ge) stampGlow(ctx, ge, x + (w - tw) / 2, y + T - th + 2, tw, th);
+      else ctx.drawImage(ART.trailer, x + (w - tw) / 2, y + T - th + 2, tw, th);
       return;
     }
-    // chrome-white 1986 retro trailer body (fallback)
+    // white box concession trailer body (fallback, matches the sprite)
     const body = ctx.createLinearGradient(0, y + 5, 0, y + T - 2);
     body.addColorStop(0, '#FFFFFF'); body.addColorStop(0.55, '#F4E8FA'); body.addColorStop(1, '#C9B8DC');
-    rr(x + 3, y + 6, w - 6, T - 8, 7); ctx.fillStyle = body; ctx.fill();
+    rr(x + 3, y + 6, w - 6, T - 8, 3); ctx.fillStyle = body; ctx.fill();      // a square-cornered box trailer, like the real one
     ctx.lineWidth = 1.8; ctx.strokeStyle = '#14032E'; ctx.stroke();
     // 80s Miami racing stripes
     ctx.fillStyle = PAL.pink; ctx.fillRect(x + 4, y + 27, w - 8, 5.5);
