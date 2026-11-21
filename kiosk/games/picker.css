@@ -1,23 +1,116 @@
-/* Game picker on the kiosk: big tiles in the lower two thirds of the portrait screen (shell: shared/kgame.css). */
+/* Game picker on the kiosk: big full-art 1986 Miami arcade marquee tiles in the lower two thirds of the portrait screen (shell: shared/kgame.css). */
 :root { --kg-top: 30vh; }
 body.kg-picker .kg-shell { grid-template-rows: var(--kg-top) minmax(0, 1fr) var(--kg-bar); }
-body.kg-picker .kg-top { justify-content: flex-end; gap: 1rem; padding-bottom: 1.4rem; }
-body.kg-picker .kg-title { font-size: 3.2rem; }
-body.kg-picker .pk-sub { margin: 0; font-family: "DM Mono", monospace; font-size: 1.3rem; letter-spacing: .12em; text-transform: uppercase; color: #2AF5E4; text-align: center; }
-body.kg-picker .pk-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.8vw; padding: 0 2.4vw; min-height: 0; touch-action: manipulation; }
-body.kg-picker .pk-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .55rem; min-height: 300px; padding: 1rem .8rem; text-decoration: none; text-align: center; cursor: pointer; touch-action: manipulation;
-  border-radius: 2rem; color: #FFF4FA; background: linear-gradient(180deg, #34106A 0%, #170433 100%); border: .26rem solid #2AF5E4; box-shadow: 0 0 1.3rem rgba(42,245,228,.35), inset 0 .2rem .6rem rgba(255,255,255,.14); }
-body.kg-picker .pk-tile:active { background: linear-gradient(180deg, #6B1FB0 0%, #2B0954 100%); border-color: #FFD166; transform: translateY(3px); }
-body.kg-picker .pk-tile--slots { border-color: #FF3CAC; box-shadow: 0 0 1.3rem rgba(255,60,172,.45), inset 0 .2rem .6rem rgba(255,255,255,.14); }
-body.kg-picker .pk-icon { width: 6.2rem; height: 6.2rem; }
-body.kg-picker .pk-icon svg { width: 100%; height: 100%; display: block; }
-body.kg-picker .pk-name { font-family: "Bungee", sans-serif; font-size: 1.55rem; line-height: 1.05; color: #FFE14D; text-shadow: 0 0 .8rem rgba(255,225,77,.45); }
-body.kg-picker .pk-how { font-family: "DM Mono", monospace; font-size: 1.1rem; letter-spacing: .06em; text-transform: uppercase; color: #FFF4FA; }
-body.kg-picker .pk-best { font-family: "DM Mono", monospace; font-size: .95rem; letter-spacing: .08em; color: #2AF5E4; min-height: 1.2em; }
+body.kg-picker .kg-top {
+  position: relative; justify-content: flex-end; gap: .75rem; padding-bottom: 1.15rem;
+}
+body.kg-picker .kg-title {
+  font-size: 3.3rem;
+  letter-spacing: .04em;
+}
+body.kg-picker .pk-sub {
+  margin: 0; padding: .3rem 1.45rem; border-radius: 999px;
+  font-family: "DM Mono", monospace; font-size: 1.25rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: #2AF5E4; text-align: center;
+  background: rgba(9,2,28,.82); border: .14rem solid rgba(42,245,228,.65);
+  box-shadow: 0 0 1.25rem rgba(42,245,228,.38), inset 0 1px 0 rgba(255,255,255,.26);
+  text-shadow: 0 0 12px rgba(42,245,228,.85);
+}
+
+body.kg-picker .pk-grid {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 1.8vw; padding: 0 2.4vw; min-height: 0; touch-action: manipulation;
+}
+
+/* Each tile: full-bleed 1986 Miami arcade cabinet marquee poster with backlit bottom plate */
+body.kg-picker .pk-tile {
+  --tile-accent: #2AF5E4;
+  --tile-glow: rgba(42,245,228,.48);
+  --tile-strip: linear-gradient(90deg, #2AF5E4, #FF3CAC, #FFD166);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .18rem;
+  min-height: 0; padding: .6rem .75rem .75rem;
+  text-decoration: none; text-align: center; cursor: pointer; touch-action: manipulation;
+  border-radius: 1.75rem; color: #FFF4FA;
+  background: #140330;
+  border: .26rem solid var(--tile-accent);
+  box-shadow:
+    0 .34rem 0 #09011D,
+    0 0 1.55rem var(--tile-glow),
+    inset 0 0 0 .12rem rgba(255,255,255,.22);
+}
+/* Full-bleed illustrated key-art painting inside the tile */
+body.kg-picker .pk-icon {
+  position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none;
+}
+body.kg-picker .pk-icon img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 32%; display: block;
+}
+/* Bottom neon legibility gradient + glossy arcade glass glare */
+body.kg-picker .pk-tile::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 0; height: .28rem; z-index: 3; border-radius: 0 0 999px 999px;
+  background: var(--tile-strip);
+  box-shadow: 0 0 14px var(--tile-glow);
+}
+body.kg-picker .pk-tile::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.04) 22%, transparent 38%),
+    linear-gradient(180deg, rgba(8,1,24,.06) 0%, rgba(8,1,24,.18) 44%, rgba(10,2,28,.86) 72%, rgba(8,1,22,.96) 100%);
+}
+body.kg-picker .pk-tile:active {
+  border-color: #FFD166;
+  box-shadow: 0 .1rem 0 #09011D, 0 0 2.2rem rgba(255,209,102,.78);
+  transform: translateY(3px);
+}
+
+/* Per-game signature Miami 1986 neon accents */
+body.kg-picker .pk-tile[data-game="thirsty-blaster"] {
+  --tile-accent: #2AF5E4; --tile-glow: rgba(42,245,228,.5);
+  --tile-strip: linear-gradient(90deg, #FF3CAC, #2AF5E4, #FFD166);
+}
+body.kg-picker .pk-tile[data-game="thirsty-tower"] {
+  --tile-accent: #FFD166; --tile-glow: rgba(255,209,102,.48);
+  --tile-strip: linear-gradient(90deg, #FFD166, #FF7A45, #2AF5E4);
+}
+body.kg-picker .pk-tile[data-game="cup-catch"] {
+  --tile-accent: #5EEAD4; --tile-glow: rgba(42,245,228,.5);
+  --tile-strip: linear-gradient(90deg, #2AF5E4, #7CFFB2, #FF3CAC);
+}
+body.kg-picker .pk-tile[data-game="boardwalk-dash"] {
+  --tile-accent: #FF8E53; --tile-glow: rgba(255,142,83,.48);
+  --tile-strip: linear-gradient(90deg, #FF7A45, #FFD166, #2AF5E4);
+}
+body.kg-picker .pk-tile[data-game="soft-serve-stacker"] {
+  --tile-accent: #FF6AD5; --tile-glow: rgba(255,106,213,.52);
+  --tile-strip: linear-gradient(90deg, #FF3CAC, #FFD166, #2AF5E4);
+}
+body.kg-picker .pk-tile--slots {
+  --tile-accent: #FF3CAC; --tile-glow: rgba(255,60,172,.58);
+  --tile-strip: linear-gradient(90deg, #FFD166, #FF3CAC, #2AF5E4, #FFD166);
+}
+
+body.kg-picker .pk-name {
+  position: relative; z-index: 2;
+  font-family: "Bungee", sans-serif; font-size: 1.55rem; line-height: 1.02;
+  background: linear-gradient(180deg, #FFFAD6 0%, #FFE14D 52%, #FF963F 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(36,2,42,.98)) drop-shadow(0 0 12px rgba(255,209,102,.52));
+}
+body.kg-picker .pk-how {
+  position: relative; z-index: 2;
+  font-family: "DM Mono", monospace; font-size: 1rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: #FFF4FA; text-shadow: 0 2px 6px rgba(0,0,0,.95);
+}
+body.kg-picker .pk-best {
+  position: relative; z-index: 2;
+  font-family: "DM Mono", monospace; font-size: .92rem; font-weight: 700; letter-spacing: .09em;
+  color: #2AF5E4; text-shadow: 0 0 10px rgba(42,245,228,.85), 0 1px 4px rgba(0,0,0,.95); min-height: 1.1em;
+}
+body.kg-picker .pk-best:empty { display: none; }
+
 @media (orientation: landscape) {
   :root { --kg-top: 22vh; }
   body.kg-picker .pk-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-  body.kg-picker .pk-tile { min-height: 0; }
-  body.kg-picker .pk-icon { width: 4rem; height: 4rem; }
   body.kg-picker .kg-title { font-size: 2.2rem; }
 }

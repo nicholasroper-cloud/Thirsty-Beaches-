@@ -1,18 +1,27 @@
 /* Thirsty Tower on the kiosk: portrait 47-inch touchscreen layout (shell: ../shared/kgame.css). Two control rows: arrows + JUMP, then Pause / Sound. */
 :root { --kg-w: 360; --kg-h: 580; --kg-ctl: clamp(230px, 20vh, 420px); }
-body.kg .hud { width: min(92vw, 46rem); grid-template-columns: repeat(5, 1fr); padding: .4rem .8rem; border-radius: 1rem; }
+body.kg .hud {
+  width: min(92vw, 46rem); grid-template-columns: repeat(5, 1fr); padding: .45rem .85rem; border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(16,4,42,.94), rgba(6,1,20,.96));
+  border: .12rem solid rgba(42,245,228,.55);
+  box-shadow: 0 0 18px rgba(42,245,228,.22), inset 0 2px 10px rgba(0,0,0,.78);
+}
 body.kg .hud__l { font-size: .75rem; }
 body.kg .hud__v { font-size: 1.35rem; }
 body.kg .life { width: .95rem; height: 1.25rem; }
 body.kg #tower { cursor: default; }
-body.kg .ov { justify-content: flex-end; gap: .8rem; padding: 6% 7% 8%; background: linear-gradient(180deg, rgba(7,1,20,.35), rgba(7,1,20,.88) 45%); }
+body.kg .ov { justify-content: flex-end; gap: .8rem; padding: 6% 7% 8%; background: linear-gradient(180deg, rgba(7,1,20,.3), rgba(7,1,20,.88) 45%); }
 body.kg .ov--soft { padding-bottom: 8%; }
 body.kg .ov__title { font-size: 3rem; }
 body.kg .ov__text { font-size: 1.15rem; max-width: 26em; }
 body.kg .ov__stats { font-size: 1.15rem; }
 body.kg .ov__help { font-size: 1rem; max-width: 30em; }
 body.kg .ov__help li { padding-left: 1.2rem; margin-bottom: .4rem; }
-body.kg .ov__btn { min-height: 5.2rem; min-width: 70%; font-size: 1.9rem; touch-action: manipulation; }
+body.kg .ov__btn {
+  min-height: 5.2rem; min-width: 70%; font-size: 1.9rem; touch-action: manipulation;
+  background: linear-gradient(180deg, #FF74C8 0%, #FF3CAC 48%, #B81270 100%);
+  box-shadow: 0 .32rem 0 #6D0843, 0 0 2rem rgba(255,60,172,.68), inset 0 .18rem 0 rgba(255,255,255,.45);
+}
 body.kg .kg-ctl { flex-direction: column; gap: 1.2vh; padding-bottom: 0; }
 body.kg .kg-ctlrow { display: flex; gap: 1.3vw; min-height: 0; }
 body.kg .kg-ctlrow--main { flex: 1 1 0; }
@@ -20,10 +29,22 @@ body.kg .kg-ctlrow--small { flex: 0 0 32%; }
 body.kg .pad { margin: 0; }
 body.kg .pad--move { flex: 4 1 0; display: flex; gap: 1.3vw; touch-action: none; }
 body.kg .pad--jump { flex: 2.3 1 0; display: flex; align-items: stretch; }
-body.kg .ctl { width: auto; height: auto; flex: 1 1 0; min-width: 0; border-radius: 1.2rem; }
-body.kg .ctl--jump { width: 100%; border-radius: 1.6rem; font-size: 2rem; }
+body.kg .ctl {
+  width: auto; height: auto; flex: 1 1 0; min-width: 0; border-radius: 1.3rem;
+  background: linear-gradient(180deg, #4B1991 0%, #270A56 52%, #150333 100%);
+  box-shadow: 0 .28rem 0 #09021C, 0 0 1.25rem rgba(42,245,228,.38), inset 0 .16rem 0 rgba(255,255,255,.28);
+}
+body.kg .ctl--jump {
+  width: 100%; border-radius: 1.65rem; font-size: 2rem;
+  background: radial-gradient(circle at 38% 22%, #FFA3DF 0%, #FF3CAC 48%, #A6106B 100%);
+  box-shadow: 0 .32rem 0 #6D0843, 0 0 2rem rgba(255,60,172,.68), inset 0 .18rem 0 rgba(255,255,255,.48);
+}
 body.kg .ico { width: 42%; height: 42%; }
-body.kg .chip { flex: 1 1 0; min-height: 0; font-size: 1.15rem; border-radius: 1.4rem; touch-action: manipulation; }
+body.kg .chip {
+  flex: 1 1 0; min-height: 0; font-size: 1.15rem; border-radius: 1.4rem; touch-action: manipulation;
+  background: linear-gradient(180deg, #47188A 0%, #270A56 48%, #150333 100%);
+  box-shadow: 0 .24rem 0 #09021C, 0 0 1.15rem rgba(42,245,228,.35), inset 0 .14rem 0 rgba(255,255,255,.26);
+}
 /* the start card also carries the prize line and the RULES button: keep it all on the board */
 body.kg .ov { gap: .5rem; padding: 4% 6% 5%; }
 body.kg .ov__title { font-size: 2.5rem; }

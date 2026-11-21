@@ -1054,18 +1054,66 @@
   }
   function noise(a, b) { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); }
 
-  function drawBackground(time) {
-    // ocean strip
-    const sea = ctx.createLinearGradient(0, 0, 0, SEA);
-    sea.addColorStop(0, '#0B1E5C'); sea.addColorStop(1, '#1AA6C8');
-    ctx.fillStyle = sea; ctx.fillRect(0, 0, W, SEA);
-    ctx.fillStyle = 'rgba(255,60,172,0.55)';
-    for (let i = 0; i < 4; i++) ctx.fillRect(0, 3 + i * 5, W, 2 + i * 0.6);
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    for (let i = 0; i < 9; i++) {
-      const x = ((i * 53 + (reduced ? 0 : time * 12)) % (W + 40)) - 20;
-      ctx.fillRect(x, SEA - 8 + (i % 3) * 2, 18, 2);
+  const ART = {};
+  (function loadArt() {
+    [['trailer', '/kiosk/games/boardwalk-dash/assets/trailer.png'],
+     ['sandcastle', '/kiosk/games/boardwalk-dash/assets/sandcastle.png'],
+     ['crab', '/kiosk/games/boardwalk-dash/assets/crab.png']].forEach(function (pair) {
+      const im = new Image();
+      im.onload = function () { render(performance.now() / 1000); };
+      im.src = pair[1];
+      ART[pair[0]] = im;
+    });
+  })();
+
+  /* Pre-rendered "sprite + glow" cache. A drawImage with shadowBlur re-blurs the whole sprite on every frame; this renders it ONCE per (sprite, colour, size, resolution) into a small offscreen
+     canvas and then just stamps that bitmap. Returns null while the image is not ready, so the caller keeps its drawn fallback. */
+  const GLOW = {};
+  function glowSprite(img, key, w, h, color, blur, offY, pxPerUnit) {
+    if (!(img && img.complete && img.naturalWidth > 0)) return null;
+    const res = Math.max(1, Math.min(4, Math.ceil(pxPerUnit * 2) / 2));
+    const k = key + '|' + color + '|' + blur + '|' + (offY || 0) + '|' + w + 'x' + h + '@' + res;
+    let e = GLOW[k];
+    if (!e) {
+      const pad = Math.ceil(blur * 1.6 + Math.abs(offY || 0) + 2);
+      const cv = document.createElement('canvas');
+      cv.width = Math.ceil((w + 2 * pad) * res); cv.height = Math.ceil((h + 2 * pad) * res);
+      const x = cv.getContext('2d');
+      if (!x) return null;
+      x.shadowColor = color; x.shadowBlur = blur * res; x.shadowOffsetY = (offY || 0) * res;
+      x.drawImage(img, pad * res, pad * res, w * res, h * res);
+      if (Object.keys(GLOW).length > 24) for (const old in GLOW) { delete GLOW[old]; break; }
+      e = GLOW[k] = { cv: cv, pad: pad, w: w, h: h };
     }
+    return e;
+  }
+  function stampGlow(c, e, x, y, dw, dh) {
+    const sx = dw / e.w, sy = dh / e.h;
+    c.drawImage(e.cv, x - e.pad * sx, y - e.pad * sy, (e.w + 2 * e.pad) * sx, (e.h + 2 * e.pad) * sy);
+  }
+
+  function drawBackground(time) {
+    // 1986 Miami twilight sunset ocean strip at top
+    const sea = ctx.createLinearGradient(0, 0, 0, SEA);
+    sea.addColorStop(0, '#1B074E');
+    sea.addColorStop(0.35, '#5B1A82');
+    sea.addColorStop(0.68, '#148FB4');
+    sea.addColorStop(1, '#2AF5E4');
+    ctx.fillStyle = sea; ctx.fillRect(0, 0, W, SEA);
+    // Outrun sunset shimmer bands across upper horizon
+    ctx.fillStyle = 'rgba(255,60,172,0.58)';
+    for (let i = 0; i < 3; i++) ctx.fillRect(0, 2 + i * 4.5, W, 1.8 + i * 0.4);
+    ctx.fillStyle = 'rgba(255,209,102,0.62)';
+    ctx.fillRect(W * 0.28, 7, W * 0.44, 2);
+    ctx.fillRect(W * 0.35, 13, W * 0.3, 1.8);
+    // animated turquoise water glints & foam edge
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 53 + (reduced ? 0 : time * 14)) % (W + 40)) - 20;
+      ctx.fillRect(x, SEA - 9 + (i % 3) * 2.5, 18, 2);
+    }
+    ctx.fillStyle = 'rgba(255,244,250,0.85)';
+    ctx.fillRect(0, SEA - 2, W, 2);
     for (let r = 0; r < ROWS; r++) drawRowBg(r, time);
   }
 
@@ -1073,56 +1121,136 @@
     const R = g.lvl.rows[r];
     const y = rowTop(r);
     if (R.kind === 'start') {
-      ctx.fillStyle = '#2C1D52'; ctx.fillRect(0, y, W, T);
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      const bg = ctx.createLinearGradient(0, y, 0, y + T);
+      bg.addColorStop(0, '#361466'); bg.addColorStop(1, '#1B063B');
+      ctx.fillStyle = bg; ctx.fillRect(0, y, W, T);
+      // retro Art Deco checkerboard terrazzo floor
+      ctx.fillStyle = 'rgba(42,245,228,0.07)';
       for (let c = 0; c < COLS; c++) if ((c + 1) % 2) ctx.fillRect(c * T, y, T, T);
+      ctx.fillStyle = 'rgba(255,60,172,0.5)'; ctx.fillRect(0, y, W, 2);
       drawTrailer(y);
     } else if (R.kind === 'board') {
-      ctx.fillStyle = r % 2 ? '#4C2C66' : '#432659'; ctx.fillRect(0, y, W, T);
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      for (let x = -((r * 37) % 70); x < W; x += 70) ctx.fillRect(x, y, 2, T);
-      ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(0, y + 1, W, 2);
-      ctx.fillStyle = 'rgba(42,245,228,0.5)'; ctx.fillRect(0, y + T - 2, W, 2);
+      // warm twilight wooden Miami boardwalk planks
+      const pl = ctx.createLinearGradient(0, y, 0, y + T);
+      pl.addColorStop(0, r % 2 ? '#592C78' : '#4E246C');
+      pl.addColorStop(1, r % 2 ? '#3F1B5B' : '#361650');
+      ctx.fillStyle = pl; ctx.fillRect(0, y, W, T);
+      // horizontal subtle wood grain bands
+      ctx.fillStyle = 'rgba(255,200,240,0.05)';
+      ctx.fillRect(0, y + T * 0.28, W, 2);
+      ctx.fillRect(0, y + T * 0.65, W, 2);
+      // staggered vertical plank seams with nail studs
+      for (let x = -((r * 37) % 64); x < W; x += 64) {
+        ctx.fillStyle = 'rgba(12,2,28,0.45)'; ctx.fillRect(x, y, 2, T);
+        ctx.fillStyle = 'rgba(255,244,250,0.09)'; ctx.fillRect(x + 2, y, 1, T);
+        ctx.fillStyle = 'rgba(255,209,102,0.28)';
+        ctx.fillRect(x + 5, y + 6, 2, 2); ctx.fillRect(x + 5, y + T - 9, 2, 2);
+      }
+      // glowing neon cyan lane guide rail
+      ctx.fillStyle = 'rgba(42,245,228,0.62)'; ctx.fillRect(0, y + T - 2, W, 2);
     } else if (R.kind === 'safe') {
       if (R.zone === 'promenade') {
-        ctx.fillStyle = '#6D4590'; ctx.fillRect(0, y, W, T);
-        for (let c = 0; c < COLS; c++) circle(c * T + T / 2, y + T / 2, 2.5, (c % 3 === 0 ? '#FF3CAC' : c % 3 === 1 ? '#FFD166' : '#2AF5E4'));
-        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(0, y, W, 2);
+        // 1986 South Beach Art Deco neon promenade
+        const pr = ctx.createLinearGradient(0, y, 0, y + T);
+        pr.addColorStop(0, '#7B3DA3'); pr.addColorStop(1, '#582580');
+        ctx.fillStyle = pr; ctx.fillRect(0, y, W, T);
+        // subtle Art Deco diamond tiles
+        ctx.strokeStyle = 'rgba(255,244,250,0.12)'; ctx.lineWidth = 1.2;
+        for (let c = 0; c < COLS; c++) {
+          const cx0 = c * T + T / 2, cy0 = y + T / 2;
+          ctx.beginPath();
+          ctx.moveTo(cx0, cy0 - 11); ctx.lineTo(cx0 + 13, cy0); ctx.lineTo(cx0, cy0 + 11); ctx.lineTo(cx0 - 13, cy0);
+          ctx.closePath(); ctx.stroke();
+          // glowing neon walkway studs
+          const col = c % 3 === 0 ? '#FF3CAC' : c % 3 === 1 ? '#FFD166' : '#2AF5E4';
+          circle(cx0, cy0, 3.2, col);
+          circle(cx0, cy0, 1.3, '#FFF4FA');
+        }
+        ctx.fillStyle = 'rgba(255,209,102,0.45)'; ctx.fillRect(0, y, W, 2);
+        ctx.fillStyle = 'rgba(255,60,172,0.45)'; ctx.fillRect(0, y + T - 2, W, 2);
       } else {
-        ctx.fillStyle = '#E2B27A'; ctx.fillRect(0, y, W, T);
+        const sg = ctx.createLinearGradient(0, y, 0, y + T);
+        sg.addColorStop(0, '#F6C68C'); sg.addColorStop(1, '#E5AE74');
+        ctx.fillStyle = sg; ctx.fillRect(0, y, W, T);
         sandSpeckle(r, y);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0, y, W, 2);
+        ctx.fillStyle = 'rgba(255,250,235,0.3)'; ctx.fillRect(0, y, W, 2);
       }
     } else if (R.kind === 'sand') {
-      ctx.fillStyle = r % 2 ? '#EBBC82' : '#E5B377'; ctx.fillRect(0, y, W, T);
+      const sg = ctx.createLinearGradient(0, y, 0, y + T);
+      sg.addColorStop(0, r % 2 ? '#F6C88E' : '#F0BF84');
+      sg.addColorStop(1, r % 2 ? '#E8B376' : '#E0A86C');
+      ctx.fillStyle = sg; ctx.fillRect(0, y, W, T);
       sandSpeckle(r, y);
-      ctx.fillStyle = 'rgba(160,100,60,0.22)'; ctx.fillRect(0, y + T - 2, W, 2);
+      ctx.fillStyle = 'rgba(175,95,62,0.2)'; ctx.fillRect(0, y + T - 2, W, 2);
     } else if (R.kind === 'wave') {
-      ctx.fillStyle = '#C48E64'; ctx.fillRect(0, y, W, T);
+      const wg = ctx.createLinearGradient(0, y, 0, y + T);
+      wg.addColorStop(0, '#BA8563'); wg.addColorStop(1, '#D39B6D');
+      ctx.fillStyle = wg; ctx.fillRect(0, y, W, T);
       sandSpeckle(r, y);
     } else if (R.kind === 'goal') {
-      ctx.fillStyle = '#F0C88E'; ctx.fillRect(0, y, W, T);
+      const gg = ctx.createLinearGradient(0, y, 0, y + T);
+      gg.addColorStop(0, '#FFE0A3'); gg.addColorStop(1, '#F2C080');
+      ctx.fillStyle = gg; ctx.fillRect(0, y, W, T);
       sandSpeckle(r, y);
     }
   }
   function sandSpeckle(r, y) {
-    ctx.fillStyle = 'rgba(120,70,40,0.2)';
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 18; i++) {
       const x = noise(r, i) * W, yy = y + 4 + noise(i, r + 3) * (T - 8);
-      ctx.fillRect(x, yy, 2, 2);
+      ctx.fillStyle = i % 4 === 0 ? 'rgba(255,252,240,0.45)' : 'rgba(130,68,42,0.22)';
+      ctx.fillRect(x, yy, 2.2, 2);
+    }
+    // tiny pastel beach shell accent on select sand rows
+    if (r % 2 === 1) {
+      const sx0 = 18 + noise(r, 99) * (W - 36);
+      circle(sx0, y + T * 0.65, 2.6, 'rgba(255,140,190,0.45)');
     }
   }
 
   function drawTrailer(y) {
     const x = 3 * T, w = 3 * T;
-    rr(x + 4, y + 6, w - 8, T - 8, 6); ctx.fillStyle = '#FFF4FA'; ctx.fill();
-    ctx.fillStyle = PAL.pink; ctx.fillRect(x + 4, y + 26, w - 8, 6);
-    ctx.fillStyle = PAL.teal; ctx.fillRect(x + 4, y + 34, w - 8, 3);
-    rr(x + T + 8, y + 12, T - 16, 16, 3); ctx.fillStyle = '#1B0538'; ctx.fill();
-    for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#FFF4FA' : PAL.pink; ctx.fillRect(x + 6 + i * ((w - 12) / 6), y + 2, (w - 12) / 6, 9); }
-    circle(x + 14, y + T - 3, 5, '#14032E', '#9aa', 1.5); circle(x + w - 14, y + T - 3, 5, '#14032E', '#9aa', 1.5);
-    ctx.fillStyle = PAL.ink; ctx.font = '700 9px Bungee, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('THIRSTY', x + 28, y + 24); ctx.fillText('BEACHES', x + w - 28, y + 24);
+    // glowing neon underglow beneath the trailer
+    ellipse(x + w / 2, y + T - 1, w * 0.48, 5, 'rgba(42,245,228,0.38)');
+    if (ART.trailer && ART.trailer.complete && ART.trailer.naturalWidth > 0) {
+      const tw = 114, th = 79;
+      const ge = glowSprite(ART.trailer, 'trailer', tw, th, 'rgba(255,60,172,0.45)', 10, 0, scale);   // the glow is baked once, not re-blurred every frame
+      if (ge) stampGlow(ctx, ge, x + (w - tw) / 2, y + T - th + 6, tw, th);
+      else ctx.drawImage(ART.trailer, x + (w - tw) / 2, y + T - th + 6, tw, th);
+      return;
+    }
+    // chrome-white 1986 retro trailer body (fallback)
+    const body = ctx.createLinearGradient(0, y + 5, 0, y + T - 2);
+    body.addColorStop(0, '#FFFFFF'); body.addColorStop(0.55, '#F4E8FA'); body.addColorStop(1, '#C9B8DC');
+    rr(x + 3, y + 6, w - 6, T - 8, 7); ctx.fillStyle = body; ctx.fill();
+    ctx.lineWidth = 1.8; ctx.strokeStyle = '#14032E'; ctx.stroke();
+    // 80s Miami racing stripes
+    ctx.fillStyle = PAL.pink; ctx.fillRect(x + 4, y + 27, w - 8, 5.5);
+    ctx.fillStyle = PAL.teal; ctx.fillRect(x + 4, y + 33, w - 8, 3.2);
+    ctx.fillStyle = '#FFD166'; ctx.fillRect(x + 4, y + 25, w - 8, 2);
+    // illuminated service window
+    rr(x + T + 7, y + 12, T - 14, 16, 3);
+    const win = ctx.createLinearGradient(0, y + 12, 0, y + 28);
+    win.addColorStop(0, '#2C0A5C'); win.addColorStop(1, '#12032B');
+    ctx.fillStyle = win; ctx.fill();
+    ctx.strokeStyle = PAL.teal; ctx.lineWidth = 1.2; ctx.stroke();
+    // tiny glowing drink cup on counter inside window
+    ctx.fillStyle = PAL.pink; ctx.fillRect(x + T + 18, y + 19, 6, 7);
+    ctx.fillStyle = '#FFD166'; ctx.fillRect(x + T + 21, y + 15, 1.5, 5);
+    // scalloped hot-pink & white cabana awning
+    const segW = (w - 10) / 8;
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? '#FFF4FA' : PAL.pink;
+      ctx.fillRect(x + 5 + i * segW, y + 2, segW + 0.5, 9);
+      circle(x + 5 + (i + 0.5) * segW, y + 11, segW * 0.5, i % 2 ? '#FFF4FA' : PAL.pink);
+    }
+    // chrome wheels
+    circle(x + 15, y + T - 3, 5.5, '#14032E', '#DCE8F5', 1.8);
+    circle(x + 15, y + T - 3, 2, '#FFD166');
+    circle(x + w - 15, y + T - 3, 5.5, '#14032E', '#DCE8F5', 1.8);
+    circle(x + w - 15, y + T - 3, 2, '#FFD166');
+    // crisp signage
+    ctx.fillStyle = PAL.ink; ctx.font = '700 8.5px Bungee, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('THIRSTY', x + 29, y + 23); ctx.fillText('BEACHES', x + w - 29, y + 23);
   }
 
   function drawWaves(time) {
@@ -1134,21 +1262,31 @@
     if (depth > 0.02) {
       const frontY = top + depth * T;
       const grad = ctx.createLinearGradient(0, top, 0, frontY);
-      grad.addColorStop(0, 'rgba(14,116,144,0.75)'); grad.addColorStop(1, 'rgba(42,245,228,0.62)');
+      grad.addColorStop(0, 'rgba(14,116,158,0.82)');
+      grad.addColorStop(0.55, 'rgba(26,196,214,0.74)');
+      grad.addColorStop(1, 'rgba(42,245,228,0.68)');
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.moveTo(0, top);
       ctx.lineTo(W, top);
-      for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, Math.min(bottomY, frontY) + Math.sin(x * 0.05 + (reduced ? 0 : time * 3)) * 3);
+      for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, Math.min(bottomY, frontY) + Math.sin(x * 0.05 + (reduced ? 0 : time * 3.4)) * 3.2);
       ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.beginPath();
+      // secondary inner foam lace
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2; ctx.beginPath();
       for (let x = 0; x <= W; x += 8) {
-        const yy = Math.min(bottomY, frontY) + Math.sin(x * 0.05 + (reduced ? 0 : time * 3)) * 3;
+        const yy = Math.max(top + 2, Math.min(bottomY, frontY) - 8 + Math.sin(x * 0.065 + (reduced ? 0 : time * 2.8) + 1.5) * 2.4);
+        if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+      // crisp frothy white surf crest
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 3.5; ctx.beginPath();
+      for (let x = 0; x <= W; x += 8) {
+        const yy = Math.min(bottomY, frontY) + Math.sin(x * 0.05 + (reduced ? 0 : time * 3.4)) * 3.2;
         if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
       }
       ctx.stroke();
     } else if (warn) {
       const blink = reduced ? 1 : (Math.sin(time * 14) > 0 ? 1 : 0.35);
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * blink) + ')'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+      ctx.strokeStyle = 'rgba(42,245,228,' + (0.9 * blink) + ')'; ctx.lineWidth = 3.5; ctx.setLineDash([10, 8]);
       ctx.beginPath(); ctx.moveTo(0, top + 2); ctx.lineTo(W, top + 2); ctx.stroke(); ctx.setLineDash([]);
     }
   }
@@ -1157,75 +1295,104 @@
   function drawSkater(cx, cy, dir, time, id) {
     const wob = reduced ? 0 : Math.sin(time * 9 + id) * 2;
     ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1);
-    ellipse(0, 15, 12, 4, 'rgba(0,0,0,0.3)');
-    circle(-5, 14, 3.2, '#FFF4FA'); circle(5, 14, 3.2, '#FFF4FA');
-    ctx.fillStyle = PAL.pink; ctx.fillRect(-9, 9, 18, 4);
-    ctx.fillStyle = '#2AF5E4'; ctx.fillRect(-4, -6 + wob * 0.3, 8, 13);
-    ctx.fillStyle = PAL.pink; ctx.fillRect(-4, 3, 8, 6);
-    circle(0, -11 + wob * 0.3, 5.5, '#E8A87C');
-    ctx.fillStyle = '#FFD166'; ctx.fillRect(-6, -17, 12, 4);
-    ctx.strokeStyle = '#2AF5E4'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-3, -3); ctx.lineTo(-11, -6 + wob); ctx.moveTo(3, -3); ctx.lineTo(11, -2 - wob); ctx.stroke();
+    ellipse(0, 16, 13, 4, 'rgba(0,0,0,0.34)');
+    // neon roller-skate wheels & boots
+    circle(-6, 14.5, 3, '#2AF5E4', '#14032E', 1.2); circle(6, 14.5, 3, '#2AF5E4', '#14032E', 1.2);
+    rr(-10, 8.5, 20, 5, 2); ctx.fillStyle = '#FFF4FA'; ctx.fill(); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
+    // 80s neon leg warmers & shorts
+    ctx.fillStyle = PAL.pink; ctx.fillRect(-5, 3, 10, 6);
+    // Miami Vice tank top
+    rr(-5.5, -7 + wob * 0.3, 11, 12, 3); ctx.fillStyle = '#2AF5E4'; ctx.fill(); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#FFD166'; ctx.fillRect(-5, -3 + wob * 0.3, 10, 2.5);
+    // head, flowing hair, neon headband & shades
+    circle(0, -12 + wob * 0.3, 5.8, '#F0B289', '#14032E', 1.2);
+    ctx.fillStyle = '#FFD166'; ctx.beginPath(); ctx.arc(-2, -14 + wob * 0.3, 5.5, Math.PI * 0.8, Math.PI * 2.1); ctx.fill();
+    ctx.fillStyle = PAL.pink; ctx.fillRect(-6, -16.5 + wob * 0.3, 12, 2.8);
+    ctx.fillStyle = '#14032E'; ctx.fillRect(0, -13 + wob * 0.3, 5.5, 2.4);
+    ctx.strokeStyle = '#F0B289'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-4, -3); ctx.lineTo(-12, -6 + wob); ctx.moveTo(4, -3); ctx.lineTo(12, -2 - wob); ctx.stroke();
     ctx.restore();
   }
   function drawBike(cx, cy, dir, time) {
     ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1);
-    ellipse(0, 15, 17, 4, 'rgba(0,0,0,0.3)');
+    ellipse(0, 16, 18, 4, 'rgba(0,0,0,0.34)');
     const spin = reduced ? 0 : time * 10;
     for (const x of [-12, 12]) {
-      circle(x, 8, 8, null, '#FFF4FA', 2.2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
+      circle(x, 8, 8.2, 'rgba(20,3,46,0.35)', '#2AF5E4', 2.4);
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(x + Math.cos(spin) * 7, 8 + Math.sin(spin) * 7); ctx.lineTo(x - Math.cos(spin) * 7, 8 - Math.sin(spin) * 7); ctx.stroke();
+      circle(x, 8, 2, '#FFD166');
     }
-    ctx.strokeStyle = PAL.pink; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.strokeStyle = PAL.pink; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(-12, 8); ctx.lineTo(-2, -2); ctx.lineTo(8, -2); ctx.lineTo(12, 8); ctx.moveTo(-2, -2); ctx.lineTo(2, 8); ctx.lineTo(-12, 8); ctx.stroke();
-    ctx.fillStyle = '#FFD166'; ctx.fillRect(-4, -9, 9, 8);
-    circle(1, -14, 5, '#B9794F'); ctx.fillStyle = PAL.teal; ctx.fillRect(-4, -20, 10, 4);
+    // chrome handlebars
+    ctx.strokeStyle = '#FFF4FA'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(8, -2); ctx.lineTo(11, -9); ctx.lineTo(7, -10); ctx.stroke();
+    // rider
+    rr(-5, -10, 10, 10, 3); ctx.fillStyle = '#FFD166'; ctx.fill(); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
+    circle(1, -15, 5.4, '#C68259', '#14032E', 1.2);
+    ctx.fillStyle = PAL.teal; ctx.fillRect(-5, -20.5, 11, 3.8);
+    ctx.fillStyle = '#14032E'; ctx.fillRect(1, -16, 5, 2.2);
     ctx.restore();
   }
   function drawCooler(cx, cy, dir, time) {
     ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1);
-    ellipse(0, 15, 14, 4, 'rgba(0,0,0,0.3)');
-    rr(-13, -9, 26, 20, 3); ctx.fillStyle = '#E8403A'; ctx.fill();
-    rr(-14, -12, 28, 7, 3); ctx.fillStyle = '#FFF4FA'; ctx.fill();
-    ctx.fillStyle = '#1B0538'; ctx.fillRect(-4, -15, 8, 3);
-    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(-10, 0, 20, 3);
+    ellipse(0, 15, 15, 4, 'rgba(0,0,0,0.34)');
+    const cg = ctx.createLinearGradient(0, -9, 0, 11);
+    cg.addColorStop(0, '#FF4D5E'); cg.addColorStop(1, '#C41838');
+    rr(-13.5, -9, 27, 20, 4); ctx.fillStyle = cg; ctx.fill();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.5; ctx.stroke();
+    rr(-14.5, -12.5, 29, 7.5, 3.5); ctx.fillStyle = '#FFF4FA'; ctx.fill(); ctx.stroke();
+    // chrome handle & turquoise racing stripe
+    ctx.fillStyle = '#2AF5E4'; ctx.fillRect(-12, 1, 24, 3.5);
+    ctx.fillStyle = '#B8D4EE'; ctx.fillRect(-5, -15.5, 10, 3.2);
     const w = reduced ? 0 : Math.sin(time * 12) * 0.6;
-    circle(-8, 12 + w, 3.2, '#14032E', '#9aa', 1); circle(8, 12 - w, 3.2, '#14032E', '#9aa', 1);
+    circle(-8, 12.5 + w, 3.6, '#14032E', '#DCE8F5', 1.4); circle(8, 12.5 - w, 3.6, '#14032E', '#DCE8F5', 1.4);
     ctx.restore();
   }
   function drawCart(cx, cy, dir, time) {
     ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1);
-    ellipse(0, 16, 24, 4, 'rgba(0,0,0,0.3)');
-    rr(-22, -2, 40, 17, 3); ctx.fillStyle = '#FFF4FA'; ctx.fill();
-    ctx.fillStyle = PAL.pink; ctx.fillRect(-22, 6, 40, 4);
+    ellipse(0, 17, 25, 4.5, 'rgba(0,0,0,0.34)');
+    // retro ice-cream boardwalk cart body
+    rr(-22, -2, 40, 17, 4); ctx.fillStyle = '#FFF4FA'; ctx.fill();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = PAL.pink; ctx.fillRect(-21, 5, 38, 4.5);
+    ctx.fillStyle = PAL.teal; ctx.fillRect(-21, 10, 38, 2.5);
+    // brass awning poles
     ctx.fillStyle = '#FFD166'; ctx.fillRect(-20, -14, 3, 12); ctx.fillRect(14, -14, 3, 12);
-    for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#FFF4FA' : PAL.teal; ctx.fillRect(-22 + i * 7.5, -20, 7.5, 7); }
-    ctx.fillStyle = '#FFD166'; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(6, -2); ctx.lineTo(0, 9); ctx.closePath(); ctx.fill();
-    circle(0, -6, 5.5, PAL.pink); circle(0, -12, 4, '#FFF4FA');
-    circle(-12, 15, 4, '#14032E', '#9aa', 1.2); circle(12, 15, 4, '#14032E', '#9aa', 1.2);
-    ctx.fillStyle = '#9aa'; ctx.fillRect(18, 2, 6, 3);
+    // scalloped teal & white cabana canopy
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = i % 2 ? '#FFF4FA' : PAL.teal;
+      ctx.fillRect(-22 + i * 7.5, -20.5, 7.6, 7.5);
+    }
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.strokeRect(-22, -20.5, 45, 7.5);
+    // mini soft-serve cone emblem on cart
+    ctx.fillStyle = '#E8A857'; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(6, -2); ctx.lineTo(0, 9); ctx.closePath(); ctx.fill();
+    circle(0, -6, 5.5, PAL.pink, '#14032E', 1); circle(0, -12, 4, '#FFF4FA', '#14032E', 1);
+    circle(-12, 15.5, 4.4, '#14032E', '#FFD166', 1.5); circle(12, 15.5, 4.4, '#14032E', '#FFD166', 1.5);
+    ctx.fillStyle = '#DCE8F5'; ctx.fillRect(18, 2, 6, 3);
     ctx.restore();
   }
   function drawDog(cx, cy, dir, time, id) {
     const run = reduced ? 0 : Math.sin(time * 14 + id);
     ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1);
-    ellipse(0, 15, 48, 4, 'rgba(0,0,0,0.3)');
-    // jogger (rear, left side of the sprite)
-    ctx.fillStyle = PAL.pink; ctx.fillRect(-42, -8, 12, 15);
+    ellipse(0, 16, 48, 4.2, 'rgba(0,0,0,0.34)');
+    // 80s neon jogger (rear)
+    rr(-42, -8, 12, 15, 3); ctx.fillStyle = PAL.pink; ctx.fill(); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
     ctx.fillStyle = '#FFF4FA'; ctx.fillRect(-42, 0, 12, 3);
-    circle(-36, -14, 6, '#E8A87C'); ctx.fillStyle = PAL.teal; ctx.fillRect(-43, -21, 14, 4);
-    ctx.strokeStyle = '#E8A87C'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    circle(-36, -14, 6, '#F0B289', '#14032E', 1.2); ctx.fillStyle = PAL.teal; ctx.fillRect(-43, -20.5, 14, 4);
+    ctx.strokeStyle = '#F0B289'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(-36, 7); ctx.lineTo(-36 + run * 8, 16); ctx.moveTo(-36, 7); ctx.lineTo(-36 - run * 8, 16); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-30, -3); ctx.lineTo(-22, 1); ctx.stroke();
-    // leash
-    ctx.strokeStyle = '#FFD166'; ctx.lineWidth = 2;
+    // glowing neon leash
+    ctx.strokeStyle = '#FFD166'; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.moveTo(-22, 1); ctx.quadraticCurveTo(-10, 12, 6, 3); ctx.stroke();
-    // dog
-    ctx.fillStyle = '#B9794F'; rr(4, -4, 26, 14, 6); ctx.fill();
-    circle(34, -4, 7, '#B9794F'); ctx.fillStyle = '#7A4A2E'; ctx.fillRect(36, -4, 6, 5);
+    // happy beach pup with neon collar
+    rr(4, -4, 26, 14, 6); ctx.fillStyle = '#C98354'; ctx.fill(); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = PAL.teal; ctx.fillRect(25, -4, 4, 13);
+    circle(34, -4, 7.2, '#C98354', '#14032E', 1.2); ctx.fillStyle = '#7A4A2E'; ctx.fillRect(36, -4, 6, 5);
     ctx.fillStyle = '#7A4A2E'; ctx.beginPath(); ctx.moveTo(30, -10); ctx.lineTo(36, -14); ctx.lineTo(37, -7); ctx.fill();
-    circle(36, -6, 1.5, '#14032E');
+    circle(36, -6, 1.6, '#14032E');
     ctx.strokeStyle = '#7A4A2E'; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(8 + run * 6, 16); ctx.moveTo(26, 8); ctx.lineTo(26 - run * 6, 16); ctx.moveTo(4, -2); ctx.lineTo(-2, -8 + run * 3); ctx.stroke();
     ctx.restore();
@@ -1233,53 +1400,89 @@
   const DRAWERS = { skater: drawSkater, bike: drawBike, cooler: drawCooler, cart: drawCart, dog: drawDog };
 
   function drawCrab(cx, cy, time, id) {
-    const leg = reduced ? 0 : Math.sin(time * 18 + id) * 2;
-    ellipse(cx, cy + 12, 14, 4, 'rgba(0,0,0,0.25)');
-    ctx.strokeStyle = '#C8321F'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-    for (let i = -1; i <= 1; i += 2) for (let k = 0; k < 3; k++) {
-      ctx.beginPath(); ctx.moveTo(cx + i * 7, cy + 3 + k * 3); ctx.lineTo(cx + i * 16, cy + 6 + k * 3 + (k % 2 ? leg : -leg)); ctx.stroke();
+    const leg = reduced ? 0 : Math.sin(time * 18 + id) * 2.2;
+    ellipse(cx, cy + 12, 15, 4.2, 'rgba(80,30,15,0.34)');
+    if (ART.crab && ART.crab.complete && ART.crab.naturalWidth > 0) {
+      const wob = reduced ? 0 : Math.sin(time * 14 + id) * 0.1;
+      ctx.save();
+      ctx.translate(cx, cy - 1);
+      ctx.rotate(wob);
+      ctx.drawImage(ART.crab, -20, -19, 40, 39);
+      ctx.restore();
+      return;
     }
-    ctx.beginPath(); ctx.moveTo(cx - 9, cy - 4); ctx.lineTo(cx - 15, cy - 11); ctx.moveTo(cx + 9, cy - 4); ctx.lineTo(cx + 15, cy - 11); ctx.stroke();
-    circle(cx - 16, cy - 13, 4.5, '#FF5A3C'); circle(cx + 16, cy - 13, 4.5, '#FF5A3C');
-    ellipse(cx, cy + 2, 12, 8.5, '#FF5A3C');
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(cx - 6, cy - 2, 6, 2);
-    circle(cx - 4, cy - 6, 2.6, '#FFF4FA'); circle(cx + 4, cy - 6, 2.6, '#FFF4FA');
-    circle(cx - 4, cy - 6, 1.2, '#14032E'); circle(cx + 4, cy - 6, 1.2, '#14032E');
+    ctx.strokeStyle = '#B8261A'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+    for (let i = -1; i <= 1; i += 2) for (let k = 0; k < 3; k++) {
+      ctx.beginPath(); ctx.moveTo(cx + i * 7, cy + 3 + k * 3); ctx.lineTo(cx + i * 16.5, cy + 6 + k * 3 + (k % 2 ? leg : -leg)); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(cx - 9, cy - 4); ctx.lineTo(cx - 15.5, cy - 11); ctx.moveTo(cx + 9, cy - 4); ctx.lineTo(cx + 15.5, cy - 11); ctx.stroke();
+    // snapping coral pincers
+    circle(cx - 16, cy - 13, 4.8, '#FF5A3C', '#7A1610', 1.3); circle(cx + 16, cy - 13, 4.8, '#FF5A3C', '#7A1610', 1.3);
+    // glossy shaded crab shell
+    const sh = ctx.createRadialGradient(cx - 4, cy - 2, 2, cx, cy + 2, 13);
+    sh.addColorStop(0, '#FF8F6B'); sh.addColorStop(0.55, '#FF4D33'); sh.addColorStop(1, '#B31D15');
+    ellipse(cx, cy + 2, 12.5, 8.8, sh);
+    ctx.strokeStyle = '#6B1010'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ellipse(cx - 4, cy - 2, 4.2, 1.8, 'rgba(255,255,255,0.45)');
+    circle(cx - 4.2, cy - 6.5, 3, '#FFF4FA', '#14032E', 1.1); circle(cx + 4.2, cy - 6.5, 3, '#FFF4FA', '#14032E', 1.1);
+    circle(cx - 4.2, cy - 6.5, 1.3, '#14032E'); circle(cx + 4.2, cy - 6.5, 1.3, '#14032E');
   }
 
   function drawSandcastle(c, r) {
-    const x = c * T + 5, y = rowTop(r) + 6, w = T - 10;
-    ellipse(c * T + T / 2, y + 36, 19, 4, 'rgba(90,50,20,0.35)');
-    rr(x, y + 12, w, 24, 3); ctx.fillStyle = '#F8DDA8'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#8A5A34'; ctx.stroke();
-    for (let i = 0; i < 3; i++) { ctx.fillStyle = '#F8DDA8'; ctx.fillRect(x + 1 + i * (w / 3), y + 6, w / 3 - 3, 7); ctx.strokeStyle = '#8A5A34'; ctx.strokeRect(x + 1 + i * (w / 3), y + 6, w / 3 - 3, 7); }
-    rr(x + w / 2 - 5, y + 20, 10, 16, 5); ctx.fillStyle = '#9A6B43'; ctx.fill();
-    ctx.strokeStyle = '#5B3A2A'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + w / 2, y + 6); ctx.lineTo(x + w / 2, y - 4); ctx.stroke();
-    ctx.fillStyle = PAL.pink; ctx.beginPath(); ctx.moveTo(x + w / 2, y - 4); ctx.lineTo(x + w / 2 + 9, y - 1); ctx.lineTo(x + w / 2, y + 2); ctx.fill();
+    const x = c * T + 4, y = rowTop(r) + 5, w = T - 8;
+    ellipse(c * T + T / 2, y + 37, 20, 4.5, 'rgba(95,48,20,0.38)');
+    if (ART.sandcastle && ART.sandcastle.complete && ART.sandcastle.naturalWidth > 0) {
+      const sw = T + 4, sh = T + 8;
+      ctx.drawImage(ART.sandcastle, c * T - 2, rowTop(r) - 6, sw, sh);
+      return;
+    }
+    const sg = ctx.createLinearGradient(x, y + 8, x + w, y + 36);
+    sg.addColorStop(0, '#FFF0C2'); sg.addColorStop(0.55, '#F4CE8E'); sg.addColorStop(1, '#C99358');
+    rr(x, y + 12, w, 25, 3.5); ctx.fillStyle = sg; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = '#7D4D28'; ctx.stroke();
+    // sculpted turrets with warm highlight
+    for (let i = 0; i < 3; i++) {
+      const tx = x + 1 + i * (w / 3);
+      ctx.fillStyle = i === 0 ? '#FFF0C2' : '#F2CB89';
+      ctx.fillRect(tx, y + 6, w / 3 - 2.5, 7);
+      ctx.strokeStyle = '#7D4D28'; ctx.strokeRect(tx, y + 6, w / 3 - 2.5, 7);
+    }
+    // arched castle doorway
+    rr(x + w / 2 - 5.5, y + 20, 11, 17, 5.5); ctx.fillStyle = '#7E4E2E'; ctx.fill();
+    ctx.strokeStyle = '#5B3A2A'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x + w / 2, y + 6); ctx.lineTo(x + w / 2, y - 5); ctx.stroke();
+    // vibrant neon pennant flag
+    ctx.fillStyle = (c + r) % 2 ? PAL.pink : PAL.teal;
+    ctx.beginPath(); ctx.moveTo(x + w / 2, y - 5); ctx.lineTo(x + w / 2 + 10, y - 1.5); ctx.lineTo(x + w / 2, y + 2); ctx.closePath(); ctx.fill();
   }
 
   function drawUmbrella(lane, r, time) {
     const x = (umbrellaX(lane, g.tT) + lane.umbrella.w / 2) * T;
     const y = rowTop(r) + T / 2;
     const rx = lane.umbrella.w * T / 2;
-    ellipse(x, y + 6, rx, 14, 'rgba(0,0,0,0.28)');
+    ellipse(x, y + 7, rx, 14.5, 'rgba(10,2,28,0.34)');
+    const cols = [PAL.pink, '#FFF4FA', PAL.teal, '#FFF4FA', '#FFD166', '#FFF4FA'];
     for (let i = 0; i < 6; i++) {
-      ctx.beginPath(); ctx.ellipse(x, y, rx, 16, 0, Math.PI + (i * Math.PI) / 6, Math.PI + ((i + 1) * Math.PI) / 6);
-      ctx.lineTo(x, y); ctx.closePath(); ctx.fillStyle = i % 2 ? '#FFF4FA' : PAL.pink; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x, y, rx, 16.5, 0, Math.PI + (i * Math.PI) / 6, Math.PI + ((i + 1) * Math.PI) / 6);
+      ctx.lineTo(x, y); ctx.closePath(); ctx.fillStyle = cols[i]; ctx.fill();
     }
-    ctx.beginPath(); ctx.ellipse(x, y, rx, 16, 0, Math.PI, Math.PI * 2); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.fillStyle = '#FFD166'; ctx.fillRect(x - 1.5, y - 2, 3, 14);
-    circle(x, y - 17, 2.5, '#FFD166');
+    ctx.beginPath(); ctx.ellipse(x, y, rx, 16.5, 0, Math.PI, Math.PI * 2); ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.8; ctx.stroke();
+    ctx.fillStyle = '#FFD166'; ctx.fillRect(x - 1.8, y - 2, 3.6, 15);
+    circle(x, y - 17.5, 3, '#FFD166', '#14032E', 1.2);
   }
 
   function drawPickup(pk, time) {
     const cx = tileCx(pk.col);
-    const bob = reduced ? 0 : Math.sin(time * 4 + pk.row) * 2;
+    const bob = reduced ? 0 : Math.sin(time * 4 + pk.row) * 2.2;
     const cy = tileCy(pk.row) + bob;
-    ellipse(cx, tileCy(pk.row) + 14, 9, 3, 'rgba(0,0,0,0.25)');
+    ellipse(cx, tileCy(pk.row) + 14, 10, 3.2, 'rgba(0,0,0,0.28)');
+    // crisp neon pickup aura ring
+    const aura = pk.type === 'ice' ? '#2AF5E4' : pk.type === 'swirl' ? '#FFD166' : '#FF3CAC';
+    ctx.save();
+    circle(cx, cy, 13.5, 'rgba(20,4,48,0.42)', aura, 1.8);
+    ctx.restore();
     if (pk.type === 'cherry') {
-      ctx.strokeStyle = '#2E7D32'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 5, cy + 3); ctx.quadraticCurveTo(cx - 2, cy - 12, cx + 5, cy - 12); ctx.moveTo(cx + 6, cy + 4); ctx.quadraticCurveTo(cx + 4, cy - 8, cx + 5, cy - 12); ctx.stroke();
-      circle(cx - 6, cy + 5, 6, '#E8112D', '#7A0A18', 1.2); circle(cx + 6, cy + 6, 6, '#E8112D', '#7A0A18', 1.2);
-      circle(cx - 8, cy + 3, 1.6, 'rgba(255,255,255,0.8)'); circle(cx + 4, cy + 4, 1.6, 'rgba(255,255,255,0.8)');
+      ctx.strokeStyle = '#2FCB6B'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(cx - 5, cy + 3); ctx.quadraticCurveTo(cx - 2, cy - 12, cx + 5, cy - 12); ctx.moveTo(cx + 6, cy + 4); ctx.quadraticCurveTo(cx + 4, cy - 8, cx + 5, cy - 12); ctx.stroke();
+      circle(cx - 6, cy + 5, 6, '#EE1D47', '#6B081B', 1.3); circle(cx + 6, cy + 6, 6, '#EE1D47', '#6B081B', 1.3);
+      circle(cx - 8, cy + 3, 1.8, 'rgba(255,255,255,0.85)'); circle(cx + 4, cy + 4, 1.8, 'rgba(255,255,255,0.85)');
     } else if (pk.type === 'straw') {
       ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#FFF4FA';
       ctx.beginPath(); ctx.moveTo(cx - 6, cy + 12); ctx.lineTo(cx - 6, cy - 6); ctx.quadraticCurveTo(cx - 6, cy - 12, cx + 2, cy - 12); ctx.lineTo(cx + 8, cy - 12); ctx.stroke();
@@ -1287,13 +1490,15 @@
       ctx.beginPath(); ctx.moveTo(cx - 6, cy + 12); ctx.lineTo(cx - 6, cy - 6); ctx.quadraticCurveTo(cx - 6, cy - 12, cx + 2, cy - 12); ctx.lineTo(cx + 8, cy - 12); ctx.stroke(); ctx.setLineDash([]);
     } else if (pk.type === 'ice') {
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0.2 : Math.sin(time * 2) * 0.15);
-      rr(-9, -9, 18, 18, 3); ctx.fillStyle = 'rgba(180,255,250,0.92)'; ctx.fill(); ctx.strokeStyle = PAL.teal; ctx.lineWidth = 2; ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-5, -4); ctx.lineTo(-1, -6); ctx.stroke();
+      const ig = ctx.createLinearGradient(-9, -9, 9, 9);
+      ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(0.5, '#A8FAFF'); ig.addColorStop(1, '#2AF5E4');
+      rr(-9, -9, 18, 18, 3.5); ctx.fillStyle = ig; ctx.fill(); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(20,110,145,0.55)'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(-5, 2); ctx.lineTo(2, -5); ctx.stroke();
       ctx.restore();
     } else if (pk.type === 'swirl') {
-      ctx.fillStyle = '#D9A24A'; ctx.beginPath(); ctx.moveTo(cx - 7, cy + 1); ctx.lineTo(cx + 7, cy + 1); ctx.lineTo(cx, cy + 13); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#FFE066'; rr(cx - 9, cy - 2, 18, 5, 2.5); ctx.fill(); rr(cx - 7, cy - 7, 14, 5, 2.5); ctx.fill(); rr(cx - 4.5, cy - 11, 9, 5, 2.5); ctx.fill();
-      circle(cx, cy - 13, 2, '#2E9C4A');
+      ctx.fillStyle = '#E3A152'; ctx.beginPath(); ctx.moveTo(cx - 7, cy + 1); ctx.lineTo(cx + 7, cy + 1); ctx.lineTo(cx, cy + 13); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#FFE45E'; rr(cx - 9, cy - 2, 18, 5, 2.5); ctx.fill(); rr(cx - 7, cy - 7, 14, 5, 2.5); ctx.fill(); rr(cx - 4.5, cy - 11, 9, 5, 2.5); ctx.fill();
+      circle(cx, cy - 13, 2.2, '#2FCB6B');
     }
   }
 
@@ -1301,33 +1506,47 @@
     const cx = (d.towelCol + d.towelW / 2) * T;
     const y = rowTop(ROWS - 1);
     const L = d.look;
-    // towel
-    rr(d.towelCol * T + 3, y + 22, d.towelW * T - 6, 24, 3); ctx.fillStyle = '#FFF4FA'; ctx.fill();
+    // vibrant fringed Miami cabana beach towel
+    const tx = d.towelCol * T + 3, tw = d.towelW * T - 6;
+    ctx.fillStyle = 'rgba(100,55,25,0.28)';
+    rr(tx + 2, y + 24, tw, 24, 3); ctx.fill();
+    rr(tx, y + 21, tw, 24, 3); ctx.fillStyle = '#FFF4FA'; ctx.fill();
     ctx.save(); ctx.clip();
-    for (let i = 0; i < d.towelW * 4; i++) { ctx.fillStyle = i % 2 ? PAL.pink : PAL.teal; ctx.fillRect(d.towelCol * T + 3 + i * (d.towelW * T / (d.towelW * 4)), y + 22, 7, 24); }
+    for (let i = 0; i < d.towelW * 4; i++) {
+      ctx.fillStyle = i % 2 ? PAL.pink : PAL.teal;
+      ctx.fillRect(tx + i * (tw / (d.towelW * 4)), y + 21, 7.5, 24);
+    }
     ctx.restore();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.4; rr(tx, y + 21, tw, 24, 3); ctx.stroke();
+
     const kid = L.kind === 3;
-    const s = kid ? 0.8 : 1;
+    const s = kid ? 0.82 : 1;
     const by = y + 26;
     ctx.save(); ctx.translate(cx, by); ctx.scale(s, s);
-    ctx.fillStyle = SHIRT[L.shirt]; rr(-8, -16, 16, 16, 4); ctx.fill();
+    ctx.fillStyle = SHIRT[L.shirt]; rr(-8.5, -16, 17, 16, 4.5); ctx.fill();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.3; ctx.stroke();
     ctx.fillStyle = SKIN[L.skin]; ctx.fillRect(-12, -2, 7, 5); ctx.fillRect(5, -2, 7, 5);
-    circle(0, -23, 7, SKIN[L.skin]);
-    ctx.fillStyle = HAIR[L.hair]; ctx.beginPath(); ctx.arc(0, -25, 7.2, Math.PI, Math.PI * 2); ctx.fill();
-    if (L.kind === 0) { ctx.fillStyle = '#14032E'; ctx.fillRect(-6, -24, 12, 3); }
-    if (L.kind === 1) { ctx.fillStyle = '#FFD166'; ctx.fillRect(-12, -27, 24, 3); ctx.fillRect(-7, -33, 14, 7); }
-    if (L.kind === 2) { ctx.fillStyle = PAL.teal; ctx.fillRect(-9, -28, 18, 3); }
+    circle(0, -23, 7.2, SKIN[L.skin], '#14032E', 1.3);
+    ctx.fillStyle = HAIR[L.hair]; ctx.beginPath(); ctx.arc(0, -25, 7.5, Math.PI, Math.PI * 2); ctx.fill();
+    if (L.kind === 0) { ctx.fillStyle = '#14032E'; ctx.fillRect(-6, -24.5, 12, 3.2); ctx.fillStyle = PAL.teal; ctx.fillRect(-5, -24, 4, 1.5); ctx.fillRect(1, -24, 4, 1.5); }
+    if (L.kind === 1) { ctx.fillStyle = '#FFD166'; ctx.fillRect(-12, -27.5, 24, 3.2); ctx.fillRect(-7, -33.5, 14, 7); ctx.fillStyle = PAL.pink; ctx.fillRect(-7, -28.5, 14, 2); }
+    if (L.kind === 2) { ctx.fillStyle = PAL.teal; ctx.fillRect(-9, -28.5, 18, 3.2); }
     // waving arm
     const wave = reduced ? 0 : Math.sin(time * 6) * 0.5;
     ctx.save(); ctx.translate(8, -12); ctx.rotate(-1.1 + wave);
     ctx.fillStyle = SKIN[L.skin]; ctx.fillRect(0, -2, 13, 4); ctx.restore();
     ctx.restore();
-    // thirsty bubble with a cup
+    // glowing neon-trimmed thirsty speech bubble
     const bx = cx + (d.towelCol + d.towelW / 2 > COLS / 2 ? -34 : 34);
-    const bob = reduced ? 0 : Math.sin(time * 3) * 2;
-    rr(bx - 14, y - 4 + bob, 28, 22, 8); ctx.fillStyle = 'rgba(255,244,250,0.95)'; ctx.fill();
-    ctx.fillStyle = PAL.pink; ctx.beginPath(); ctx.moveTo(bx - 7, y + 4 + bob); ctx.lineTo(bx + 7, y + 4 + bob); ctx.lineTo(bx + 5, y + 15 + bob); ctx.lineTo(bx - 5, y + 15 + bob); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = PAL.teal; ctx.fillRect(bx + 2, y - 1 + bob, 2, 8);
+    const bob = reduced ? 0 : Math.sin(time * 3.5) * 2.2;
+    ctx.save();
+    ctx.shadowColor = PAL.teal; ctx.shadowBlur = 8;
+    rr(bx - 14.5, y - 4 + bob, 29, 23, 8); ctx.fillStyle = '#FFFDF8'; ctx.fill();
+    ctx.strokeStyle = PAL.pink; ctx.lineWidth = 1.8; ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = PAL.pink; ctx.beginPath(); ctx.moveTo(bx - 7, y + 4 + bob); ctx.lineTo(bx + 7, y + 4 + bob); ctx.lineTo(bx + 5, y + 15.5 + bob); ctx.lineTo(bx - 5, y + 15.5 + bob); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = PAL.teal; ctx.fillRect(bx + 2, y - 1 + bob, 2.2, 8);
+    ctx.restore();
   }
 
   function drawRunner(time) {
@@ -1342,34 +1561,42 @@
     const frac = g.d.melt / g.d.meltTotal;
     const blink = p.invuln > 0 && !reduced && Math.floor(time * 14) % 2 === 0;
     if (p.state === 'dropped') { drawSpill(cx, cy, p.stateT, time); return; }
-    ellipse(cx, cy + 15, 11 - lift * 0.2, 3.5, 'rgba(0,0,0,0.35)');
+    ellipse(cx, cy + 15.5, 11.5 - lift * 0.2, 3.8, 'rgba(10,2,28,0.42)');
     if (blink) ctx.globalAlpha = 0.4;
     ctx.save(); ctx.translate(cx, cy - lift);
     const lean = p.face === 'left' ? -0.12 : p.face === 'right' ? 0.12 : 0;
     ctx.rotate(lean);
-    // legs
-    ctx.fillStyle = '#E8A87C'; ctx.fillRect(-5, 8, 4, 7); ctx.fillRect(1, 8, 4, 7);
-    ctx.fillStyle = PAL.pink; ctx.fillRect(-6, 4, 12, 6);
-    // shirt
-    ctx.fillStyle = PAL.teal; rr(-7, -8, 14, 14, 3); ctx.fill();
-    ctx.fillStyle = '#FFF4FA'; ctx.fillRect(-7, -2, 14, 2.5);
-    // head and visor
-    circle(0, -13, 6, '#FFD0A6'); ctx.fillStyle = PAL.pink; ctx.fillRect(-7, -17.5, 14, 3.5); ctx.fillRect(1, -16, 9, 2.5);
-    ctx.fillStyle = '#14032E'; circle(-2, -12, 1, '#14032E'); circle(2.5, -12, 1, '#14032E');
-    // the drink: cup, straw, melt level
-    ctx.fillStyle = '#FFD0A6'; ctx.fillRect(5, -5, 6, 3);
-    ctx.beginPath(); ctx.moveTo(8, -20); ctx.lineTo(16, -20); ctx.lineTo(14.5, -4); ctx.lineTo(9.5, -4); ctx.closePath();
-    ctx.fillStyle = 'rgba(255,244,250,0.95)'; ctx.fill();
-    const fh = 14 * clamp(frac, 0, 1);
-    ctx.beginPath(); ctx.moveTo(9.7, -5 - fh); ctx.lineTo(14.3, -5 - fh); ctx.lineTo(14.4, -5); ctx.lineTo(9.6, -5); ctx.closePath();
+    // legs & white 80s sneakers
+    ctx.fillStyle = '#F0B289'; ctx.fillRect(-5, 8, 4, 6); ctx.fillRect(1, 8, 4, 6);
+    ctx.fillStyle = '#FFF4FA'; ctx.fillRect(-6, 13, 5.5, 3); ctx.fillRect(0.5, 13, 5.5, 3);
+    ctx.fillStyle = PAL.pink; ctx.fillRect(-6.5, 3.5, 13, 6);
+    // vibrant Miami surf tee
+    rr(-7.5, -8.5, 15, 14, 3.5); ctx.fillStyle = PAL.teal; ctx.fill();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = '#FFF4FA'; ctx.fillRect(-7, -3, 14, 2.4);
+    ctx.fillStyle = '#FFD166'; ctx.fillRect(-7, -0.5, 14, 1.8);
+    // head & neon beach visor
+    circle(0, -13.5, 6.2, '#FFD0A6', '#14032E', 1.3);
+    ctx.fillStyle = PAL.pink; ctx.fillRect(-7.5, -18, 15, 3.8); ctx.fillRect(1, -16.2, 9.5, 2.6);
+    circle(-2, -12, 1.1, '#14032E'); circle(2.5, -12, 1.1, '#14032E');
+    // glowing icy Thirsty Beaches drink cup held high
+    ctx.fillStyle = '#FFD0A6'; ctx.fillRect(5, -5.5, 6, 3.2);
+    ctx.beginPath(); ctx.moveTo(8, -21); ctx.lineTo(17, -21); ctx.lineTo(15.2, -4); ctx.lineTo(9.8, -4); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,244,250,0.96)'; ctx.fill();
+    ctx.strokeStyle = '#14032E'; ctx.lineWidth = 1.2; ctx.stroke();
+    const fh = 14.5 * clamp(frac, 0, 1);
+    ctx.beginPath(); ctx.moveTo(10, -5 - fh); ctx.lineTo(15, -5 - fh); ctx.lineTo(14.8, -5); ctx.lineTo(10.2, -5); ctx.closePath();
     ctx.fillStyle = frac > 0.35 ? PAL.pink : '#FF9B6B'; ctx.fill();
-    ctx.strokeStyle = PAL.teal; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(13, -20); ctx.lineTo(15, -25); ctx.stroke();
+    ctx.strokeStyle = PAL.teal; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(13.5, -21); ctx.lineTo(16, -26.5); ctx.stroke();
     ctx.restore();
     ctx.globalAlpha = 1;
     if (g.shield) {
-      ctx.strokeStyle = 'rgba(255,209,102,0.95)'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.ellipse(cx, cy - lift - 2, 17, 21, 0, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,209,102,0.15)'; ctx.fill();
+      ctx.save();
+      ctx.shadowColor = '#FFD166'; ctx.shadowBlur = 12;
+      ctx.strokeStyle = 'rgba(255,209,102,0.98)'; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.ellipse(cx, cy - lift - 2, 18, 22, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,209,102,0.16)'; ctx.fill();
+      ctx.restore();
     }
     if (g.freeze > 0 && !reduced) { /* frost on the board is drawn in drawFreeze */ }
   }

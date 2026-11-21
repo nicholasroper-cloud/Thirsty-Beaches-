@@ -618,6 +618,57 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       }
     });
 
+    /* ======================= C7. the art (v46): every image comes from the kiosk, nothing breaks without it ======================= */
+    await section("C7. every page loads all its images from the kiosk (200, right type, no CSP violation, no external host); a blocked image falls back and the game still plays", async () => {
+      const A = "/kiosk/games/";
+      const EXPECT = {
+        "/arcade/games": ["shared/assets/miami-backdrop.webp", "assets/tile-thirsty-blaster.webp", "assets/tile-thirsty-tower.webp", "assets/tile-cup-catch.webp", "assets/tile-boardwalk-dash.webp", "assets/tile-soft-serve-stacker.webp", "assets/tile-slots.webp"],
+        "/arcade/games/thirsty-blaster": ["shared/assets/miami-backdrop.webp", "thirsty-blaster/assets/bg-miami-beach.webp", "thirsty-blaster/assets/blaster-bot.png"],
+        "/arcade/games/thirsty-tower": ["shared/assets/miami-backdrop.webp", "thirsty-tower/assets/bg-miami-tower.webp", "thirsty-tower/assets/crab.png"],
+        "/arcade/games/cup-catch": ["shared/assets/miami-backdrop.webp", "cup-catch/assets/bg-miami-counter.webp", "cup-catch/assets/customer.png"],
+        "/arcade/games/boardwalk-dash": ["shared/assets/miami-backdrop.webp", "boardwalk-dash/assets/trailer.png", "boardwalk-dash/assets/sandcastle.png", "boardwalk-dash/assets/crab.png"],
+        "/arcade/games/soft-serve-stacker": ["shared/assets/miami-backdrop.webp", "soft-serve-stacker/assets/bg-miami-pier.webp", "soft-serve-stacker/assets/cone.png"],
+      };
+      await installMock(c);
+      for (const [page, files] of Object.entries(EXPECT)) {
+        await c.goto(url(kiosk, page)); await sleep(1500);
+        for (const f of files) {
+          const r = c.responses.find(x => x.url.endsWith(A + f));
+          ok(r && r.status === 200 && /^image\/(webp|png)$/.test(r.mime), page + ": " + f + " loaded from the kiosk (200 " + (r && r.mime) + ")");
+        }
+        ok(c.responses.filter(x => x.url.includes("/assets/")).every(x => x.status === 200), page + ": no asset answered an error");
+        ok(c.requests.every(r => /^(http:\/\/127\.0\.0\.1:|data:)/.test(r.url)), page + ": nothing requested from outside the kiosk");
+        eq(await c.eval("window.__errs.length"), 0, page + ": no script error and no CSP violation");
+        eq(c.exceptions.length, 0, page + ": no exception");
+        if (page === "/arcade/games") ok(await c.eval("[].every.call(document.images,function(i){return i.complete&&i.naturalWidth>0})"), "every picker tile image decoded");
+      }
+      // served with the right type and nothing reachable by traversal
+      for (const [f, t] of [["thirsty-blaster/assets/blaster-bot.png", "image/png"], ["shared/assets/miami-backdrop.webp", "image/webp"], ["fonts/bungee.woff2", "font/woff2"]]) {
+        const r = await req(kiosk.port, "GET", "/kiosk/games/" + f); eq([r.status, String(r.headers["content-type"]).split(";")[0]], [200, t], f + " content type");
+      }
+      for (const bad of ["/kiosk/games/../../kiosk-server.js", "/kiosk/games/thirsty-blaster/assets/..%2f..%2f..%2f..%2fkiosk-server.js", "/kiosk/games/%2e%2e/%2e%2e/kiosk-server.js", "/kiosk/games/thirsty-blaster/assets/blaster-bot.png%00.js", "/kiosk/games/thirsty-blaster/assets/"]) {
+        const r = await req(kiosk.port, "GET", bad); ok([400, 403, 404].includes(r.status) && !/createServer/.test(r.body || ""), bad + " -> " + r.status);
+      }
+      const csp = String((await req(kiosk.port, "GET", "/arcade/games/cup-catch")).headers["content-security-policy"]);
+      ok(/img-src 'self' data:/.test(csp) && !/img-src[^;]*https?:/.test(csp) && /default-src 'none'/.test(csp), "game pages: images from 'self' only (data: for the heart mask and favicon), no external host: " + csp.slice(0, 120));
+      // one image blocked: the previous drawn art takes over, the game starts and runs, no exception
+      await c.S("Network.setBlockedURLs", { urls: ["*assets/*"] });
+      try {
+        for (const g of Object.keys(GAMES)) {
+          await c.goto(url(kiosk, "/arcade/games/" + g)); await sleep(800);
+          await c.tapEl(GAMES[g].start);
+          await waitFor(async () => (await c.eval(GAMES[g].mode)) === GAMES[g].playing, 5000, g + " starts with every image blocked");
+          await sleep(1200);
+          eq(await c.eval(GAMES[g].mode), GAMES[g].playing, g + ": still running (no stall waiting on an image)");
+          eq(c.exceptions.length, 0, g + ": no exception in the draw loop without its images");
+          ok(c.consoleErrors.every(e => /ERR_BLOCKED_BY_CLIENT|blocked/i.test(e)), g + ": the only errors are the blocked loads: " + c.consoleErrors.slice(0, 2).join(" | "));
+          if (g === "thirsty-blaster" && out) await c.shot("portrait-fallback-no-images.png");
+        }
+        await c.goto(url(kiosk, "/arcade/games")); await sleep(800);
+        eq(await c.eval("[].filter.call(document.querySelectorAll('.pk-tile'),function(t){var r=t.getBoundingClientRect();return r.width>200&&r.height>200}).length"), 6, "picker: six tappable tiles even with no art");
+      } finally { await c.S("Network.setBlockedURLs", { urls: [] }); }
+    });
+
     /* ======================= D. the visit ======================= */
     await section("D1. visit cap spans pages; Time's up stops audio and returns hands-off", async () => {
       const k2 = await stageKiosk({ session: { gameMaxSeconds: 30, endedReturnSeconds: 10 } });

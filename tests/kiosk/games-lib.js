@@ -82,10 +82,12 @@ async function launchChrome() {
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
   const S = (m, p) => send(m, p, sessionId);
   await S("Page.enable"); await S("Runtime.enable"); await S("Network.enable");
-  const page = { requests: [], consoleErrors: [], exceptions: [], mocks: [], size: [1080, 1920] };
+  const page = { requests: [], responses: [], failed: [], consoleErrors: [], exceptions: [], mocks: [], size: [1080, 1920] };
   listeners.push(d => {
     if (d.sessionId !== sessionId) return;
     if (d.method === "Network.requestWillBeSent") page.requests.push({ url: d.params.request.url, method: d.params.request.method, body: d.params.request.postData || "" });
+    else if (d.method === "Network.responseReceived") page.responses.push({ url: d.params.response.url, status: d.params.response.status, mime: d.params.response.mimeType });
+    else if (d.method === "Network.loadingFailed") page.failed.push({ id: d.params.requestId, error: d.params.errorText, blocked: d.params.blockedReason || "" });
     else if (d.method === "Runtime.consoleAPICalled" && (d.params.type === "error" || d.params.type === "warning")) page.consoleErrors.push(d.params.type + ": " + d.params.args.map(a => a.value || a.description || "").join(" "));
     else if (d.method === "Runtime.exceptionThrown") page.exceptions.push((d.params.exceptionDetails.exception && d.params.exceptionDetails.exception.description) || d.params.exceptionDetails.text);
     else if (d.method === "Log.entryAdded" && d.params.entry.level === "error") page.consoleErrors.push("log: " + d.params.entry.text + " " + (d.params.entry.url || ""));
@@ -109,7 +111,7 @@ async function launchChrome() {
     },
     async mock(re, fn) { page.mocks.push({ re, fn }); await S("Fetch.enable", { patterns: [{ urlPattern: "*" }] }); },
     async goto(url) {
-      page.requests.length = 0; page.consoleErrors.length = 0; page.exceptions.length = 0;
+      page.requests.length = 0; page.responses.length = 0; page.failed.length = 0; page.consoleErrors.length = 0; page.exceptions.length = 0;
       page._down = new Map();   // a fresh touch device per page: a finger left down by the last test can never leak into this one
       // Headless Chrome quirk: after a HELD finger (or a moved one) on one page the first held finger on the NEXT page is swallowed unless the old page is reloaded first.
       if (page._moved) { page._moved = false; await S("Page.reload").catch(() => {}); await sleep(500); }

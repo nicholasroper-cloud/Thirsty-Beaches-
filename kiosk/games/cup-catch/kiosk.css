@@ -2,13 +2,18 @@
 :root { --kg-w: 360; --kg-h: 560; }
 body.kg { overflow: hidden; height: 100%; }
 body.kg .kg-surface { display: contents; }
-body.kg .hud { width: min(92vw, 46rem); margin: 0; grid-template-columns: repeat(4, 1fr); padding: .4rem .8rem; border-radius: 1rem; }
+body.kg .hud {
+  width: min(92vw, 46rem); margin: 0; grid-template-columns: repeat(4, 1fr); padding: .45rem .85rem; border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(16,4,42,.94), rgba(6,1,20,.96));
+  border: .12rem solid rgba(42,245,228,.55);
+  box-shadow: 0 0 18px rgba(42,245,228,.22), inset 0 2px 10px rgba(0,0,0,.78);
+}
 body.kg .hud__label { font-size: .75rem; }
 body.kg .hud__val { font-size: 1.35rem; }
 body.kg .heart { width: 1.3rem; height: 1.15rem; }
 body.kg .kg-board { background: #1B0538; }
 body.kg .board__canvas { cursor: default; }
-body.kg .overlay { align-items: flex-end; padding: 6% 6% 8%; background: linear-gradient(180deg, rgba(7,1,20,.3), rgba(7,1,20,.86) 50%); }
+body.kg .overlay { align-items: flex-end; padding: 6% 6% 8%; background: linear-gradient(180deg, rgba(7,1,20,.3), rgba(7,1,20,.88) 50%); }
 body.kg .overlay__card { max-width: none; width: 100%; padding: 1.2rem 1.3rem 1.4rem; border-radius: 1.4rem; }
 body.kg .overlay__title { font-size: 2.7rem; margin-bottom: .6rem; }
 body.kg .overlay__tips { font-size: 1.12rem; margin-bottom: 1rem; }
@@ -17,9 +22,23 @@ body.kg .tip { flex: 0 0 2rem; height: 2rem; font-size: 1.2rem; }
 body.kg .overlay__score { font-size: 1.5rem; }
 body.kg .overlay__score strong { font-size: 2.3rem; }
 body.kg .overlay__best, body.kg .overlay__meta { font-size: 1.05rem; }
-body.kg .btn { min-height: 64px; font-size: 1.1rem; border-radius: 1.4rem; touch-action: manipulation; }
-body.kg .btn--big { min-height: 5.2rem; width: 100%; font-size: 1.9rem; }
+body.kg .btn {
+  min-height: 64px; font-size: 1.1rem; border-radius: 1.4rem; touch-action: manipulation;
+  background: linear-gradient(180deg, #47188A 0%, #270A56 48%, #150333 100%);
+  box-shadow: 0 .24rem 0 #09021C, 0 0 1.15rem rgba(42,245,228,.35), inset 0 .14rem 0 rgba(255,255,255,.26);
+}
+body.kg .btn--big {
+  min-height: 5.2rem; width: 100%; font-size: 1.9rem;
+  background: linear-gradient(180deg, #FFF0A8 0%, #FFD166 36%, #FF7A45 72%, #FF3CAC 100%);
+  box-shadow: 0 .32rem 0 #8F0A53, 0 0 1.8rem rgba(255,60,172,.6), inset 0 .18rem 0 rgba(255,255,255,.65);
+}
 body.kg .kg-ctl { gap: 1.3vw; }
 body.kg .kg-ctl .btn { flex: 0 0 22%; height: 100%; padding: 0 .4rem; border-radius: 1.4rem; }
-body.kg .kg-slide { flex: 1 1 0; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 1.4rem; border: .2rem dashed rgba(42,245,228,.5); background: rgba(42,245,228,.07);
-  font-family: "Bungee", sans-serif; font-size: 1.15rem; letter-spacing: .06em; line-height: 1.2; text-transform: uppercase; color: rgba(255,244,250,.9); pointer-events: auto; }
+body.kg .kg-slide {
+  flex: 1 1 0; display: flex; align-items: center; justify-content: center; text-align: center;
+  border-radius: 1.4rem; border: .22rem dashed rgba(42,245,228,.75);
+  background: linear-gradient(180deg, rgba(42,245,228,.16), rgba(255,60,172,.12));
+  box-shadow: 0 0 1.2rem rgba(42,245,228,.22), inset 0 0 1.4rem rgba(42,245,228,.14);
+  font-family: "Bungee", sans-serif; font-size: 1.15rem; letter-spacing: .06em; line-height: 1.2; text-transform: uppercase;
+  color: #FFF4FA; text-shadow: 0 0 10px rgba(42,245,228,.65); pointer-events: auto;
+}
