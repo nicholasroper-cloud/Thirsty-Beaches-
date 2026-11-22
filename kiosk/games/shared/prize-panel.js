@@ -81,7 +81,8 @@
   }
 
   let el = null;
-  function hide() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+  function musicPanel(on) { try { if (root.TBMusic) root.TBMusic.setPanel('prize', on); } catch (e) { /* the beach music is optional */ } }
+  function hide() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; musicPanel(false); }
 
   function show(opts) {
     hide();
@@ -213,6 +214,7 @@
     if (win) drawWin('');
     else { body.appendChild(mk('h2', 'kp-title', WORDING.thanksTitle)); if (r.chanceUsed === true) body.appendChild(mk('p', 'kp-line kp-chance', WORDING.chanceUsed)); navRow(); }
     doc.body.appendChild(modal);
+    musicPanel(true);                                      // the beach music stays silent behind this panel (it also stopped at game over)
     return modal;
   }
 

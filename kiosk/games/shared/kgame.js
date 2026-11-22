@@ -33,6 +33,7 @@
     audioBlocked = true;
     ctxs.splice(0).forEach(function (c) { try { c.close(); } catch (e) { /* already closed */ } });
     try { if (root.speechSynthesis) root.speechSynthesis.cancel(); } catch (e) { /* no speech */ }
+    try { if (root.TBMusic) root.TBMusic.stopAll(); } catch (e) { /* the music is optional */ }      // the beach music stops for good with every other sound (visit end, page hide)
   }
 
   /* ---------- 2. limits (same sanitising as kiosk/boardwalk-slots.js sessionLimits; the game time cap is new) ---------- */
@@ -64,7 +65,7 @@
   const VISIT_GAP_MS = 90000;
   function readVisit() { try { return JSON.parse(root.sessionStorage.getItem(VISIT_KEY)); } catch (e) { return null; } }
   function writeVisit(v) { try { root.sessionStorage.setItem(VISIT_KEY, JSON.stringify(v)); } catch (e) { /* storage blocked: the visit lives in memory for this page */ } }
-  function clearVisit() { try { root.sessionStorage.removeItem(VISIT_KEY); } catch (e) { /* nothing stored */ } memVisit = null; }
+  function clearVisit() { try { root.sessionStorage.removeItem(VISIT_KEY); } catch (e) { /* nothing stored */ } memVisit = null; try { if (root.TBMusic) root.TBMusic.clearMute(); } catch (e) { /* optional */ } }
   let memVisit = null;
   function loadVisit() {
     const now = Date.now();
@@ -141,11 +142,11 @@
       const idleLimit = (ended ? Math.min(limits.idleSeconds, limits.endedReturnSeconds) : limits.idleSeconds) * 1000;
       const idleFor = now - lastTouch;
       if (idleFor >= idleLimit) { leaveHandsOff(); return; }
-      if (warnEl && !ended) warnEl.hidden = idleFor < idleLimit - limits.idleWarnSeconds * 1000;
+      if (warnEl && !ended) { warnEl.hidden = idleFor < idleLimit - limits.idleWarnSeconds * 1000; try { if (root.TBMusic) root.TBMusic.setPanel('idle', !warnEl.hidden); } catch (e) { /* optional */ } }
     } else if (timeEl) timeEl.hidden = true;
   }
 
-  function touched() { lastTouch = Date.now(); if (warnEl && !warnEl.hidden) warnEl.hidden = true; }
+  function touched() { lastTouch = Date.now(); if (warnEl && !warnEl.hidden) { warnEl.hidden = true; try { if (root.TBMusic) root.TBMusic.setPanel('idle', false); } catch (e) { /* optional */ } } }
 
   /* ---------- 4. one run = one server session ---------- */
   let sid = null, startP = null, runGame = null, againFn = null, runGen = 0;
@@ -156,11 +157,13 @@
     runGame = game; sid = null; runGen++;
     if (root.TBPrize && root.TBPrize.hide) root.TBPrize.hide();
     if (ended) return;
+    try { if (root.TBMusic) root.TBMusic.runStart(); } catch (e) { /* the beach music is optional: a run never waits for it */ }
     startP = post('/api/arcade/game/start', { game: game }).then(function (r) {
       if (r.ok && r.d && r.d.ok === true && /^[a-f0-9]{24}$/.test(String(r.d.sid))) sid = r.d.sid;
     }).catch(function () { /* offline: the game plays, no prize roll */ });
   }
   function runEnd() {
+    try { if (root.TBMusic) root.TBMusic.runEnd(); } catch (e) { /* optional */ }      // game over: the music stops with the run, before the result panel
     if (ended) return Promise.resolve();
     const p = startP || Promise.resolve();
     const gen = runGen;                  // a new run started before the panel shows (quick Play again on the game's own card): no panel over a running game

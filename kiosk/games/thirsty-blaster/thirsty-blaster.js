@@ -648,10 +648,11 @@
       default: break;
     }
   }
-  function setSound(on) {
+  function setSound(on, bootOnly) {
     soundOn = on;
     soundBtn.textContent = on ? 'Sound On' : 'Sound Off';
     soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (window.TBMusic && !bootOnly) window.TBMusic.setMuted(!on);      // the beach music follows this setting (shared/beach-music.js); the boot call does not touch it
     if (on) {
       ensureAudio();
       sfx('pickup');
@@ -1800,6 +1801,7 @@
   function pauseGame() {
     if (state !== 'playing') return;
     state = 'paused';
+    if (window.TBMusic) window.TBMusic.setPaused(true);
     stopLoop();
     input.firing = false;
     keys.clear();
@@ -1811,6 +1813,7 @@
   function resumeGame() {
     if (state !== 'paused') return;
     state = 'playing';
+    if (window.TBMusic) window.TBMusic.setPaused(false);
     hideOverlay();
     pauseBtn.textContent = 'Pause';
     if (soundOn) ensureAudio();
@@ -2035,7 +2038,8 @@
   /* ---------- boot ---------- */
   loadBest();
   if (window.TBK) { window.TBK.onEnd(pauseGame); window.TBK.onAgain(begin); }
-  setSound(false);
+  if (window.TBMusic && window.TBMusic.isMuted()) soundTouched = true;      // a mute chosen on another game page in this visit: the Start tap must not turn the sound back on
+  setSound(false, true);
   selectFlavor(0);
   // a static preview scene behind the start screen: a few seconds of a quiet wave 1
   preview = createGame({ seed: 7 });

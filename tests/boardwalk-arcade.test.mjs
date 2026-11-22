@@ -521,36 +521,64 @@ test('arcade-session.json: shipped defaults are sane, bad values fall back, the 
   assert.equal(slots.sessionLimits({ enabled: false }).enabled, false, 'staff can switch the limit off (second-screen use)');
 });
 
-test('audio bank: stopAll stops everything and nothing starts again; a missing clip is asked for once and never throws', async () => {
-  const sent = [];
-  const ctxs = [];
-  class FakeCtx { constructor() { this.state = 'running'; this.currentTime = 0; this.sampleRate = 8000; this.destination = {}; ctxs.push(this); }
-    createGain() { return { gain: { setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {} }; }
-    createOscillator() { return { type: '', frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {}, start() {}, stop() {} }; }
-    createBiquadFilter() { return { type: '', frequency: { setValueAtTime() {} }, Q: { setValueAtTime() {} }, connect() {} }; }
+test('audio bank: the 1986 loop plays through Web Audio (loop = true, decoded once), no computer voice, stopAll stops everything and nothing starts again; missing files are silent, asked for once', async () => {
+  const sent = [], fetched = [];
+  const ctxs = [], sources = [];
+  let speechCalls = 0, decodeFails = false, fetchFails = false;
+  const param = () => ({ value: 0, setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} });
+  class FakeCtx { constructor(o) { this.opts = o; this.state = 'running'; this.currentTime = 0; this.sampleRate = (o && o.sampleRate) || 48000; this.destination = {}; ctxs.push(this); }
+    createGain() { return { gain: param(), connect() {}, disconnect() {} }; }
+    createOscillator() { return { type: '', frequency: param(), connect() {}, start() {}, stop() {} }; }
+    createBiquadFilter() { return { type: '', frequency: param(), Q: param(), connect() {} }; }
+    createBuffer(n) { return { getChannelData: () => new Float32Array(n) }; }
+    createBufferSource() { const src = { buffer: null, loop: false, loopStart: 0, loopEnd: 0, started: 0, stopped: 0, connect() {}, disconnect() {}, start() { this.started++; }, stop() { this.stopped++; } }; sources.push(src); return src; }
+    decodeAudioData(ab, ok, no) { if (decodeFails) { no(new Error('bad data')); return undefined; } const buf = { duration: 756000 / 44100, length: 756000, sampleRate: 44100 }; ok(buf); return Promise.resolve(buf); }
     resume() { return Promise.resolve(); } close() { this.state = 'closed'; return Promise.resolve(); } }
-  let canceled = 0;
-  class FakeAudio { constructor(u) { sent.push(u); this.volume = 1; } play() { return Promise.reject(new Error('NotSupportedError')); } pause() {} addEventListener() {} }
+  let audioMode = 'missing';
+  class FakeAudio { constructor(u) { sent.push(u); this.volume = 1; }
+    play() { if (audioMode === 'missing') return Promise.reject(new Error('NotSupportedError')); setTimeout(() => this.onended && this.onended(), 5); return Promise.resolve(); } pause() {} addEventListener() {} }
+  const fakeFetch = (u) => { fetched.push(u); if (fetchFails) return Promise.resolve({ ok: false, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) }); return Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(16)) }); };
   const g = globalThis;
-  const saved = { window: g.window, Audio: g.Audio, AC: g.AudioContext };
-  g.window = { AudioContext: FakeCtx, speechSynthesis: { cancel() { canceled++; }, speak() {} } }; g.Audio = FakeAudio;
+  const saved = { window: g.window, Audio: g.Audio, fetch: g.fetch };
+  g.window = { AudioContext: FakeCtx, speechSynthesis: { cancel() { speechCalls++; }, speak() { speechCalls++; } } }; g.Audio = FakeAudio; g.fetch = fakeFetch;
   try {
     const bank = audioBank.createAudioBank({ basePath: '/kiosk/audio/' });
     bank.setPersonaMode('shredder');
     const r1 = await bank.playTrigger('slot_spin');
-    assert.ok(['speech', 'speech-unavailable', 'speech-error', 'silent'].includes(r1.source), 'missing mp3 falls back, no throw: ' + r1.source);
+    assert.equal(r1.source, 'synth-jingle', 'no studio clip installed: a musical stinger, not a voice: ' + r1.source);
     const n1 = sent.length;
     for (let i = 0; i < 6; i++) await bank.playTrigger('slot_spin');
-    assert.ok(sent.length - n1 <= 1, 'the same missing file is not requested again and again (' + (sent.length - n1) + ' more requests)');
+    assert.ok(sent.length - n1 <= 1, 'the same missing clip is not requested again and again (' + (sent.length - n1) + ' more requests)');
+    assert.equal(speechCalls, 0, 'speechSynthesis is never called');
     bank.startSynthwaveIdle(); await sleep(20);
-    const bgm = sent.filter((u) => /bgm\//.test(u)).length; bank.stopSynthwaveIdle(); bank.startSynthwaveIdle(); await sleep(20);
-    assert.equal(sent.filter((u) => /bgm\//.test(u)).length, bgm, 'the missing music file is asked for once');
+    assert.deepEqual(fetched, ['/kiosk/audio/bgm/miami-beach-80s.wav'], 'the loop is fetched from the kiosk, once');
+    assert.ok(!sent.some((u) => /bgm\//.test(u)), 'and never through an <audio> element (no gap at the loop point)');
+    assert.equal(sources.length, 1, 'one buffer source'); assert.equal(sources[0].loop, true, 'loop = true'); assert.equal(sources[0].loopStart, 0); assert.ok(Math.abs(sources[0].loopEnd - 756000 / 44100) < 1e-9, 'over the whole 756000-frame buffer'); assert.equal(sources[0].started, 1);
+    assert.equal(ctxs[0].opts.sampleRate, 44100, 'the context runs at the file rate: no resampling at the loop edges');
+    bank.stopSynthwaveIdle(); assert.equal(sources[0].stopped, 1, 'stopping stops the source'); bank.startSynthwaveIdle(); await sleep(20);
+    assert.equal(fetched.length, 1, 'the decoded loop is reused: no second request'); assert.equal(sources.length, 2);
+    // a recorded clip, when installed, still plays and wins over the stinger
+    audioMode = 'ok'; const bank2 = audioBank.createAudioBank({ basePath: '/kiosk/audio/' }); bank2.setPersonaMode('shredder');
+    const rc = await bank2.playTrigger('prize_win'); assert.equal(rc.source, 'mp3', 'a recorded clip still plays: ' + rc.source); audioMode = 'missing';
     bank.stopAll();
-    assert.ok(ctxs.length >= 1 && ctxs.every((c) => c.state === 'closed'), 'the audio context is closed');
-    assert.ok(canceled >= 1, 'speech is cancelled');
-    const before = ctxs.length;
-    bank.playReelClick(); bank.playSodaFizz(); bank.playArcadeFanfare(true); bank.startSynthwaveIdle();
+    assert.ok(ctxs.length >= 1 && ctxs.filter((c) => c === ctxs[0]).every((c) => c.state === 'closed'), 'the audio context is closed');
+    assert.equal(sources[1].stopped, 1, 'the loop source is stopped');
+    const before = ctxs.length, srcBefore = sources.length;
+    bank.playReelClick(); bank.playSodaFizz(); bank.playArcadeFanfare(true); bank.startSynthwaveIdle(); await sleep(20);
     assert.equal((await bank.playTrigger('prize_win')).source, 'stopped', 'nothing plays after stopAll');
-    assert.equal(ctxs.length, before, 'and no new audio context is created');
-  } finally { g.window = saved.window; g.Audio = saved.Audio; if (saved.window === undefined) delete g.window; if (saved.Audio === undefined) delete g.Audio; }
+    assert.equal(ctxs.length, before, 'and no new audio context is created'); assert.equal(sources.length, srcBefore, 'and no new loop source'); assert.equal(fetched.length, 1, 'and no new request');
+    // a missing or undecodable music file is silent (the procedural pad), never throws, asked for once
+    fetchFails = true; fetched.length = 0;
+    const bank3 = audioBank.createAudioBank({ basePath: '/kiosk/audio/' });
+    bank3.startSynthwaveIdle(); await sleep(30); bank3.stopSynthwaveIdle(); bank3.startSynthwaveIdle(); await sleep(30);
+    assert.equal(fetched.length, 1, 'a missing music file is asked for once'); bank3.stopAll();
+    fetchFails = false; decodeFails = true; fetched.length = 0;
+    const bank4 = audioBank.createAudioBank({ basePath: '/kiosk/audio/' });
+    bank4.startSynthwaveIdle(); await sleep(30); bank4.stopSynthwaveIdle(); bank4.startSynthwaveIdle(); await sleep(30);
+    assert.equal(fetched.length, 1, 'an undecodable music file is asked for once'); bank4.stopAll();
+    assert.equal(speechCalls, 0, 'still no speech');
+    // muted: no stinger plays
+    decodeFails = false; const bank5 = audioBank.createAudioBank({ basePath: '/kiosk/audio/', muted: true });
+    assert.equal((await bank5.playTrigger('slot_spin')).source, 'muted', 'muted = silent'); bank5.stopAll();
+  } finally { g.window = saved.window; g.Audio = saved.Audio; g.fetch = saved.fetch; if (saved.window === undefined) delete g.window; if (saved.Audio === undefined) delete g.Audio; if (saved.fetch === undefined) delete g.fetch; }
 });

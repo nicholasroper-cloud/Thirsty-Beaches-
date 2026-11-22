@@ -1,9 +1,10 @@
 /* Thirsty Beaches — Dual-Persona 80s Audio Engine (kiosk/audio-bank.js)
    Personas: "shredder" (Fun 80s Surfer) & "neon86" (80s Arcade / Radio DJ).
-   Loads local MP3 voice clips by persona & trigger, auto-ducks 80s synthwave BGM to 20%
-   whenever a voice line plays, falls back to Web Speech API if an MP3 is missing,
+   Plays the 1986 Miami Beach loop (bgm/miami-beach-80s.wav, decoded once and looped sample-exact through Web Audio) while a visit is on,
+   loads local MP3 voice clips by persona & trigger when they are installed and ducks the music to 20% while one plays,
+   otherwise plays a short musical synth stinger (the robotic Web Speech voice is gone: nothing here calls speechSynthesis),
    layers mechanical reel clicks / soda-can fizz / 80s arcade fanfare via Web Audio,
-   and enforces PG Audio Mode (ON by default) to censor 18+ words in spoken audio. */
+   and enforces PG Audio Mode (ON by default) on any recorded-clip text that is shown on screen. */
 (function (root) {
   'use strict';
 
@@ -22,7 +23,7 @@
     'mega_jackpot',
   ];
 
-  // Local MP3 file pool per persona & trigger + scripted TTS fallback lines
+  // Local MP3 file pool per persona & trigger. The `text` is the line the clip says (shown on the staff barker demo); with no clip installed a synth stinger plays instead
   const CLIPS = {
     shredder: {
       barker_approach: [
@@ -84,6 +85,9 @@
     },
   };
 
+  const BGM_URL = 'bgm/miami-beach-80s.wav';
+  const BGM_LOOP_GAIN = 0.15;
+
   // PG Audio Mode censor filter (ON by default): scrubs 18+ words in spoken audio while leaving screen text untouched.
   const PROFANITY_RE = /\b(f+u+c+k\w*|sh[i1]+t\w*|bitch\w*|asshole\w*|dick(?:s|head\w*)?|cock(?:s|blocker\w*)?|piss\w*|bastard\w*|slut\w*|dumbass\w*|damn|hell)\b/gi;
   function sanitizeSpokenText(text, pgMode = true) {
@@ -107,10 +111,10 @@
 
     let ctx = null;
     let stopped = false;               // stopAll() was called (the page is being left): nothing may start again
-    const missing = new Set();         // clip files that failed to load once: never requested again (no repeated 404s), the Web Speech / synth fallback is used
+    const missing = new Set();         // clip files that failed to load once: never requested again (no repeated 404s), the synth stinger is used
+    let bgmBuffer = null, bgmLoading = false, bgmFailed = false, bgmSource = null;   // the decoded loop (once per page), a failed load is remembered (silent, no retry)
     let masterGain = null;
     let bgmGain = null;
-    let bgmAudio = null;
     let bgmTimer = null;
     let activeVoiceAudio = null;
 
@@ -119,7 +123,7 @@
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       if (!ctx) {
-        ctx = new AC();
+        try { ctx = new AC({ sampleRate: 44100 }); } catch { ctx = new AC(); }      // 44100 Hz = the music file's own rate: the decoded loop is exactly 756000 frames, no resampling at the loop edges
         masterGain = ctx.createGain();
         bgmGain = ctx.createGain();
         bgmGain.connect(masterGain);
@@ -137,11 +141,9 @@
         masterGain.gain.setTargetAtTime(vol, ctx.currentTime, 0.03);
       }
       if (bgmGain && ctx) {
-        // Subtle idle synthwave level (0.12 base, ducks cleanly to 20% = 0.024 during voice clips)
-        bgmGain.gain.setTargetAtTime(0.12 * bgmLevel, ctx.currentTime, 0.06);
-      }
-      if (bgmAudio) {
-        bgmAudio.volume = Math.max(0, Math.min(1, vol * 0.22 * bgmLevel));
+        // The recorded loop is normalised to -16 LUFS; BGM_LOOP_GAIN (0.15) puts it at -32.5 LUFS at staff volume 1 (-35 at the default 0.75), the same level as the games, under the effects. The procedural pad (fallback only) keeps its old 0.12.
+        // Both sit behind masterGain, so the staff volume and mute scale and silence everything. A voice clip or stinger ducks either to 20%.
+        bgmGain.gain.setTargetAtTime((bgmSource ? BGM_LOOP_GAIN : 0.12) * bgmLevel, ctx.currentTime, 0.06);
       }
       if (activeVoiceAudio) {
         activeVoiceAudio.volume = vol;
@@ -157,32 +159,31 @@
       if (stopped || state.bgmRunning) return;
       state.bgmRunning = true;
       const a = ensureCtx();
-      // Try loading local synthwave-idle.mp3 first; if unavailable (it ships without sound files), run procedural 1986 Web Audio arpeggio pad
-      if (typeof Audio !== 'undefined' && !missing.has('bgm/synthwave-idle.mp3')) {
-        let el = null;
-        try {
-          el = new Audio(basePath + 'bgm/synthwave-idle.mp3');
-          el.loop = true;
-          el.volume = state.muted ? 0 : state.volume * 0.22;
-          el.addEventListener('error', () => missing.add('bgm/synthwave-idle.mp3'));
-          const p = el.play();
-          if (p && typeof p.then === 'function') {
-            p.then(() => {
-              if (stopped) { try { el.pause(); } catch {} return; }
-              bgmAudio = el;
-              applyGains();
-            }).catch(() => {
-              missing.add('bgm/synthwave-idle.mp3');
-              if (!stopped) startProceduralSynthwave(a);
-            });
-          } else if (!stopped) startProceduralSynthwave(a);
-        } catch {
-          missing.add('bgm/synthwave-idle.mp3');
-          startProceduralSynthwave(a);
-        }
-      } else {
-        startProceduralSynthwave(a);
-      }
+      if (!a) return;
+      if (bgmBuffer) { startLoopSource(a); return; }
+      if (bgmFailed || bgmLoading || typeof fetch === 'undefined') { if (bgmFailed || typeof fetch === 'undefined') startProceduralSynthwave(a); return; }
+      // Decode the loop once; a missing or undecodable file is silent here (the procedural 1986 pad plays instead): nothing throws and no spin waits for it.
+      bgmLoading = true;
+      const fail = () => { bgmLoading = false; bgmFailed = true; if (!stopped && state.bgmRunning) startProceduralSynthwave(ctx); };
+      try {
+        fetch(basePath + BGM_URL, { cache: 'force-cache' })
+          .then((r) => { if (!r.ok) throw new Error('no track'); return r.arrayBuffer(); })
+          .then((ab) => new Promise((ok, no) => { const q = a.decodeAudioData(ab, ok, no); if (q && q.catch) q.catch(no); }))
+          .then((buf) => { bgmLoading = false; bgmBuffer = buf; if (!stopped && state.bgmRunning && ctx) startLoopSource(ctx); })
+          .catch(fail);
+      } catch { fail(); }
+    }
+
+    // One AudioBufferSourceNode over the WHOLE decoded buffer with loop = true: the file is exactly 8 bars (756000 frames), so the wrap is sample-exact (no <audio> gap, no encoder padding).
+    function startLoopSource(a) {
+      if (bgmSource || !bgmBuffer || !a || !bgmGain || stopped) return;
+      try {
+        const src = a.createBufferSource();
+        src.buffer = bgmBuffer; src.loop = true; src.loopStart = 0; src.loopEnd = bgmBuffer.duration;
+        src.connect(bgmGain); src.start();
+        bgmSource = src;
+        applyGains();
+      } catch { bgmSource = null; startProceduralSynthwave(a); }
     }
 
     function startProceduralSynthwave(a) {
@@ -216,7 +217,7 @@
     function stopSynthwaveIdle() {
       state.bgmRunning = false;
       if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
-      if (bgmAudio) { try { bgmAudio.pause(); } catch {} bgmAudio = null; }
+      if (bgmSource) { try { bgmSource.stop(); } catch {} try { bgmSource.disconnect(); } catch {} bgmSource = null; }
     }
 
     /* ---------- Layered Arcade SFX ---------- */
@@ -280,7 +281,7 @@
       });
     }
 
-    /* ---------- Dual-Persona Voice Playback (MP3 -> Web Speech API fallback) ---------- */
+    /* ---------- Dual-Persona Voice Playback (recorded MP3 clip -> synth stinger) ---------- */
     function resolvePersona() {
       if (state.personaMode === 'shredder' || state.personaMode === 'neon86') {
         state.activePersona = state.personaMode;
@@ -296,28 +297,45 @@
       return state.activePersona;
     }
 
-    function speakFallback(rawText, personaId) {
+    /* No studio clip installed: a short, musical 1986 synth stinger (never a computer voice). Real MP3 clips in kiosk/audio/<persona>/ still play and win automatically. */
+    const STINGERS = {
+      slot_spin: [392, 493.88, 587.33], drink_reveal: [523.25, 659.25, 783.99], prize_win: [523.25, 659.25, 783.99, 1046.5],
+      arcade_charm_win: [587.33, 739.99, 880, 1174.66], mega_jackpot: [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98],
+      barker_approach: [440, 523.25, 659.25], barker_dog_spotted: [523.25, 659.25, 587.33, 783.99],
+    };
+    function playSynthStinger(trigger, personaId) {
+      const a = ensureCtx();
+      if (!a || state.muted || !masterGain) return false;
+      const surfer = personaId !== 'neon86';
+      const notes = STINGERS[trigger] || [440, 554.37, 659.25];
+      notes.forEach((f, i) => {
+        const t = a.currentTime + i * 0.07;
+        const osc = a.createOscillator();
+        const g = a.createGain();
+        const filt = a.createBiquadFilter();
+        osc.type = surfer ? 'triangle' : 'sawtooth';
+        osc.frequency.setValueAtTime(f, t);
+        filt.type = 'lowpass';
+        filt.frequency.setValueAtTime(surfer ? 2200 : 1800, t);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.14, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+        osc.connect(filt); filt.connect(g); g.connect(masterGain);
+        osc.start(t); osc.stop(t + 0.24);
+      });
+      return notes.length * 0.07 + 0.25;
+    }
+
+    function speakFallback(rawText, personaId, trigger) {
       return new Promise((resolve) => {
         const spoken = sanitizeSpokenText(rawText, state.pgMode);
-        if (stopped || state.muted || typeof window === 'undefined' || !window.speechSynthesis) {
-          resolve({ source: 'silent', text: spoken });
-          return;
-        }
-        try {
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(spoken);
-          const p = PERSONAS[personaId] || PERSONAS.shredder;
-          u.pitch = p.pitch;
-          u.rate = p.rate;
-          u.volume = Math.max(0, Math.min(1, state.volume));
+        if (stopped || state.muted) { resolve({ source: 'silent', text: spoken }); return; }
+        let dur = 0;
+        try { dur = playSynthStinger(trigger, personaId) || 0; } catch { dur = 0; }
+        if (dur) {
           setDucking(true);
-          u.onend = () => { setDucking(false); resolve({ source: 'speech', text: spoken }); };
-          u.onerror = () => { setDucking(false); resolve({ source: 'speech-error', text: spoken }); };
-          window.speechSynthesis.speak(u);
-        } catch {
-          setDucking(false);
-          resolve({ source: 'speech-unavailable', text: spoken });
-        }
+          setTimeout(() => { if (!stopped) setDucking(false); resolve({ source: 'synth-jingle', text: spoken }); }, dur * 1000);
+        } else resolve({ source: 'silent', text: spoken });
       });
     }
 
@@ -329,13 +347,13 @@
       const fallbackText = customOverrideText || (clip ? clip.text : '');
       if (state.muted) return { persona: personaId, trigger, source: 'muted', text: sanitizeSpokenText(fallbackText, state.pgMode) };
 
-      // If custom text override was explicitly requested (e.g. reading out a custom line), go straight to TTS
+      // No clip for this trigger, or none installed (asked for once, never again): the synth stinger
       if (customOverrideText || !clip || typeof Audio === 'undefined' || missing.has(clip.file)) {
-        const r = await speakFallback(fallbackText, personaId);
+        const r = await speakFallback(fallbackText, personaId, trigger);
         return { persona: personaId, trigger, ...r };
       }
 
-      // Attempt local MP3 voice clip first; automatically fall back to Web Speech API if MP3 is missing
+      // Attempt the local studio MP3 voice clip first; fall back to the synth stinger if it is missing
       return new Promise((resolve) => {
         if (activeVoiceAudio) { try { activeVoiceAudio.pause(); } catch {} activeVoiceAudio = null; }
         const el = new Audio(basePath + clip.file);
@@ -344,10 +362,10 @@
         const finishFallback = () => {
           if (settled) return;
           settled = true;
-          missing.add(clip.file);       // not there (the kiosk ships without sound files): do not ask for it again
+          missing.add(clip.file);       // not there (the kiosk ships no voice clips): do not ask for it again
           activeVoiceAudio = null;
           if (stopped) { resolve({ persona: personaId, trigger, source: 'stopped', text: '' }); return; }
-          speakFallback(fallbackText, personaId).then((r) => resolve({ persona: personaId, trigger, ...r }));
+          speakFallback(fallbackText, personaId, trigger).then((r) => resolve({ persona: personaId, trigger, ...r }));
         };
         el.onended = () => {
           if (settled) return;
@@ -371,7 +389,6 @@
       stopped = true;
       stopSynthwaveIdle();
       if (activeVoiceAudio) { try { activeVoiceAudio.pause(); } catch {} activeVoiceAudio = null; }
-      try { if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); } catch {}
       state.ducking = false;
       if (ctx) { const c = ctx; ctx = null; masterGain = null; bgmGain = null; try { c.close().catch(() => {}); } catch {} }
     }
@@ -389,8 +406,8 @@
         return state.personaMode;
       },
       setVolume: (v) => { state.volume = Math.max(0, Math.min(1, Number(v) || 0)); applyGains(); },
-      setMuted: (m) => { state.muted = Boolean(m); applyGains(); if (state.muted && typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); },
-      toggleMute: () => { state.muted = !state.muted; applyGains(); if (state.muted && typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); return state.muted; },
+      setMuted: (m) => { state.muted = Boolean(m); applyGains(); },
+      toggleMute: () => { state.muted = !state.muted; applyGains(); return state.muted; },
       setPgMode: (on) => { state.pgMode = Boolean(on); },
       startSynthwaveIdle,
       stopSynthwaveIdle,

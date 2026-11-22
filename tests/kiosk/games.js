@@ -73,8 +73,8 @@ async function driveToOver(c, g) {
     if (m === cfg.paused) { await c.tapEl(cfg.resume); await sleep(200); continue; }   // headless Chrome sometimes reports the tab hidden for a moment and the game pauses itself: a tap resumes
     if (g === "boardwalk-dash" && m === "playing") {
       await c.tapEl("[data-dir=up]"); await sleep(120); hops++;
-      // a skilled run can go on for minutes: after 10 real hops (a count, not a time) let the drink melt (the game's own life-loss rule), every round, so the run always ends however slow the machine is
-      if (hops >= 10) await c.eval("(function(){var d=BoardwalkDash.getGame().d;d.melt=Math.min(d.melt,0.15)})()");
+      // a blind hopper can go on for minutes (a melted drink only cuts the tip, it costs no life): after 10 real hops (a count, not a time) drop the runner with no lives left, so the run always ends the same way whatever the layout, the difficulty table or how slow the machine is
+      if (hops >= 10) await c.eval("(function(){var g=BoardwalkDash.getGame();g.shield=false;g.lives=0;g.buf=null;g.p.state='dropped';g.p.stateT=0;g.p.invuln=0})()");
     }
     else if (g === "soft-serve-stacker" && m === "playing") {
       const s = await c.eval("SoftServeStacker.getState()");
@@ -725,6 +725,135 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
           eq(await c.eval(MODE[g]), "classic", g + ": unreadable settings -> classic");
         }
       } finally { k0.stop(); }
+    });
+
+    /* ======================= M. music (v50): plays only while a game is being played ======================= */
+    const MUSIC = process.env.TB_DIFFICULTY !== "classic";      // the music sections run once (in the default pass), not once per difficulty
+    const mus = () => c.eval("window.TBMusic ? window.TBMusic.getState() : null");
+    const wavReqs = () => c.requests.filter(r => /\/kiosk\/audio\/bgm\//.test(r.url));
+    async function settle(ms = 700) { await sleep(ms); return mus(); }
+
+    await section("M1. music is silent on the picker and on every start card: no gesture, no file request, no audio context of its own", async () => {
+      if (!MUSIC) return;
+      await installMock(c);
+      for (const p of PAGES) {
+        c.requests.length = 0;
+        await c.goto(url(kiosk, p)); await sleep(500);
+        await c.tap(540, 60, 40); await sleep(500);                   // a gesture on the title changes nothing: no run is on
+        if (p === "/arcade/games") { ok((await mus()) === null || (await mus()).playing === false, "the picker has no music"); eq(await c.eval("typeof window.TBMusic"), "undefined", "the picker does not even load the music script"); }
+        else { const s = await mus(); eq([s.audible, s.playing, s.ctx, s.requested, s.running], [false, false, "none", 0, false], p + ": the start card is silent"); }
+        eq(wavReqs().length, 0, p + ": the music file is not requested before a game starts");
+      }
+    });
+
+    await section("M2. a started game plays the loop (one request, audio/wav, from the kiosk, sample-exact loop), at the staff level; pause, game over and a new run follow it", async () => {
+      if (!MUSIC) return;
+      for (const g of ["thirsty-blaster", "cup-catch"]) {
+        await installMock(c); c.requests.length = 0;
+        await c.goto(url(kiosk, "/arcade/games/" + g)); await sleep(500);
+        await c.tapEl(GAMES[g].start);
+        await waitFor(async () => { const s = await mus(); return s && s.playing && s.audible; }, 8000, g + " music playing");
+        const s = await settle(900);
+        eq([s.playing, s.audible, s.loaded, s.loop, s.loopFrames, s.ctx, s.failed], [true, true, true, true, 756000, "running", false], g + ": the 756000-frame loop plays with loop = true");
+        ok(Math.abs(s.gain - 0.15 * 0.75) < 0.02, g + ": gain 0.15 x the staff volume 0.75 = " + s.gain);
+        eq(wavReqs().length, 1, g + ": the file was requested once"); ok(wavReqs().every(r => r.url.startsWith(kiosk.base)), g + ": from the kiosk only");
+        const ct = await c.eval("fetch('/kiosk/audio/bgm/miami-beach-80s.wav').then(function(r){return r.arrayBuffer().then(function(b){return r.headers.get('content-type')+' '+b.byteLength})})");
+        ok(/^audio\/wav 3024044$/.test(ct), g + ": served as audio/wav, 3024044 bytes: " + ct);
+        // the decoded buffer is the file, sample for sample (no resampling, no padding), so the loop wrap has no gap and no click
+        const dec = await c.eval("fetch('/kiosk/audio/bgm/miami-beach-80s.wav').then(function(r){return r.arrayBuffer()}).then(function(ab){var raw=new Int16Array(ab.slice(44));return new (window.AudioContext)({sampleRate:44100}).decodeAudioData(ab).then(function(b){var L=b.getChannelData(0),R=b.getChannelData(1);return {len:b.length,rate:b.sampleRate,ch:b.numberOfChannels,f0:L[0]*32768-raw[0],fN:R[b.length-1]*32768-raw[2*b.length-1],seam:Math.abs(L[0]-L[b.length-1])}})})");
+        eq([dec.len, dec.rate, dec.ch], [756000, 44100, 2], g + ": decodes to exactly 756000 frames, 44100 Hz, stereo");
+        ok(Math.abs(dec.f0) < 1.01 && Math.abs(dec.fN) < 1.01 && dec.seam < 0.05, g + ": first and last samples are the file's, and the loop seam is a small step, not a click (" + dec.seam.toFixed(4) + ")");
+        // pause: silent, same place; resume: back
+        await c.tapEl(GAMES[g].pause); await waitFor(async () => (await mus()).paused, 3000, "paused");
+        let s2 = await settle(300); eq([s2.audible, s2.running], [false, true], g + ": paused = silent"); eq(s2.target, 0, g + ": the gain target is 0 while paused");
+        await c.tapEl(GAMES[g].resume); await waitFor(async () => (await mus()).audible, 3000, "resumed");
+        ok((await settle(500)).gain > 0.08, g + ": resumed = audible again");
+        // game over: the music stops with the run, and does not play on the game-over card
+        await driveToOver(c, g);
+        s2 = await settle(900); eq([s2.audible, s2.playing, s2.running], [false, false, false], g + ": game over = no music");
+        eq(s2.target, 0, g + ": and the gain target is 0");
+        eq(await c.eval("window.__errs"), [], g + ": no page error");
+      }
+    });
+
+    await section("M3. every panel is silent: rules, the win / phone / age panel, 'Still playing?'; Time's up stops it for good", async () => {
+      if (!MUSIC) return;
+      const k = await stageKiosk({ session: { idleSeconds: 40, idleWarnSeconds: 10, gameMaxSeconds: 60, gameMinSeconds: 5 } });
+      try {
+        await installMock(c, { win: true });
+        await c.goto(url(k, "/arcade/games/boardwalk-dash")); await sleep(500);
+        await c.tapEl(GAMES["boardwalk-dash"].start);
+        await waitFor(async () => (await mus()).audible, 8000, "playing");
+        await c.eval("TBRules.open()"); let s = await settle(300);
+        eq([s.audible, s.panels.indexOf("rules") >= 0], [false, true], "rules panel open: silent"); await c.eval("TBRules.close()");
+        await c.eval("TBPrize.show({ result: { ok: true, win: true, prizeId: 'size_upgrade', label: 'Free Size Upgrade', code: 'K7QD', expiresAt: Date.now() + 1e6 }, mode: 'game' })"); s = await settle(300);
+        eq([s.audible, s.panels.indexOf("prize") >= 0], [false, true], "win / phone / age panel open: silent"); await c.eval("TBPrize.hide()");
+        await waitFor(async () => (await mus()).audible, 3000, "audible again after the panels close");
+        await c.eval("window.__skew=32");                              // 32 s with no touch: 'Still playing?' (idle 40, warn 10)
+        await waitFor(async () => !(await c.eval("document.getElementById('kgIdle').hidden")), 4000, "Still playing? warning");
+        s = await settle(300); eq([s.audible, s.panels.indexOf("idle") >= 0], [false, true], "'Still playing?' up: silent");
+        await c.tapEl("#kgIdle .kg-btn"); await waitFor(async () => (await mus()).audible, 3000, "a tap brings it back");
+        await c.eval("window.__skew=62");                              // past the visit cap
+        await waitFor(async () => !!(await c.eval("document.getElementById('kgEnded')")), 4000, "Time's up");
+        s = await settle(400); eq([s.stopped, s.audible, s.playing, s.ctx], [true, false, false, "none"], "Time's up: stopped, closed");
+        await c.eval("TBMusic.runStart()"); s = await settle(300);
+        eq([s.audible, s.playing, s.ctx], [false, false, "none"], "after stopAll a new run cannot start it again");
+      } finally { k.stop(); }
+    });
+
+    await section("M4. the Sound button is the mute: silent at once, carried to the next game page in the visit, cleared when the visit ends", async () => {
+      if (!MUSIC) return;
+      await installMock(c);
+      await c.goto(url(kiosk, "/arcade/games/cup-catch")); await sleep(400);
+      await c.tapEl(GAMES["cup-catch"].start); await waitFor(async () => (await mus()).audible, 8000, "playing");
+      await c.tapEl("#btnSound"); let s = await settle(300);
+      eq([s.muted, s.audible], [true, false], "Sound Off: the music is silent"); eq(await c.eval("sessionStorage.getItem('tbGamesMute')"), "1", "and remembered for the visit");
+      await c.tapEl("#btnSound"); s = await settle(300); eq([s.muted, s.audible], [false, true], "Sound On: back");
+      await c.tapEl("#btnSound"); await settle(200);
+      for (const g of ["thirsty-blaster", "thirsty-tower", "boardwalk-dash", "soft-serve-stacker"]) {
+        await c.goto(url(kiosk, "/arcade/games/" + g)); await sleep(500);
+        eq(await c.eval("TBMusic.isMuted()"), true, g + ": the mute carried to the next page");
+        const label = await c.eval("(document.querySelector('" + GAMES[g].controls.find(x => /ound/i.test(x)) + "')||{}).textContent");
+        ok(/off/i.test(label), g + ": its Sound button says Off: " + label);
+        await c.tapEl(GAMES[g].start); await waitFor(async () => (await c.eval(GAMES[g].mode)) === GAMES[g].playing, 8000, g + " running");
+        s = await settle(900); eq([s.running, s.audible, s.playing], [true, false, false], g + ": running but muted = silent, nothing playing");
+      }
+      // unmute on this page: music comes in; and the visit ending clears the mute
+      await c.tapEl(GAMES["soft-serve-stacker"].controls.find(x => /ound/i.test(x))); await waitFor(async () => (await mus()).audible, 4000, "unmuted");
+      await c.eval("TBK.clearVisit()"); eq(await c.eval("sessionStorage.getItem('tbGamesMute')"), null, "clearing the visit clears the mute");
+    });
+
+    await section("M5. staff volume and mute (arcade config) rule the music; a missing or undecodable file is silent and never blocks play; page hide stops it", async () => {
+      if (!MUSIC) return;
+      const run = async (g, prep) => { await installMock(c); if (prep) await prep(); await c.eval("try{sessionStorage.clear();localStorage.clear()}catch(e){}"); await c.goto(url(kiosk, "/arcade/games/" + g)); await sleep(400); await c.tapEl(GAMES[g].start); await waitFor(async () => (await c.eval(GAMES[g].mode)) === GAMES[g].playing, 8000, g + " running"); await sleep(1200); return mus(); };
+      let s = await run("thirsty-blaster", () => c.mock(/\/api\/arcade-config/, () => ({ body: { ok: true, config: { volume: 0.4, muted: false } } })));
+      ok(s.audible && Math.abs(s.gain - 0.15 * 0.4) < 0.02, "staff volume 0.4 scales the music: gain " + s.gain);
+      s = await run("thirsty-blaster", () => c.mock(/\/api\/arcade-config/, () => ({ body: { ok: true, config: { volume: 0.75, muted: true } } })));
+      eq([s.staffMuted, s.audible, s.playing], [true, false, false], "staff muted: no music");
+      s = await run("cup-catch", () => c.mock(/\/kiosk\/audio\/bgm\//, () => ({ status: 404, body: "Not found", type: "text/plain" })));
+      eq([s.failed, s.playing, s.requested], [true, false, 1], "a missing file is silent, asked for once");
+      eq(await c.eval(GAMES["cup-catch"].mode), "playing", "and the game is playing");
+      eq(await c.eval("window.__errs"), [], "no page error from the missing file");
+      s = await run("cup-catch", () => c.mock(/\/kiosk\/audio\/bgm\//, () => ({ body: "this is not audio", type: "audio/wav" })));
+      eq([s.failed, s.playing], [true, false], "an undecodable file is silent too"); eq(await c.eval(GAMES["cup-catch"].mode), "playing", "game still playing");
+      eq(await c.eval("window.__errs"), [], "no page error from the bad file");
+      c.mocks.length = 0; await installMock(c);
+      s = await run("soft-serve-stacker"); ok(s.audible, "baseline plays");
+      await c.eval("Object.defineProperty(document,'hidden',{value:true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))");
+      s = await settle(500); eq([s.stopped, s.audible, s.ctx], [true, false, "none"], "page hidden = stopped and closed for good");
+    });
+
+    await section("M6. no computer voice and no Gemini guessing: no speech synthesis call or button-text sniffing in the music code", async () => {
+      if (!MUSIC) return;
+      const fs = require("fs"), path = require("path");
+      const root = path.join(__dirname, "../..");
+      for (const f of ["kiosk/audio-bank.js", "kiosk/boardwalk-slots.js", "kiosk/games/shared/beach-music.js"]) {
+        const t = fs.readFileSync(path.join(root, f), "utf8");
+        ok(!/speechSynthesis|SpeechSynthesisUtterance/.test(t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")), f + ": no speech synthesis call");
+      }
+      const bm = fs.readFileSync(path.join(root, "kiosk/games/shared/beach-music.js"), "utf8");
+      ok(!/textContent|innerText|sound on|sound off/i.test(bm.replace(/\/\*[\s\S]*?\*\//g, "")), "the music never reads button text");
+      for (const f of ["kiosk/games/index.html"]) ok(!/beach-music/.test(fs.readFileSync(path.join(root, f), "utf8")), f + ": the picker does not load the music");
     });
 
     /* ======================= D. the visit ======================= */

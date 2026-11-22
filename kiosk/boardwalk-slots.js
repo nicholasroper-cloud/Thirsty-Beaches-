@@ -337,7 +337,6 @@
 
     document.querySelectorAll('[data-persona]').forEach((b) => {
       b.addEventListener('click', () => {
-        audio.startSynthwaveIdle();
         cfg.personaMode = b.dataset.persona;
         audio.setPersonaMode(cfg.personaMode);
         saveLocalCfg();
@@ -630,7 +629,6 @@
       const now = Date.now();
       if (!bypassCooldown && now - lastBarkAt < BARKER_COOLDOWN_MS) return;
       lastBarkAt = now;
-      audio.startSynthwaveIdle();
       const trigger = kind === 'dog' ? 'barker_dog_spotted' : 'barker_approach';
       const out = await audio.playTrigger(trigger);
       if (barkerMsg) {
@@ -638,7 +636,9 @@
         const b = document.createElement('b');
         b.textContent = kind === 'dog' ? 'Dog Spotted! ' : 'Walk-Up! ';
         barkerMsg.appendChild(b);
-        barkerMsg.appendChild(document.createTextNode(kind === 'dog' ? 'Pitching The $1 Menace Cup + $1 Freeze-Dried Dog Treat — “' + ((out && out.text) || '') + '”' : '“' + ((out && out.text) || '') + '”'));
+        // the line is quoted only when a recorded clip really said it; with no clip installed the machine plays a jingle and says nothing
+        const said = out && out.source === 'mp3' ? '“' + ((out && out.text) || '') + '”' : '(jingle only: no recorded voice clip is installed)';
+        barkerMsg.appendChild(document.createTextNode(kind === 'dog' ? 'Pitching The $1 Menace Cup + $1 Freeze-Dried Dog Treat — ' + said : said));
       }
       syncPersonaUI();
     }

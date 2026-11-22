@@ -1,10 +1,11 @@
 Thirsty Beaches — 1986 Boardwalk Arcade Dual-Persona Audio Bank
 ================================================================
 
-Drop local MP3 files into these exact paths to override the built-in Web Speech API & Web Audio fallbacks:
+Shipped: bgm/miami-beach-80s.wav (8 bars, 112 BPM, exactly 756000 frames at 44.1 kHz, normalised to -16 LUFS). It is looped sample-exact through Web Audio
+by the slot machine (audio-bank.js) and the five games (games/shared/beach-music.js), and plays ONLY while a visit / a game is being played.
+There is no computer voice any more: with no recorded clip a short synth stinger plays instead.
 
-Background Music (auto-ducks to 20% whenever a voice clip plays):
-  bgm/synthwave-idle.mp3
+Drop local MP3 files into these exact paths to add real recorded voice lines (they play automatically and duck the music to 20%):
 
 Persona 1 — "Shredder" (Fun 80s Surfer):
   shredder/barker_approach_1.mp3 .. _3.mp3

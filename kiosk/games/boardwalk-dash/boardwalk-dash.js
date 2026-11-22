@@ -732,6 +732,8 @@
 
   let soundOn = true;
   try { if (window.localStorage.getItem(SOUND_KEY) === '0') soundOn = false; } catch (e) { /* default on */ }
+  // the beach music follows this Sound setting; a mute chosen on another game page in this visit carries here (shared/beach-music.js)
+  if (window.TBMusic) { if (window.TBMusic.isMuted()) soundOn = false; else window.TBMusic.setMuted(!soundOn); }
 
   /* ---------------- audio: Web Audio blips, created on the first gesture ---------------- */
   let actx = null;
@@ -785,6 +787,7 @@
     soundOn = !soundOn;
     try { window.localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch (e) { /* fine */ }
     paintSound();
+    if (window.TBMusic) window.TBMusic.setMuted(!soundOn);
     if (soundOn) { ensureAudio(); play('pickup'); }
   });
   paintSound();
@@ -869,6 +872,7 @@
   function pause() {
     if (mode !== 'playing') return;
     mode = 'paused';
+    if (window.TBMusic) window.TBMusic.setPaused(true);
     stopLoop();
     pauseBtn.textContent = 'Resume';
     showOverlay('Paused', 'Take a breath. The traffic waits for you.', 'Resume', false);
@@ -877,6 +881,7 @@
   function resume() {
     if (mode !== 'paused') return;
     mode = 'playing';
+    if (window.TBMusic) window.TBMusic.setPaused(false);
     hideOverlay();
     pauseBtn.textContent = 'Pause';
     startLoop();

@@ -68,7 +68,8 @@
   }
 
   let el = null;
-  function close() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+  function musicPanel(on) { try { if (root.TBMusic) root.TBMusic.setPanel('rules', on); } catch (e) { /* the beach music is optional */ } }
+  function close() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; musicPanel(false); }
   function open() {
     close();
     const modal = el = mk('div', 'kr-modal'); modal.id = 'krPanel'; modal.setAttribute('role', 'dialog');
@@ -85,6 +86,7 @@
       root.fetch('/api/arcade/rules', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (d) { if (el === modal) paint(d); });
     } catch (e) { paint(null); }
     doc.body.appendChild(modal);
+    musicPanel(true);                                      // silent behind the rules
     return modal;
   }
 

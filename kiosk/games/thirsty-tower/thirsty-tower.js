@@ -1579,10 +1579,12 @@
     function resetFx() { particles = []; popups = []; shakeT = 0; flashT = 0; celebrate = 0; deliverClock = 0; staticLayer = null; }
     function pause() {
       if (mode !== 'play') return;
+      if (window.TBMusic) window.TBMusic.setPaused(true);
       stopLoop(); clearInput(); setMode('paused'); saveBest(); showOverlay('paused'); render();
     }
     function resume() {
       if (mode !== 'paused') return;
+      if (window.TBMusic) window.TBMusic.setPaused(false);
       hideOverlay(); setMode('play'); startLoop();
     }
     function finishRun(kind) {
@@ -1618,10 +1620,12 @@
       else startNew();
     });
     els.pause.addEventListener('click', () => { audio.unlock(); if (mode === 'play') pause(); else if (mode === 'paused') resume(); });
+    if (window.TBMusic && window.TBMusic.isMuted()) { audio.setOn(false); els.sound.textContent = 'Sound Off'; els.sound.setAttribute('aria-pressed', 'false'); }      // a mute chosen on another game page in this visit carries here
     els.sound.addEventListener('click', () => {
       audio.unlock();
       const on = !audio.isOn();
       audio.setOn(on);
+      if (window.TBMusic) window.TBMusic.setMuted(!on);      // the beach music follows this setting (shared/beach-music.js)
       els.sound.textContent = on ? 'Sound On' : 'Sound Off';
       els.sound.setAttribute('aria-pressed', on ? 'true' : 'false');
       if (on) audio.play('row');

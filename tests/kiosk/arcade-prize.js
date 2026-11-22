@@ -556,6 +556,7 @@ async function navTests() {
     ok(!(await chrome.eval("document.getElementById('sessionHud').hidden")), "spins-left is shown");
     SESS = { maxSpins: 2, maxSeconds: 900, idleSeconds: 300 };
     await fresh(base + "/arcade", 1080, 1920); await arcadeReady();
+    eq(await chrome.eval("performance.getEntriesByType('resource').filter(function(e){return /\\/kiosk\\/audio\\//.test(e.name)}).length"), 0, "no music file is requested before the first spin (the slot page is silent until a visit is being played)");
     eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "2", "the configured limit is read from arcade-session.json");
     await spinOnce();
     eq(await chrome.eval("document.body.dataset.spins"), "1"); eq(await chrome.eval("document.getElementById('spinsLeft').textContent"), "1");
@@ -572,6 +573,7 @@ async function navTests() {
     eq(await chrome.eval("window.__errs"), [], "no page errors, including from the missing audio files");
     const clipReqs = await chrome.eval("performance.getEntriesByType('resource').map(e=>e.name).filter(n=>/\\/kiosk\\/audio\\//.test(n))");
     eq(clipReqs.length, new Set(clipReqs).size, "no sound file was asked for twice: " + clipReqs.join(","));
+    ok(clipReqs.filter(n => /miami-beach-80s\.wav$/.test(n)).length === 1 && !clipReqs.some(n => /\.m4a|synthwave-idle/.test(n)), "the beach loop (a .wav) was fetched once after the first spin, and no .m4a or old .mp3 was asked for: " + clipReqs.join(","));
     await chrome.shot("arcade-session-ended-1080x1920.png");
     await chrome.resize(1920, 1080); await sleep(200);
     ok(!overlap(await R("#orderDrinksBtn"), await R("#sessionEnd")), "landscape: the thanks panel and the dock do not overlap");

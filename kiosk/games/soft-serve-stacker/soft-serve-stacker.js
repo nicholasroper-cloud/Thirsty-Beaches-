@@ -254,6 +254,8 @@
   let raf = 0;
   let lastTs = 0;
   let soundOn = loadSound();
+  // the beach music follows this Sound setting; a mute chosen on another game page in this visit carries here (shared/beach-music.js)
+  if (root.TBMusic) { if (root.TBMusic.isMuted()) soundOn = false; else root.TBMusic.setMuted(!soundOn); }
   let ac = null;
   let layoutW = 0;
 
@@ -379,6 +381,7 @@
   function pauseGame() {
     if (g.phase !== 'playing') return;
     g.phase = 'paused';
+    if (root.TBMusic) root.TBMusic.setPaused(true);
     showOverlay('pause');
     document.body.classList.remove('is-playing');
     render();
@@ -386,6 +389,7 @@
   function resumeGame() {
     if (g.phase !== 'paused') return;
     g.phase = 'playing';
+    if (root.TBMusic) root.TBMusic.setPaused(false);
     showOverlay(null);
     document.body.classList.add('is-playing');
     try { board.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
@@ -1223,6 +1227,7 @@
     soundOn = !soundOn;
     saveSound(soundOn);
     setSoundButton();
+    if (root.TBMusic) root.TBMusic.setMuted(!soundOn);
     if (soundOn) { unlockAudio(); blip(660, 0.08, 'square', 0.06); }
   }
 

@@ -36,7 +36,7 @@ const KIOSK_FILES = [
   "clover-menu-server.js", "clover-menu-server.next.js",
   "Run-Kiosk.bat", "Stop-Kiosk.bat", "Debug-Kiosk.bat", "Fix-And-Run.bat", "Install-AutoStart.bat", "Remove-AutoStart.bat",
   "assets/cup-80s-shell.webp", "assets/cup-80s-cream.png", "assets/cup-80s-liquid.png", "assets/logo-480.webp",
-  "kiosk/boardwalk-slots.html", "kiosk/boardwalk-slots.css", "kiosk/boardwalk-slots.js", "kiosk/audio-bank.js", "kiosk/arcade-menu.json", "kiosk/arcade-session.json", "kiosk/arcade-rules.json", "kiosk/audio/README.txt",   // the /arcade page (linked from the ordering and attract screens since v40; one visit is limited by arcade-session.json)
+  "kiosk/boardwalk-slots.html", "kiosk/boardwalk-slots.css", "kiosk/boardwalk-slots.js", "kiosk/audio-bank.js", "kiosk/arcade-menu.json", "kiosk/arcade-session.json", "kiosk/arcade-rules.json", "kiosk/audio/README.txt", "kiosk/audio/bgm/miami-beach-80s.wav",   // the /arcade page (linked from the ordering and attract screens since v40; one visit is limited by arcade-session.json)
   "READ-ME-FIRST.txt", "remote-update-SETUP.txt",
   "kiosk-lockdown/Setup-Appliance.ps1", "kiosk-lockdown/Uninstall-Appliance.ps1", "kiosk-lockdown/READ-ME-APPLIANCE.txt",
 ];

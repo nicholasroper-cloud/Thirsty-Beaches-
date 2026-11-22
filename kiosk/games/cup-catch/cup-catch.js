@@ -314,6 +314,8 @@
     customer: 0, mood: 'idle', moodT: 0, spoilPulse: 0, isNewBest: false
   };
   var sound = { on: loadSound(), ctx: null };
+  // the beach music follows this Sound setting; a mute chosen on another game page in this visit carries here (shared/beach-music.js)
+  if (root.TBMusic) { if (root.TBMusic.isMuted()) sound.on = false; else root.TBMusic.setMuted(!sound.on); }
   var keys = { left: false, right: false };
   var rafId = 0, lastTs = 0;
   var scale = 1, dpr = 1, bgCanvas = null;
@@ -1179,6 +1181,7 @@
   function pauseGame() {
     if (g.mode !== 'playing') return;
     g.mode = 'paused';
+    if (root.TBMusic) root.TBMusic.setPaused(true);
     stopLoop();
     showOverlay('pause');
     els.btnPause.textContent = 'Resume';
@@ -1191,6 +1194,7 @@
     if (g.mode !== 'paused') return;
     unlockAudio();
     g.mode = 'playing';
+    if (root.TBMusic) root.TBMusic.setPaused(false);
     showOverlay(null);
     els.btnPause.textContent = 'Pause';
     setPlayingClass(true);
@@ -1451,6 +1455,7 @@
     sound.on = !sound.on;
     saveSound(sound.on);
     syncSoundBtn();
+    if (root.TBMusic) root.TBMusic.setMuted(!sound.on);
     if (sound.on) { unlockAudio(); sfx.click(); }
   });
 
