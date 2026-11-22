@@ -14,7 +14,31 @@
   var MAX_SPOILS = 3;     // spoils that dump a drink
   var START_LIVES = 3;
   var RUSH_EVERY = 3;     // a Rush Hour after every 3rd drink served
-  var RUSH_SECONDS = 7;
+
+  /* ---------- difficulty: two tables, one switch ----------
+     `classic` is the v48 tuning exactly. `arcade86` is the harder 1986 arcade pace. gameDifficulty in kiosk/arcade-session.json picks one (the shared shell reads it, TBK.difficulty());
+     setDifficulty() is called once when a run starts, so a run never changes table mid-game. Nothing else differs between the two modes. */
+  var TUNING = {
+    classic: {
+      rushSeconds: 7,
+      ticketBase: 7, ticketPerItem: 3.6, ticketPerLevel: 0.25, ticketMin: 10,
+      junkBase: 0.2, junkPer: 0.02, junkMax: 0.4, wrongBase: 0.12, wrongPer: 0.01, wrongMax: 0.2,
+      fallBase: 150, fallPer: 15, fallMax: 330, intervalBase: 1.05, intervalPer: 0.045, intervalMin: 0.5
+    },
+    arcade86: {
+      rushSeconds: 5.5,
+      ticketBase: 5.2, ticketPerItem: 2.6, ticketPerLevel: 0.35, ticketMin: 7.5,
+      junkBase: 0.26, junkPer: 0.025, junkMax: 0.46, wrongBase: 0.16, wrongPer: 0.015, wrongMax: 0.24,
+      fallBase: 205, fallPer: 24, fallMax: 420, intervalBase: 0.82, intervalPer: 0.055, intervalMin: 0.36
+    }
+  };
+  var TUNE = TUNING.classic;
+  var RUSH_SECONDS = TUNE.rushSeconds;
+  function setDifficulty(mode) {
+    TUNE = Object.prototype.hasOwnProperty.call(TUNING, mode) ? TUNING[mode] : TUNING.classic;
+    RUSH_SECONDS = TUNE.rushSeconds;
+    return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic';
+  }
 
   // Ingredient catalog. `label` is what the order ticket says.
   var GOOD = {
@@ -100,16 +124,16 @@
   function remainingOf(prog, kind) { return (prog.need[kind] || 0) - (prog.got[kind] || 0); }
 
   // Seconds a drink takes to melt: longer tickets get more time, a little less each level.
-  function ticketTime(total, lvl) { return Math.max(10, 7 + 3.6 * total - 0.25 * (lvl - 1)); }
+  function ticketTime(total, lvl) { return Math.max(TUNE.ticketMin, TUNE.ticketBase + TUNE.ticketPerItem * total - TUNE.ticketPerLevel * (lvl - 1)); }
 
   // Difficulty curve for a level. Fall speed is logical px per second.
   function difficulty(lvl) {
     var l = Math.max(1, lvl | 0);
-    var junk = Math.min(0.4, 0.2 + 0.02 * (l - 1));
-    var wrong = Math.min(0.2, 0.12 + 0.01 * (l - 1));
+    var junk = Math.min(TUNE.junkMax, TUNE.junkBase + TUNE.junkPer * (l - 1));
+    var wrong = Math.min(TUNE.wrongMax, TUNE.wrongBase + TUNE.wrongPer * (l - 1));
     return {
-      fall: Math.min(330, 150 + 15 * (l - 1)),
-      interval: Math.max(0.5, 1.05 - 0.045 * (l - 1)),
+      fall: Math.min(TUNE.fallMax, TUNE.fallBase + TUNE.fallPer * (l - 1)),
+      interval: Math.max(TUNE.intervalMin, TUNE.intervalBase - TUNE.intervalPer * (l - 1)),
       junk: junk,
       wrong: wrong,
       needed: 1 - junk - wrong
@@ -211,7 +235,7 @@
   function shouldRush(servedCount) { return servedCount > 0 && servedCount % RUSH_EVERY === 0; }
 
   var api = {
-    W: W, H: H, MAX_SPOILS: MAX_SPOILS, START_LIVES: START_LIVES, RUSH_SECONDS: RUSH_SECONDS,
+    W: W, H: H, MAX_SPOILS: MAX_SPOILS, START_LIVES: START_LIVES, RUSH_SECONDS: TUNING.classic.rushSeconds, TUNING: TUNING, setDifficulty: setDifficulty, difficultyMode: function () { return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'; },
     GOOD: GOOD, JUNK: JUNK, GOOD_KINDS: GOOD_KINDS, JUNK_KINDS: JUNK_KINDS,
     mulberry32: mulberry32, level: level, ticketTotal: ticketTotal, ticketKinds: ticketKinds,
     ticketForLevel: ticketForLevel, ticketText: ticketText, newProgress: newProgress,
@@ -1136,6 +1160,7 @@
 
   function startGame() {
     unlockAudio();
+    setDifficulty(root.TBK && typeof root.TBK.difficulty === 'function' ? root.TBK.difficulty() : 'classic');   // the table is fixed for this whole run
     resetGame();
     g.mode = 'playing';
     showOverlay(null);

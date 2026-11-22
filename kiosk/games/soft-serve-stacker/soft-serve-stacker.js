@@ -13,19 +13,19 @@
   const RIM_Y = 104;          // world height of the cone / cup rim
   const LH = 24;              // vertical step between layers
   const PILL_H = 32;          // drawn height of one swirl layer (overlaps the one below)
-  const START_W = 150;        // starting layer width (also the widest a layer can regrow to)
+  let START_W = 150;          // starting layer width (also the widest a layer can regrow to). The tuned values (START_W ... WIND_DRIFT, the slider speeds) come from TUNING below.
   const SLIDER_Y = 150;       // screen y of the bottom of the sliding layer
   const CAM_LEAD = 230;       // the camera keeps the tower top this far above the sand line once it scrolls
-  const MIN_OVERLAP = 8;      // less overlap than this and the tower topples
-  const TOL_EARLY = 8;        // perfect window for the first layers (kind to small hands)
-  const TOL = 6;              // perfect window afterwards
-  const EARLY_LAYERS = 5;
-  const REGROW = 16;          // width given back by a perfect streak
+  let MIN_OVERLAP = 8;      // less overlap than this and the tower topples
+  let TOL_EARLY = 8;        // perfect window for the first layers (kind to small hands)
+  let TOL = 6;                // perfect window afterwards
+  let EARLY_LAYERS = 5;
+  let REGROW = 16;            // width given back by a perfect streak
   const STREAK_FOR_REGROW = 3;
-  const WIND_START = 7;       // first layer that can meet a sea breeze
-  const WIND_PERIOD = 11;     // a breeze block repeats every 11 layers
+  let WIND_START = 7;         // first layer that can meet a sea breeze
+  let WIND_PERIOD = 11;     // a breeze block repeats every 11 layers
   const WIND_LEN = 3;         // and lasts 3 layers
-  const WIND_DRIFT = 7;       // how far a breeze nudges a dropped layer
+  let WIND_DRIFT = 7;         // how far a breeze nudges a dropped layer
   const TOP_W = 34;           // width of a topping on its slider
   const TOP_EVERY = 10;       // topping round every 10 layers
 
@@ -48,13 +48,30 @@
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp = (a, b, t) => a + (b - a) * t;
 
+  /* ---------- difficulty: two tables, one switch ----------
+     `classic` is the v48 tuning exactly. `arcade86` is the harder 1986 arcade pace. gameDifficulty in kiosk/arcade-session.json picks one (the shared shell reads it, TBK.difficulty());
+     setDifficulty() is called once when a run starts, so a run never changes table mid-game. Nothing else differs between the two modes. */
+  const TUNING = {
+    classic: { START_W: 150, MIN_OVERLAP: 8, TOL_EARLY: 8, TOL: 6, EARLY_LAYERS: 5, REGROW: 16, WIND_START: 7, WIND_PERIOD: 11, WIND_DRIFT: 7,
+      slow: [62, 68, 74, 80], speedBase: 80, speedPer: 4.2, speedMax: 235 },
+    arcade86: { START_W: 132, MIN_OVERLAP: 14, TOL_EARLY: 5.5, TOL: 4, EARLY_LAYERS: 4, REGROW: 10, WIND_START: 5, WIND_PERIOD: 8, WIND_DRIFT: 11,
+      slow: [105, 118, 132, 146], speedBase: 146, speedPer: 9.5, speedMax: 310 }
+  };
+  let TUNE = TUNING.classic;
+  function setDifficulty(mode) {
+    TUNE = Object.prototype.hasOwnProperty.call(TUNING, mode) ? TUNING[mode] : TUNING.classic;
+    START_W = TUNE.START_W; MIN_OVERLAP = TUNE.MIN_OVERLAP; TOL_EARLY = TUNE.TOL_EARLY; TOL = TUNE.TOL; EARLY_LAYERS = TUNE.EARLY_LAYERS; REGROW = TUNE.REGROW;
+    WIND_START = TUNE.WIND_START; WIND_PERIOD = TUNE.WIND_PERIOD; WIND_DRIFT = TUNE.WIND_DRIFT;
+    return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic';
+  }
+
   /* Slide speed in units per second for the layer about to be dropped. The first four are slow so a small kid stacks several
      scoops; after that it climbs gently and stops at a ceiling so it stays fair. */
   function speedFor(layer) {
     const n = Math.max(0, Math.floor(Number(layer) || 0));
-    const slow = [62, 68, 74, 80];
+    const slow = TUNE.slow;
     if (n < slow.length) return slow[n];
-    return Math.min(235, 80 + 4.2 * (n - 3));
+    return Math.min(TUNE.speedMax, TUNE.speedBase + TUNE.speedPer * (n - 3));
   }
 
   /* Where the slider is after `elapsed` seconds: a triangle wave between minX and maxX, entering from the left or the right. */
@@ -163,7 +180,9 @@
   }
 
   const api = {
-    W, H, GROUND_Y, RIM_Y, LH, START_W, MIN_OVERLAP, WIND_START, TOL, TOL_EARLY, REGROW, STREAK_FOR_REGROW, WIND_DRIFT, TOP_EVERY, TOP_W,
+    W, H, GROUND_Y, RIM_Y, LH, STREAK_FOR_REGROW, TOP_EVERY, TOP_W, TUNING, setDifficulty, difficultyMode: () => (TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'),
+    get START_W() { return START_W; }, get MIN_OVERLAP() { return MIN_OVERLAP; }, get WIND_START() { return WIND_START; }, get TOL() { return TOL; }, get TOL_EARLY() { return TOL_EARLY; },
+    get REGROW() { return REGROW; }, get WIND_DRIFT() { return WIND_DRIFT; },
     FLAVORS, TOPPINGS, TOPPING_LABEL, RANKS,
     speedFor, sliderX, perfectTol, resolveDrop, streakAfter, shouldRegrow, regrow, flavorFor, scoreForDrop,
     isToppingRound, toppingFor, landTopping, windForLayer, applyWind, rankFor, noteFreq, cameraTarget, layerWorldY, mixColor,
@@ -344,6 +363,7 @@
 
   function startGame() {
     unlockAudio();
+    setDifficulty(root.TBK && typeof root.TBK.difficulty === 'function' ? root.TBK.difficulty() : 'classic');   // the table is fixed for this whole run
     newGame();
     g.phase = 'playing';
     showOverlay(null);
@@ -870,11 +890,11 @@
       const tipY = sy(0);
       if (ART.cone && ART.cone.complete && ART.cone.naturalWidth > 0) {
         // draw the studio-illustrated crispy waffle cone with 1986 neon paper wrapper
-        const drawW = b.width * 1.06;
-        const drawH = (tipY - rim) + 34;
+        const drawW = b.width * 1.04;                       // art fit (Gemini v49): the first swirl sits on the waffle cone rim
+        const drawH = (tipY - rim) + 12;
         const ge = glowSprite(ART.cone, 'cone', 100, 170, 'rgba(10,2,28,0.55)', 12, 4, scale * dpr);   // soft shadow baked once at a fixed size, then stamped scaled
-        if (ge) stampGlow(ctx, ge, cx - drawW / 2, rim - 28, drawW, drawH);
-        else ctx.drawImage(ART.cone, cx - drawW / 2, rim - 28, drawW, drawH);
+        if (ge) stampGlow(ctx, ge, cx - drawW / 2, rim - 8, drawW, drawH);
+        else ctx.drawImage(ART.cone, cx - drawW / 2, rim - 8, drawW, drawH);
       } else {
         const tY = sy(8);
         ctx.beginPath(); ctx.moveTo(b.left + 4, rim); ctx.lineTo(b.left + b.width - 4, rim); ctx.lineTo(cx + 6, tY); ctx.quadraticCurveTo(cx, tY + 6, cx - 6, tY); ctx.closePath();

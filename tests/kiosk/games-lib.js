@@ -54,6 +54,7 @@ async function stageKiosk(opts = {}) {
   fs.writeFileSync(path.join(dir, "catalog-map.json"), JSON.stringify({ version: 1, floats: [], categories: {} }));
   fs.cpSync(path.join(ROOT, "kiosk"), path.join(dir, "kiosk"), { recursive: true });
   const sess = JSON.parse(fs.readFileSync(path.join(dir, "kiosk", "arcade-session.json"), "utf8"));
+  if (process.env.TB_DIFFICULTY) sess.gameDifficulty = process.env.TB_DIFFICULTY;   // run the whole games suite in one mode: TB_DIFFICULTY=classic|arcade86 (default: whatever the shipped arcade-session.json says)
   Object.assign(sess, opts.session || {});
   fs.writeFileSync(path.join(dir, "kiosk", "arcade-session.json"), JSON.stringify(sess));
   const port = await freePort();

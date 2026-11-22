@@ -29,10 +29,35 @@
   const NOZ_KEY = 340;         // keyboard speed
   const INTRO = 2.0;           // wave banner time before the first cup of a wave
   const START_LIVES = 3;
-  const ICE_SECS = 6;
-  const CREAM_SECS = 8;
-  const ICE_SLOW = 0.4;
   const STEP = 1 / 60;
+
+  /* ---------- difficulty: two tables, one switch ----------
+     `classic` is the v48 tuning exactly. `arcade86` is the harder 1986 arcade pace. gameDifficulty in kiosk/arcade-session.json picks one (the shared shell reads it, TBK.difficulty());
+     the choice is made once, when a run starts (setDifficulty), so a run never changes table mid-game. Nothing else differs between the two modes. */
+  const TUNING = {
+    classic: {
+      ICE_SECS: 6, CREAM_SECS: 8, ICE_SLOW: 0.4,
+      speedBase: 36, speedPer: 6, speedMax: 110,
+      happy: { cups: 14, interval: 0.5, speedMax: 80, pLarge: 0, pMedium: 0.3 },
+      cupsBase: 6, cupsPer: 2, cupsMax: 24,
+      intervalBase: 2.2, intervalPer: 0.18, intervalMin: 0.8,
+      pLargeOffset: 2, pLargePer: 0.07, pLargeMax: 0.3,
+      pMediumBase: 0.1, pMediumPer: 0.07, pMediumMax: 0.45,
+      gullFromWave: 2, gullTwoFromWave: 6, umbrellaFromWave: 3
+    },
+    arcade86: {
+      ICE_SECS: 4.5, CREAM_SECS: 6, ICE_SLOW: 0.45,
+      speedBase: 58, speedPer: 11, speedMax: 155,
+      happy: { cups: 18, interval: 0.42, speedMax: 105, pLarge: 0, pMedium: 0.35 },
+      cupsBase: 8, cupsPer: 3, cupsMax: 30,
+      intervalBase: 1.65, intervalPer: 0.18, intervalMin: 0.52,
+      pLargeOffset: 1, pLargePer: 0.1, pLargeMax: 0.4,
+      pMediumBase: 0.2, pMediumPer: 0.08, pMediumMax: 0.45,
+      gullFromWave: 1, gullTwoFromWave: 4, umbrellaFromWave: 2
+    }
+  };
+  let TUNE = TUNING.classic;
+  function setDifficulty(mode) { TUNE = Object.prototype.hasOwnProperty.call(TUNING, mode) ? TUNING[mode] : TUNING.classic; return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'; }
 
   const FLAVORS = [
     { id: 'cherry', name: 'Cherry', letter: 'C', color: '#FF3CAC' },
@@ -71,17 +96,18 @@
   function waveParams(n) {
     n = Math.max(1, Math.floor(n) || 1);
     const happy = isHappyHour(n);
-    const speed = Math.min(110, 36 + 6 * (n - 1));
+    const T = TUNE;
+    const speed = Math.min(T.speedMax, T.speedBase + T.speedPer * (n - 1));
     if (happy) {
-      return { n, happy: true, cups: 14, interval: 0.5, speed: Math.min(80, speed), pLarge: 0, pMedium: 0.3 };
+      return { n, happy: true, cups: T.happy.cups, interval: T.happy.interval, speed: Math.min(T.happy.speedMax, speed), pLarge: T.happy.pLarge, pMedium: T.happy.pMedium };
     }
     return {
       n, happy: false,
-      cups: Math.min(24, 6 + 2 * (n - 1)),
-      interval: Math.max(0.8, 2.2 - 0.18 * (n - 1)),
+      cups: Math.min(T.cupsMax, T.cupsBase + T.cupsPer * (n - 1)),
+      interval: Math.max(T.intervalMin, T.intervalBase - T.intervalPer * (n - 1)),
       speed,
-      pLarge: clamp((n - 2) * 0.07, 0, 0.3),
-      pMedium: clamp(0.1 + (n - 1) * 0.07, 0, 0.45)
+      pLarge: clamp((n - T.pLargeOffset) * T.pLargePer, 0, T.pLargeMax),
+      pMedium: clamp(T.pMediumBase + (n - 1) * T.pMediumPer, 0, T.pMediumMax)
     };
   }
 
@@ -137,13 +163,13 @@
       events.push({ kind: 'pickup', type: n === 1 ? 'cream' : pickupType(), t: 3 + rng() * Math.max(1, span * 0.5 - 3), x: 40 + rng() * 280 });
       if (n >= 6) events.push({ kind: 'pickup', type: pickupType(), t: span * 0.5 + rng() * span * 0.3, x: 40 + rng() * 280 });
     }
-    if (!p.happy && n >= 2) {
-      const gulls = n < 6 ? 1 : 2;
+    if (!p.happy && n >= TUNE.gullFromWave) {
+      const gulls = n < TUNE.gullTwoFromWave ? 1 : 2;
       for (let i = 0; i < gulls; i++) {
         events.push({ kind: 'gull', t: span * (0.25 + 0.3 * i) + rng() * 2, side: rng() < 0.5 ? -1 : 1, tries: 0 });
       }
     }
-    if (!p.happy && n >= 3) {
+    if (!p.happy && n >= TUNE.umbrellaFromWave) {
       events.push({ kind: 'umbrella', t: span * 0.2 + rng() * span * 0.3, side: rng() < 0.5 ? -1 : 1, y: 270 + rng() * 90, tries: 0 });
     }
     return { params: p, events };
@@ -269,8 +295,8 @@
   function collectPickup(g, p) {
     const i = g.pickups.indexOf(p);
     if (i >= 0) g.pickups.splice(i, 1);
-    if (p.type === 'ice') g.fx.ice = ICE_SECS;
-    else if (p.type === 'cream') g.fx.cream = CREAM_SECS;
+    if (p.type === 'ice') g.fx.ice = TUNE.ICE_SECS;
+    else if (p.type === 'cream') g.fx.cream = TUNE.CREAM_SECS;
     else if (p.type === 'pineapple') {
       g.cups.slice().forEach(function (c) { popCup(g, c, true); });
     }
@@ -457,7 +483,7 @@
     g.time += dt;
     g.fx.ice = Math.max(0, g.fx.ice - dt);
     g.fx.cream = Math.max(0, g.fx.cream - dt);
-    const sdt = g.fx.ice > 0 ? dt * ICE_SLOW : dt;
+    const sdt = g.fx.ice > 0 ? dt * TUNE.ICE_SLOW : dt;
 
     // nozzle: glide to a finger/mouse x, or move with the keyboard
     const nz = g.nozzle;
@@ -498,7 +524,7 @@
   }
 
   const core = {
-    W, H, GROUND, NOZ_TIP_Y, NOZ_HALF, FIRE_INTERVAL, DROP_SPEED, INTRO, START_LIVES, STEP, ICE_SECS, CREAM_SECS,
+    W, H, GROUND, NOZ_TIP_Y, NOZ_HALF, FIRE_INTERVAL, DROP_SPEED, INTRO, START_LIVES, STEP, ICE_SECS: TUNING.classic.ICE_SECS, CREAM_SECS: TUNING.classic.CREAM_SECS, TUNING, setDifficulty, getTune: function () { return TUNE; }, difficultyMode: function () { return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'; },
     FLAVORS, SIZES, CARRIERS,
     makeRng, isHappyHour, waveParams, buildWave, fillFraction, isMatch, popScore, waveBonus,
     createGame, update, setFlavor
@@ -1247,8 +1273,8 @@
 
     if (ART.bot && ART.bot.complete && ART.bot.naturalWidth > 0) {
       // draw gleaming illustrated 1986 Chrome & Neon Soda Blaster Bot!
-      const bw = 64, bh = 69;
-      c2.drawImage(ART.bot, -bw / 2, 470, bw, bh);
+      const bw = 60, bh = 65;                                  // art fit (Gemini v49): never clips the bottom edge of the 540 board
+      c2.drawImage(ART.bot, -bw / 2, 469, bw, bh);
       // active flavor neon glow orb right on the nozzle muzzle
       c2.save();
       c2.shadowColor = f.color;
@@ -1652,7 +1678,7 @@
 
   function drawEffectBars(c2, g) {
     let y = 10;
-    [['ice', 'ICE', '#9CF6FF', ICE_SECS], ['cream', 'CREAM', '#FFFDF8', CREAM_SECS]].forEach(function (e) {
+    [['ice', 'ICE', '#9CF6FF', TUNE.ICE_SECS], ['cream', 'CREAM', '#FFFDF8', TUNE.CREAM_SECS]].forEach(function (e) {
       const left = g.fx[e[0]];
       if (left <= 0) return;
       c2.fillStyle = 'rgba(9,1,15,.65)';
@@ -1754,6 +1780,7 @@
   function startGame() {
     const url = new URLSearchParams(window.location.search);
     const seed = url.has('debug') && url.get('seed') ? parseInt(url.get('seed'), 10) : randomSeed();
+    setDifficulty(window.TBK && typeof window.TBK.difficulty === 'function' ? window.TBK.difficulty() : 'classic');   // the table is fixed for this whole run
     game = createGame({ seed, flavor: flavorIdx });
     particles = [];
     floaters = [];

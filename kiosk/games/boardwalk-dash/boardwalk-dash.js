@@ -104,22 +104,48 @@
      at a column for at least ~0.6 s of a player's time: enough to hop in, and hop out, with human reaction jitter. */
   const gapRequired = (speed) => 0.9 + 0.6 * speed;
 
+  /* ---------- difficulty: two tables, one switch ----------
+     `classic` is the v48 tuning exactly. `arcade86` is the harder 1986 arcade pace. gameDifficulty in kiosk/arcade-session.json picks one (the shared shell reads it, TBK.difficulty());
+     setDifficulty() is called once when a run starts, so a run never changes table mid-game. Nothing else differs between the two modes.
+     ramp = { base, per, max|min }: value = clamp(base +/- per * (level - 1)). steps = [[lastLevel, value], ...] then `rest` for every higher level. */
+  const TUNING = {
+    classic: {
+      speedBase: { base: 1.15, per: 0.3, max: 3.4 }, gapScale: { base: 1.9, per: -0.15, min: 1.0 },
+      maxPerLane: { steps: [[2, 3], [5, 4]], rest: 5 }, umbrellaChance: 0.34,
+      crabLanes: { steps: [[1, 1], [3, 2]], rest: 3 }, crabStep: { base: 1.6, per: -0.08, min: 0.8 },
+      wavePeriod: { base: 6.8, per: -0.3, min: 4.4 }, dryFrac: { base: 0.62, per: -0.02, min: 0.45 },
+      melt: { base: 70, per: -4, min: 38 }, towelW: { steps: [[3, 3]], rest: 2 }, speedCap: 3.8
+    },
+    arcade86: {
+      speedBase: { base: 1.55, per: 0.38, max: 4.2 }, gapScale: { base: 1.45, per: -0.14, min: 0.95 },
+      maxPerLane: { steps: [[1, 3], [3, 4]], rest: 5 }, umbrellaChance: 0.3,
+      crabLanes: { steps: [[1, 2]], rest: 3 }, crabStep: { base: 1.25, per: -0.1, min: 0.62 },
+      wavePeriod: { base: 5.4, per: -0.32, min: 3.6 }, dryFrac: { base: 0.54, per: -0.025, min: 0.4 },
+      melt: { base: 48, per: -4, min: 24 }, towelW: { steps: [[2, 2]], rest: 1 }, speedCap: 4.5
+    }
+  };
+  let TUNE = TUNING.classic;
+  function setDifficulty(mode) { TUNE = Object.prototype.hasOwnProperty.call(TUNING, mode) ? TUNING[mode] : TUNING.classic; return TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'; }
+  const ramp = (r, L) => { const v = r.base + r.per * (L - 1); return r.max != null ? Math.min(r.max, v) : Math.max(r.min, v); };
+  const stepped = (t, L) => { for (const [last, v] of t.steps) if (L <= last) return v; return t.rest; };
+
   function levelParams(level) {
     const L = Math.max(1, Math.floor(level) || 1);
+    const T = TUNE;
     return {
       level: L,
-      speedBase: Math.min(3.4, 1.15 + 0.3 * (L - 1)),
-      gapScale: Math.max(1.0, 1.9 - 0.15 * (L - 1)),
-      maxPerLane: L <= 2 ? 3 : L <= 5 ? 4 : 5,
-      umbrellaChance: 0.34,
-      crabLanes: L === 1 ? 1 : L <= 3 ? 2 : 3,
-      crabStep: Math.max(0.8, 1.6 - 0.08 * (L - 1)),
+      speedBase: ramp(T.speedBase, L),
+      gapScale: ramp(T.gapScale, L),
+      maxPerLane: stepped(T.maxPerLane, L),
+      umbrellaChance: T.umbrellaChance,
+      crabLanes: stepped(T.crabLanes, L),
+      crabStep: ramp(T.crabStep, L),
       walls: Math.min(4, 2 + Math.floor((L - 1) / 2)),
-      wavePeriod: Math.max(4.4, 6.8 - 0.3 * (L - 1)),
-      dryFrac: Math.max(0.45, 0.62 - 0.02 * (L - 1)),
-      melt: Math.max(38, 70 - 4 * (L - 1)),
-      towelW: L <= 3 ? 3 : 2,
-      speedCap: 3.8,
+      wavePeriod: ramp(T.wavePeriod, L),
+      dryFrac: ramp(T.dryFrac, L),
+      melt: ramp(T.melt, L),
+      towelW: stepped(T.towelW, L),
+      speedCap: T.speedCap,
     };
   }
 
@@ -647,7 +673,7 @@
     COLS, ROWS, START_COL, PAD, LOOP, HOP_COOLDOWN, PLAYER_HALF, MAX_LIVES, DELIVERIES_PER_LEVEL, FREEZE_SECONDS,
     TYPES, TYPE_ORDER, DIRS, SWEEP_TILES, DROP_TIME, DELIVER_TIME, SHIELD_INVULN,
     BASE_DELIVERY, LEVEL_BONUS, TIP_MAX, CHERRY_POINTS, STRAW_POINTS, ROW_POINTS,
-    mulberry32, hashSeed, levelForDeliveries, gapRequired, levelParams, laneCounts, entityX, umbrellaX, inShade, crabX,
+    mulberry32, hashSeed, levelForDeliveries, gapRequired, levelParams, TUNING, setDifficulty, difficultyMode: () => (TUNE === TUNING.arcade86 ? 'arcade86' : 'classic'), laneCounts, entityX, umbrellaX, inShade, crabX,
     waveDepth, waveWet, waveWarn, waveDrySeconds, waveDryNeeded, laneMinGap, hazardAt, isWall, generateLevel,
     staticReachable, generateDelivery, deliveryBase, speedTip, deliveryScore, pickupPoints, bufferHop, solve,
     createGame, hop, update,
@@ -816,6 +842,7 @@
 
   function newGame() {
     sid = null;                                            // a fresh run never inherits a tracked finger
+    setDifficulty(window.TBK && typeof window.TBK.difficulty === 'function' ? window.TBK.difficulty() : 'classic');   // the table is fixed for this whole run
     g = createGame({ seed: fixedSeed != null ? fixedSeed : undefined });
     particles = []; popups = []; shake = 0;
     lastWaveWet = false;
@@ -1212,7 +1239,7 @@
     // glowing neon underglow beneath the trailer
     ellipse(x + w / 2, y + T - 1, w * 0.48, 5, 'rgba(42,245,228,0.38)');
     if (ART.trailer && ART.trailer.complete && ART.trailer.naturalWidth > 0) {
-      const tw = 114, th = 79;
+      const tw = 74, th = 51;                                   // art fit (Gemini v49): the trailer fits inside row 0 without covering row 1 or the runner
       const ge = glowSprite(ART.trailer, 'trailer', tw, th, 'rgba(255,60,172,0.45)', 10, 0, scale);   // the glow is baked once, not re-blurred every frame
       if (ge) stampGlow(ctx, ge, x + (w - tw) / 2, y + T - th + 2, tw, th);
       else ctx.drawImage(ART.trailer, x + (w - tw) / 2, y + T - th + 2, tw, th);
@@ -1407,7 +1434,7 @@
       ctx.save();
       ctx.translate(cx, cy - 1);
       ctx.rotate(wob);
-      ctx.drawImage(ART.crab, -20, -19, 40, 39);
+      ctx.drawImage(ART.crab, -17, -16, 34, 32);              // art fit (Gemini v49): matches the crab's collision box
       ctx.restore();
       return;
     }
@@ -1432,8 +1459,8 @@
     const x = c * T + 4, y = rowTop(r) + 5, w = T - 8;
     ellipse(c * T + T / 2, y + 37, 20, 4.5, 'rgba(95,48,20,0.38)');
     if (ART.sandcastle && ART.sandcastle.complete && ART.sandcastle.naturalWidth > 0) {
-      const sw = T + 4, sh = T + 8;
-      ctx.drawImage(ART.sandcastle, c * T - 2, rowTop(r) - 6, sw, sh);
+      const sw = T - 2, sh = T;                                // art fit (Gemini v49): the castle stays inside its own tile
+      ctx.drawImage(ART.sandcastle, c * T + 1, rowTop(r), sw, sh);
       return;
     }
     const sg = ctx.createLinearGradient(x, y + 8, x + w, y + 36);

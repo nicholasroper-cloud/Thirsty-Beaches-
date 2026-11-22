@@ -46,10 +46,16 @@
       idleSeconds: idleSeconds,
       idleWarnSeconds: Math.min(num(src.idleWarnSeconds, 5, 120, DEFAULTS.idleWarnSeconds), idleSeconds - 5),
       endedReturnSeconds: num(src.endedReturnSeconds, 10, 180, DEFAULTS.endedReturnSeconds),
-      gameMaxSeconds: num(src.gameMaxSeconds, 30, 900, DEFAULTS.gameMaxSeconds)
+      gameMaxSeconds: num(src.gameMaxSeconds, 30, 900, DEFAULTS.gameMaxSeconds),
+      gameDifficulty: difficultyOf(src.gameDifficulty)
     };
   }
+  /* gameDifficulty: which tuning table the five games use. Exactly "arcade86" or "classic"; anything else, a missing key or an unreadable file is "classic" (the original, gentler numbers). */
+  const DIFFICULTIES = ['classic', 'arcade86'];
+  function difficultyOf(v) { return DIFFICULTIES.indexOf(v) >= 0 ? v : 'classic'; }
   let limits = sessionLimits(null);
+  let difficulty = 'classic', settled = false;   // the games ask TBK.difficulty() when a RUN starts; until the settings are read (or failed to read) the board buttons are inert (data-cfg="pending"), so no run can start in the wrong mode
+  function settle() { settled = true; try { if (doc.body) doc.body.removeAttribute('data-cfg'); } catch (e) { /* no body yet */ } }
 
   /* ---------- visit (sessionStorage) ---------- */
   const VISIT_KEY = 'tbGamesVisit';
@@ -236,15 +242,17 @@
     doc.addEventListener('visibilitychange', function () { if (doc.hidden) stopAudio(); });
     // the visit settings (a bad or missing file is the defaults)
     let timer = null;
+    if (!settled) { try { doc.body.setAttribute('data-cfg', 'pending'); } catch (e) { /* no body */ } }
     try {
       const ctl = new root.AbortController(); timer = root.setTimeout(function () { ctl.abort(); }, 2500);
-      root.fetch('/kiosk/arcade-session.json', { cache: 'no-store', signal: ctl.signal }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { limits = sessionLimits(j); tick(); }, function () { /* defaults stay */ }).then(function () { root.clearTimeout(timer); });
-    } catch (e) { /* defaults stay */ }
+      root.fetch('/kiosk/arcade-session.json', { cache: 'no-store', signal: ctl.signal }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { limits = sessionLimits(j); difficulty = limits.gameDifficulty; tick(); }, function () { /* defaults stay */ }).then(function () { root.clearTimeout(timer); settle(); });
+    } catch (e) { settle(); /* defaults stay */ }
     tick();
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init); else init();
 
   const api = { stopAudio: stopAudio, onEnd: onEnd, runStart: runStart, runEnd: runEnd, onAgain: onAgain, sessionLimits: sessionLimits, DEFAULTS: DEFAULTS, leaveHandsOff: leaveHandsOff, clearVisit: clearVisit,
+    difficulty: function () { return difficulty; }, difficultySettled: function () { return settled; }, DIFFICULTIES: DIFFICULTIES,
     isEnded: function () { return ended; }, isStray: function (e) { return !!e && e.pointerType === 'touch' && Math.max(e.width || 0, e.height || 0) > 220; } };
   root.TBK = api;
 })(typeof window !== 'undefined' ? window : globalThis);

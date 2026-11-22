@@ -30,6 +30,26 @@
     UMBRELLA_EXTRA: 20, UMBRELLA_COOL: 0.5, MAX_GAP: 44, LIVES: 3
   };
 
+  /* ---------- difficulty: two tables, one switch ----------
+     `classic` is the v48 tuning exactly (these are the values TUNE above starts with). `arcade86` is the harder 1986 arcade pace. gameDifficulty in kiosk/arcade-session.json picks one (the shared shell
+     reads it, TBK.difficulty()); setDifficulty() is called once when a run starts, copies the tide/buff numbers into TUNE and selects the hazard ramp used by difficulty(). Nothing else differs. */
+  const TUNING = {
+    classic: {
+      tune: { TIDE_DELAY: 6, TIDE_DELAY_CHECKPOINT: 3, TIDE_BASE: 4.0, FREEZE: 4, INVINCIBLE: 6, SPAWN_PROT: 1.8 },
+      hz: { base: 1, per: 0.12, max: 2.0 }, rate: { base: 1, per: 0.1, max: 1.8 }, tide: { per: 0.15, max: 2.6 }
+    },
+    arcade86: {
+      tune: { TIDE_DELAY: 3.5, TIDE_DELAY_CHECKPOINT: 2, TIDE_BASE: 7.2, FREEZE: 3, INVINCIBLE: 4.5, SPAWN_PROT: 1.3 },
+      hz: { base: 1.35, per: 0.18, max: 2.5 }, rate: { base: 1.3, per: 0.16, max: 2.3 }, tide: { per: 0.2, max: 2.8 }
+    }
+  };
+  let RAMP = TUNING.classic;
+  function setDifficulty(mode) {
+    RAMP = Object.prototype.hasOwnProperty.call(TUNING, mode) ? TUNING[mode] : TUNING.classic;
+    Object.assign(TUNE, RAMP.tune);
+    return RAMP === TUNING.arcade86 ? 'arcade86' : 'classic';
+  }
+
   // ---------------------------------------------------------------------
   // Hand-authored towers. Rows are numbered from the ground (0) to the top deck.
   // segs: per row, deck pieces [x0, x1]. A hole between two pieces is a gap to jump (or a board to ride).
@@ -141,9 +161,9 @@
   function difficulty(levelNo, res) {
     const k = Math.max(0, levelNo - 1);
     return {
-      hz: Math.min(1 + 0.12 * k, 2.0),
-      rate: Math.min(1 + 0.1 * k, 1.8),
-      tide: TUNE.TIDE_BASE * ((res && res.tide) || 1) * Math.min(1 + 0.15 * k, 2.6)
+      hz: Math.min(RAMP.hz.base + RAMP.hz.per * k, RAMP.hz.max),
+      rate: Math.min(RAMP.rate.base + RAMP.rate.per * k, RAMP.rate.max),
+      tide: TUNE.TIDE_BASE * ((res && res.tide) || 1) * Math.min(1 + RAMP.tide.per * k, RAMP.tide.max)
     };
   }
 
@@ -707,7 +727,7 @@
   const api = {
     W, H, GROUND_Y, TOP_Y, DECK_T, DT, TUNE, LEVELS, NO_INPUT,
     resolveLevel, levelFor, analyzeLevel, difficulty, tideStep, tipFor, aabbOverlap, playerBox, hazardBox, ladderGrab,
-    createGame, loadLevel, resetAttempt, nextLevel, step, platAt
+    createGame, loadLevel, resetAttempt, nextLevel, step, platAt, TUNING, setDifficulty, difficultyMode: () => (RAMP === TUNING.arcade86 ? 'arcade86' : 'classic')
   };
 
   // ======================================================================
@@ -730,10 +750,12 @@
 
   // ---- local 1986 Miami artwork assets ----
   const ART = {};
+  let onArtLoaded = null;
   if (typeof Image !== 'undefined') {
     [['bg', '/kiosk/games/thirsty-tower/assets/bg-miami-tower.webp'],
      ['crab', '/kiosk/games/thirsty-tower/assets/crab.png']].forEach(([k, src]) => {
       const im = new Image();
+      im.onload = () => { if (typeof onArtLoaded === 'function') onArtLoaded(k); };
       im.src = src;
       ART[k] = im;
     });
@@ -1542,6 +1564,7 @@
     }
     function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
     function startNew() {
+      setDifficulty(window.TBK && typeof window.TBK.difficulty === 'function' ? window.TBK.difficulty() : 'classic');   // the table is fixed for this whole run
       g = api.createGame({ level: 1 });
       resetFx(); clearInput();
       hideOverlay(); setMode('play');
@@ -1604,6 +1627,7 @@
       if (on) audio.play('row');
     });
 
+    onArtLoaded = (k) => { if (k === 'bg') staticLayer = null; render(); };
     if (window.ResizeObserver) new ResizeObserver(layout).observe(els.board); else window.addEventListener('resize', layout);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => render());
     updateHud();
@@ -1611,7 +1635,7 @@
     layout();
     if (window.TBK) { window.TBK.onEnd(pause); window.TBK.onAgain(startNew); }
     // read-only view for the page tests (only with ?debug in the address)
-    if (/[?&]debug(?:=|&|$)/.test(window.location.search)) window.__tbdbg = { get mode() { return mode; }, get g() { return g; } };
+    if (/[?&]debug(?:=|&|$)/.test(window.location.search)) window.__tbdbg = { get mode() { return mode; }, get g() { return g; }, get difficulty() { return api.difficultyMode(); } };
   }
 
   if (typeof document !== 'undefined') {

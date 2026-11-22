@@ -7,15 +7,15 @@ const jobs = [
   ["node", ["tests/kiosk/unit.js"]], ["node", ["tests/kiosk/html-syntax.js"]], ["node", ["tests/kiosk/station.js"]], ["node", ["tests/kiosk/page.js"]],
   ["node", ["tests/kiosk/seq.js"]], ["node", ["tests/kiosk/greeter.js"]], ["node", ["tests/kiosk/asis.js"]], ["node", ["tests/kiosk/consent.js"]], ["node", ["tests/kiosk/contrast.js"]], ["node", ["tests/kiosk/servers.js"]],
   ["node", ["tests/kiosk/catalog.js"]], ["node", ["tests/kiosk/gate.js"]], ["node", ["tools/catalog-map.js", "--check"]], ["node", ["tests/kiosk/pay-journal.js"]], ["node", ["tests/kiosk/pay-state.js"]], ["node", ["tests/kiosk/pay-server.js"]], ["node", ["tests/kiosk/pay-e2e.js"]],
-  ["node", ["tests/boardwalk-arcade.test.mjs"]], ["node", ["tests/kiosk/arcade-e2e.js"]], ["node", ["tests/kiosk/arcade-prize.js"]], ["node", ["tests/kiosk/arcade-prize-pipeline.js"]], ["node", ["tests/kiosk/prize-pad.js"]], ["node", ["tests/kiosk/games.js"]], ["node", ["tests/kiosk/chrome-leak.js"]], ["node", ["tests/kiosk/map-inert.js"]],
+  ["node", ["tests/boardwalk-arcade.test.mjs"]], ["node", ["tests/kiosk/arcade-e2e.js"]], ["node", ["tests/kiosk/arcade-prize.js"]], ["node", ["tests/kiosk/arcade-prize-pipeline.js"]], ["node", ["tests/kiosk/prize-pad.js"]], ["node", ["tests/kiosk/games.js"]], ["node", ["tests/kiosk/games.js"], { TB_DIFFICULTY: "classic" }], ["node", ["tests/kiosk/chrome-leak.js"]], ["node", ["tests/kiosk/difficulty.js"]], ["node", ["tests/kiosk/map-inert.js"]],
   ["node", ["tools/sync-recipe-defaults.js", "--check"]], ["node", ["tools/publish-manifest.js", "--check"]],
   ...["aka", "prize-link", "punch", "relay", "report-cors", "station", "redeem-relay"].map(n => ["node", ["tests/cloud/" + n + ".test.mjs"]]),
 ];
 let bad = 0;
-for (const [cmd, args] of jobs) {
-  const r = cp.spawnSync(process.execPath, args, { cwd: ROOT, encoding: "utf8", env: { ...process.env, NODE_NO_WARNINGS: "1" } });
+for (const [cmd, args, extraEnv] of jobs) {
+  const r = cp.spawnSync(process.execPath, args, { cwd: ROOT, encoding: "utf8", env: { ...process.env, NODE_NO_WARNINGS: "1", ...(extraEnv || {}) } });
   const last = (r.stdout + r.stderr).trim().split("\n").filter(Boolean).pop() || "";
-  console.log((r.status === 0 ? "PASS " : "FAIL ") + args.join(" ") + "  " + last.slice(0, 110));
+  console.log((r.status === 0 ? "PASS " : "FAIL ") + args.join(" ") + (extraEnv ? " [" + Object.entries(extraEnv).map(e => e.join("=")).join(" ") + "]" : "") + "  " + last.slice(0, 110));
   if (r.status !== 0) { bad++; console.log((r.stdout + r.stderr).slice(-1500)); }
 }
 console.log(bad ? bad + " failed" : "all passed");

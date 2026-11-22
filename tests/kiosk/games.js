@@ -697,6 +697,36 @@ async function section(name, fn) { if (process.env.ONLY && !process.env.ONLY.spl
       } finally { await c.S("Network.setBlockedURLs", { urls: [] }); }
     });
 
+    /* ======================= C9. gameDifficulty (v49): the run starts in the table the setting names, classic when it cannot be read ======================= */
+    await section("C9. gameDifficulty selects the tuning table when a run starts (arcade86 / classic); a bad value, a missing file or an unreadable one is classic", async () => {
+      const MODE = { "thirsty-blaster": "window.__tb.core.difficultyMode()", "thirsty-tower": "window.__tbdbg.difficulty", "cup-catch": "CupCatch.difficultyMode()", "boardwalk-dash": "BoardwalkDash.core.difficultyMode()", "soft-serve-stacker": "SoftServeStacker.difficultyMode()" };
+      const cases = [["arcade86", "arcade86"], ["classic", "classic"], ["Arcade86", "classic"], [7, "classic"], [undefined, "classic"]];
+      for (const [setting, want] of cases) {
+        const kz = await stageKiosk({ session: { gameDifficulty: setting, gameMinSeconds: 5, gameMaxSeconds: 900, idleSeconds: 300 } });
+        try {
+          await installMock(c);
+          for (const g of Object.keys(GAMES)) {
+            await c.goto(url(kz, "/arcade/games/" + g)); await sleep(500);
+            await waitFor(async () => c.eval("document.body.getAttribute('data-cfg') === null"), 5000, g + ": the settings read finished");
+            await c.tapEl(GAMES[g].start);
+            await waitFor(async () => (await c.eval(GAMES[g].mode)) === GAMES[g].playing, 8000, g + " running");
+            eq(await c.eval(MODE[g]), want, g + ": gameDifficulty " + JSON.stringify(setting) + " -> " + want);
+          }
+        } finally { kz.stop(); }
+      }
+      // the settings file cannot be read at all: classic
+      const k0 = await stageKiosk({ session: { gameDifficulty: "arcade86" } });
+      try {
+        await installMock(c); await c.mock(/\/kiosk\/arcade-session\.json/, () => ({ status: 404, body: "Not found", type: "text/plain" }));
+        for (const g of Object.keys(GAMES)) {
+          await c.goto(url(k0, "/arcade/games/" + g)); await sleep(500);
+          await waitFor(async () => c.eval("document.body.getAttribute('data-cfg') === null"), 5000, g + ": the failed read still settles");
+          await c.tapEl(GAMES[g].start); await waitFor(async () => (await c.eval(GAMES[g].mode)) === GAMES[g].playing, 8000, g + " running");
+          eq(await c.eval(MODE[g]), "classic", g + ": unreadable settings -> classic");
+        }
+      } finally { k0.stop(); }
+    });
+
     /* ======================= D. the visit ======================= */
     await section("D1. visit cap spans pages; Time's up stops audio and returns hands-off", async () => {
       const k2 = await stageKiosk({ session: { gameMaxSeconds: 30, endedReturnSeconds: 10 } });

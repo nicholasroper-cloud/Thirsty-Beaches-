@@ -94,8 +94,8 @@ img, svg, canvas { -webkit-user-drag: none; user-drag: none; }
 .kg-board::after {
   content: ""; position: absolute; inset: 0; z-index: 11; pointer-events: none; border-radius: inherit;
   background:
-    repeating-linear-gradient(180deg, rgba(255,255,255,.022) 0 1px, transparent 1px 4px),
-    radial-gradient(ellipse at 50% 45%, transparent 64%, rgba(6,1,20,.32) 100%);
+    repeating-linear-gradient(0deg, rgba(6,0,18,.14) 0 1px, transparent 1px 4px),      /* 1986 CRT scanlines (Gemini v49), pointer-events: none above */
+    radial-gradient(ellipse at 50% 45%, transparent 62%, rgba(7,1,22,.34) 100%);        /* phosphor vignette */
   box-shadow: inset 0 0 22px rgba(42,245,228,.14), inset 0 2px 0 rgba(255,255,255,.22);
 }
 .kg-board canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -194,3 +194,7 @@ img, svg, canvas { -webkit-user-drag: none; user-drag: none; }
 }
 .kg-bar .kg-rulesbar:active { transform: translateY(3px); }
 .kg-picker .kg-prizeline { max-width: 40ch; }
+
+/* The five games read gameDifficulty (kiosk/arcade-session.json) once in kgame.js; until that read has finished (or failed) a run must not start, or it could start in the wrong mode.
+   The window is a few milliseconds on the local server; the board's buttons are simply inert during it. */
+body[data-cfg="pending"] .kg-board button, body[data-cfg="pending"] .kg-board [data-kg-rules] { pointer-events: none; }
